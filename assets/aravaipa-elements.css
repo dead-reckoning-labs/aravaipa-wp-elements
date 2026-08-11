@@ -1,0 +1,437 @@
+/**
+ * Aravaipa Elements
+ *
+ * Scoped entirely under .arv- prefixes. Selectors are kept to a single class
+ * wherever possible so X theme and Cornerstone's own generated CSS can still
+ * win when an editor overrides something in the builder: this file sets the
+ * baseline, it does not fight the page.
+ *
+ * Type sizes are in rem so they inherit X's root scale rather than pinning a
+ * pixel size the rest of the site does not use.
+ */
+
+.arv-distances,
+.arv-timeline,
+.arv-partners,
+.arv-countdown,
+.arv-hero {
+	--arv-accent: #ff2a13;
+	--arv-ink: #272727;
+	--arv-line: rgba(0, 0, 0, 0.12);
+	box-sizing: border-box;
+}
+
+.arv-distances *,
+.arv-timeline *,
+.arv-partners *,
+.arv-countdown *,
+.arv-hero * {
+	box-sizing: inherit;
+}
+
+/* ---------------------------------------------------------------- Hero -- */
+
+.arv-hero {
+	position: relative;
+	padding: 5rem 1.5rem;
+	background-color: var(--arv-ink);
+	background-size: cover;
+	background-position: center;
+	color: #fff;
+	overflow: hidden;
+}
+
+.arv-hero--image {
+	background-image: var(--arv-hero-image);
+}
+
+/* The scrim is a pseudo element rather than a background blend so the overlay
+   opacity control works the same whether or not an image is set. */
+.arv-hero--image::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: #000;
+	opacity: var(--arv-overlay, 0.55);
+}
+
+.arv-hero__inner {
+	position: relative;
+	max-width: 60rem;
+	margin: 0 auto;
+}
+
+.arv-hero--center .arv-hero__inner {
+	text-align: center;
+}
+
+.arv-hero__date {
+	margin: 0 0 0.5rem;
+	font-size: 0.95rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--arv-accent);
+}
+
+.arv-hero__name {
+	margin: 0 0 0.5rem;
+	font-size: clamp(2rem, 6vw, 4rem);
+	line-height: 1.05;
+	font-weight: 800;
+	color: #fff;
+}
+
+.arv-hero__location {
+	margin: 0;
+	font-size: 1.05rem;
+	opacity: 0.85;
+}
+
+.arv-hero__status {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 1.25rem 0 0;
+}
+
+.arv-hero--center .arv-hero__status {
+	justify-content: center;
+}
+
+.arv-hero__badge {
+	display: inline-block;
+	padding: 0.3rem 0.7rem;
+	border-radius: 2px;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	background: var(--arv-accent);
+	color: #fff;
+}
+
+.arv-hero__badge--closed {
+	background: rgba(255, 255, 255, 0.22);
+}
+
+.arv-hero__badge--waitlist,
+.arv-hero__badge--lottery {
+	background: #d99000;
+}
+
+.arv-hero__note {
+	font-size: 0.9rem;
+	opacity: 0.85;
+}
+
+.arv-hero__cta {
+	display: inline-block;
+	margin-top: 1.5rem;
+	padding: 0.85rem 2rem;
+	border-radius: 2px;
+	background: var(--arv-accent);
+	color: #fff;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition: filter 0.15s ease;
+}
+
+.arv-hero__cta:hover,
+.arv-hero__cta:focus {
+	filter: brightness(0.88);
+	color: #fff;
+}
+
+/* ----------------------------------------------------------- Distances -- */
+
+.arv-distances__heading,
+.arv-timeline__heading,
+.arv-partners__heading,
+.arv-countdown__heading {
+	margin: 0 0 1.5rem;
+	font-size: clamp(1.4rem, 3vw, 2rem);
+	font-weight: 800;
+	text-align: center;
+	color: var(--arv-ink);
+}
+
+.arv-distances__grid {
+	display: grid;
+	gap: 1.25rem;
+	grid-template-columns: repeat(var(--arv-cols, 3), minmax(0, 1fr));
+}
+
+.arv-distance {
+	display: flex;
+	flex-direction: column;
+	padding: 1.5rem;
+	border: 1px solid var(--arv-line);
+	border-top: 4px solid var(--arv-accent);
+	background: #fff;
+}
+
+.arv-distance__name {
+	margin-bottom: 1rem;
+	font-size: 1.6rem;
+	font-weight: 800;
+	line-height: 1.1;
+	color: var(--arv-ink);
+}
+
+.arv-distance__stats {
+	margin: 0 0 1.25rem;
+	padding: 0;
+	/* Pushes the CTA to the bottom so buttons line up across cards whose stat
+	   counts differ, which they routinely do between distances. */
+	flex: 1 1 auto;
+}
+
+.arv-distance__stat {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid var(--arv-line);
+}
+
+.arv-distance__stat:last-child {
+	border-bottom: 0;
+}
+
+.arv-distance__stat dt {
+	margin: 0;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	opacity: 0.6;
+}
+
+.arv-distance__stat dd {
+	margin: 0;
+	font-weight: 700;
+	text-align: right;
+	color: var(--arv-ink);
+}
+
+.arv-distance__cta {
+	display: block;
+	padding: 0.7rem 1rem;
+	background: var(--arv-accent);
+	color: #fff;
+	font-weight: 800;
+	font-size: 0.85rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	text-align: center;
+	text-decoration: none;
+	transition: filter 0.15s ease;
+}
+
+.arv-distance__cta:hover,
+.arv-distance__cta:focus {
+	filter: brightness(0.88);
+	color: #fff;
+}
+
+/* ------------------------------------------------------------ Timeline -- */
+
+.arv-timeline__day + .arv-timeline__day {
+	margin-top: 1.75rem;
+}
+
+.arv-timeline__day-label {
+	margin: 0 0 0.5rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 2px solid var(--arv-accent);
+	font-size: 1.05rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--arv-ink);
+}
+
+.arv-timeline__entries {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-timeline__entry {
+	display: flex;
+	gap: 1.25rem;
+	padding: 0.7rem 0;
+	border-bottom: 1px solid var(--arv-line);
+}
+
+.arv-timeline__entry:last-child {
+	border-bottom: 0;
+}
+
+.arv-timeline__time {
+	flex: 0 0 8rem;
+	font-weight: 800;
+	color: var(--arv-accent);
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-timeline__what {
+	flex: 1 1 auto;
+	color: var(--arv-ink);
+}
+
+/* ------------------------------------------------------------ Partners -- */
+
+.arv-partners__grid {
+	display: grid;
+	gap: 1.5rem 2rem;
+	grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+	align-items: center;
+}
+
+.arv-partners__item {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Tiers scale by column span rather than font size so a title sponsor reads
+   larger without the grid falling out of alignment. */
+.arv-partners__item--title {
+	grid-column: span 2;
+}
+
+.arv-partners__link {
+	display: block;
+	width: 100%;
+}
+
+.arv-partners__item img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-height: 5rem;
+	object-fit: contain;
+	margin: 0 auto;
+}
+
+.arv-partners__item--title img {
+	max-height: 8rem;
+}
+
+.arv-partners__item--presenting img {
+	max-height: 6.5rem;
+}
+
+.arv-partners--grayscale .arv-partners__item img {
+	filter: grayscale(100%);
+	opacity: 0.75;
+	transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.arv-partners--grayscale .arv-partners__item:hover img {
+	filter: grayscale(0);
+	opacity: 1;
+}
+
+/* ----------------------------------------------------------- Countdown -- */
+
+.arv-countdown {
+	text-align: center;
+}
+
+.arv-countdown__units {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 1rem;
+}
+
+.arv-countdown__unit {
+	min-width: 5.5rem;
+	padding: 1rem 0.75rem;
+	border: 1px solid var(--arv-line);
+	border-top: 4px solid var(--arv-accent);
+	background: #fff;
+}
+
+.arv-countdown__value {
+	display: block;
+	font-size: clamp(1.8rem, 5vw, 3rem);
+	font-weight: 800;
+	line-height: 1;
+	color: var(--arv-ink);
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-countdown__label {
+	display: block;
+	margin-top: 0.35rem;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	opacity: 0.6;
+}
+
+.arv-countdown__expired {
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 700;
+	color: var(--arv-accent);
+}
+
+/* --------------------------------------------------------- Responsive -- */
+
+@media (max-width: 979px) {
+	.arv-distances__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 767px) {
+	.arv-hero {
+		padding: 3.5rem 1.25rem;
+	}
+
+	.arv-distances__grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.arv-timeline__entry {
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	.arv-timeline__time {
+		flex-basis: auto;
+	}
+
+	.arv-partners__item--title {
+		grid-column: span 1;
+	}
+
+	/* Cards stack on mobile, so the flex spacer that keeps buttons aligned
+	   across a row has nothing left to align against and just leaves a gap
+	   under any card without a register link. */
+	.arv-distance__stats {
+		flex: 0 0 auto;
+	}
+
+	/* Four units at the desktop min-width overflow a 390px viewport by a few
+	   pixels and wrap one unit onto its own line. Narrower keeps the clock on
+	   a single row, which is the whole point of it. */
+	.arv-countdown__units {
+		gap: 0.5rem;
+	}
+
+	.arv-countdown__unit {
+		min-width: 0;
+		flex: 1 1 0;
+		padding: 0.85rem 0.35rem;
+	}
+}
