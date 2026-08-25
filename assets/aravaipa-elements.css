@@ -629,6 +629,70 @@
 	display: block;
 }
 
+/* The call to action inside the card. A block, not an inline pill: no
+   rounded corners, no shadow, squared off like the name chips and the
+   section's rules, so it reads as part of the same graphic language rather
+   than a UI button borrowed from somewhere else. */
+.arv-region-map__cta {
+	display: block;
+	margin-top: 0.6rem;
+	padding: 0.32rem 0.55rem;
+	background: var(--arv-teal);
+	color: #0d1211;
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	text-align: center;
+	transition: background 0.15s ease;
+}
+
+.arv-region-map__cta::after {
+	content: "→";
+	margin-left: 0.35rem;
+	display: inline-block;
+	transition: transform 0.15s ease;
+}
+
+.arv-region-map__pin--primary .arv-region-map__cta {
+	background: var(--arv-accent);
+	color: #fff;
+}
+
+/* Without this the card is scenery: it opens on hover but the pointer cannot
+   reach it, so the button inside would swallow nothing and the click would
+   fall through to the map behind it. Only enabled while the card is actually
+   visible, so a hidden card never intercepts a click meant for the pin
+   underneath it. */
+.arv-region-map__pin:hover .arv-region-map__detail,
+.arv-region-map__pin:focus-within .arv-region-map__detail,
+.arv-region-map__pin:focus-visible .arv-region-map__detail {
+	pointer-events: auto;
+}
+
+/* Bridges the gap between the dot and the card. Moving the pointer off the
+   dot and toward the button crosses a few pixels of bare map, and without
+   something covering them the anchor stops being hovered, the card closes,
+   and the button vanishes from under the pointer mid-travel. Transparent,
+   and inert whenever the card itself is (it inherits pointer-events), so it
+   never blocks a neighbouring pin. */
+.arv-region-map__detail::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 100%;
+	height: 1.1rem;
+}
+
+/* Card flipped below the dot: the bridge flips with it, and reaches further
+   because that variant clears the always-visible name label as well. */
+.arv-region-map__pin--label-below .arv-region-map__detail::after {
+	top: auto;
+	bottom: 100%;
+	height: 2.2rem;
+}
+
 .arv-region-map__pin:focus-visible .arv-region-map__detail {
 	opacity: 1;
 	transform: translateX(-50%) translateY(0);
@@ -815,6 +879,18 @@
 
 	.arv-region-map__pin--edge-right:hover .arv-region-map__detail {
 		transform: translateX(0) translateY(0);
+	}
+
+	.arv-region-map__cta:hover {
+		background: #6fc7b4;
+	}
+
+	.arv-region-map__pin--primary .arv-region-map__cta:hover {
+		background: #ff4a30;
+	}
+
+	.arv-region-map__cta:hover::after {
+		transform: translateX(3px);
 	}
 
 	.arv-region-map__item:hover .arv-region-map__item-name {

@@ -44,7 +44,16 @@ echo "region map:\n";
 t('empty rows return nothing', arv_region_map_render(array('rows'=>''))==='');
 $r=arv_region_map_render(array('rows'=>"Arizona | 20.9 | 61.9 | https://x/arizona/"));
 t('minimal valid row renders a pin', strpos($r,'arv-region-map__pin')!==false);
-t('minimal valid row has no detail span', strpos($r,'arv-region-map__detail')===false);
+// The card used to be skipped entirely for a row with nothing to put in it.
+// It now always renders, because it carries the "View races" button, and a pin
+// whose card never opens would be the only pin on the map with no visible way
+// into the page it links to. What a bare row must still not produce is an
+// empty logo image or an empty line of detail text.
+t('minimal valid row still gets a card, since the card holds the button', strpos($r,'arv-region-map__detail"')!==false);
+t('minimal valid row card has the call to action', strpos($r,'arv-region-map__cta')!==false);
+t('minimal valid row renders no logo img', strpos($r,'arv-region-map__detail-logo')===false);
+t('minimal valid row renders no detail text span', strpos($r,'arv-region-map__detail-text')===false);
+t('the call to action is hidden from screen readers, the anchor already says it', strpos($r,'arv-region-map__cta" aria-hidden="true"')!==false);
 t('row missing url is dropped', arv_region_map_render(array('rows'=>"Arizona | 20.9 | 61.9 | "))==='');
 t('row with non-numeric x is dropped', arv_region_map_render(array('rows'=>"Arizona | not-a-number | 61.9 | https://x/"))==='');
 t('one bad row does not sink a good one', strpos(arv_region_map_render(array('rows'=>"Bad | x | y | \nArizona | 20.9 | 61.9 | https://x/")),'Arizona')!==false);

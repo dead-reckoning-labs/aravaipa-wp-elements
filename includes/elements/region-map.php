@@ -48,13 +48,13 @@ cs_register_element(
 					// stacking on each other the way the centres did.
 					"California | 9.4 | 59.7 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | | ARV_LOGO:aravaipa.png\n" .
 					"Nevada | 15.6 | 52.7 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | | | ARV_LOGO:aravaipa.png\n" .
-					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country. | | | ARV_LOGO:aravaipa.png\n" .
+					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country. | | | ARV_LOGO:colorado.png\n" .
 					"Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon. | | | ARV_LOGO:ultra-adventures.png\n" .
 					// On the Upper Peninsula rather than the state's centre, which
 					// is where the events actually are.
 					"Great Lakes Endurance | 64.3 | 18.2 | https://www.aravaiparunning.com/great-lakes-endurance/ | Trail and ultra events across the Great Lakes region. | | | ARV_LOGO:great-lakes-endurance.png\n" .
-					"White Mountain Endurance | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Trail and ultra events across the Northeast.\n" .
-					'Bad Beard Events | 71.2 | 61.1 | https://www.aravaiparunning.com/bad-beard/ | Chattanooga, Tennessee.',
+					"White Mountain Endurance | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Trail and ultra events across the Northeast. | | | ARV_LOGO:white-mountain-endurance.png\n" .
+					'Bad Beard Events | 71.2 | 61.1 | https://www.aravaiparunning.com/bad-beard/ | Chattanooga, Tennessee. | | | ARV_LOGO:bad-beard.png',
 					'markup'
 				),
 			),
@@ -212,20 +212,29 @@ function arv_region_map_render( $data ) {
 		$pins .= '<a class="' . esc_attr( $classes ) . '" style="left:' . esc_attr( $x ) . '%;top:' . esc_attr( $y ) . '%" href="' . esc_url( $url ) . '">';
 		$pins .= '<span class="arv-region-map__dot"></span>';
 		$pins .= '<span class="arv-region-map__name">' . esc_html( $name ) . '</span>';
-		if ( '' !== trim( $detail ) || '' !== trim( $logo ) ) {
-			$pins .= '<span class="arv-region-map__detail">';
-			if ( '' !== trim( $logo ) ) {
-				// alt is empty on purpose: the region's name is already in
-				// the label beside this card and in the list below, so a
-				// screen reader announcing the brand a third time off the
-				// image is repetition, not information.
-				$pins .= '<img class="arv-region-map__detail-logo" src="' . esc_url( $logo ) . '" alt="" loading="lazy" decoding="async" />';
-			}
-			if ( '' !== trim( $detail ) ) {
-				$pins .= '<span class="arv-region-map__detail-text">' . esc_html( $detail ) . '</span>';
-			}
-			$pins .= '</span>';
+		// Always a card now, where it used to appear only for a row carrying
+		// a detail or a logo: it also holds the call to action, and a pin
+		// whose card never opens would be the one pin on the map with no
+		// visible way to reach the page it links to.
+		$pins .= '<span class="arv-region-map__detail">';
+		if ( '' !== trim( $logo ) ) {
+			// alt is empty on purpose: the region's name is already in
+			// the label beside this card and in the list below, so a
+			// screen reader announcing the brand a third time off the
+			// image is repetition, not information.
+			$pins .= '<img class="arv-region-map__detail-logo" src="' . esc_url( $logo ) . '" alt="" loading="lazy" decoding="async" />';
 		}
+		if ( '' !== trim( $detail ) ) {
+			$pins .= '<span class="arv-region-map__detail-text">' . esc_html( $detail ) . '</span>';
+		}
+		// A span, not a nested <a> or <button>. The whole pin is already the
+		// link to this region's page, and putting a second interactive
+		// element inside it would be invalid HTML and would announce the
+		// same destination to a screen reader twice. This is the affordance
+		// for a click the surrounding anchor already handles, which is why
+		// it is also aria-hidden.
+		$pins .= '<span class="arv-region-map__cta" aria-hidden="true">' . esc_html( __( 'View races', 'aravaipa-elements' ) ) . '</span>';
+		$pins .= '</span>';
 		$pins .= '</a>';
 
 		// The same regions again as plain text links. On a phone the pins are
