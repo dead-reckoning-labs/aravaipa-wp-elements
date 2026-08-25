@@ -60,6 +60,23 @@ Great Lakes | 67.1 | 25.5 | https://www.aravaiparunning.com/great-lakes-enduranc
 White Mtn | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | White Mountain Endurance. Trail and ultra events across the Northeast region.
 ```
 
+## Region Map without the plugin
+
+The Region Map also ships as `standalone-region-map.html`: one self-contained block to paste into a Cornerstone **Raw Content** element, no plugin required. Inline `<style>`, inline SVG, no JavaScript, no external requests, no API keys.
+
+This exists because the plugin is not currently installed on aravaiparunning.com, and swapping one Raw Content block for another is a much smaller change to that site than installing a plugin on it. The "Where to find us" block it replaces is itself a Raw Content block today.
+
+It is generated, not hand written. To change anything (move a pin, add a region, restyle):
+
+```bash
+# edit includes/elements/region-map.php and/or assets/aravaipa-elements.css
+php arv-standalone.php     # rewrites standalone-region-map.html
+```
+
+`arv-standalone.php` calls the element's real render function, extracts every `arv-region-map` rule out of the shared stylesheet (preserving `@media` wrappers), and inlines `assets/us-outline.svg`. Nothing is duplicated by hand, so the plugin element and the paste-in block cannot drift apart. It refuses to write the file at all rather than emit an unstyled block, an empty block, or one whose map image would 404.
+
+Editing `standalone-region-map.html` directly works until the next regeneration overwrites it, which is why the generated file says so in its own header comment.
+
 ## Install
 
 1. Download `aravaipa-elements.zip`.
@@ -84,12 +101,13 @@ There is no build step. PHP, one CSS file, one dependency free JS file.
 
 ```bash
 php -l aravaipa-elements.php          # lint (repeat per file)
-php arv-edge.php                      # 23 edge case assertions
+php arv-edge.php                      # 36 edge case assertions
 php arv-harness.php                   # writes preview.html
+php arv-standalone.php                # writes standalone-region-map.html
 python3 -m http.server 8899           # then open /preview.html
 ```
 
-`arv-harness.php` and `arv-edge.php` stub the Cornerstone and WordPress functions the elements call, so the render output can be checked in a browser without a WordPress install. Both are excluded from the packaged zip.
+`arv-harness.php` and `arv-edge.php` stub the Cornerstone and WordPress functions the elements call, so the render output can be checked in a browser without a WordPress install. `arv-standalone.php` stubs the same set to generate the paste-in Region Map. All three are excluded from the packaged zip.
 
 ## Possible next step
 
