@@ -24,29 +24,29 @@ cs_register_element(
 		'values'  => cs_compose_values(
 			array(
 				'heading' => cs_value( 'Where to find us', 'markup' ),
+				'eyebrow' => cs_value( 'Aravaipa Running Regions', 'markup' ),
 				'intro'   => cs_value( '', 'markup' ),
+				'theme'   => cs_value( 'dark', 'style' ),
+				'list'    => cs_value( 'true', 'style' ),
 				'rows'    => cs_value(
-					"Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred, Black Canyon 100K, and more. | primary\n" .
-					"Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | \n" .
-					// California and Nevada's real state centers sit about
-					// 25 miles apart, close enough on a page-width US map
-					// that their labels touch at a phone's width no matter
-					// how small the type goes. Abbreviating whichever
-					// regions cluster this tightly is the normal cartographic
-					// answer (every small dot map of the US does this),
-					// not a bug to fix with smaller and smaller font sizes.
-					"CA | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | California\n" .
-					"NV | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | Nevada\n" .
-					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | \n" .
+					// Name | X% | Y% | URL | detail | primary | full name
+					//
+					// `Name` is the map label and has to stay short enough not to
+					// collide with its neighbours at a phone's width. Where it is
+					// abbreviated for that reason, the 7th column carries the real
+					// name for the list below the map, which has room for it.
+					// CA and NV sit about 25 miles apart in real state centers;
+					// Great Lakes and White Mountain are each other's longest
+					// labels and land close enough that the map's own edge
+					// avoidance pushes one into the other.
+					"Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary\n" .
+					"Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas.\n" .
+					"CA | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | California\n" .
+					"NV | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | | Nevada\n" .
+					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country.\n" .
 					"Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon.\n" .
-					// Same reasoning as CA/NV above: Great Lakes Endurance and
-					// White Mountain Endurance are close enough together, and
-					// each other's longest labels, that at a phone's width
-					// White Mountain's (edge-anchored, since it sits hard
-					// against the map's right side) runs left straight into
-					// Great Lakes'. Shortened both; full names live in detail.
-					"Great Lakes | 67.1 | 25.5 | https://www.aravaiparunning.com/great-lakes-endurance/ | Great Lakes Endurance. Trail and ultra events across the Great Lakes region.\n" .
-					'White Mtn | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | White Mountain Endurance. Trail and ultra events across the Northeast region.',
+					"Great Lakes | 67.1 | 25.5 | https://www.aravaiparunning.com/great-lakes-endurance/ | Trail and ultra events across the Great Lakes region. | | Great Lakes Endurance\n" .
+					'White Mtn | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Trail and ultra events across the Northeast. | | White Mountain Endurance',
 					'markup'
 				),
 			),
@@ -70,6 +70,12 @@ function arv_region_map_builder() {
 			),
 			'controls'    => array(
 				array(
+					'key'   => 'eyebrow',
+					'type'  => 'text',
+					'label' => __( 'Eyebrow', 'aravaipa-elements' ),
+					'group' => 'map',
+				),
+				array(
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
@@ -80,6 +86,31 @@ function arv_region_map_builder() {
 					'type'  => 'text',
 					'label' => __( 'Intro line', 'aravaipa-elements' ),
 					'group' => 'map',
+				),
+				array(
+					'key'     => 'theme',
+					'type'    => 'select',
+					'label'   => __( 'Theme', 'aravaipa-elements' ),
+					'group'   => 'map',
+					'options' => array(
+						'choices' => array(
+							array(
+								'value' => 'dark',
+								'label' => __( 'Dark panel', 'aravaipa-elements' ),
+							),
+							array(
+								'value' => 'light',
+								'label' => __( 'Light', 'aravaipa-elements' ),
+							),
+						),
+					),
+				),
+				array(
+					'key'         => 'list',
+					'type'        => 'toggle',
+					'label'       => __( 'Region list below map', 'aravaipa-elements' ),
+					'description' => __( 'Repeats every region as a text link under the map. Carries the section on a phone, where the pins are small, and gives search engines the region names as real text.', 'aravaipa-elements' ),
+					'group'       => 'map',
 				),
 				array(
 					'key'         => 'rows',
@@ -110,7 +141,8 @@ function arv_region_map_render( $data ) {
 		return '';
 	}
 
-	$pins = '';
+	$pins  = '';
+	$items = '';
 
 	foreach ( $rows as $row ) {
 		$name   = arv_cell( $row, 0 );
@@ -119,6 +151,12 @@ function arv_region_map_render( $data ) {
 		$url    = arv_cell( $row, 3 );
 		$detail = arv_cell( $row, 4 );
 		$flag   = strtolower( arv_cell( $row, 5 ) );
+		// Optional 7th column, appended rather than slotted in beside `name`
+		// so rows already saved in a page keep parsing unchanged. `name` is
+		// what the map label shows and has to stay short enough not to
+		// collide with its neighbours; this is the unabbreviated version for
+		// the list below, where there is room for it.
+		$full   = arv_cell( $row, 6 );
 
 		// Name, a real position, and somewhere to send the click: without any
 		// one of those a pin cannot render as anything a visitor could use.
@@ -153,6 +191,18 @@ function arv_region_map_render( $data ) {
 			$pins .= '<span class="arv-region-map__detail">' . esc_html( $detail ) . '</span>';
 		}
 		$pins .= '</a>';
+
+		// The same regions again as plain text links. On a phone the pins are
+		// a few millimetres across and their labels are set small to stop
+		// them colliding, so the list is what actually makes this section
+		// usable there. It is also the only part a search engine can read:
+		// the map itself is one decorative SVG with no place names in it.
+		$items .= '<a class="arv-region-map__item" href="' . esc_url( $url ) . '">';
+		$items .= '<span class="arv-region-map__item-name">' . esc_html( '' !== trim( $full ) ? $full : $name ) . '</span>';
+		if ( '' !== trim( $detail ) ) {
+			$items .= '<span class="arv-region-map__item-detail">' . esc_html( $detail ) . '</span>';
+		}
+		$items .= '</a>';
 	}
 
 	if ( '' === $pins ) {
@@ -160,9 +210,25 @@ function arv_region_map_render( $data ) {
 	}
 
 	$heading = isset( $data['heading'] ) ? $data['heading'] : '';
+	$eyebrow = isset( $data['eyebrow'] ) ? $data['eyebrow'] : '';
 	$intro   = isset( $data['intro'] ) ? $data['intro'] : '';
 
-	$out = '<div class="' . arv_wrapper_class( $data, 'arv-region-map' ) . '">';
+	$theme = ( isset( $data['theme'] ) && 'light' === $data['theme'] ) ? 'light' : 'dark';
+
+	// Cornerstone toggles arrive as the strings "true"/"false" as often as
+	// booleans depending on how the value was saved, so compare loosely
+	// rather than trusting a bare truthiness check ("false" is truthy).
+	$show_list = isset( $data['list'] ) ? $data['list'] : true;
+	$show_list = ! ( 'false' === $show_list || false === $show_list || '0' === $show_list );
+
+	$base = 'arv-region-map arv-region-map--' . $theme;
+
+	$out = '<div class="' . arv_wrapper_class( $data, $base ) . '">';
+	$out .= '<div class="arv-region-map__inner">';
+
+	if ( '' !== trim( $eyebrow ) ) {
+		$out .= '<p class="arv-region-map__eyebrow">' . esc_html( $eyebrow ) . '</p>';
+	}
 
 	if ( '' !== trim( $heading ) ) {
 		$out .= '<h2 class="arv-region-map__heading">' . esc_html( $heading ) . '</h2>';
@@ -173,9 +239,56 @@ function arv_region_map_render( $data ) {
 	}
 
 	$out .= '<div class="arv-region-map__stage">';
-	$out .= '<img class="arv-region-map__base" src="' . esc_url( ARV_ELEMENTS_URL . 'assets/us-outline.svg' ) . '" alt="" width="960" height="609" loading="lazy" decoding="async" />';
+	$out .= arv_region_map_svg();
 	$out .= $pins;
+	$out .= '</div>';
+
+	if ( $show_list && '' !== $items ) {
+		$out .= '<div class="arv-region-map__list">' . $items . '</div>';
+	}
+
 	$out .= '</div></div>';
 
 	return $out;
+}
+
+/**
+ * The US outline, inlined.
+ *
+ * Inlined rather than served as <img src="...us-outline.svg">, because an
+ * <img> is an opaque document the page's own stylesheet cannot reach into:
+ * the state fills and borders could not then follow the element's light or
+ * dark theme, and would need a second copy of the file per theme to do it.
+ * Inline also drops a request, and the file is ~28 KB that gzips to a few.
+ *
+ * Read once per request. Cornerstone can render the same element more than
+ * once on a page, and re-reading the file each time would be pointless I/O.
+ *
+ * @return string
+ */
+function arv_region_map_svg() {
+	static $svg = null;
+
+	if ( null !== $svg ) {
+		return $svg;
+	}
+
+	$path = ARV_ELEMENTS_PATH . 'assets/us-outline.svg';
+
+	// A missing asset should cost the pins, not the page. Returning nothing
+	// leaves the labels stacked on a blank stage, which is obviously broken
+	// to whoever is editing, and still not a fatal on a live race page.
+	if ( ! file_exists( $path ) ) {
+		$svg = '';
+		return $svg;
+	}
+
+	$svg = trim( (string) file_get_contents( $path ) );
+	$svg = preg_replace( '/^<\?xml[^>]*\?>\s*/', '', $svg );
+	// Decorative: every place name on this map is real text in the pins and
+	// the list layered over it, so announcing the outline itself would just
+	// be noise in a screen reader.
+	$svg = preg_replace( '/^<svg /', '<svg class="arv-region-map__base" aria-hidden="true" focusable="false" ', $svg, 1 );
+
+	return $svg;
 }

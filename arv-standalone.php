@@ -26,6 +26,7 @@
 
 define( 'ABSPATH', true );
 define( 'ARV_ELEMENTS_URL', './' );
+define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
 
 function cs_register_element( $n, $c ) {
 	$GLOBALS['ARV_EL'][ $n ] = $c;
@@ -151,13 +152,10 @@ if ( '' === trim( $rules ) ) {
 // selector list in the plugin (--arv-accent and friends, declared once for
 // all six elements), and the extractor above already narrows that list down
 // to this element, so restating them would emit the same block twice.
-$svg = trim( file_get_contents( __DIR__ . '/assets/us-outline.svg' ) );
-$svg = preg_replace( '/^<\?xml[^>]*\?>\s*/', '', $svg );
-// Carries the class the stylesheet targets, and the same accessibility
-// posture as the <img> it replaces: decorative, since every place name on
-// this map is already real text in the pins layered over it.
-$svg = preg_replace( '/^<svg /', '<svg class="arv-region-map__base" aria-hidden="true" focusable="false" ', $svg, 1 );
-
+//
+// The SVG needs no handling here either: the element inlines it itself now
+// (arv_region_map_svg), so that the page stylesheet can theme the state
+// fills. Render output is already self contained.
 $markup = arv_region_map_render(
 	array_merge(
 		$GLOBALS['ARV_EL']['aravaipa-region-map']['values'],
@@ -173,12 +171,16 @@ if ( '' === $markup ) {
 	exit( 1 );
 }
 
-// Swap the plugin-served <img> for the inlined SVG, so the block has no
-// dependency on a plugin asset URL that would 404 without the plugin.
-$markup = preg_replace( '#<img class="arv-region-map__base"[^>]*/?>#', $svg, $markup, 1, $swapped );
+// The block must carry the map itself, not a reference to a plugin asset
+// URL that would 404 wherever the plugin is not installed, which is the
+// whole point of this build.
+if ( false === strpos( $markup, '<svg' ) ) {
+	fwrite( STDERR, "render produced no inline SVG, refusing to write a block with no map in it\n" );
+	exit( 1 );
+}
 
-if ( 1 !== $swapped ) {
-	fwrite( STDERR, "could not inline the map image, refusing to write a block that would 404\n" );
+if ( false !== strpos( $markup, 'ARV_ELEMENTS_URL' ) || preg_match( '#<img[^>]*us-outline#', $markup ) ) {
+	fwrite( STDERR, "render still references a plugin asset URL, refusing to write a block that would 404\n" );
 	exit( 1 );
 }
 
@@ -193,7 +195,7 @@ $out .= "  API keys. Pins are real links, so this works with JS disabled and is\
 $out .= "  keyboard navigable.\n\n";
 $out .= "  To move a pin or add a region, edit the rows in the element source\n";
 $out .= "  (includes/elements/region-map.php) and re-run. Row format:\n";
-$out .= "  Name | X% | Y% | landing page URL | detail | primary\n";
+$out .= "  Name | X% | Y% | landing page URL | detail | primary | full name\n";
 $out .= "-->\n";
 $out .= '<style>' . "\n" . $rules . '</style>' . "\n";
 $out .= $markup . "\n";

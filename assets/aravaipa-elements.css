@@ -153,8 +153,7 @@
 .arv-distances__heading,
 .arv-timeline__heading,
 .arv-partners__heading,
-.arv-countdown__heading,
-.arv-region-map__heading {
+.arv-countdown__heading {
 	margin: 0 0 1.5rem;
 	font-size: clamp(1.4rem, 3vw, 2rem);
 	font-weight: 800;
@@ -390,25 +389,84 @@
 
 /* --------------------------------------------------------- Region Map -- */
 
+/* Two themes, because this section can sit on a light race page or stand as
+   its own band. The dark panel is the default: on a white page the map was
+   a pale shape floating in whitespace with no edge to it, and the pins had
+   nothing to read against. Colours are the site's own, sampled off
+   aravaiparunning.com rather than invented (#ff2a13 accent, #272727 ink,
+   and the logo's teals). */
 .arv-region-map {
+	--arv-teal: #5bb5a2;
+	--arv-teal-deep: #2a5e6b;
+	position: relative;
 	text-align: center;
+}
+
+.arv-region-map--dark {
+	--arv-map-land: #33403f;
+	--arv-map-line: #253130;
+	--arv-map-text: #f4f4f4;
+	--arv-map-muted: rgba(244, 244, 244, 0.62);
+	--arv-map-chip: #1c2524;
+	--arv-map-rule: rgba(244, 244, 244, 0.14);
+	background: #212a29;
+	color: var(--arv-map-text);
+}
+
+.arv-region-map--light {
+	--arv-map-land: #dfe6e3;
+	--arv-map-line: #fff;
+	--arv-map-text: var(--arv-ink);
+	--arv-map-muted: rgba(39, 39, 39, 0.62);
+	--arv-map-chip: #fff;
+	--arv-map-rule: rgba(0, 0, 0, 0.12);
+	color: var(--arv-map-text);
+}
+
+/* Full bleed inside a Cornerstone column: the dark band should run edge to
+   edge like the site's other dark sections, while the content inside it
+   stays on the page's own measure. */
+.arv-region-map__inner {
+	max-width: 68rem;
+	margin: 0 auto;
+	padding: 4rem 1.5rem;
+}
+
+.arv-region-map__eyebrow {
+	margin: 0 0 0.6rem;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--arv-teal);
+}
+
+.arv-region-map--light .arv-region-map__eyebrow {
+	color: var(--arv-teal-deep);
+}
+
+.arv-region-map__heading {
+	margin: 0 0 0.6rem;
+	font-size: clamp(1.9rem, 4vw, 3rem);
+	font-weight: 800;
+	line-height: 1.05;
+	color: var(--arv-map-text);
 }
 
 .arv-region-map__intro {
 	max-width: 34rem;
-	margin: 0 auto 2rem;
-	color: var(--arv-ink);
-	opacity: 0.7;
+	margin: 0 auto;
+	color: var(--arv-map-muted);
 }
 
 /* Aspect ratio, not a fixed height: the pins are positioned by percentage of
-   this box, so the box has to keep the same proportions as us-outline.svg
+   this box, so it has to keep the same proportions as us-outline.svg
    (960x609) at every width or every pin drifts off its state as the page
    resizes. */
 .arv-region-map__stage {
 	position: relative;
-	max-width: 56rem;
-	margin: 0 auto;
+	max-width: 60rem;
+	margin: 2.5rem auto 0;
 	aspect-ratio: 960 / 609;
 }
 
@@ -418,75 +476,91 @@
 	height: 100%;
 }
 
+/* The outline ships with no fill or stroke of its own so both can follow the
+   theme from here. That is the reason it is inlined rather than served as an
+   <img>, which the page stylesheet could not reach into. */
+.arv-region-map__states {
+	fill: var(--arv-map-land);
+	stroke: var(--arv-map-line);
+}
+
 .arv-region-map__pin {
 	position: absolute;
 	/* Zero size on purpose: this is a positioning point, not a box. The dot
 	   and name used to be flex children centred by this element's own box,
 	   which broke the moment a long name (White Mountain Endurance) landed
-	   near the map's right edge: centring a wide label under a point 90% of
+	   near the map's right edge: centring a wide label under a point 92% of
 	   the way across the stage pushes half of it straight out past the
 	   stage, and past the whole page after it, since nothing here was ever
 	   clipped. Both are now absolutely positioned against this single point
-	   instead (see .arv-region-map__dot and __name below), free to anchor
-	   to whichever edge has room. */
+	   instead, free to anchor to whichever edge has room. */
 	display: block;
 	width: 0;
 	height: 0;
 	text-decoration: none;
-	color: var(--arv-ink);
+	color: inherit;
 	z-index: 1;
 }
 
 .arv-region-map__pin:focus-visible {
-	z-index: 2;
+	z-index: 3;
+	outline: none;
 }
 
 .arv-region-map__dot {
 	position: absolute;
 	top: 0;
 	left: 0;
-	/* The pin itself is a zero-size point (see above), so the dot centres
-	   on it the same way the pin used to centre on the map coordinate: by
-	   pulling back half its own box. */
 	transform: translate(-50%, -50%);
-	width: 0.65rem;
-	height: 0.65rem;
+	width: 0.7rem;
+	height: 0.7rem;
 	border-radius: 50%;
-	background: var(--arv-ink);
-	border: 2px solid #fff;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-	transition: transform 0.15s ease;
+	background: var(--arv-teal);
+	box-shadow: 0 0 0 3px rgba(91, 181, 162, 0.25);
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* The one pin that is headquarters rather than a region, in the site's
+   accent rather than the teal the others share. Ringed wider so it still
+   reads as the anchor of the map at a glance on a phone. */
 .arv-region-map__pin--primary .arv-region-map__dot {
-	width: 0.95rem;
-	height: 0.95rem;
+	width: 1rem;
+	height: 1rem;
 	background: var(--arv-accent);
+	box-shadow: 0 0 0 4px rgba(255, 42, 19, 0.25);
 }
 
 .arv-region-map__pin:focus-visible .arv-region-map__dot {
-	transform: translate(-50%, -50%) scale(1.25);
+	transform: translate(-50%, -50%) scale(1.3);
+	box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.4);
 }
 
 .arv-region-map__name {
 	position: absolute;
-	top: 0.5rem;
+	top: 0.55rem;
 	left: 0;
 	/* Centred under the dot by default. The edge modifiers below override
 	   only this translate, sliding the label fully to one side instead of
 	   splitting it evenly across the dot, which is what keeps a long name
-	   near the map's edge (White Mountain Endurance, hard against the
-	   right side of a US outline) from running past the stage and taking
-	   the whole page into a horizontal scroll with it. */
+	   near the map's edge from running past the stage and taking the whole
+	   page into a horizontal scroll with it. */
 	transform: translateX(-50%);
-	padding: 0.15rem 0.45rem;
-	background: #fff;
-	border: 1px solid var(--arv-line);
+	padding: 0.12rem 0.4rem;
+	background: var(--arv-map-chip);
+	color: var(--arv-map-text);
 	font-size: 0.68rem;
 	font-weight: 700;
-	letter-spacing: 0.03em;
+	letter-spacing: 0.02em;
 	white-space: nowrap;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+	transition: color 0.15s ease;
+}
+
+.arv-region-map--light .arv-region-map__name {
+	border: 1px solid var(--arv-map-rule);
+}
+
+.arv-region-map__pin--primary .arv-region-map__name {
+	color: var(--arv-accent);
 }
 
 .arv-region-map__pin--edge-left .arv-region-map__name {
@@ -497,26 +571,21 @@
 	transform: translateX(-100%);
 }
 
-.arv-region-map__pin--primary .arv-region-map__name {
-	border-top: 2px solid var(--arv-accent);
-	color: var(--arv-ink);
-}
-
-/* The detail line is a real element the whole time, positioned and ready, so
-   the transition is opacity alone rather than a display toggle Cornerstone's
-   own CSS or an X theme animation library would otherwise fight to enter. */
+/* A real element the whole time, positioned and ready, so the transition is
+   opacity alone rather than a display toggle Cornerstone's own CSS or an X
+   theme animation library would otherwise fight to enter. */
 .arv-region-map__detail {
 	position: absolute;
-	bottom: calc(100% + 0.4rem);
+	bottom: calc(100% + 0.5rem);
 	left: 50%;
 	transform: translateX(-50%) translateY(4px);
 	width: max-content;
-	max-width: 14rem;
-	padding: 0.6rem 0.75rem;
-	background: var(--arv-ink);
+	max-width: 15rem;
+	padding: 0.65rem 0.8rem;
+	background: var(--arv-accent);
 	color: #fff;
-	font-size: 0.75rem;
-	font-weight: 400;
+	font-size: 0.76rem;
+	font-weight: 500;
 	line-height: 1.4;
 	text-align: left;
 	opacity: 0;
@@ -529,13 +598,11 @@
 	transform: translateX(-50%) translateY(0);
 }
 
-/* Flips the detail card below the pin instead of above, for the handful of
-   regions that sit in the top slice of the map (northern states): above
-   would otherwise push the card off the top of the stage. Cleared further
-   down (2rem, not the 0.4rem the above-pin version uses) so it lands below
-   the always-visible name label rather than under it: both the name and
-   this card measure their position from the same zero-size point, and the
-   name is the one already sitting in the first ~1.5rem below it. */
+/* Flips the card below the pin for the regions in the top slice of the map,
+   where above would push it off the top of the stage. Cleared further down
+   than the above-pin version so it lands below the always-visible name
+   label rather than on top of it: both measure from the same zero-size
+   point, and the name already occupies the first ~1.5rem below it. */
 .arv-region-map__pin--label-below .arv-region-map__detail {
 	bottom: auto;
 	top: calc(100% + 2rem);
@@ -548,8 +615,7 @@
 
 /* Re-anchors the card to whichever edge has room, for a region close enough
    to the left or right of the map that a centred card would run off the
-   stage (Great Lakes and anything in New England sit right at that edge on a
-   real US outline). */
+   stage. */
 .arv-region-map__pin--edge-left .arv-region-map__detail {
 	left: 0;
 	transform: translateX(0) translateY(4px);
@@ -569,20 +635,107 @@
 	transform: translateX(0) translateY(0);
 }
 
+/* The same regions again as text. On a phone the pins are a few millimetres
+   across with labels set small enough not to collide, so this is what
+   actually makes the section usable there, and it is the only part a search
+   engine can read: the map is one decorative SVG with no place names in it.
+   Deliberately not cards. No rounded corners, no shadows, no left accent
+   bars: hairline rules and type only, so it reads as an index rather than a
+   dashboard. */
+/* Column counts are explicit rather than auto-fit, and deliberately skip
+   three. Eight regions divide evenly into four, two or one, so those leave
+   full rows; three leaves a last row of two whose bottom rules stop two
+   thirds of the way across and read as a half-drawn table. auto-fit picks
+   whatever the width allows and lands on three for most of the desktop
+   range. */
+.arv-region-map__list {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0 2rem;
+	margin-top: 3rem;
+	border-top: 1px solid var(--arv-map-rule);
+	text-align: left;
+}
+
+@media (min-width: 600px) {
+	.arv-region-map__list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 1024px) {
+	.arv-region-map__list {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+.arv-region-map__item {
+	display: block;
+	padding: 1.1rem 0 1.2rem;
+	border-bottom: 1px solid var(--arv-map-rule);
+	text-decoration: none;
+	color: inherit;
+}
+
+.arv-region-map__item-name {
+	display: block;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--arv-map-text);
+	transition: color 0.15s ease;
+}
+
+/* The arrow is a pseudo element so the link text stays clean for a screen
+   reader, which would otherwise read the character out. */
+.arv-region-map__item-name::after {
+	content: "→";
+	margin-left: 0.4rem;
+	color: var(--arv-teal);
+	opacity: 0;
+	transition: opacity 0.15s ease, transform 0.15s ease;
+	display: inline-block;
+}
+
+.arv-region-map--light .arv-region-map__item-name::after {
+	color: var(--arv-teal-deep);
+}
+
+.arv-region-map__item-detail {
+	display: block;
+	margin-top: 0.2rem;
+	font-size: 0.8rem;
+	line-height: 1.45;
+	color: var(--arv-map-muted);
+}
+
+.arv-region-map__item:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: -2px;
+}
+
+.arv-region-map__item:focus-visible .arv-region-map__item-name::after {
+	opacity: 1;
+}
+
 /* :hover only, gated behind a real pointer that can actually hover. Without
    this, iOS Safari treats the first tap on a link with a :hover rule as
    triggering the hover state rather than following the link, so visitors on
    the device most of this page's traffic comes from would need to tap every
    pin twice to reach the landing page it points to. Touch devices simply
-   never see the detail card; the name label (always on) and the link itself
-   (always real, tap navigates first try) are unaffected. */
+   never see the detail card; the name label (always on), the list below the
+   map, and the links themselves are all unaffected. */
 @media (hover: hover) and (pointer: fine) {
 	.arv-region-map__pin:hover {
-		z-index: 2;
+		z-index: 3;
 	}
 
 	.arv-region-map__pin:hover .arv-region-map__dot {
-		transform: scale(1.25);
+		transform: translate(-50%, -50%) scale(1.3);
+		box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.4);
+	}
+
+	.arv-region-map__pin--primary:hover .arv-region-map__dot {
+		box-shadow: 0 0 0 6px rgba(255, 42, 19, 0.35);
 	}
 
 	.arv-region-map__pin:hover .arv-region-map__detail {
@@ -601,6 +754,19 @@
 	.arv-region-map__pin--edge-right:hover .arv-region-map__detail {
 		transform: translateX(0) translateY(0);
 	}
+
+	.arv-region-map__item:hover .arv-region-map__item-name {
+		color: var(--arv-teal);
+	}
+
+	.arv-region-map--light .arv-region-map__item:hover .arv-region-map__item-name {
+		color: var(--arv-teal-deep);
+	}
+
+	.arv-region-map__item:hover .arv-region-map__item-name::after {
+		opacity: 1;
+		transform: translateX(3px);
+	}
 }
 
 /* --------------------------------------------------------- Responsive -- */
@@ -616,19 +782,48 @@
 		padding: 3.5rem 1.25rem;
 	}
 
-	/* Name labels are always on (see region-map.php), so on a narrow screen
-	   with pins packed into the western third of the map (Arizona, Nevada,
-	   California, Colorado all sit within about 25% of the map's width) the
-	   full-size labels start overlapping each other. Smaller type and
-	   tighter padding buys enough room that they stay legible side by side. */
+	.arv-region-map__inner {
+		padding: 3rem 1.25rem;
+	}
+
+	/* Labels come off the map entirely at phone width. Four of the eight
+	   regions sit within about 25% of the map's width, so at 390px their
+	   labels overlap each other no matter how small the type is set, and
+	   the earlier attempt to shrink them into fitting just made an
+	   unreadable pile instead of a readable one. The list below names every
+	   region in full, so nothing is lost: the map goes back to showing
+	   where, and the list says what. Dots stay, and stay tappable. */
 	.arv-region-map__name {
-		padding: 0.1rem 0.3rem;
-		font-size: 0.6rem;
+		display: none;
 	}
 
 	.arv-region-map__detail {
 		max-width: 11rem;
 		font-size: 0.7rem;
+	}
+
+	/* Without labels the dots carry the map on their own, so they get a
+	   little bigger rather than reading as specks. */
+	.arv-region-map__dot {
+		width: 0.8rem;
+		height: 0.8rem;
+	}
+
+	.arv-region-map__pin--primary .arv-region-map__dot {
+		width: 1.1rem;
+		height: 1.1rem;
+	}
+
+	.arv-region-map__stage {
+		margin-top: 2rem;
+	}
+
+	.arv-region-map__list {
+		margin-top: 2.25rem;
+	}
+
+	.arv-region-map__item {
+		padding-right: 0;
 	}
 
 	.arv-distances__grid {
