@@ -14,6 +14,7 @@
 .arv-timeline,
 .arv-partners,
 .arv-countdown,
+.arv-region-map,
 .arv-hero {
 	--arv-accent: #ff2a13;
 	--arv-ink: #272727;
@@ -25,6 +26,7 @@
 .arv-timeline *,
 .arv-partners *,
 .arv-countdown *,
+.arv-region-map *,
 .arv-hero * {
 	box-sizing: inherit;
 }
@@ -151,7 +153,8 @@
 .arv-distances__heading,
 .arv-timeline__heading,
 .arv-partners__heading,
-.arv-countdown__heading {
+.arv-countdown__heading,
+.arv-region-map__heading {
 	margin: 0 0 1.5rem;
 	font-size: clamp(1.4rem, 3vw, 2rem);
 	font-weight: 800;
@@ -385,6 +388,221 @@
 	color: var(--arv-accent);
 }
 
+/* --------------------------------------------------------- Region Map -- */
+
+.arv-region-map {
+	text-align: center;
+}
+
+.arv-region-map__intro {
+	max-width: 34rem;
+	margin: 0 auto 2rem;
+	color: var(--arv-ink);
+	opacity: 0.7;
+}
+
+/* Aspect ratio, not a fixed height: the pins are positioned by percentage of
+   this box, so the box has to keep the same proportions as us-outline.svg
+   (960x609) at every width or every pin drifts off its state as the page
+   resizes. */
+.arv-region-map__stage {
+	position: relative;
+	max-width: 56rem;
+	margin: 0 auto;
+	aspect-ratio: 960 / 609;
+}
+
+.arv-region-map__base {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.arv-region-map__pin {
+	position: absolute;
+	/* Zero size on purpose: this is a positioning point, not a box. The dot
+	   and name used to be flex children centred by this element's own box,
+	   which broke the moment a long name (White Mountain Endurance) landed
+	   near the map's right edge: centring a wide label under a point 90% of
+	   the way across the stage pushes half of it straight out past the
+	   stage, and past the whole page after it, since nothing here was ever
+	   clipped. Both are now absolutely positioned against this single point
+	   instead (see .arv-region-map__dot and __name below), free to anchor
+	   to whichever edge has room. */
+	display: block;
+	width: 0;
+	height: 0;
+	text-decoration: none;
+	color: var(--arv-ink);
+	z-index: 1;
+}
+
+.arv-region-map__pin:focus-visible {
+	z-index: 2;
+}
+
+.arv-region-map__dot {
+	position: absolute;
+	top: 0;
+	left: 0;
+	/* The pin itself is a zero-size point (see above), so the dot centres
+	   on it the same way the pin used to centre on the map coordinate: by
+	   pulling back half its own box. */
+	transform: translate(-50%, -50%);
+	width: 0.65rem;
+	height: 0.65rem;
+	border-radius: 50%;
+	background: var(--arv-ink);
+	border: 2px solid #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+	transition: transform 0.15s ease;
+}
+
+.arv-region-map__pin--primary .arv-region-map__dot {
+	width: 0.95rem;
+	height: 0.95rem;
+	background: var(--arv-accent);
+}
+
+.arv-region-map__pin:focus-visible .arv-region-map__dot {
+	transform: translate(-50%, -50%) scale(1.25);
+}
+
+.arv-region-map__name {
+	position: absolute;
+	top: 0.5rem;
+	left: 0;
+	/* Centred under the dot by default. The edge modifiers below override
+	   only this translate, sliding the label fully to one side instead of
+	   splitting it evenly across the dot, which is what keeps a long name
+	   near the map's edge (White Mountain Endurance, hard against the
+	   right side of a US outline) from running past the stage and taking
+	   the whole page into a horizontal scroll with it. */
+	transform: translateX(-50%);
+	padding: 0.15rem 0.45rem;
+	background: #fff;
+	border: 1px solid var(--arv-line);
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.arv-region-map__pin--edge-left .arv-region-map__name {
+	transform: translateX(0);
+}
+
+.arv-region-map__pin--edge-right .arv-region-map__name {
+	transform: translateX(-100%);
+}
+
+.arv-region-map__pin--primary .arv-region-map__name {
+	border-top: 2px solid var(--arv-accent);
+	color: var(--arv-ink);
+}
+
+/* The detail line is a real element the whole time, positioned and ready, so
+   the transition is opacity alone rather than a display toggle Cornerstone's
+   own CSS or an X theme animation library would otherwise fight to enter. */
+.arv-region-map__detail {
+	position: absolute;
+	bottom: calc(100% + 0.4rem);
+	left: 50%;
+	transform: translateX(-50%) translateY(4px);
+	width: max-content;
+	max-width: 14rem;
+	padding: 0.6rem 0.75rem;
+	background: var(--arv-ink);
+	color: #fff;
+	font-size: 0.75rem;
+	font-weight: 400;
+	line-height: 1.4;
+	text-align: left;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.arv-region-map__pin:focus-visible .arv-region-map__detail {
+	opacity: 1;
+	transform: translateX(-50%) translateY(0);
+}
+
+/* Flips the detail card below the pin instead of above, for the handful of
+   regions that sit in the top slice of the map (northern states): above
+   would otherwise push the card off the top of the stage. Cleared further
+   down (2rem, not the 0.4rem the above-pin version uses) so it lands below
+   the always-visible name label rather than under it: both the name and
+   this card measure their position from the same zero-size point, and the
+   name is the one already sitting in the first ~1.5rem below it. */
+.arv-region-map__pin--label-below .arv-region-map__detail {
+	bottom: auto;
+	top: calc(100% + 2rem);
+	transform: translateX(-50%) translateY(-4px);
+}
+
+.arv-region-map__pin--label-below:focus-visible .arv-region-map__detail {
+	transform: translateX(-50%) translateY(0);
+}
+
+/* Re-anchors the card to whichever edge has room, for a region close enough
+   to the left or right of the map that a centred card would run off the
+   stage (Great Lakes and anything in New England sit right at that edge on a
+   real US outline). */
+.arv-region-map__pin--edge-left .arv-region-map__detail {
+	left: 0;
+	transform: translateX(0) translateY(4px);
+}
+
+.arv-region-map__pin--edge-left:focus-visible .arv-region-map__detail {
+	transform: translateX(0) translateY(0);
+}
+
+.arv-region-map__pin--edge-right .arv-region-map__detail {
+	left: auto;
+	right: 0;
+	transform: translateX(0) translateY(4px);
+}
+
+.arv-region-map__pin--edge-right:focus-visible .arv-region-map__detail {
+	transform: translateX(0) translateY(0);
+}
+
+/* :hover only, gated behind a real pointer that can actually hover. Without
+   this, iOS Safari treats the first tap on a link with a :hover rule as
+   triggering the hover state rather than following the link, so visitors on
+   the device most of this page's traffic comes from would need to tap every
+   pin twice to reach the landing page it points to. Touch devices simply
+   never see the detail card; the name label (always on) and the link itself
+   (always real, tap navigates first try) are unaffected. */
+@media (hover: hover) and (pointer: fine) {
+	.arv-region-map__pin:hover {
+		z-index: 2;
+	}
+
+	.arv-region-map__pin:hover .arv-region-map__dot {
+		transform: scale(1.25);
+	}
+
+	.arv-region-map__pin:hover .arv-region-map__detail {
+		opacity: 1;
+		transform: translateX(-50%) translateY(0);
+	}
+
+	.arv-region-map__pin--label-below:hover .arv-region-map__detail {
+		transform: translateX(-50%) translateY(0);
+	}
+
+	.arv-region-map__pin--edge-left:hover .arv-region-map__detail {
+		transform: translateX(0) translateY(0);
+	}
+
+	.arv-region-map__pin--edge-right:hover .arv-region-map__detail {
+		transform: translateX(0) translateY(0);
+	}
+}
+
 /* --------------------------------------------------------- Responsive -- */
 
 @media (max-width: 979px) {
@@ -396,6 +614,21 @@
 @media (max-width: 767px) {
 	.arv-hero {
 		padding: 3.5rem 1.25rem;
+	}
+
+	/* Name labels are always on (see region-map.php), so on a narrow screen
+	   with pins packed into the western third of the map (Arizona, Nevada,
+	   California, Colorado all sit within about 25% of the map's width) the
+	   full-size labels start overlapping each other. Smaller type and
+	   tighter padding buys enough room that they stay legible side by side. */
+	.arv-region-map__name {
+		padding: 0.1rem 0.3rem;
+		font-size: 0.6rem;
+	}
+
+	.arv-region-map__detail {
+		max-width: 11rem;
+		font-size: 0.7rem;
 	}
 
 	.arv-distances__grid {
