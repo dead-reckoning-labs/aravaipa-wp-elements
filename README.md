@@ -85,7 +85,11 @@ Editing `standalone-region-map.html` directly works until the next regeneration 
 2. WP Admin, Plugins, Add New, Upload Plugin.
 3. Activate. The elements appear in Cornerstone immediately.
 
-To update, deactivate and delete the old copy first, then upload the new zip. Page content is unaffected: element values live in the page, not the plugin.
+That manual deactivate-delete-reupload cycle is only needed once, to get this version installed. From here on, updates show up as a normal "Update available" row on the Plugins screen with a one-click "Update now", the same as any WordPress.org plugin, because `includes/updater.php` points WordPress at this repo's [Releases](https://github.com/dead-reckoning-labs/aravaipa-wp-elements/releases) page instead.
+
+Publishing a new version means cutting a GitHub Release with `build/aravaipa-elements.zip` attached as the release asset (`gh release create vX.Y.Z build/aravaipa-elements.zip`, after bumping the `Version:` header and re-running `./build.sh`) and nothing else. No server access, no manual file transfer. WordPress checks for a new release at most once every 12 hours per site, and clicking "Check Again" on the Plugins screen bypasses that and checks immediately.
+
+This is also why the repo is public: WordPress's background update check runs on cron, with no admin session and nowhere to put a credential, so it has to be able to read the releases API anonymously. There's nothing in this repo that needs to be private (checked before flipping it: no keys, no tokens, nothing beyond the plugin code and aravaiparunning.com's own already-public URLs).
 
 ## Safety notes
 
@@ -96,6 +100,7 @@ This plugin sits on the site that sells the race entries, so it is written to fa
 - All editor input is escaped on output.
 - The countdown validates its target date and leaves the server rendered zeros in place if it cannot parse one, instead of ticking `NaN`.
 - The region map drops any row with no name, no URL, or a non-numeric position, and clamps whatever position is left into 0-100, rather than emitting a pin at an arbitrary or off-map coordinate from a typo.
+- The updater only loads in wp-admin (`is_admin()`), never on a page a visitor requests. A failed or slow GitHub check is cached as a failure for 5 minutes rather than retried on every admin page load, and every one of its own filters returns whatever it was handed untouched if anything about the request doesn't match this plugin, rather than assuming it does.
 
 ## Development
 
@@ -103,13 +108,15 @@ There is no build step. PHP, one CSS file, one dependency free JS file.
 
 ```bash
 php -l aravaipa-elements.php          # lint (repeat per file)
-php arv-edge.php                      # 36 edge case assertions
+php arv-edge.php                      # 36 element render assertions
+php arv-updater-test.php              # 31 self-updater assertions
 php arv-harness.php                   # writes preview.html
 php arv-standalone.php                # writes standalone-region-map.html
 python3 -m http.server 8899           # then open /preview.html
+./build.sh                            # writes build/aravaipa-elements.zip
 ```
 
-`arv-harness.php` and `arv-edge.php` stub the Cornerstone and WordPress functions the elements call, so the render output can be checked in a browser without a WordPress install. `arv-standalone.php` stubs the same set to generate the paste-in Region Map. All three are excluded from the packaged zip.
+`arv-harness.php` and `arv-edge.php` stub the Cornerstone and WordPress functions the elements call, so the render output can be checked in a browser without a WordPress install. `arv-standalone.php` stubs the same set to generate the paste-in Region Map. `arv-updater-test.php` stubs a different set (the transient cache and HTTP APIs, not Cornerstone) to exercise the update checker against canned GitHub responses, including failures, without making a real network request. All four are excluded from the packaged zip.
 
 ## Possible next step
 

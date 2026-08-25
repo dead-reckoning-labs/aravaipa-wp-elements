@@ -31,7 +31,7 @@ fi
 
 # Lint every file that will ship. A parse error reaching the live site
 # takes down the whole thing, not just the builder.
-for f in "$NAME.php" includes/helpers.php includes/elements/*.php; do
+for f in "$NAME.php" includes/helpers.php includes/updater.php includes/elements/*.php; do
 	php -l "$f" > /dev/null
 done
 
@@ -39,7 +39,7 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php "$STAGE/includes/"
+cp includes/helpers.php includes/updater.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/us-outline.svg "$STAGE/assets/"
 
