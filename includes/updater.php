@@ -162,30 +162,41 @@ function arv_elements_check_for_update( $transient ) {
 		? $transient->checked[ ARV_ELEMENTS_SLUG ]
 		: null;
 
-	if ( ! $current_version || ! version_compare( $remote_version, $current_version, '>' ) ) {
-		// Already current, or somehow ahead (a manual copy of an unreleased
-		// build). Either way nothing to surface, and importantly: WordPress
-		// does not treat a missing entry in ->response as "up to date" on
-		// its own unless nothing else already put one there, so any stale
-		// entry from a previous, newer-at-the-time check is cleared here
-		// too rather than left to linger.
-		unset( $transient->response[ ARV_ELEMENTS_SLUG ] );
-		return $transient;
-	}
-
 	$zip_url = arv_elements_release_zip_url( $release );
-	if ( ! $zip_url ) {
-		return $transient;
-	}
 
-	$transient->response[ ARV_ELEMENTS_SLUG ] = (object) array(
+	$info = (object) array(
 		'slug'        => 'aravaipa-elements',
 		'plugin'      => ARV_ELEMENTS_SLUG,
 		'new_version' => $remote_version,
 		'url'         => $release->html_url,
-		'package'     => $zip_url,
+		'package'     => $zip_url ? $zip_url : '',
+		'icons'       => array(),
+		'banners'     => array(),
+		'banners_rtl' => array(),
 		'tested'      => get_bloginfo( 'version' ),
 	);
+
+	if ( ! $current_version || ! $zip_url || ! version_compare( $remote_version, $current_version, '>' ) ) {
+		// Already current, ahead of the latest release (a manual copy of an
+		// unreleased build), or the release has no installable zip.
+		//
+		// Landing here still means describing the plugin in ->no_update
+		// rather than just returning. WordPress only draws the "Enable
+		// auto-updates" link for plugins it finds in ->response or
+		// ->no_update, so a plugin that is simply up to date and absent
+		// from both looks unmanaged, and its Automatic Updates column comes
+		// out empty while every other plugin on the screen offers the
+		// toggle. That is exactly what it did before this.
+		//
+		// Any stale ->response entry from an earlier, newer-at-the-time
+		// check is cleared at the same time rather than left to linger.
+		unset( $transient->response[ ARV_ELEMENTS_SLUG ] );
+		$transient->no_update[ ARV_ELEMENTS_SLUG ] = $info;
+		return $transient;
+	}
+
+	unset( $transient->no_update[ ARV_ELEMENTS_SLUG ] );
+	$transient->response[ ARV_ELEMENTS_SLUG ] = $info;
 
 	return $transient;
 }

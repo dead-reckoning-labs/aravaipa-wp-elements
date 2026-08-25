@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.5.0
+ * Version:           0.5.1
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.5.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.5.1' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -89,6 +89,27 @@ function arv_elements_assets() {
 	);
 }
 add_action( 'wp_enqueue_scripts', 'arv_elements_assets' );
+
+/**
+ * Clear the cached GitHub release on activation.
+ *
+ * Installing a zip by hand is an "install", not an "update", so the
+ * upgrader hook in includes/updater.php does not fire for it. Without this,
+ * a fresh install that checks GitHub while it happens to be the newest
+ * release caches "you are current" for 12 hours, and a release published an
+ * hour later stays invisible for the rest of that window. Exactly that
+ * happened on the first real install.
+ *
+ * Deliberately not calling into updater.php: that file only loads in
+ * wp-admin, and this needs to run whenever activation happens.
+ */
+function arv_elements_on_activate() {
+	delete_transient( 'arv_elements_latest_release' );
+	// Also drop WordPress's own cached update check, so the Plugins screen
+	// reflects reality on the next load rather than up to 12 hours later.
+	delete_site_transient( 'update_plugins' );
+}
+register_activation_hook( __FILE__, 'arv_elements_on_activate' );
 
 /**
  * Admin notice when Cornerstone is missing, so an accidental deactivation

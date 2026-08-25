@@ -158,8 +158,9 @@ $zip_asset = array( (object) array( 'name' => 'aravaipa-elements.zip', 'browser_
 reset_state();
 arv_test_queue_response( fake_release( 'v0.3.0', $zip_asset ) );
 $transient = (object) array(
-	'checked'  => array( ARV_ELEMENTS_SLUG => '0.2.0' ),
-	'response' => array(),
+	'checked'   => array( ARV_ELEMENTS_SLUG => '0.2.0' ),
+	'response'  => array(),
+	'no_update' => array(),
 );
 $_GET = array();
 $out = arv_elements_check_for_update( $transient );
@@ -170,20 +171,39 @@ t( 'package points at the real zip asset, not the auto-generated source zip', 'h
 reset_state();
 arv_test_queue_response( fake_release( 'v0.3.0', $zip_asset ) );
 $transient = (object) array(
-	'checked'  => array( ARV_ELEMENTS_SLUG => '0.3.0' ),
-	'response' => array( ARV_ELEMENTS_SLUG => (object) array( 'stale' => true ) ),
+	'checked'   => array( ARV_ELEMENTS_SLUG => '0.3.0' ),
+	'response'  => array( ARV_ELEMENTS_SLUG => (object) array( 'stale' => true ) ),
+	'no_update' => array(),
 );
 $out = arv_elements_check_for_update( $transient );
 t( 'already current: stale response entry is cleared, not left in place', ! isset( $out->response[ ARV_ELEMENTS_SLUG ] ) );
+// WordPress only draws the "Enable auto-updates" link for plugins listed in
+// ->response or ->no_update. Shipping without this left the plugin's
+// Automatic Updates column empty on a real site while every other plugin
+// offered the toggle.
+t( 'already current: still described in no_update, so the auto-update toggle appears', isset( $out->no_update[ ARV_ELEMENTS_SLUG ] ) );
+t( 'no_update entry carries the plugin path WP matches on', ARV_ELEMENTS_SLUG === $out->no_update[ ARV_ELEMENTS_SLUG ]->plugin );
 
 reset_state();
 arv_test_queue_response( fake_release( 'v0.3.0', $zip_asset ) );
 $transient = (object) array(
-	'checked'  => array( ARV_ELEMENTS_SLUG => '0.9.0' ),
-	'response' => array(),
+	'checked'   => array( ARV_ELEMENTS_SLUG => '0.9.0' ),
+	'response'  => array(),
+	'no_update' => array(),
 );
 $out = arv_elements_check_for_update( $transient );
 t( 'locally ahead of the release: no update offered', ! isset( $out->response[ ARV_ELEMENTS_SLUG ] ) );
+t( 'locally ahead: still in no_update, so the toggle does not vanish', isset( $out->no_update[ ARV_ELEMENTS_SLUG ] ) );
+
+reset_state();
+arv_test_queue_response( fake_release( 'v0.9.0', $zip_asset ) );
+$transient = (object) array(
+	'checked'   => array( ARV_ELEMENTS_SLUG => '0.3.0' ),
+	'response'  => array(),
+	'no_update' => array( ARV_ELEMENTS_SLUG => (object) array( 'stale' => true ) ),
+);
+$out = arv_elements_check_for_update( $transient );
+t( 'update available: cleared out of no_update so it is not listed both ways', ! isset( $out->no_update[ ARV_ELEMENTS_SLUG ] ) );
 
 reset_state();
 $transient = (object) array( 'checked' => array() );
@@ -193,9 +213,10 @@ t( 'and makes no HTTP request at all', 0 === $GLOBALS['_http_calls'] );
 
 reset_state();
 arv_test_queue_response( fake_release( 'v0.3.0', array() ) );
-$transient = (object) array( 'checked' => array( ARV_ELEMENTS_SLUG => '0.1.0' ), 'response' => array() );
+$transient = (object) array( 'checked' => array( ARV_ELEMENTS_SLUG => '0.1.0' ), 'response' => array(), 'no_update' => array() );
 $out       = arv_elements_check_for_update( $transient );
 t( 'newer release with no zip asset offers nothing to install', ! isset( $out->response[ ARV_ELEMENTS_SLUG ] ) );
+t( 'and is still described in no_update rather than dropped entirely', isset( $out->no_update[ ARV_ELEMENTS_SLUG ] ) );
 
 echo "plugins_api:\n";
 reset_state();
