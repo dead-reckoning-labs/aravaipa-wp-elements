@@ -16,7 +16,7 @@ function esc_attr($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8')
 function esc_url($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 require_once __DIR__ . '/includes/helpers.php';
-foreach (['race-hero','distance-cards','event-timeline','partner-grid','countdown'] as $e) {
+foreach (['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map'] as $e) {
   require_once __DIR__ . '/includes/elements/' . $e . '.php';
 }
 
@@ -45,6 +45,7 @@ $blocks = array(
   'Countdown' => arv_countdown_render(arv_defaults('aravaipa-countdown', array(
     'heading' => 'Until the gun',
   ))),
+  'Region Map' => arv_region_map_render(arv_defaults('aravaipa-region-map')),
 );
 
 $out = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
