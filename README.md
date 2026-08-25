@@ -45,26 +45,28 @@ Kahtoola | https://.../kahtoola.png | https://kahtoola.com | presenting
 Squirrels Nut Butter | https://.../snb.png | | supporting
 ```
 
-**Region Map**: `Name | X% | Y% | landing page URL | detail (optional) | primary (optional)`. X and Y are the pin's position on `assets/us-outline.svg` as a percentage of its width and height, left and top edges are 0. To place a new pin, open that file at full size in a browser, find the spot, and read its position off as a percentage of the image's own width (X) and height (Y). `primary` (the literal word, in the sixth column) marks the HQ pin: bigger, accent coloured. Detail is optional prose that only appears on hover or keyboard focus, so it costs nothing when left blank.
+**Region Map**: `Name | X% | Y% | landing page URL | detail (optional) | primary (optional) | full name (optional)`. X and Y are the pin's position on `assets/us-outline.svg` as a percentage of its width and height, left and top edges are 0. To place a new pin, open that file at full size in a browser, find the spot, and read its position off as a percentage of the image's own width (X) and height (Y). `primary` (the literal word, in the sixth column) marks the HQ pin: bigger, accent coloured. Detail is optional prose, shown on hover or keyboard focus over the map and always in the list beneath it. The seventh column is the unabbreviated name for that list, for regions whose map label had to be shortened to stop it colliding with a neighbour.
 
-Region names are always visible on the map, not hover-only (a label that only appears on hover is unusable on a touch screen, which is most of this page's traffic), which means two regions whose real-world locations are close together can run their labels into each other at a phone's width. This is not a bug to chase with smaller and smaller font sizes: it is what every small dot map of the US does, and the fix is the one they all use. Abbreviate whichever pins cluster tightly and move the full name into the (hover/focus-only) detail field, rather than widening the map or shrinking the type further. The default rows below do this twice: California and Nevada's real state centers sit close enough together to collide, and Great Lakes Endurance and White Mountain Endurance are each other's longest labels and land close enough that the map's own edge-avoidance (which slides a pin's label away from whichever side of the map it is closest to) pushes White Mountain's label straight into Great Lakes' at a phone's width.
+Two other controls: **Theme** (dark panel or light, dark by default, since on a white page the map read as a pale shape floating in whitespace) and **Region list below map** (on by default). The list repeats every region as a text link under the map. It is what makes the section usable on a phone, where the pin labels are hidden because four of the eight regions sit within about 25% of the map's width and their labels overlap at any readable size, and it is the only part of this element a search engine can read: the map itself is one decorative SVG with no place names in it.
+
+Above phone width the map labels are always visible rather than hover-only, so two regions whose real-world locations are close together can still run their labels into each other. Abbreviate whichever pins cluster tightly and put the real name in the seventh column, rather than shrinking the type further: that is what every small dot map of the US does. The default rows below do it twice. California and Nevada's real state centers sit close enough together to collide, and Great Lakes and White Mountain are each other's longest labels and land close enough that the map's own edge avoidance (which slides a pin's label away from whichever side of the map it is nearest) pushes White Mountain's straight into Great Lakes'.
 
 ```
-Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred, Black Canyon 100K, and more. | primary
-Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/
-CA | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | California
-NV | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | Nevada
-Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/
+Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary
+Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas.
+CA | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | California
+NV | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | | Nevada
+Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country.
 Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon.
-Great Lakes | 67.1 | 25.5 | https://www.aravaiparunning.com/great-lakes-endurance/ | Great Lakes Endurance. Trail and ultra events across the Great Lakes region.
-White Mtn | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | White Mountain Endurance. Trail and ultra events across the Northeast region.
+Great Lakes | 67.1 | 25.5 | https://www.aravaiparunning.com/great-lakes-endurance/ | Trail and ultra events across the Great Lakes region. | | Great Lakes Endurance
+White Mtn | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Trail and ultra events across the Northeast. | | White Mountain Endurance
 ```
 
 ## Region Map without the plugin
 
 The Region Map also ships as `standalone-region-map.html`: one self-contained block to paste into a Cornerstone **Raw Content** element, no plugin required. Inline `<style>`, inline SVG, no JavaScript, no external requests, no API keys.
 
-This exists because the plugin is not currently installed on aravaiparunning.com, and swapping one Raw Content block for another is a much smaller change to that site than installing a plugin on it. The "Where to find us" block it replaces is itself a Raw Content block today.
+This exists for the case where installing a plugin is a bigger change to the live site than swapping one Raw Content block for another. The "Where to find us" block it replaces was itself a Raw Content block.
 
 It is generated, not hand written. To change anything (move a pin, add a region, restyle):
 
@@ -73,7 +75,7 @@ It is generated, not hand written. To change anything (move a pin, add a region,
 php arv-standalone.php     # rewrites standalone-region-map.html
 ```
 
-`arv-standalone.php` calls the element's real render function, extracts every `arv-region-map` rule out of the shared stylesheet (preserving `@media` wrappers), and inlines `assets/us-outline.svg`. Nothing is duplicated by hand, so the plugin element and the paste-in block cannot drift apart. It refuses to write the file at all rather than emit an unstyled block, an empty block, or one whose map image would 404.
+`arv-standalone.php` calls the element's real render function and extracts every `arv-region-map` rule out of the shared stylesheet, preserving `@media` wrappers. The map itself needs no handling: the element inlines the SVG rather than pointing an `<img>` at it, so the page's own stylesheet can theme the state fills, and the render output is already self contained. Nothing is duplicated by hand, so the plugin element and the paste-in block cannot drift apart. It refuses to write the file at all rather than emit an unstyled block, an empty one, or one still referencing a plugin asset URL that would 404.
 
 Editing `standalone-region-map.html` directly works until the next regeneration overwrites it, which is why the generated file says so in its own header comment.
 

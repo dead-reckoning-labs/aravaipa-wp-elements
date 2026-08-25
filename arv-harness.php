@@ -4,6 +4,7 @@
 // eyeballed in a browser before any of this goes near the live site.
 define('ABSPATH', true);
 define('ARV_ELEMENTS_URL', './');
+define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
 
 function cs_register_element($n, $c) { $GLOBALS['ARV_EL'][$n] = $c; }
 function cs_value($d, $desig = 'markup', $p = false) { return $d; }

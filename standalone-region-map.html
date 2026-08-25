@@ -12,7 +12,7 @@
 
   To move a pin or add a region, edit the rows in the element source
   (includes/elements/region-map.php) and re-run. Row format:
-  Name | X% | Y% | landing page URL | detail | primary
+  Name | X% | Y% | landing page URL | detail | primary | full name
 -->
 <style>
 .arv-region-map {
@@ -24,32 +24,73 @@
 .arv-region-map * {
 	box-sizing: inherit;
 }
-.arv-region-map__heading {
-	margin: 0 0 1.5rem;
-	font-size: clamp(1.4rem, 3vw, 2rem);
-	font-weight: 800;
-	text-align: center;
-	color: var(--arv-ink);
-}
 .arv-region-map {
+	--arv-teal: #5bb5a2;
+	--arv-teal-deep: #2a5e6b;
+	position: relative;
 	text-align: center;
+}
+.arv-region-map--dark {
+	--arv-map-land: #33403f;
+	--arv-map-line: #253130;
+	--arv-map-text: #f4f4f4;
+	--arv-map-muted: rgba(244, 244, 244, 0.62);
+	--arv-map-chip: #1c2524;
+	--arv-map-rule: rgba(244, 244, 244, 0.14);
+	background: #212a29;
+	color: var(--arv-map-text);
+}
+.arv-region-map--light {
+	--arv-map-land: #dfe6e3;
+	--arv-map-line: #fff;
+	--arv-map-text: var(--arv-ink);
+	--arv-map-muted: rgba(39, 39, 39, 0.62);
+	--arv-map-chip: #fff;
+	--arv-map-rule: rgba(0, 0, 0, 0.12);
+	color: var(--arv-map-text);
+}
+.arv-region-map__inner {
+	max-width: 68rem;
+	margin: 0 auto;
+	padding: 4rem 1.5rem;
+}
+.arv-region-map__eyebrow {
+	margin: 0 0 0.6rem;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--arv-teal);
+}
+.arv-region-map--light .arv-region-map__eyebrow {
+	color: var(--arv-teal-deep);
+}
+.arv-region-map__heading {
+	margin: 0 0 0.6rem;
+	font-size: clamp(1.9rem, 4vw, 3rem);
+	font-weight: 800;
+	line-height: 1.05;
+	color: var(--arv-map-text);
 }
 .arv-region-map__intro {
 	max-width: 34rem;
-	margin: 0 auto 2rem;
-	color: var(--arv-ink);
-	opacity: 0.7;
+	margin: 0 auto;
+	color: var(--arv-map-muted);
 }
 .arv-region-map__stage {
 	position: relative;
-	max-width: 56rem;
-	margin: 0 auto;
+	max-width: 60rem;
+	margin: 2.5rem auto 0;
 	aspect-ratio: 960 / 609;
 }
 .arv-region-map__base {
 	display: block;
 	width: 100%;
 	height: 100%;
+}
+.arv-region-map__states {
+	fill: var(--arv-map-land);
+	stroke: var(--arv-map-line);
 }
 .arv-region-map__pin {
 	position: absolute;
@@ -58,48 +99,55 @@
 	width: 0;
 	height: 0;
 	text-decoration: none;
-	color: var(--arv-ink);
+	color: inherit;
 	z-index: 1;
 }
 .arv-region-map__pin:focus-visible {
-	z-index: 2;
+	z-index: 3;
+	outline: none;
 }
 .arv-region-map__dot {
 	position: absolute;
 	top: 0;
 	left: 0;
-	
 	transform: translate(-50%, -50%);
-	width: 0.65rem;
-	height: 0.65rem;
+	width: 0.7rem;
+	height: 0.7rem;
 	border-radius: 50%;
-	background: var(--arv-ink);
-	border: 2px solid #fff;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-	transition: transform 0.15s ease;
+	background: var(--arv-teal);
+	box-shadow: 0 0 0 3px rgba(91, 181, 162, 0.25);
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .arv-region-map__pin--primary .arv-region-map__dot {
-	width: 0.95rem;
-	height: 0.95rem;
+	width: 1rem;
+	height: 1rem;
 	background: var(--arv-accent);
+	box-shadow: 0 0 0 4px rgba(255, 42, 19, 0.25);
 }
 .arv-region-map__pin:focus-visible .arv-region-map__dot {
-	transform: translate(-50%, -50%) scale(1.25);
+	transform: translate(-50%, -50%) scale(1.3);
+	box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.4);
 }
 .arv-region-map__name {
 	position: absolute;
-	top: 0.5rem;
+	top: 0.55rem;
 	left: 0;
 	
 	transform: translateX(-50%);
-	padding: 0.15rem 0.45rem;
-	background: #fff;
-	border: 1px solid var(--arv-line);
+	padding: 0.12rem 0.4rem;
+	background: var(--arv-map-chip);
+	color: var(--arv-map-text);
 	font-size: 0.68rem;
 	font-weight: 700;
-	letter-spacing: 0.03em;
+	letter-spacing: 0.02em;
 	white-space: nowrap;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+	transition: color 0.15s ease;
+}
+.arv-region-map--light .arv-region-map__name {
+	border: 1px solid var(--arv-map-rule);
+}
+.arv-region-map__pin--primary .arv-region-map__name {
+	color: var(--arv-accent);
 }
 .arv-region-map__pin--edge-left .arv-region-map__name {
 	transform: translateX(0);
@@ -107,22 +155,18 @@
 .arv-region-map__pin--edge-right .arv-region-map__name {
 	transform: translateX(-100%);
 }
-.arv-region-map__pin--primary .arv-region-map__name {
-	border-top: 2px solid var(--arv-accent);
-	color: var(--arv-ink);
-}
 .arv-region-map__detail {
 	position: absolute;
-	bottom: calc(100% + 0.4rem);
+	bottom: calc(100% + 0.5rem);
 	left: 50%;
 	transform: translateX(-50%) translateY(4px);
 	width: max-content;
-	max-width: 14rem;
-	padding: 0.6rem 0.75rem;
-	background: var(--arv-ink);
+	max-width: 15rem;
+	padding: 0.65rem 0.8rem;
+	background: var(--arv-accent);
 	color: #fff;
-	font-size: 0.75rem;
-	font-weight: 400;
+	font-size: 0.76rem;
+	font-weight: 500;
 	line-height: 1.4;
 	text-align: left;
 	opacity: 0;
@@ -156,12 +200,73 @@
 .arv-region-map__pin--edge-right:focus-visible .arv-region-map__detail {
 	transform: translateX(0) translateY(0);
 }
+.arv-region-map__list {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0 2rem;
+	margin-top: 3rem;
+	border-top: 1px solid var(--arv-map-rule);
+	text-align: left;
+}
+@media (min-width: 600px) {
+.arv-region-map__list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+@media (min-width: 1024px) {
+.arv-region-map__list {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+}
+.arv-region-map__item {
+	display: block;
+	padding: 1.1rem 0 1.2rem;
+	border-bottom: 1px solid var(--arv-map-rule);
+	text-decoration: none;
+	color: inherit;
+}
+.arv-region-map__item-name {
+	display: block;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--arv-map-text);
+	transition: color 0.15s ease;
+}
+.arv-region-map__item-name::after {
+	content: "→";
+	margin-left: 0.4rem;
+	color: var(--arv-teal);
+	opacity: 0;
+	transition: opacity 0.15s ease, transform 0.15s ease;
+	display: inline-block;
+}
+.arv-region-map--light .arv-region-map__item-name::after {
+	color: var(--arv-teal-deep);
+}
+.arv-region-map__item-detail {
+	display: block;
+	margin-top: 0.2rem;
+	font-size: 0.8rem;
+	line-height: 1.45;
+	color: var(--arv-map-muted);
+}
+.arv-region-map__item:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: -2px;
+}
+.arv-region-map__item:focus-visible .arv-region-map__item-name::after {
+	opacity: 1;
+}
 @media (hover: hover) and (pointer: fine) {
 .arv-region-map__pin:hover {
-		z-index: 2;
+		z-index: 3;
 }
 .arv-region-map__pin:hover .arv-region-map__dot {
-		transform: scale(1.25);
+		transform: translate(-50%, -50%) scale(1.3);
+		box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.4);
+}
+.arv-region-map__pin--primary:hover .arv-region-map__dot {
+		box-shadow: 0 0 0 6px rgba(255, 42, 19, 0.35);
 }
 .arv-region-map__pin:hover .arv-region-map__detail {
 		opacity: 1;
@@ -176,20 +281,49 @@
 .arv-region-map__pin--edge-right:hover .arv-region-map__detail {
 		transform: translateX(0) translateY(0);
 }
+.arv-region-map__item:hover .arv-region-map__item-name {
+		color: var(--arv-teal);
+}
+.arv-region-map--light .arv-region-map__item:hover .arv-region-map__item-name {
+		color: var(--arv-teal-deep);
+}
+.arv-region-map__item:hover .arv-region-map__item-name::after {
+		opacity: 1;
+		transform: translateX(3px);
+}
 }
 @media (max-width: 767px) {
+.arv-region-map__inner {
+		padding: 3rem 1.25rem;
+}
 .arv-region-map__name {
-		padding: 0.1rem 0.3rem;
-		font-size: 0.6rem;
+		display: none;
 }
 .arv-region-map__detail {
 		max-width: 11rem;
 		font-size: 0.7rem;
 }
+.arv-region-map__dot {
+		width: 0.8rem;
+		height: 0.8rem;
+}
+.arv-region-map__pin--primary .arv-region-map__dot {
+		width: 1.1rem;
+		height: 1.1rem;
+}
+.arv-region-map__stage {
+		margin-top: 2rem;
+}
+.arv-region-map__list {
+		margin-top: 2.25rem;
+}
+.arv-region-map__item {
+		padding-right: 0;
+}
 }
 </style>
-<div class="arv-region-map"><h2 class="arv-region-map__heading">Where to find us</h2><div class="arv-region-map__stage"><svg class="arv-region-map__base" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="169.8 88.4 949.6 608.6" fill="none">
-<g fill="#e4ddd0" stroke="#fdf9f2" stroke-width="1.5" stroke-linejoin="round">
+<div class="arv-region-map arv-region-map--dark"><div class="arv-region-map__inner"><p class="arv-region-map__eyebrow">Aravaipa Running Regions</p><h2 class="arv-region-map__heading">Where to find us</h2><div class="arv-region-map__stage"><svg class="arv-region-map__base" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="169.8 88.4 949.6 608.6" fill="none">
+<g class="arv-region-map__states" stroke-width="1.5" stroke-linejoin="round">
 <path d="M799.6,566.8l-1.6-15.2l-2.7-18.8l0.2-14.1l0.8-31l-0.2-16.7l0.2-6.4l7.8-0.4l27.8-2.6l8.9-0.7   l-0.1,2.2l0.2,2.1l0.6,3.4l3.4,7.9l2.4,9.9l1.5,6.1l1.6,4.8l1.5,7l2.1,6.3l2.6,3.4l0.5,3.4l1.9,0.8l0.2,2.1l-1.8,4.8l-0.5,3.2   l-0.2,1.9l1.6,4.4l0.3,5.3l-0.8,2.4l0.6,0.8l1.5,0.8l1,2.5h-6.3l-6.8,0.6l-25.5,2.9l-10.4,1.4l-0.1,3.8l1.8,1.8l2.6,1.9l0.6,7.9   l-5.5,2.6l-2.7-0.3l2.7-1.9v-1l-3.1-6l-2.3-0.6l-1.5,4.4l-1.3,2.7l-0.6-0.2H799.6z"/>
 <path d="M765,445l-3.8,0.9l-6.2-0.5l0.7-3l3.2-2.7l0.5-2.3l-1.8-3l-11,0.5l-20.8,0.9l-23.3,0.7L679,437   l1.6,6.9v8.2l1.4,11l0.2,37.8l2.3,1.9l3-1.4l2.7,1.1l0.4,10.3l22.9-0.1l18.9-0.8l10.1-0.2l1.1-2.1l-0.3-3.5l-1.8-3l1.6-1.5   l-1.6-2.5l0.7-2.5l1.4-5.6l2.5-2.1l-0.7-2.3l3.7-5.4l2.7-1.4l-0.1-1.5l-0.3-1.8l2.9-5.6l2.4-1.3l0.4-3.4l1.8-1.2l0.9-4.2l-1.3-4   l4-2.4l0.6-2l1.2-4.3L765,445z"/>
 <path d="M311.7,487.5l-2.6,2.2l-0.3,1.5l0.5,1l18.9,10.7l12.1,7.6l14.7,8.6l16.8,10l12.3,2.4l25.1,2.7   l2.5-12.5l3.8-27.2l7-52.9l4.3-31l-24.6-3.7l-27.2-4.6l-33.4-6.3l-2.9,18.1l-0.5,0.5l-1.7,2.6l-2.5-0.1l-1.3-2.7l-2.7-0.3l-0.9-1.1   h-0.9l-0.9,0.6l-1.9,1l-0.1,7l-0.2,1.7l-0.6,12.6l-1.5,2.2l-0.6,3.3l2.7,4.9l1.3,5.8l0.8,1l1,0.6l-0.1,2.3l-1.6,1.4l-3.4,1.7   l-1.9,1.9l-1.5,3.7l-0.6,4.9l-2.9,2.7l-2.1,0.7l-0.1,5.8l-0.5,1.7l0.5,0.8l3.7,0.6l-0.6,2.7l-1.5,2.2L311.7,487.5z"/>
@@ -238,4 +372,4 @@
 <path d="M786.9,297.2l0.4-3l-1.6-4.5l-0.6-6.1l-1.1-2.4l1-3.1l0.8-2.9l1.5-2.6l-0.6-3.4l-0.6-3.6l0.5-1.8   l1.9-2.4l0.2-2.7l-0.8-1.3l0.6-2.6l0.5-3.2l2.7-5.7l2.9-6.8l0.2-2.3l-0.3-1l-0.8,0.5l-4.2,6.3l-2.7,4l-1.9,1.8l-0.8,2.3l-1.5,0.8   l-1.1,1.9l-1.5-0.3l-0.2-1.8l1.3-2.4l2.1-4.7l1.8-1.6l1.1-2.3l-1.6-0.9l-1.4-1.4l-1.6-10.3l-3.7-1.1l-1.4-2.3l-12.6-2.7l-2.5-1.1   l-8.2-2.3l-8.2-1.1l-4.2-5.4l-0.5,1.3l-1.1-0.2l-0.6-1.1l-2.7-0.8l-1.1,0.2l-1.8,1l-1-0.6l0.6-1.9l1.9-3.1l1.1-1.1l-1.9-1.5   l-2.1,0.8l-2.9,1.9l-7.4,3.2l-2.9,0.6l-2.9-0.5l-1-0.9l-2.1,2.8l-0.2,2.7v8.5l-1.1,1.6l-5.3,3.9l-2.3,5.9l0.5,0.2l2.5,2.1l0.7,3.2   l-1.8,3.2v3.9l0.5,6.6l3,3h3.4l1.8,3.2l3.4,0.5l3.9,5.7l7.1,4.1l2.1,2.7l0.9,7.4l0.7,3.3l2.3,1.6l0.2,1.4l-2.1,3.4l0.2,3.2l2.5,3.9   l2.5,1.1l3,0.5l1.3,1.4l9.2,0l26.1-1.5L786.9,297.2z"/>
 <path d="M930.6,342l1.1,4.9l1.1,6.9l3.6-2.7l2.3-3.1l2.5-0.6l1.5-1.5l1.8-2.6l1.2,0.6l2.9-0.3l2.6-2.1   l2-1.5l1.8-0.5l1.3,1l2.2,1.1l1.9,1.8l1.4,1.3l-0.1,4.7l-5.7-3.1l-4.5-1.8l-0.2,5.3l-0.5,2.1l-1.6,2.7l-0.6,1.6l-3.1,2.4l-0.5,2.3   l-3.4,0.3l-0.3,3.1l-1.1,5.5h-2.6l-1.3-0.8l-1.6-2.7l-1.8,0.2l-0.3,4.4l-2.1,6.6l-5,10.8l0.8,1.3l-0.2,2.7l-2.1,1.9l-1.5-0.3   l-3.2,2.4l-2.6-1l-1.8,4.7c0,0-3.7,0.8-4.4,1c-0.6,0.2-2.4-1.3-2.4-1.3l-2.4,2.3l-2.6,0.6l-2.9-0.8l-1.3-1.3l-2.2-3l-3.1-2   l-2.6-2.7l-2.9-3.7l-0.6-2.3l-2.6-1.5l-0.8-1.6l-0.2-5.3l2.2-0.1l1.9-0.8l0.2-2.7l1.6-1.5l0.2-5l1-3.9l1.3-0.6l1.3,1.1l0.5,1.8   l1.8-1l0.5-1.6l-1.1-1.8v-2.4l1-1.3l2.3-3.4l1.3-1.5l2.1,0.5l2.3-1.6l3.1-3.4l2.3-3.9l0.3-5.7l0.5-5v-4.7l-1.1-3.1l1-1.5l1.3-1.3   l3.5,19.8l4.6-0.8L930.6,342z"/>
 <path d="M528.3,243.8l-10.5-0.8l-32.1-3.3l-16.2-2.1l-28.3-4.1l-19.9-3l-1.4,11.2l-3.8,24.3l-5.3,30.4   l-1.5,10.5l-1.7,11.9l6.5,0.9l25.9,2.5l20.6,2.3l36.8,4.1l23.8,2.9l4.5-44.2l1.4-25.4L528.3,243.8z"/>
-</g></svg><a class="arv-region-map__pin arv-region-map__pin--primary" style="left:20.9%;top:61.9%" href="https://www.aravaiparunning.com/arizona/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Arizona</span><span class="arv-region-map__detail">Southwest roots. Home of Cocodona 250, Javelina Jundred, Black Canyon 100K, and more.</span></a><a class="arv-region-map__pin" style="left:23%;top:68.9%" href="https://www.aravaiparunning.com/tucson-runs/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Tucson</span></a><a class="arv-region-map__pin arv-region-map__pin--edge-left" style="left:9.2%;top:45.9%" href="https://www.aravaiparunning.com/california-races/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">CA</span><span class="arv-region-map__detail">California</span></a><a class="arv-region-map__pin" style="left:14.4%;top:43.3%" href="https://www.aravaiparunning.com/nevada/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">NV</span><span class="arv-region-map__detail">Nevada</span></a><a class="arv-region-map__pin" style="left:33.8%;top:46.7%" href="https://www.aravaiparunning.com/colorado/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Colorado</span></a><a class="arv-region-map__pin" style="left:23.2%;top:49.1%" href="https://www.aravaiparunning.com/ultra-adventures/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Ultra Adventures</span><span class="arv-region-map__detail">Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon.</span></a><a class="arv-region-map__pin" style="left:67.1%;top:25.5%" href="https://www.aravaiparunning.com/great-lakes-endurance/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Great Lakes</span><span class="arv-region-map__detail">Great Lakes Endurance. Trail and ultra events across the Great Lakes region.</span></a><a class="arv-region-map__pin arv-region-map__pin--edge-right" style="left:91.9%;top:22%" href="https://www.aravaiparunning.com/white-mountain-endurance/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">White Mtn</span><span class="arv-region-map__detail">White Mountain Endurance. Trail and ultra events across the Northeast region.</span></a></div></div>
+</g></svg><a class="arv-region-map__pin arv-region-map__pin--primary" style="left:20.9%;top:61.9%" href="https://www.aravaiparunning.com/arizona/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Arizona</span><span class="arv-region-map__detail">Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K.</span></a><a class="arv-region-map__pin" style="left:23%;top:68.9%" href="https://www.aravaiparunning.com/tucson-runs/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Tucson</span><span class="arv-region-map__detail">Saguaro country, in the shadow of the Santa Catalinas.</span></a><a class="arv-region-map__pin arv-region-map__pin--edge-left" style="left:9.2%;top:45.9%" href="https://www.aravaiparunning.com/california-races/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">CA</span><span class="arv-region-map__detail">Coastal ranges and Sierra foothills.</span></a><a class="arv-region-map__pin" style="left:14.4%;top:43.3%" href="https://www.aravaiparunning.com/nevada/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">NV</span><span class="arv-region-map__detail">High desert and the Spring Mountains.</span></a><a class="arv-region-map__pin" style="left:33.8%;top:46.7%" href="https://www.aravaiparunning.com/colorado/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Colorado</span><span class="arv-region-map__detail">Front Range and high country.</span></a><a class="arv-region-map__pin" style="left:23.2%;top:49.1%" href="https://www.aravaiparunning.com/ultra-adventures/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Ultra Adventures</span><span class="arv-region-map__detail">Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon.</span></a><a class="arv-region-map__pin" style="left:67.1%;top:25.5%" href="https://www.aravaiparunning.com/great-lakes-endurance/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">Great Lakes</span><span class="arv-region-map__detail">Trail and ultra events across the Great Lakes region.</span></a><a class="arv-region-map__pin arv-region-map__pin--edge-right" style="left:91.9%;top:22%" href="https://www.aravaiparunning.com/white-mountain-endurance/"><span class="arv-region-map__dot"></span><span class="arv-region-map__name">White Mtn</span><span class="arv-region-map__detail">Trail and ultra events across the Northeast.</span></a></div><div class="arv-region-map__list"><a class="arv-region-map__item" href="https://www.aravaiparunning.com/arizona/"><span class="arv-region-map__item-name">Arizona</span><span class="arv-region-map__item-detail">Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K.</span></a><a class="arv-region-map__item" href="https://www.aravaiparunning.com/tucson-runs/"><span class="arv-region-map__item-name">Tucson</span><span class="arv-region-map__item-detail">Saguaro country, in the shadow of the Santa Catalinas.</span></a><a class="arv-region-map__item" href="https://www.aravaiparunning.com/california-races/"><span class="arv-region-map__item-name">California</span><span class="arv-region-map__item-detail">Coastal ranges and Sierra foothills.</span></a><a class="arv-region-map__item" href="https://www.aravaiparunning.com/nevada/"><span class="arv-region-map__item-name">Nevada</span><span class="arv-region-map__item-detail">High desert and the Spring Mountains.</span></a><a class="arv-region-map__item" href="https://www.aravaiparunning.com/colorado/"><span class="arv-region-map__item-name">Colorado</span><span class="arv-region-map__item-detail">Front Range and high country.</span></a><a class="arv-region-map__item" href="https://www.aravaiparunning.com/ultra-adventures/"><span class="arv-region-map__item-name">Ultra Adventures</span><span class="arv-region-map__item-detail">Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon.</span></a><a class="arv-region-map__item" href="https://www.aravaiparunning.com/great-lakes-endurance/"><span class="arv-region-map__item-name">Great Lakes Endurance</span><span class="arv-region-map__item-detail">Trail and ultra events across the Great Lakes region.</span></a><a class="arv-region-map__item" href="https://www.aravaiparunning.com/white-mountain-endurance/"><span class="arv-region-map__item-name">White Mountain Endurance</span><span class="arv-region-map__item-detail">Trail and ultra events across the Northeast.</span></a></div></div></div>

@@ -1,5 +1,6 @@
 <?php
 define('ABSPATH', true); define('ARV_ELEMENTS_URL','./');
+define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
 function cs_register_element($n,$c){$GLOBALS['ARV_EL'][$n]=$c;}
 function cs_value($d,$x='markup',$p=false){return $d;}
 function cs_compose_values($v,...$p){return $v;}
