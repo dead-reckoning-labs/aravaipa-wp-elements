@@ -563,6 +563,14 @@
 	color: var(--arv-accent);
 }
 
+/* Lifts the label above the dot. Paired with a neighbour that keeps the
+   default below, this is what separates two pins too close together
+   horizontally for their labels to sit on the same line. */
+.arv-region-map__pin--name-above .arv-region-map__name {
+	top: auto;
+	bottom: 0.55rem;
+}
+
 .arv-region-map__pin--edge-left .arv-region-map__name {
 	transform: translateX(0);
 }
@@ -581,16 +589,44 @@
 	transform: translateX(-50%) translateY(4px);
 	width: max-content;
 	max-width: 15rem;
-	padding: 0.65rem 0.8rem;
-	background: var(--arv-accent);
-	color: #fff;
+	padding: 0.7rem 0.85rem;
+	/* Near-black with a teal edge rather than the accent red it used to be.
+	   A solid red card is the loudest thing on the panel, which is wrong
+	   for what is only a one-line description, and it fought the red HQ pin
+	   for attention. Red now means one thing on this map: headquarters. */
+	background: #121817;
+	border-top: 2px solid var(--arv-teal);
+	color: var(--arv-map-text);
 	font-size: 0.76rem;
 	font-weight: 500;
 	line-height: 1.4;
 	text-align: left;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.arv-region-map--light .arv-region-map__detail {
+	background: var(--arv-ink);
+	color: #fff;
+}
+
+/* Brand mark inside the hover card, for the regions that have one. Capped
+   by height rather than width so a square logo and a wide horizontal
+   lockup both land at the same optical weight. */
+.arv-region-map__detail-logo {
+	display: block;
+	max-width: 100%;
+	max-height: 2.6rem;
+	width: auto;
+	margin-bottom: 0.5rem;
+	object-fit: contain;
+	object-position: left center;
+}
+
+.arv-region-map__detail-text {
+	display: block;
 }
 
 .arv-region-map__pin:focus-visible .arv-region-map__detail {
@@ -642,12 +678,12 @@
    Deliberately not cards. No rounded corners, no shadows, no left accent
    bars: hairline rules and type only, so it reads as an index rather than a
    dashboard. */
-/* Column counts are explicit rather than auto-fit, and deliberately skip
-   three. Eight regions divide evenly into four, two or one, so those leave
-   full rows; three leaves a last row of two whose bottom rules stop two
-   thirds of the way across and read as a half-drawn table. auto-fit picks
-   whatever the width allows and lands on three for most of the desktop
-   range. */
+/* Column counts are explicit rather than auto-fit, and chosen to divide the
+   number of regions evenly. A last row that is not full leaves bottom rules
+   stopping partway across, which reads as a half-drawn table. Nine regions
+   go three, three and three; at eight this was four. Worth re-checking
+   whenever a region is added or removed, since auto-fit picks whatever the
+   width allows and cannot know the count. */
 .arv-region-map__list {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
@@ -665,16 +701,42 @@
 
 @media (min-width: 1024px) {
 	.arv-region-map__list {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
 
 .arv-region-map__item {
-	display: block;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
 	padding: 1.1rem 0 1.2rem;
 	border-bottom: 1px solid var(--arv-map-rule);
 	text-decoration: none;
 	color: inherit;
+}
+
+/* Fixed box so every row's text starts on the same left edge whether or
+   not that region has a logo yet, instead of the list ragging in and out
+   as brands get added. */
+.arv-region-map__item-logo {
+	flex: 0 0 2.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 2.25rem;
+}
+
+.arv-region-map__item-logo img {
+	max-width: 100%;
+	max-height: 100%;
+	width: auto;
+	height: auto;
+	object-fit: contain;
+}
+
+.arv-region-map__item-body {
+	min-width: 0;
+	flex: 1 1 auto;
 }
 
 .arv-region-map__item-name {

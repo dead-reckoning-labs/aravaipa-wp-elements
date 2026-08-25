@@ -36,16 +36,17 @@ for f in "$NAME.php" includes/helpers.php includes/updater.php includes/elements
 done
 
 rm -rf "$STAGE" "$OUT/$NAME.zip"
-mkdir -p "$STAGE/includes/elements" "$STAGE/assets"
+mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos"
 
 cp "$NAME.php" "$STAGE/"
 cp includes/helpers.php includes/updater.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/logos/*.png "$STAGE/assets/logos/"
 
 # WordPress convention: an empty index.php in every directory so a server
 # with directory listing enabled serves nothing instead of the file tree.
-for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/assets"; do
+for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/assets" "$STAGE/assets/logos"; do
 	printf '<?php // Silence is golden.' > "$d/index.php"
 done
 
@@ -56,6 +57,17 @@ missing=0
 while read -r el; do
 	[ -f "$STAGE/includes/elements/$el.php" ] || { echo "element '$el' registered but not packaged" >&2; missing=1; }
 done < <(sed -n "/\$elements = array(/,/);/p" "$NAME.php" | grep -oE "'[a-z-]+'" | tr -d "'")
+[ "$missing" -eq 0 ] || exit 1
+
+# Every bundled logo an element references must actually be in the payload,
+# for the same reason the element check above exists: a missing one renders
+# as a broken image on a live page rather than failing anywhere visible.
+while read -r logo; do
+	[ -f "$STAGE/assets/logos/$logo" ] || { echo "logo '$logo' referenced but not packaged" >&2; missing=1; }
+# Comment lines are stripped first, so the "ARV_LOGO:name.png" written as
+# an example in the resolver's own doc block is not mistaken for a real
+# reference to a file called name.png.
+done < <(grep -hv '^[[:space:]]*[*/]' includes/elements/*.php | grep -oE 'ARV_LOGO:[A-Za-z0-9._-]+' | sed 's/ARV_LOGO://' | sort -u)
 [ "$missing" -eq 0 ] || exit 1
 
 ( cd "$OUT" && zip -qr "$NAME.zip" "$NAME" )

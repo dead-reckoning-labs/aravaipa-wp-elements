@@ -45,22 +45,25 @@ Kahtoola | https://.../kahtoola.png | https://kahtoola.com | presenting
 Squirrels Nut Butter | https://.../snb.png | | supporting
 ```
 
-**Region Map**: `Name | X% | Y% | landing page URL | detail (optional) | primary (optional) | full name (optional)`. X and Y are the pin's position on `assets/us-outline.svg` as a percentage of its width and height, left and top edges are 0. To place a new pin, open that file at full size in a browser, find the spot, and read its position off as a percentage of the image's own width (X) and height (Y). `primary` (the literal word, in the sixth column) marks the HQ pin: bigger, accent coloured. Detail is optional prose, shown on hover or keyboard focus over the map and always in the list beneath it. The seventh column is the unabbreviated name for that list, for regions whose map label had to be shortened to stop it colliding with a neighbour.
+**Region Map**: `Name | X% | Y% | landing page URL | detail (optional) | flags (optional) | full name (optional) | logo (optional)`. X and Y are the pin's position on `assets/us-outline.svg` as a percentage of its width and height, left and top edges are 0. To place a new pin, open that file at full size in a browser, find the spot, and read its position off as a percentage of the image's own width (X) and height (Y). Flags (sixth column) is a space separated list: `primary` marks the HQ pin (bigger, accent coloured), `above` lifts that pin's label over its dot instead of under it. Two pins at nearly the same latitude collide horizontally however their labels are anchored, so putting one above and one below is what separates them; that is how California and Nevada both carry their real names. The eighth column is a logo, either `ARV_LOGO:file.png` for one of the marks bundled in `assets/logos/` or a full URL. Detail is optional prose, shown on hover or keyboard focus over the map and always in the list beneath it. The seventh column is the unabbreviated name for that list, for regions whose map label had to be shortened to stop it colliding with a neighbour.
 
-Two other controls: **Theme** (dark panel or light, dark by default, since on a white page the map read as a pale shape floating in whitespace) and **Region list below map** (on by default). The list repeats every region as a text link under the map. It is what makes the section usable on a phone, where the pin labels are hidden because four of the eight regions sit within about 25% of the map's width and their labels overlap at any readable size, and it is the only part of this element a search engine can read: the map itself is one decorative SVG with no place names in it.
+Two other controls: **Theme** (dark panel or light, dark by default, since on a white page the map read as a pale shape floating in whitespace) and **Region list below map** (on by default). The list repeats every region as a text link under the map. It is what makes the section usable on a phone, where the pin labels are hidden because several regions sit within about 25% of the map's width and their labels overlap at any readable size, and it is the only part of this element a search engine can read: the map itself is one decorative SVG with no place names in it.
 
-Above phone width the map labels are always visible rather than hover-only, so two regions whose real-world locations are close together can still run their labels into each other. Abbreviate whichever pins cluster tightly and put the real name in the seventh column, rather than shrinking the type further: that is what every small dot map of the US does. The default rows below do it twice. California and Nevada's real state centers sit close enough together to collide, and Great Lakes and White Mountain are each other's longest labels and land close enough that the map's own edge avoidance (which slides a pin's label away from whichever side of the map it is nearest) pushes White Mountain's straight into Great Lakes'.
+Above phone width the map labels are always visible rather than hover-only, so two regions close together can still run their labels into each other. Reach for the `above` flag first, which lifts one of the pair over its dot so they sit on different lines: that is what lets California and Nevada, whose state centers are about 25 miles apart, both carry their full names. Only if that is not enough, shorten the map label and put the real name in the seventh column, which is what every small dot map of the US does.
 
 ```
-Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary
-Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas.
-CA | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | California
-NV | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | | Nevada
-Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country.
-Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon.
-Great Lakes | 67.1 | 25.5 | https://www.aravaiparunning.com/great-lakes-endurance/ | Trail and ultra events across the Great Lakes region. | | Great Lakes Endurance
-White Mtn | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Trail and ultra events across the Northeast. | | White Mountain Endurance
+Arizona | 20.9 | 61.9 | .../arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary | | ARV_LOGO:aravaipa.png
+Tucson | 23 | 68.9 | .../tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas. | | | ARV_LOGO:aravaipa.png
+California | 9.2 | 45.9 | .../california-races/ | Coastal ranges and Sierra foothills. | | | ARV_LOGO:aravaipa.png
+Nevada | 14.4 | 43.3 | .../nevada/ | High desert and the Spring Mountains. | above | | ARV_LOGO:aravaipa.png
+Colorado | 33.8 | 46.7 | .../colorado/ | Front Range and high country. | | | ARV_LOGO:aravaipa.png
+Ultra Adventures | 23.2 | 49.1 | .../ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon. | | | ARV_LOGO:ultra-adventures.png
+Great Lakes Endurance | 64.3 | 18.2 | .../great-lakes-endurance/ | Trail and ultra events across the Great Lakes region. | | | ARV_LOGO:great-lakes-endurance.png
+White Mountain Endurance | 91.9 | 22 | .../white-mountain-endurance/ | Trail and ultra events across the Northeast.
+Bad Beard Events | 71.2 | 61.1 | .../bad-beard/ | Chattanooga, Tennessee.
 ```
+
+Aravaipa's own regions carry the Aravaipa mountain icon; partner brands carry their own, which is also what distinguishes the two at a glance. White Mountain Endurance and Bad Beard Events have no mark yet: neither has a brand logo anywhere on aravaiparunning.com, only sponsor logos on their pages. See `assets/logos/README.md`.
 
 ## Region Map without the plugin
 
