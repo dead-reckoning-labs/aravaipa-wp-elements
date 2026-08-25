@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.5.1
+ * Version:           0.5.2
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.5.1' );
+define( 'ARV_ELEMENTS_VERSION', '0.5.2' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -27,6 +27,15 @@ require_once ARV_ELEMENTS_PATH . 'includes/helpers.php';
 // alongside it). Loading it on the front end would just be dead weight on
 // every page view a visitor makes.
 if ( is_admin() ) {
+	// Worked out here, from the real file, rather than spelled out as a
+	// literal inside updater.php. WordPress appends a suffix when it installs
+	// a plugin whose folder name is already taken, so a second upload of this
+	// zip lands in aravaipa-elements-2/ alongside the original. The live site
+	// is running exactly that right now. A hardcoded
+	// "aravaipa-elements/aravaipa-elements.php" does not match that copy, so
+	// the copy actually running the site would never be offered an update,
+	// while the stale copy next to it quietly collects them.
+	define( 'ARV_ELEMENTS_SLUG', plugin_basename( __FILE__ ) );
 	require_once ARV_ELEMENTS_PATH . 'includes/updater.php';
 }
 

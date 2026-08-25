@@ -76,7 +76,30 @@ function do_action_stub( $tag, ...$args ) {
 	return call_user_func_array( $fn, $args );
 }
 
+// Deliberately the suffixed folder name WordPress hands out when it installs
+// a plugin over one whose directory already exists. The live site is running
+// exactly that, and a slug hardcoded to the unsuffixed name meant the copy
+// actually serving the site could never be offered an update. Setting it here
+// pins the behaviour that matters: the updater keys off whatever slug the
+// plugin file hands it, never a name of its own.
+define( 'ARV_ELEMENTS_SLUG', 'aravaipa-elements-2/aravaipa-elements.php' );
+
+// Redefining an already-defined constant is only a warning today and a fatal
+// in PHP 9, so asserting on the resulting value alone would pass either way:
+// PHP keeps the first definition and the test learns nothing. What actually
+// distinguishes the two versions is whether including the file is silent, so
+// that is what gets recorded.
+$GLOBALS['_notices'] = array();
+set_error_handler(
+	function ( $errno, $errstr ) {
+		$GLOBALS['_notices'][] = $errstr;
+		return true;
+	}
+);
+
 require_once __DIR__ . '/includes/updater.php';
+
+restore_error_handler();
 
 $pass = 0;
 $fail = 0;
@@ -110,6 +133,10 @@ function fake_release( $tag, $assets = array(), $body = 'Notes.' ) {
 		),
 	);
 }
+
+echo "slug:\n";
+t( 'a slug set by the plugin file wins over the updater\'s own fallback', 'aravaipa-elements-2/aravaipa-elements.php' === ARV_ELEMENTS_SLUG );
+t( 'and the updater defers to it silently, rather than redefining it', array() === $GLOBALS['_notices'] );
 
 echo "version_from_tag:\n";
 t( 'strips leading v', arv_elements_version_from_tag( 'v0.3.0' ) === '0.3.0' );
