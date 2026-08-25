@@ -54,7 +54,7 @@ Above phone width the map labels are always visible rather than hover-only, so t
 ```
 Arizona | 20.9 | 61.9 | .../arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary | | ARV_LOGO:aravaipa.png
 Tucson | 23 | 68.9 | .../tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas. | | | ARV_LOGO:aravaipa.png
-California | 9.2 | 45.9 | .../california-races/ | Coastal ranges and Sierra foothills. | | | ARV_LOGO:aravaipa.png
+California | 9.4 | 59.7 | .../california-races/ | Coastal ranges and Sierra foothills. | | | ARV_LOGO:aravaipa.png
 Nevada | 15.6 | 52.7 | .../nevada/ | High desert and the Spring Mountains. | | | ARV_LOGO:aravaipa.png
 Colorado | 33.8 | 46.7 | .../colorado/ | Front Range and high country. | | | ARV_LOGO:aravaipa.png
 Ultra Adventures | 23.2 | 49.1 | .../ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon. | | | ARV_LOGO:ultra-adventures.png
