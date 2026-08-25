@@ -171,6 +171,23 @@ if ( '' === $markup ) {
 	exit( 1 );
 }
 
+// Bundled logos are inlined as data URIs for the same reason the SVG is:
+// this block is pasted somewhere the plugin does not exist, so a relative
+// ./assets/logos/ path would resolve against the page's own URL and 404.
+$markup = preg_replace_callback(
+	'#src="\./assets/logos/([A-Za-z0-9._-]+)"#',
+	function ( $m ) {
+		$path = __DIR__ . '/assets/logos/' . basename( $m[1] );
+		if ( ! file_exists( $path ) ) {
+			fwrite( STDERR, "logo {$m[1]} referenced but missing, refusing to write a block with a broken image\n" );
+			exit( 1 );
+		}
+		$mime = 'image/' . ( 'svg' === strtolower( pathinfo( $path, PATHINFO_EXTENSION ) ) ? 'svg+xml' : strtolower( pathinfo( $path, PATHINFO_EXTENSION ) ) );
+		return 'src="data:' . $mime . ';base64,' . base64_encode( file_get_contents( $path ) ) . '"';
+	},
+	$markup
+);
+
 // The block must carry the map itself, not a reference to a plugin asset
 // URL that would 404 wherever the plugin is not installed, which is the
 // whole point of this build.
@@ -179,8 +196,11 @@ if ( false === strpos( $markup, '<svg' ) ) {
 	exit( 1 );
 }
 
-if ( false !== strpos( $markup, 'ARV_ELEMENTS_URL' ) || preg_match( '#<img[^>]*us-outline#', $markup ) ) {
-	fwrite( STDERR, "render still references a plugin asset URL, refusing to write a block that would 404\n" );
+// Catches anything still pointing into the plugin directory: the map as an
+// <img>, a logo whose path did not match the inliner above, or any future
+// asset added to an element without a matching case here.
+if ( false !== strpos( $markup, 'ARV_ELEMENTS_URL' ) || preg_match( '#(src|href)="\.?/?assets/#', $markup ) || preg_match( '#<img[^>]*us-outline#', $markup ) ) {
+	fwrite( STDERR, "render still references a plugin asset path, refusing to write a block that would 404\n" );
 	exit( 1 );
 }
 

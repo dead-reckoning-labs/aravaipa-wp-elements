@@ -29,24 +29,26 @@ cs_register_element(
 				'theme'   => cs_value( 'dark', 'style' ),
 				'list'    => cs_value( 'true', 'style' ),
 				'rows'    => cs_value(
-					// Name | X% | Y% | URL | detail | primary | full name
+					// Name | X% | Y% | URL | detail | flags | full name | logo URL
 					//
-					// `Name` is the map label and has to stay short enough not to
-					// collide with its neighbours at a phone's width. Where it is
-					// abbreviated for that reason, the 7th column carries the real
-					// name for the list below the map, which has room for it.
-					// CA and NV sit about 25 miles apart in real state centers;
-					// Great Lakes and White Mountain are each other's longest
-					// labels and land close enough that the map's own edge
-					// avoidance pushes one into the other.
-					"Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary\n" .
-					"Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas.\n" .
-					"CA | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | California\n" .
-					"NV | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | | Nevada\n" .
-					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country.\n" .
-					"Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon.\n" .
-					"Great Lakes | 67.1 | 25.5 | https://www.aravaiparunning.com/great-lakes-endurance/ | Trail and ultra events across the Great Lakes region. | | Great Lakes Endurance\n" .
-					'White Mtn | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Trail and ultra events across the Northeast. | | White Mountain Endurance',
+					// Flags is a space separated list: `primary` marks the HQ pin,
+					// `above` lifts that pin's label over the dot instead of under
+					// it. California and Nevada sit about 2% apart vertically, close
+					// enough that their labels overlap horizontally however they are
+					// anchored, so Nevada's goes above and California's stays below.
+					// That is what lets both carry their real names rather than the
+					// CA/NV abbreviations they needed before.
+					"Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary | | ARV_LOGO:aravaipa.png\n" .
+					"Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas. | | | ARV_LOGO:aravaipa.png\n" .
+					"California | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | | ARV_LOGO:aravaipa.png\n" .
+					"Nevada | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | above | | ARV_LOGO:aravaipa.png\n" .
+					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country. | | | ARV_LOGO:aravaipa.png\n" .
+					"Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon. | | | ARV_LOGO:ultra-adventures.png\n" .
+					// On the Upper Peninsula rather than the state's centre, which
+					// is where the events actually are.
+					"Great Lakes Endurance | 64.3 | 18.2 | https://www.aravaiparunning.com/great-lakes-endurance/ | Trail and ultra events across the Great Lakes region. | | | ARV_LOGO:great-lakes-endurance.png\n" .
+					"White Mountain Endurance | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Trail and ultra events across the Northeast.\n" .
+					'Bad Beard Events | 71.2 | 61.1 | https://www.aravaiparunning.com/bad-beard/ | Chattanooga, Tennessee.',
 					'markup'
 				),
 			),
@@ -150,13 +152,21 @@ function arv_region_map_render( $data ) {
 		$y      = arv_cell( $row, 2 );
 		$url    = arv_cell( $row, 3 );
 		$detail = arv_cell( $row, 4 );
-		$flag   = strtolower( arv_cell( $row, 5 ) );
+		// Column 6 is a space separated flag list rather than a single
+		// value, so a pin can be both the HQ and need its label lifted.
+		$flags  = preg_split( '/\s+/', strtolower( trim( arv_cell( $row, 5 ) ) ), -1, PREG_SPLIT_NO_EMPTY );
+		$flags  = is_array( $flags ) ? $flags : array();
 		// Optional 7th column, appended rather than slotted in beside `name`
 		// so rows already saved in a page keep parsing unchanged. `name` is
 		// what the map label shows and has to stay short enough not to
 		// collide with its neighbours; this is the unabbreviated version for
 		// the list below, where there is room for it.
 		$full   = arv_cell( $row, 6 );
+		// Optional 8th column: the region's own brand mark, shown in the
+		// hover card and beside its name in the list. Anything without one
+		// simply renders as it did before, so a partner whose logo we do
+		// not have yet is not a blank box.
+		$logo   = arv_region_map_logo_url( arv_cell( $row, 7 ) );
 
 		// Name, a real position, and somewhere to send the click: without any
 		// one of those a pin cannot render as anything a visitor could use.
@@ -167,8 +177,17 @@ function arv_region_map_render( $data ) {
 		$x = max( 0, min( 100, (float) $x ) );
 		$y = max( 0, min( 100, (float) $y ) );
 
+		$is_primary = in_array( 'primary', $flags, true );
+
 		$classes = 'arv-region-map__pin';
-		$classes .= ( 'primary' === $flag ) ? ' arv-region-map__pin--primary' : '';
+		$classes .= $is_primary ? ' arv-region-map__pin--primary' : '';
+		// "above" lifts the name label over the dot instead of under it.
+		// Two pins at nearly the same latitude (California and Nevada sit
+		// about 2% apart vertically) collide horizontally no matter how
+		// their labels are anchored; putting one above and one below is
+		// what actually separates them, and is the standard fix on any
+		// crowded dot map.
+		$classes .= in_array( 'above', $flags, true ) ? ' arv-region-map__pin--name-above' : '';
 		// A label centred on a pin within about 12% of either edge runs off
 		// the stage; Great Lakes and anything in New England sit right at
 		// that edge in a real US outline. Anchoring the label to whichever
@@ -187,8 +206,19 @@ function arv_region_map_render( $data ) {
 		$pins .= '<a class="' . esc_attr( $classes ) . '" style="left:' . esc_attr( $x ) . '%;top:' . esc_attr( $y ) . '%" href="' . esc_url( $url ) . '">';
 		$pins .= '<span class="arv-region-map__dot"></span>';
 		$pins .= '<span class="arv-region-map__name">' . esc_html( $name ) . '</span>';
-		if ( '' !== trim( $detail ) ) {
-			$pins .= '<span class="arv-region-map__detail">' . esc_html( $detail ) . '</span>';
+		if ( '' !== trim( $detail ) || '' !== trim( $logo ) ) {
+			$pins .= '<span class="arv-region-map__detail">';
+			if ( '' !== trim( $logo ) ) {
+				// alt is empty on purpose: the region's name is already in
+				// the label beside this card and in the list below, so a
+				// screen reader announcing the brand a third time off the
+				// image is repetition, not information.
+				$pins .= '<img class="arv-region-map__detail-logo" src="' . esc_url( $logo ) . '" alt="" loading="lazy" decoding="async" />';
+			}
+			if ( '' !== trim( $detail ) ) {
+				$pins .= '<span class="arv-region-map__detail-text">' . esc_html( $detail ) . '</span>';
+			}
+			$pins .= '</span>';
 		}
 		$pins .= '</a>';
 
@@ -198,11 +228,15 @@ function arv_region_map_render( $data ) {
 		// usable there. It is also the only part a search engine can read:
 		// the map itself is one decorative SVG with no place names in it.
 		$items .= '<a class="arv-region-map__item" href="' . esc_url( $url ) . '">';
+		if ( '' !== trim( $logo ) ) {
+			$items .= '<span class="arv-region-map__item-logo"><img src="' . esc_url( $logo ) . '" alt="" loading="lazy" decoding="async" /></span>';
+		}
+		$items .= '<span class="arv-region-map__item-body">';
 		$items .= '<span class="arv-region-map__item-name">' . esc_html( '' !== trim( $full ) ? $full : $name ) . '</span>';
 		if ( '' !== trim( $detail ) ) {
 			$items .= '<span class="arv-region-map__item-detail">' . esc_html( $detail ) . '</span>';
 		}
-		$items .= '</a>';
+		$items .= '</span></a>';
 	}
 
 	if ( '' === $pins ) {
@@ -250,6 +284,38 @@ function arv_region_map_render( $data ) {
 	$out .= '</div></div>';
 
 	return $out;
+}
+
+/**
+ * Resolve a logo cell into a usable URL.
+ *
+ * "ARV_LOGO:name.png" points at assets/logos/ inside the plugin, which is
+ * where the marks we have are kept. They were originally hotlinked straight
+ * out of the WordPress media library, which turned out to be unreliable:
+ * aravaiparunning.com's origin intermittently times out behind Cloudflare
+ * (repeatedly measured returning 522 on a cache miss for both logos), so
+ * the image only rendered while Cloudflare happened to be holding a cached
+ * copy. Bundled, they ship and version with the plugin instead.
+ *
+ * Anything else is passed through untouched, so a full URL still works for
+ * a brand whose mark is not bundled.
+ *
+ * @param string $cell Raw cell value.
+ * @return string
+ */
+function arv_region_map_logo_url( $cell ) {
+	$cell = trim( (string) $cell );
+
+	if ( 0 !== strpos( $cell, 'ARV_LOGO:' ) ) {
+		return $cell;
+	}
+
+	$file = substr( $cell, strlen( 'ARV_LOGO:' ) );
+	// basename() so a value out of the builder cannot walk up out of the
+	// logos directory with ../ and point this at some other file.
+	$file = basename( $file );
+
+	return ARV_ELEMENTS_URL . 'assets/logos/' . $file;
 }
 
 /**
