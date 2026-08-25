@@ -33,15 +33,21 @@ cs_register_element(
 					//
 					// Flags is a space separated list: `primary` marks the HQ pin,
 					// `above` lifts that pin's label over the dot instead of under
-					// it. California and Nevada sit about 2% apart vertically, close
-					// enough that their labels overlap horizontally however they are
-					// anchored, so Nevada's goes above and California's stays below.
-					// That is what lets both carry their real names rather than the
-					// CA/NV abbreviations they needed before.
+					// it. Nothing needs `above` at the moment: the pins are placed
+					// on the cities the events are actually in rather than on state
+					// centres, which spreads them out enough that every label fits
+					// below its own dot.
+					//
+					// Coordinates are percentages of assets/us-outline.svg's
+					// viewBox, checked against that file's own path geometry rather
+					// than eyeballed, so a pin lands inside the state it names.
 					"Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest roots. Home of Cocodona 250, Javelina Jundred and Black Canyon 100K. | primary | | ARV_LOGO:aravaipa.png\n" .
 					"Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Saguaro country, in the shadow of the Santa Catalinas. | | | ARV_LOGO:aravaipa.png\n" .
-					"California | 9.2 | 45.9 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | | ARV_LOGO:aravaipa.png\n" .
-					"Nevada | 14.4 | 43.3 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | above | | ARV_LOGO:aravaipa.png\n" .
+					// On Orange County and Las Vegas rather than the state centres:
+					// that is where the races are, and it keeps the two labels from
+					// stacking on each other the way the centres did.
+					"California | 9.4 | 59.7 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. | | | ARV_LOGO:aravaipa.png\n" .
+					"Nevada | 15.6 | 52.7 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. | | | ARV_LOGO:aravaipa.png\n" .
 					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country. | | | ARV_LOGO:aravaipa.png\n" .
 					"Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country. Antelope Canyon, Zion, Tushars, Bryce Canyon. | | | ARV_LOGO:ultra-adventures.png\n" .
 					// On the Upper Peninsula rather than the state's centre, which

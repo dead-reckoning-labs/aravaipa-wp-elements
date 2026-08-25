@@ -27,10 +27,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'ARV_ELEMENTS_GH_REPO', 'dead-reckoning-labs/aravaipa-wp-elements' );
-// plugin_basename() needs the real plugin file on disk, which is not
-// reachable from this include, so it is spelled out to match it instead:
-// {plugin-folder}/{main-file}, the same shape plugin_basename() returns.
-define( 'ARV_ELEMENTS_SLUG', 'aravaipa-elements/aravaipa-elements.php' );
+
+// Normally handed in by the main plugin file, which is the only place
+// plugin_basename() has a real __FILE__ to work from. The fallback is for the
+// test harness, which loads this file on its own; it is deliberately the
+// conventional folder name rather than anything clever, because in WordPress
+// this constant is always already set by the time the file is reached.
+if ( ! defined( 'ARV_ELEMENTS_SLUG' ) ) {
+	define( 'ARV_ELEMENTS_SLUG', 'aravaipa-elements/aravaipa-elements.php' );
+}
 
 /**
  * Fetch the latest GitHub release, cached in a transient.
