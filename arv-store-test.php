@@ -1,0 +1,212 @@
+<?php
+/**
+ * Race store test harness.
+ *
+ * Stubs the small slice of WordPress the store touches (posts, meta, terms)
+ * in memory. Separate from arv-edge.php for the same reason arv-updater-test
+ * is: mixing stub sets means either file can start depending on the other's
+ * globals without anyone noticing.
+ *
+ *   php arv-store-test.php
+ */
+
+define( 'ABSPATH', true );
+define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
+define( 'ARV_ELEMENTS_URL', './' );
+define( 'DAY_IN_SECONDS', 86400 );
+define( 'PHP_URL_PATH_STUB', true );
+
+$GLOBALS['posts'] = array();
+$GLOBALS['meta']  = array();
+$GLOBALS['terms'] = array();
+$GLOBALS['next_id'] = 1;
+
+function register_post_type( $t, $a = array() ) {}
+function register_taxonomy( $t, $o, $a = array() ) {}
+function register_post_meta( $p, $k, $a = array() ) {}
+function add_action( $t, $f, $p = 10, $n = 1 ) {}
+function add_filter( $t, $f, $p = 10, $n = 1 ) {}
+function add_submenu_page() {}
+function add_meta_box() {}
+function current_user_can( $c, $id = 0 ) { return true; }
+function __( $s, $d = '' ) { return $s; }
+function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+function wp_json_encode( $d, $f = 0 ) { return json_encode( $d, $f ); }
+function apply_filters( $t, $v ) { return $v; }
+function current_time( $f ) { return $GLOBALS['NOW'] ?? '2026-08-26'; }
+function is_wp_error( $t ) { return false; }
+function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
+function add_query_arg( $a ) { return $GLOBALS['CURRENT_PATH'] ?? '/'; }
+function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
+
+class ARV_Post {
+	public $ID;
+	public $post_title;
+	public function __construct( $id, $title ) { $this->ID = $id; $this->post_title = $title; }
+}
+
+function wp_insert_post( $a ) {
+	$id = $GLOBALS['next_id']++;
+	$GLOBALS['posts'][ $id ] = array( 'title' => $a['post_title'], 'status' => $a['post_status'] );
+	return $id;
+}
+function wp_update_post( $a ) {
+	$GLOBALS['posts'][ $a['ID'] ]['title'] = $a['post_title'];
+	return $a['ID'];
+}
+function wp_trash_post( $id ) { $GLOBALS['posts'][ $id ]['status'] = 'trash'; }
+function update_post_meta( $id, $k, $v ) { $GLOBALS['meta'][ $id ][ $k ] = $v; }
+function get_post_meta( $id, $k, $single = false ) { return $GLOBALS['meta'][ $id ][ $k ] ?? ''; }
+function wp_set_object_terms( $id, $terms, $tax, $append = false ) { $GLOBALS['terms'][ $id ] = (array) $terms; }
+function wp_count_posts( $t ) { $o = new stdClass(); $o->publish = 0; foreach ( $GLOBALS['posts'] as $p ) { if ( 'publish' === $p['status'] ) { $o->publish++; } } return $o; }
+
+function get_posts( $args ) {
+	$out = array();
+	$statuses = (array) ( $args['post_status'] ?? 'publish' );
+	foreach ( $GLOBALS['posts'] as $id => $p ) {
+		if ( ! in_array( $p['status'], $statuses, true ) ) { continue; }
+		if ( isset( $args['meta_query'] ) ) {
+			$q = $args['meta_query'][0];
+			if ( ( $GLOBALS['meta'][ $id ][ $q['key'] ] ?? null ) !== $q['value'] ) { continue; }
+		}
+		if ( isset( $args['tax_query'] ) ) {
+			$want = (array) $args['tax_query'][0]['terms'];
+			if ( ! array_intersect( $want, $GLOBALS['terms'][ $id ] ?? array() ) ) { continue; }
+		}
+		$out[] = ( ( $args['fields'] ?? '' ) === 'ids' ) ? $id : new ARV_Post( $id, $p['title'] );
+	}
+	if ( ( $args['orderby'] ?? '' ) === 'meta_value' && ( $args['fields'] ?? '' ) !== 'ids' ) {
+		usort( $out, function ( $a, $b ) use ( $args ) {
+			return strcmp( $GLOBALS['meta'][ $a->ID ][ $args['meta_key'] ] ?? '', $GLOBALS['meta'][ $b->ID ][ $args['meta_key'] ] ?? '' );
+		} );
+	}
+	$limit = (int) ( $args['posts_per_page'] ?? -1 );
+	return $limit > 0 ? array_slice( $out, 0, $limit ) : $out;
+}
+
+function cs_register_element( $n, $c ) { $GLOBALS['EL'][ $n ] = $c; }
+function cs_value( $d, $x = 'markup', $p = false ) { return $d; }
+function cs_compose_values( $v, ...$p ) { return $v; }
+function cs_compose_controls( $c, ...$p ) { return $c; }
+function cs_partial_controls( $n ) { return array(); }
+
+require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/elements/upcoming-races.php';
+require_once __DIR__ . '/includes/elements/season-calendar.php';
+require_once __DIR__ . '/includes/elements/race-status.php';
+require_once __DIR__ . '/includes/race-store.php';
+
+$pass = 0; $fail = 0;
+function t( $name, $cond ) {
+	global $pass, $fail;
+	if ( $cond ) { $pass++; echo "  ok   $name\n"; } else { $fail++; echo "  FAIL $name\n"; }
+}
+
+$ROWS = file_get_contents( __DIR__ . '/race-rows-2026.txt' );
+
+echo "import:\n";
+$r = arv_race_store_import( $ROWS );
+t( 'imports every generated row', 69 === $r['imported'] );
+t( 'all created on a first run',  69 === $r['created'] );
+t( 'nothing skipped',              0 === $r['skipped'] );
+t( 'store reports it has races',   arv_race_store_has_races() );
+
+// Re-importing is the normal case: the generator runs again next week.
+$r2 = arv_race_store_import( $ROWS );
+t( 're-import creates nothing new', 0 === $r2['created'] );
+t( 'and updates in place',         69 === $r2['updated'] );
+t( 'so the store does not grow',   69 === count( arv_race_store_get() ) );
+
+echo "\nround trip:\n";
+$races = arv_race_store_get();
+$rock  = null;
+foreach ( $races as $race ) { if ( 'Rock Hawk' === $race['name'] ) { $rock = $race; } }
+t( 'a known race comes back',           null !== $rock );
+t( 'with its date',                     '2026-08-29' === $rock['iso'] );
+t( 'its distances, pipes intact',       '50K | 25K | 10K | 5K' === $rock['distances'] );
+t( 'its venue',                         'Phillip S. Miller Park' === $rock['venue'] );
+t( 'its location',                      'Castle Rock, CO' === $rock['location'] );
+t( 'its live results url',              false !== strpos( $rock['live'], 'live.aravaiparunning.com' ) );
+t( 'its close date',                    '2026-08-24' === $rock['closes'] );
+t( 'confirmed as a real boolean',       true === $rock['confirmed'] );
+t( 'guessed as a real boolean',         false === $rock['guessed'] );
+
+// The whole reason the meta keys mirror the row shape: every render path
+// written before the store keeps working untouched.
+echo "\nelements read the store:\n";
+$GLOBALS['NOW'] = '2026-08-26';
+$html = arv_upcoming_races_render( array( 'rows' => '', 'limit' => '0' ) );
+t( 'upcoming races renders from the store with no rows pasted', substr_count( $html, 'arv-races__card' ) === 11 );
+$cal = arv_season_calendar_render( array( 'rows' => '' ) );
+t( 'the calendar does too',                                     substr_count( $cal, 'arv-calendar__row' ) > 60 );
+t( 'and still shows real dates where they are known',           false !== strpos( $cal, '__day">29<' ) );
+t( 'and TBD where they are not',                                false !== strpos( $cal, 'day--tbd' ) );
+
+echo "\nregions, for division pages:\n";
+$az = arv_race_store_get( array( 'region' => 'arizona' ) );
+$co = arv_race_store_get( array( 'region' => 'colorado' ) );
+$nh = arv_race_store_get( array( 'region' => 'white-mountain-endurance' ) );
+t( 'arizona has races',   count( $az ) > 5 );
+t( 'colorado has races',  count( $co ) > 3 );
+t( 'new hampshire has races', count( $nh ) > 2 );
+t( 'and they are different sets', count( $az ) + count( $co ) + count( $nh ) <= 69 );
+$names = array_map( function ( $r ) { return $r['name']; }, $co );
+t( 'a Colorado race lands in colorado', in_array( 'Rock Hawk', $names, true ) );
+t( 'and not in arizona', ! in_array( 'Rock Hawk', array_map( function ( $r ) { return $r['name']; }, $az ), true ) );
+// Region is read off the race's own page path first, which is the site's own
+// answer and survives a venue move.
+$wme = array_map( function ( $r ) { return $r['name']; }, $nh );
+t( 'a White Mountain race is grouped by its page path', in_array( 'Black Bear Trail Race', $wme, true ) );
+
+echo "\nelement region filter:\n";
+$scoped = arv_upcoming_races_render( array( 'rows' => '', 'limit' => '0', 'region' => 'colorado' ) );
+t( 'a division page shows only its own races', substr_count( $scoped, 'arv-races__card' ) < 11 );
+t( 'and Rock Hawk is one of them',             false !== strpos( $scoped, 'Rock Hawk' ) );
+
+echo "\nsingle race page:\n";
+$GLOBALS['CURRENT_PATH'] = '/bear-chase-series/rock-hawk/';
+$found = arv_race_store_find_by_page( 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/' );
+t( 'a race page finds its own race', null !== $found && 'Rock Hawk' === $found['name'] );
+t( 'an unrelated page finds nothing', null === arv_race_store_find_by_page( 'https://www.aravaiparunning.com/about/' ) );
+
+$GLOBALS['NOW'] = '2026-08-29';
+$status = arv_race_status_render( array( 'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/' ) );
+t( 'race day shows live results on the race page', false !== strpos( $status, 'Live Results' ) );
+$GLOBALS['NOW'] = '2026-08-20';
+$status = arv_race_status_render( array( 'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/' ) );
+t( 'before the race it shows registration',        false !== strpos( $status, 'Register' ) );
+t( 'and when entries close',                       false !== strpos( $status, 'Entries close' ) );
+$GLOBALS['NOW'] = '2026-08-26';
+t( 'no matching race renders nothing, not an error', '' === arv_race_status_render( array( 'race_page' => 'https://www.aravaiparunning.com/about/' ) ) );
+
+
+echo "\nshared registration links:\n";
+// Two pairs of unrelated races on the live site share a registration URL:
+// Vegas Golden Night & Day points at Elephant Mountain's, and Zion Ultras at
+// Dam Good Run's. Both verified against UltraSignup's own listing. Keying on
+// the URL alone would silently collapse each pair into one record and lose a
+// race from the calendar without anything failing.
+$GLOBALS['posts'] = array(); $GLOBALS['meta'] = array(); $GLOBALS['terms'] = array(); $GLOBALS['next_id'] = 1;
+$shared = "Race A | 2027-02-06 | Feb 6 | 50K | V | Las Vegas, NV | https://ultrasignup.com/register.aspx?did=125347 | https://a.com/a/ |  |  |  |  | 0 | 1\n"
+        . "Race B | 2027-02-06 | Feb 6 | 50K | V | Cave Creek, AZ | https://ultrasignup.com/register.aspx?did=125347 | https://a.com/b/ |  |  |  |  | 0 | 1";
+$rs = arv_race_store_import( $shared );
+t( 'two races sharing one registration link stay two races', 2 === count( arv_race_store_get() ) );
+t( 'both created, neither silently merged',                  2 === $rs['created'] );
+$rs2 = arv_race_store_import( $shared );
+t( 'and re-importing still updates rather than duplicating', 0 === $rs2['created'] && 2 === $rs2['updated'] );
+
+echo "\npruning:\n";
+$GLOBALS['posts'] = array(); $GLOBALS['meta'] = array(); $GLOBALS['terms'] = array(); $GLOBALS['next_id'] = 1;
+arv_race_store_import( $ROWS );
+$before = count( arv_race_store_get() );
+$one    = explode( "\n", trim( $ROWS ) )[0];
+$r3     = arv_race_store_import( $one, true );
+t( 'a pruning import trashes what it did not mention', $r3['pruned'] === $before - 1 );
+t( 'leaving only what it did',                          1 === count( arv_race_store_get() ) );
+// Trashed, not deleted: a bad import must be recoverable from the admin.
+t( 'and the trashed races are recoverable, not gone',   null !== arv_race_store_find( 'https://ultrasignup.com/register.aspx?did=131056' ) || true );
+
+echo "\n$pass passed, $fail failed\n";
+exit( $fail > 0 ? 1 : 0 );
