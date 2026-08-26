@@ -142,8 +142,7 @@ function arv_race_map_render( $data ) {
 		'white-mountain-endurance' => ARV_ELEMENTS_URL . 'assets/logos/white-mountain-endurance.png',
 	);
 
-	$pins    = array();
-	$missing = array();
+	$pins = array();
 
 	foreach ( $races as $race ) {
 		// Checked for presence and for being a real number, not just against
@@ -161,10 +160,14 @@ function arv_race_map_render( $data ) {
 		// checks, and no Aravaipa race is in the Gulf of Guinea.
 		if ( '' === $lat || '' === $lng || ! is_numeric( $lat ) || ! is_numeric( $lng )
 			|| 0.0 === (float) $lat || 0.0 === (float) $lng ) {
-			// Listed below the map rather than silently dropped. A race
-			// missing from a "complete list" with no explanation is the bug
-			// this whole page has been fighting; saying so is better.
-			$missing[] = $race;
+			// Simply not a pin. This used to render a "N races have no map
+			// location yet" list under the map, which was useful while the
+			// store was silently dropping every coordinate (see the
+			// null-island fix) but reads as a defect list now that the real
+			// gaps are down to genuinely locationless races: a virtual,
+			// worldwide race has no coordinates to be missing. The full
+			// season list on the calendar is where every race is accounted
+			// for; the map only ever claimed to show the ones with a place.
 			continue;
 		}
 
@@ -267,26 +270,6 @@ function arv_race_map_render( $data ) {
 			: '<li>' . $label . '</li>';
 	}
 	$out .= '</ul></noscript>';
-
-	if ( ! empty( $missing ) ) {
-		$out .= '<p class="arv-map__missing">';
-		$out .= esc_html(
-			sprintf(
-				/* translators: race count */
-				_n( '%d race has no map location yet:', '%d races have no map location yet:', count( $missing ), 'aravaipa-elements' ),
-				count( $missing )
-			)
-		);
-		$out .= ' ';
-		$names = array();
-		foreach ( $missing as $race ) {
-			$names[] = '' !== $race['page']
-				? '<a href="' . esc_url( $race['page'] ) . '">' . esc_html( $race['name'] ) . '</a>'
-				: esc_html( $race['name'] );
-		}
-		$out .= implode( ', ', $names );
-		$out .= '</p>';
-	}
 
 	$out .= '</div></div>';
 

@@ -554,13 +554,15 @@ t('logo points at the right asset',    $rockPin && false !== strpos($rockPin['lo
 // since a PHP harness can't execute the JS that builds the popup.
 t('distances field is intact for the JS splitter', $rockPin && '50K | 25K' === $rockPin['distances']);
 
-// A race with no coordinates must be named, not silently dropped: a race
-// missing from a "complete list" with no explanation is the exact bug this
-// page has been fighting.
+// A race with no coordinates is simply not a pin. It used to be named under
+// the map as "N races have no map location yet", which was the right call
+// while the store was silently dropping EVERY coordinate, but now that the
+// real remainder is virtual/worldwide races, listing them reads as a defect
+// list for races that have no location to be missing.
 $noCoord = "Ghost Race | 2026-09-05 | Sept 5 | 50K | V | X, AZ | https://u.com/g | https://a.com/g |  |  |  |  | 1 | 0 |  | ";
 $m2 = arv_race_map_render(array('rows'=>$mapRow . "\n" . $noCoord));
-t('a race with no coordinates is named below the map', strpos($m2,'Ghost Race')!==false);
-t('and called out as missing a location',             strpos($m2,'arv-map__missing')!==false);
+t('no "missing location" list is rendered at all',    strpos($m2,'arv-map__missing')===false);
+t('the uncoordinated race is not named under the map', strpos($m2,'Ghost Race')===false);
 t('while the mapped race still gets a pin',           strpos($m2,'39.3698')!==false);
 
 // Nothing to plot at all is nothing to render: an empty grey box with a
@@ -573,12 +575,13 @@ t('no coordinates anywhere renders nothing', arv_race_map_render(array('rows'=>$
 // at all, null was not caught by an '' check, and (float) null is 0.0.
 $zero    = "Zero Race | 2026-09-05 | Sept 5 | 50K | V | X, AZ | https://u.com/z | https://a.com/z |  |  |  |  | 1 | 0 | 0 | 0";
 $mz      = arv_race_map_render(array('rows'=>$mapRow . "\n" . $zero));
-t('a 0,0 race is called out as missing, not plotted', strpos($mz,'arv-map__missing')!==false);
+t('a 0,0 race is dropped, not plotted',               strpos($mz,'Zero Race')===false);
 t('and no pin is placed at null island',              strpos($mz,'"lat":0')===false && strpos($mz,'"lng":0')===false);
 
 $junk = "Junk Race | 2026-09-05 | Sept 5 | 50K | V | X, AZ | https://u.com/j | https://a.com/j |  |  |  |  | 1 | 0 | north | west";
 $mj   = arv_race_map_render(array('rows'=>$mapRow . "\n" . $junk));
-t('non-numeric coordinates are treated as missing',   strpos($mj,'arv-map__missing')!==false);
+t('non-numeric coordinates are dropped too',          strpos($mj,'Junk Race')===false);
+t('and the good race in the same batch survives',     strpos($mj,'Rock Hawk')!==false);
 
 // The store path is the one that actually feeds the live site, and it is
 // where the bug was: every pin must carry a real coordinate.

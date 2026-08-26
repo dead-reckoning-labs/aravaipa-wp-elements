@@ -78,6 +78,119 @@
 		return html;
 	}
 
+	/**
+	 * Great-circle distance in miles between two lat/lng pairs.
+	 *
+	 * Haversine rather than a flat Pythagorean approximation: the pins span
+	 * Arizona to New Hampshire to Michigan, and "nearest race" across that
+	 * spread is exactly where treating degrees as a flat grid gets the
+	 * ordering wrong, since a degree of longitude is ~55 miles in Arizona
+	 * and ~48 in New Hampshire.
+	 */
+	function milesBetween( aLat, aLng, bLat, bLng ) {
+		var toRad = Math.PI / 180;
+		var dLat = ( bLat - aLat ) * toRad;
+		var dLng = ( bLng - aLng ) * toRad;
+		var h = Math.sin( dLat / 2 ) * Math.sin( dLat / 2 ) +
+			Math.cos( aLat * toRad ) * Math.cos( bLat * toRad ) *
+			Math.sin( dLng / 2 ) * Math.sin( dLng / 2 );
+		return 3958.8 * 2 * Math.atan2( Math.sqrt( h ), Math.sqrt( 1 - h ) );
+	}
+
+	/**
+	 * "Near me": a control that finds the closest races to the visitor.
+	 *
+	 * Geolocation is permission-gated and the prompt only appears on a real
+	 * user gesture, so this is a button rather than something that runs on
+	 * load. A page that asks for your location the moment it opens is the
+	 * pattern browsers added the permission prompt to discourage.
+	 *
+	 * Nothing is sent anywhere: the coordinates stay in this function, the
+	 * distances are computed here, and the map just moves. There is no
+	 * request carrying the visitor's position.
+	 */
+	function addNearMe( map, pins, markers, group ) {
+		if ( ! navigator.geolocation ) {
+			return;
+		}
+
+		var Control = window.L.Control.extend( {
+			options: { position: 'topleft' },
+			onAdd: function () {
+				var wrap = window.L.DomUtil.create( 'div', 'leaflet-bar arv-map__nearme' );
+				var link = window.L.DomUtil.create( 'a', '', wrap );
+				link.href = '#';
+				link.title = 'Find races near me';
+				link.setAttribute( 'role', 'button' );
+				link.innerHTML = '<span aria-hidden="true">&#9678;</span><span class="arv-map__nearme-label">Near me</span>';
+
+				// Without this Leaflet treats the click as a map drag/zoom
+				// gesture and the anchor also tries to navigate to "#".
+				window.L.DomEvent.disableClickPropagation( wrap );
+				window.L.DomEvent.on( link, 'click', function ( e ) {
+					window.L.DomEvent.preventDefault( e );
+					locate( link, map, pins, markers, group );
+				} );
+
+				return wrap;
+			},
+		} );
+
+		map.addControl( new Control() );
+	}
+
+	function locate( link, map, pins, markers, group ) {
+		if ( link.classList.contains( 'is-busy' ) ) {
+			return;
+		}
+		link.classList.add( 'is-busy' );
+
+		navigator.geolocation.getCurrentPosition(
+			function ( pos ) {
+				link.classList.remove( 'is-busy' );
+
+				var lat = pos.coords.latitude;
+				var lng = pos.coords.longitude;
+
+				var ranked = pins.map( function ( pin, i ) {
+					return { i: i, miles: milesBetween( lat, lng, pin.lat, pin.lng ) };
+				} ).sort( function ( a, b ) {
+					return a.miles - b.miles;
+				} );
+
+				// Frame the visitor plus the three closest races rather than
+				// snapping to the single nearest one: "what is around me"
+				// is the actual question, and a lone pin at max zoom answers
+				// a different one. Three keeps the box tight enough to still
+				// read as local.
+				var box = window.L.latLngBounds( [ [ lat, lng ] ] );
+				ranked.slice( 0, 3 ).forEach( function ( r ) {
+					box.extend( [ pins[ r.i ].lat, pins[ r.i ].lng ] );
+				} );
+				map.fitBounds( box, { padding: [ 40, 40 ], maxZoom: 10 } );
+
+				window.L.circleMarker( [ lat, lng ], {
+					radius: 7,
+					color: '#ffffff',
+					weight: 2,
+					fillColor: '#ff2a13',
+					fillOpacity: 1,
+				} ).addTo( map ).bindPopup( 'You are here' );
+
+				markers[ ranked[ 0 ].i ].openPopup();
+			},
+			function () {
+				// Denied, unavailable, or timed out. All three mean the same
+				// thing to the visitor, so the map just stays where it was
+				// rather than throwing an error at someone who may have
+				// simply said no.
+				link.classList.remove( 'is-busy' );
+				map.fitBounds( group.getBounds(), { padding: [ 30, 30 ] } );
+			},
+			{ enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+		);
+	}
+
 	function setUp( canvas ) {
 		if ( typeof window.L === 'undefined' ) {
 			return;
@@ -130,6 +243,8 @@
 		if ( markers.length === 1 ) {
 			map.setZoom( 9 );
 		}
+
+		addNearMe( map, config.pins, markers, group );
 
 		// Leaflet measures its container on creation. Inside a Cornerstone
 		// section that is still settling, or a tab that was not visible yet,
