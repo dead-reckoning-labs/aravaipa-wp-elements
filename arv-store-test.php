@@ -141,7 +141,7 @@ $html = arv_upcoming_races_render( array( 'rows' => '', 'limit' => '0' ) );
 t( 'upcoming races renders from the store with no rows pasted', substr_count( $html, 'arv-races__card' ) === 11 );
 $cal = arv_season_calendar_render( array( 'rows' => '' ) );
 t( 'the calendar does too',                                     substr_count( $cal, 'arv-calendar__row' ) > 60 );
-t( 'and still shows real dates where they are known',           false !== strpos( $cal, '__day">29<' ) );
+t( 'and still shows real dates where they are known',           false !== strpos( $cal, '__day-num">29<' ) );
 t( 'and TBD where they are not',                                false !== strpos( $cal, 'day--tbd' ) );
 
 echo "\nregions, for division pages:\n";

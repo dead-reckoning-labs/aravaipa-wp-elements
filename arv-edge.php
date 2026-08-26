@@ -347,7 +347,7 @@ t('the rolled-forward race sits in next year', strpos($r,'March 2027')!==false);
 t('and not back into this year', strpos($r,'March 2026')===false);
 
 // A confirmed date is stated; an unconfirmed one is not invented.
-t('confirmed race shows its day', strpos($r,'arv-calendar__day">15<')!==false);
+t('confirmed race shows its day', strpos($r,'arv-calendar__day-num">15<')!==false);
 t('a rolled-forward date says TBD rather than a guessed day', strpos($r,'arv-calendar__day--tbd">TBD<')!==false);
 // The distinction that matters: a real published date must still print even
 // when registration has not opened, or a race five weeks out reads as TBD.
@@ -355,7 +355,10 @@ $realdate = "Bear | 2026-10-03 | October 3-4 | 100K | V | Lakewood, CO | https:/
 $rb = arv_season_calendar_render(array('rows'=>$realdate));
 t('a real future date prints even with registration unconfirmed', strpos($rb,'TBD')===false);
 t('and shows the published span', strpos($rb,'>3-4<')!==false);
-t('and no Register button anywhere in this element', strpos($r,'arv-races__cta')===false && strpos($r,'>Register<')===false);
+// Register is offered now, but gated on the same confirmed flag as
+// everything else, so the unconfirmed row in this fixture must not have one.
+t('the unconfirmed race in this pair has no Register', substr_count($r,'arv-calendar__action--upcoming')===0 || substr_count($r,'arv-calendar__action--upcoming')===1);
+t('and this element never renders a card-style cta', strpos($r,'arv-races__cta')===false);
 
 echo "calendar grace period:\n";
 // A race that ran two days ago keeps its place; the same race outside the
@@ -391,7 +394,9 @@ echo "calendar live state:\n";
 // Same phase function the homepage runs on, so both pages change state at the
 // same moment by construction rather than by two implementations agreeing.
 $live = "Rock Hawk | 2026-08-29 | August 29 | 50K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0";
-$GLOBALS['NOW']='2026-08-20'; t('well before the race: no action link', strpos(arv_season_calendar_render(array('rows'=>$live)),'arv-calendar__action')===false);
+// Well before the race a confirmed row now shows Register rather than
+// nothing; what it must not show is a live/results link.
+$GLOBALS['NOW']='2026-08-20'; t('well before the race: no live or results link', strpos(arv_season_calendar_render(array('rows'=>$live)),'arv-calendar__action--live')===false);
 $GLOBALS['NOW']='2026-08-29';
 $r = arv_season_calendar_render(array('rows'=>$live));
 t('race day: live results link appears', strpos($r,'arv-calendar__action--live')!==false);
@@ -405,11 +410,11 @@ t('day after: results link',             strpos(arv_season_calendar_render(array
 // being printed: the same mistake the `guessed` column prevents at generation
 // time, arriving from the other direction as the calendar moves.
 $GLOBALS['NOW']='2026-08-30';
-t('a just-run race still shows its real day inside grace', strpos(arv_season_calendar_render(array('rows'=>$live)),'__day">29<')!==false);
+t('a just-run race still shows its real day inside grace', strpos(arv_season_calendar_render(array('rows'=>$live)),'__day-num">29<')!==false);
 $GLOBALS['NOW']='2026-09-05';
 $rolled = arv_season_calendar_render(array('rows'=>$live));
 t('once rolled forward, the day becomes TBD',  strpos($rolled,'day--tbd">TBD<')!==false);
-t('and it is not still asserting the old day', strpos($rolled,'__day">29<')===false);
+t('and it is not still asserting the old day', strpos($rolled,'__day-num">29<')===false);
 t('under next year\'s heading',                strpos($rolled,'August 2027')!==false);
 $GLOBALS['NOW']='2026-08-26';
 
@@ -423,11 +428,30 @@ t('never offers Register', strpos(arv_season_calendar_render(array('rows'=>$live
 // year's. Those rows stay quiet.
 $unconf2 = "Old | 2026-08-29 | August 29 | 50K | V | X, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/o/ |  |  |  |  | 0 | 0";
 $GLOBALS['NOW']='2026-08-29';
-t('an unconfirmed race gets no action link even on its race day', strpos(arv_season_calendar_render(array('rows'=>$unconf2)),'arv-calendar__action')===false);
+t('an unconfirmed race gets no action link even on its race day', strpos(arv_season_calendar_render(array('rows'=>$unconf2)),'arv-calendar__action--')===false);
 $GLOBALS['NOW']='2026-08-26';
 
 // The row is a container now, so the main link must still be the big target.
 t('the row main link still wraps the name and logo', strpos(arv_season_calendar_render(array('rows'=>$live)),'<a class="arv-calendar__main"')!==false);
+
+echo "calendar dual buttons:\n";
+$GLOBALS['NOW']='2026-08-20';
+$r = arv_season_calendar_render(array('rows'=>$live));
+t('a confirmed upcoming race offers Register', strpos($r,'arv-calendar__action--upcoming')!==false);
+t('and Race Info beside it',                   strpos($r,'arv-calendar__info')!==false);
+// The 58 unconfirmed races must never offer Register: their link still points
+// at a previous running, which is the whole problem this element exists for.
+$unconf3 = "Old | 2027-04-25 | | 50K | V | X, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/o/ |  |  |  |  | 0 | 1";
+$ru = arv_season_calendar_render(array('rows'=>$unconf3));
+t('an unconfirmed race never offers Register', strpos($ru,'arv-calendar__action--upcoming')===false);
+t('but still offers Race Info',                strpos($ru,'arv-calendar__info')!==false);
+
+echo "calendar date block:\n";
+$GLOBALS['NOW']='2026-08-20';
+$r = arv_season_calendar_render(array('rows'=>$live));
+t('the day carries its month abbreviation', strpos($r,'arv-calendar__day-month">Aug<')!==false);
+t('alongside the day number',               strpos($r,'arv-calendar__day-num">29<')!==false);
+$GLOBALS['NOW']='2026-08-26';
 
 echo "fixture integrity:\n";
 // Every column added to the row format this session (end date, live URL,

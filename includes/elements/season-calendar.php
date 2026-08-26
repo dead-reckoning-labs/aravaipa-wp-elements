@@ -330,7 +330,16 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 		if ( '' !== $race['display'] && preg_match( '/\d+\s*[-\x{2013}]\s*\d+/u', $race['display'] ) ) {
 			$day = preg_replace( '/^[A-Za-z]+\s+/', '', $race['display'] );
 		}
-		$out .= '<span class="arv-calendar__day">' . esc_html( $day ) . '</span>';
+
+		// The month repeats the heading above, deliberately. Once someone has
+		// scrolled a few rows the heading is off screen, and "29" alone is
+		// then a number with no month attached to it.
+		$month = gmdate( 'M', strtotime( $race['iso'] . ' 00:00:00 UTC' ) );
+
+		$out .= '<span class="arv-calendar__day">'
+			. '<span class="arv-calendar__day-month">' . esc_html( $month ) . '</span>'
+			. '<span class="arv-calendar__day-num">' . esc_html( $day ) . '</span>'
+			. '</span>';
 	} else {
 		$out .= '<span class="arv-calendar__day arv-calendar__day--tbd">' . esc_html( __( 'TBD', 'aravaipa-elements' ) ) . '</span>';
 	}
@@ -345,10 +354,20 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 		$out .= '<span class="arv-calendar__where">' . esc_html( implode( ', ', $where ) ) . '</span>';
 	}
 	$out .= '</span>';
-	$out .= '<span class="arv-calendar__arrow" aria-hidden="true">&rarr;</span>';
 	$out .= '</a>';
 
+	$out .= '<span class="arv-calendar__actions">';
 	$out .= arv_season_calendar_action( $race, $today );
+
+	// Race Info is always offered and always the same shape, so the right
+	// hand edge of the list stays a straight line whatever state each race is
+	// in, rather than buttons appearing and disappearing down the column.
+	if ( '' !== $href ) {
+		$out .= '<a class="arv-calendar__info" href="' . esc_url( $href ) . '">'
+			. esc_html( __( 'Race Info', 'aravaipa-elements' ) ) . '</a>';
+	}
+
+	$out .= '</span>';
 	$out .= '</div>';
 
 	return $out;
@@ -367,9 +386,10 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
  * "Register" would be the stale link this whole element exists to stop
  * showing. Those rows stay quiet, which is the honest answer for them.
  *
- * Register is deliberately not offered here either. Selling entries is the
- * Upcoming Races element's job; this one is a reference, and two Register
- * buttons on one page pointing at the same place is noise.
+ * Register is offered here now, but only for the confirmed races, which is
+ * the same gate as everything else: for the other 58 the registration link
+ * still points at a previous running, and that stale link is the single
+ * problem this whole element was built to stop showing.
  *
  * @param array  $race
  * @param string $today Y-m-d in site time.
@@ -382,11 +402,10 @@ function arv_season_calendar_action( $race, $today ) {
 
 	$action = arv_upcoming_races_action( $race, $today );
 
-	if ( 'live' !== $action['phase'] && 'results' !== $action['phase'] ) {
-		return '';
-	}
-
-	if ( '' === $action['url'] ) {
+	// Entries closed with nowhere to send anyone is not worth a button here:
+	// Race Info beside it is the only thing left to do, and a dead chip in a
+	// long list is just noise.
+	if ( 'closed' === $action['phase'] || '' === $action['url'] ) {
 		return '';
 	}
 
