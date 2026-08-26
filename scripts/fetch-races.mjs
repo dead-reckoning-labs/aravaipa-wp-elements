@@ -130,14 +130,89 @@ function isoFor(dateText) {
   return iso;
 }
 
+
+/**
+ * Aravaipa's own timing system, at live.aravaiparunning.com. Real results,
+ * not a scrape: a public JSON list of the races currently on its board, each
+ * with a stable slug, and `#/{slug}` is a working results page for it.
+ *
+ * Only a rolling window of races lives here, not the full season, so most
+ * rows will not find a match here and fall back to the UltraSignup-derived
+ * results link the element already computes on its own.
+ */
+async function fetchLiveResultsIndex() {
+  try {
+    const res = await fetch('https://live.aravaiparunning.com/api/v1/race_events/live', { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return [];
+    const events = await res.json();
+    return events.map(e => {
+      // startTime is UTC; timezoneOffset (hours, signed) converts it to the
+      // race's own local date, which is what a runner means by "race day".
+      const utc = new Date(e.startTime);
+      const local = new Date(utc.getTime() + e.timezoneOffset * 3600000);
+      return { name: e.name, slug: e.slug, localDate: local.toISOString().slice(0, 10) };
+    });
+  } catch {
+    return [];
+  }
+}
+
+function normalizeRaceName(s) {
+  return s.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w && !['the','trail','trails','run','runs','race','races','night','ultra','ultras','night','marathon'].includes(w));
+}
+
+function nameOverlap(a, b) {
+  const wa = new Set(normalizeRaceName(a)), wb = new Set(normalizeRaceName(b));
+  if (!wa.size || !wb.size) return 0;
+  let hits = 0;
+  for (const w of wa) if (wb.has(w)) hits++;
+  return hits / Math.max(wa.size, wb.size);
+}
+
+/**
+ * Find this race on the live results board, if it is there.
+ *
+ * Matched on date and name together, neither alone. Date alone collides
+ * (Rock Hawk and Black Bear both start 2026-08-29); name alone is too loose
+ * across 69 races ("Ram Party" fuzzy-matched "Sierra Prieta" at a score that
+ * looked plausible until the date was checked). A wrong match here is worse
+ * than no match, since it ships as a live link on the page: the fallback
+ * (deriving from the UltraSignup register link) is always safe, so this only
+ * overrides it when it is confident.
+ *
+ * The date window is +/-1 day rather than exact: cross-checked against
+ * UltraSignup's own published date for a race the live board placed a day
+ * later (Kilkenny Ridge, board says the 20th, UltraSignup and the race's own
+ * page both say the 19th), which is close enough to be the same event
+ * reported across a date-line-ish quirk rather than a different race.
+ */
+function findLiveResultsUrl(raceName, raceIso, liveIndex) {
+  let best = null;
+  for (const ev of liveIndex) {
+    const dayDiff = Math.abs((new Date(raceIso) - new Date(ev.localDate)) / 86400000);
+    if (dayDiff > 1) continue;
+    const score = nameOverlap(raceName, ev.name);
+    if (score < 0.5) continue;
+    if (!best || score > best.score) best = { score, slug: ev.slug };
+  }
+  return best ? `https://live.aravaiparunning.com/#/${best.slug}` : '';
+}
+
 const rows = [], skipped = [];
-let withClose = 0;
+let withClose = 0, withLive = 0;
+const liveIndex = await fetchLiveResultsIndex();
+console.error(`live results board: ${liveIndex.length} races currently on it`);
 for (const r of raw) {
   const dateCell = r.cells[0] || '';
   const display  = dateCell.replace(/\s*(Register|Volunteer)\s*/gi, ' ').replace(/\s+/g,' ').trim();
   const iso = isoFor(display);
   const name = r.cells[1] || '';
   if (!iso || !name) { skipped.push({ name: name || '(no name)', date: display, why: !name ? 'no name' : 'no parseable date' }); continue; }
+  const liveUrl = findLiveResultsUrl(name, iso, liveIndex);
+  if (liveUrl) withLive++;
   // One request per race, paced. Sequential on purpose: 69 parallel hits on
   // someone else's site to save a few seconds is not a trade worth making.
   const regClose = r.reg ? await fetchRegClose(r.reg, iso) : '';
@@ -152,16 +227,16 @@ for (const r of raw) {
     r.page || '',
     r.img || '',
     isoEndFor(display, iso),
-    // Live/results override, for a race with its own tracker or broadcast
-    // page. Left blank: the element derives an UltraSignup results link from
-    // the register URL's did, which serves both the live field and the final
-    // results, so most races never need this.
-    '',
+    // The real timing system's results page, when this race happens to be on
+    // its rolling board right now. Left blank otherwise: the element then
+    // derives an UltraSignup results link from the register URL's did, which
+    // is a worse link (an entrants list, not real results) but a safe one.
+    liveUrl,
     regClose,
   ].join(' | '));
 }
 
 rows.sort((a, b) => a.split(' | ')[1].localeCompare(b.split(' | ')[1]));
 console.log(rows.join('\n'));
-console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withClose} with a published registration close date`);
+console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
 for (const s of skipped) console.error(`  skipped: ${s.name} (${s.date || 'no date'}) - ${s.why}`);
