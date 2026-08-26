@@ -1,6 +1,6 @@
 /**
  * Turn https://www.aravaiparunning.com/races/ into rows for the Aravaipa
- * Upcoming Races element.
+ * Upcoming Races and Season Calendar elements.
  *
  * The races page is built in Cornerstone, so its markup is a nest of
  * generated class names with no stable hooks. Regexing it was unreliable;
@@ -10,9 +10,30 @@
  * The page states dates as "August 29" with no year, and titles itself
  * "2026 Events". A date that has already passed in that year is therefore
  * next year's running, which is how a January race listed on a 2026 page is
- * actually January 2027.
+ * actually January 2027 — a guess, tracked as `guessed` below, and separate
+ * from whether registration is actually confirmed open.
  *
- *   node scripts/fetch-races.mjs [--year 2026] [--port 9360]
+ * Confirmation itself comes from UltraSignup's own group listing
+ * (events.svc/groupevents), not from scraping each race's page on the site.
+ * The site links every race with a "did", UltraSignup's old per-year event
+ * ID, which is only updated by hand when a director rolls a recurring race
+ * over to its next running. The group API instead reports "dtid" IDs, which
+ * point at whichever running is actually current right now, so a race whose
+ * "did" link still shows last year's finished event can still be confirmed
+ * correctly by matching it against the group API by name and date. This is
+ * the fix for a real bug: 33 races, including Cocodona 250 and Black Canyon,
+ * were reading as unconfirmed purely because their site links were stale,
+ * when UltraSignup itself has always had a live listing for them.
+ *
+ * Registration is also not always UltraSignup. Some races link to RunSignUp,
+ * RaceRoster, or a page on aravaiparunning.com's own "network" registration
+ * system. The extraction below reads whatever the page's own "Register" link
+ * points to, by anchor text, rather than assuming a domain — the previous
+ * version only recognised ultrasignup.com links and silently dropped every
+ * race that registered anywhere else, which included Javelina Jundred, the
+ * three RunSignUp-hosted virtual events, and about a dozen more.
+ *
+ *   node scripts/fetch-races.mjs [--year 2026] [--port 9360] [--gid 7]
  */
 const args = Object.fromEntries(
   process.argv.slice(2).join(' ').split('--').filter(Boolean)
@@ -20,6 +41,7 @@ const args = Object.fromEntries(
 );
 const YEAR = parseInt(args.year || '2026', 10);
 const PORT = parseInt(args.port || '9360', 10);
+const GID = parseInt(args.gid || '7', 10);
 const TODAY = args.today || new Date().toISOString().slice(0, 10);
 
 const targets = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
@@ -38,27 +60,30 @@ await new Promise(r => setTimeout(r, 14000));
 
 const EXTRACT = [
 "(function(){",
-" var links=[].slice.call(document.querySelectorAll('a[href*=\"ultrasignup.com/register\"]'));",
-" return JSON.stringify(links.map(function(a){",
 " // One race row is an .x-container holding six .x-column cells. Verified",
 " // by walking the ancestor chain of a register link on the live page,",
 " // rather than assumed: .x-row does not exist on this template at all.",
-"   var row=a.closest('.x-container');",
-"   if(!row) return null;",
+" var rows=[].slice.call(document.querySelectorAll('.x-container'));",
+" return JSON.stringify(rows.map(function(row){",
 "   var cells=[].slice.call(row.querySelectorAll('.x-column'))",
 "     .map(function(e){return (e.innerText||'').replace(/\\s+/g,' ').trim();})",
 "     .filter(function(v){return !!v;});",
+"   if(!cells.length) return null;",
+"   // Matched on the link's own text, not its domain: registration goes to",
+"   // ultrasignup.com, runsignup.com, raceroster.com, or a page on this site",
+"   // itself, and only the label is consistent across all of them.",
+"   var anchors=[].slice.call(row.querySelectorAll('a'));",
+"   var regA=anchors.filter(function(a){return (a.innerText||'').trim()==='Register';})[0];",
 "   var img=row.querySelector('img');",
 "   // WP Rocket lazy-loads, so src is an inline svg placeholder until the",
 "   // image scrolls into view. The real URL sits in data-lazy-src the whole",
 "   // time, which is why reading src alone returned one image out of six.",
 "   var src=img?(img.getAttribute('data-lazy-src')||img.currentSrc||img.src||''):'';",
 "   if(src.indexOf('data:')===0) src='';",
-"   var pageUrl=[].slice.call(row.querySelectorAll('a[href*=\"aravaiparunning.com\"]'))",
-"     .map(function(x){return x.getAttribute('href');})",
-"     .filter(function(h){return h && !/xmlrpc|wp-content|\\/races\\/?$/.test(h);})[0]||'';",
-"   return {reg:a.getAttribute('href'), cells:cells, img:src, page:pageUrl};",
-" }));",
+"   var pageUrl=anchors.map(function(x){return x.getAttribute('href');})",
+"     .filter(function(h){return h && /aravaiparunning\\.com/.test(h) && !/xmlrpc|wp-content|\\/races\\/?$|\\/network\\//.test(h);})[0]||'';",
+"   return {reg:regA?regA.getAttribute('href'):'', cells:cells, img:src, page:pageUrl};",
+" }).filter(function(x){return x && x.cells.length>=2;}));",
 "})()"].join('\n');
 
 const raw = JSON.parse(await ev(EXTRACT));
@@ -68,44 +93,136 @@ const MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:
                 jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
 
 /**
- * The date entries close, from the race's own UltraSignup page.
+ * UltraSignup's own list of every event under Aravaipa's group, current and
+ * past. This is the authoritative source for whether a race is really
+ * scheduled: it carries a "dtid" per year's running rather than the site's
+ * "did", which UltraSignup only updates by hand. A recurring race gets one
+ * entry per year it has ever run; only the ones dated today or later matter
+ * here.
  *
- * UltraSignup prints "Registration closes: Mon, Sep 7 @ 11:59PM MT" above the
- * fold, with no year, and only on races whose director has set a hard close:
- * 9 of the 69 in the current calendar. The rest simply take entries until
- * race day, which is what the element assumes when this comes back empty.
+ * @param {number} gid
+ * @return {Promise<Array<{name:string, iso:string, end:string, dtid:number}>>}
+ */
+async function fetchGroupEvents(gid) {
+  try {
+    const res = await fetch(`https://ultrasignup.com/service/events.svc/groupevents?gid=${gid}`, { signal: AbortSignal.timeout(20000) });
+    if (!res.ok) return [];
+    const events = await res.json();
+    const toIso = s => {
+      // "8/29/2026 12:00:00 AM"
+      const m = String(s || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      return m ? `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}` : '';
+    };
+    return events
+      .filter(e => !e.Cancelled)
+      .map(e => ({
+        name: e.EventName,
+        iso: toIso(e.EventDate),
+        end: toIso(e.EventDateEnd),
+        dtid: e.EventDateId,
+      }))
+      .filter(e => e.iso && e.iso >= TODAY);
+  } catch {
+    return [];
+  }
+}
+
+function normalizeRaceName(s) {
+  return s.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    // 'javelina' is Aravaipa's own umbrella brand for an entire race
+    // weekend covering three distinct races (Jundred, Jangover, Jallucinations),
+    // so on its own it does not distinguish anything. Dropping it here is what
+    // stopped Javelina Jallucinations, a RunSignUp virtual event with its own
+    // real October date, from matching Javelina Jangover's UltraSignup dtid
+    // purely because both names contain the word "Javelina": both scored a
+    // 0.5 overlap on that one shared token, which cleared the 0.4 threshold.
+    .filter(w => w && !['the','trail','trails','run','runs','race','races','night','ultra','ultras','marathon','presented','by','hoka','javelina'].includes(w));
+}
+
+function nameOverlap(a, b) {
+  const wa = new Set(normalizeRaceName(a)), wb = new Set(normalizeRaceName(b));
+  if (!wa.size || !wb.size) return 0;
+  let hits = 0;
+  for (const w of wa) if (wb.has(w)) hits++;
+
+  // A single shared word is only trustworthy when one whole name collapses
+  // to just that word: "Cocodona" against "Cocodona 250" is a real match on
+  // one shared token, because the shorter side IS that token, nothing else.
+  // "Across The Globe" against "Across the Years" shares one token too, and
+  // is not the same race: neither name is a subset of the other, each has a
+  // different word the other lacks, and rejecting only the second case needs
+  // this distinction rather than a bigger stopword list. A stopword fixes one
+  // specific collision (this one fixed "javelina" separately); this fixes
+  // the shape of the problem.
+  if (hits === 1 && Math.min(wa.size, wb.size) > 1) return 0;
+
+  return hits / Math.max(wa.size, wb.size);
+}
+
+/**
+ * Match one site row against UltraSignup's group listing.
  *
- * The year is taken from the race, then pulled back one if that would put the
- * close after the race it belongs to, which is how a January close for a
- * February race lands correctly.
+ * Both name and date have to agree, not just one. Name alone is too loose:
+ * "Cocodona" and "Cocodona Training Run" share enough words to pass a lenient
+ * threshold, and the group listing carries both as separate events. Date
+ * alone collides even more readily across a 120-event list. The window is 45
+ * days, wide enough to cover Mogollon Monster (site says the 12th, the API's
+ * single-day record says the 13th) and Cocodona (site's guessed date and the
+ * API's real one differ by two days after a year-boundary roll), but tight
+ * enough that "Cocodona Training Run" — a real event, just not this one —
+ * cannot win by drifting in on name alone from months away.
+ *
+ * @param {string} name
+ * @param {string} iso Our own best-guess date for this race.
+ * @param {Array}  groupEvents
+ * @return {{iso:string, end:string, dtid:number}|null}
+ */
+function matchGroupEvent(name, iso, groupEvents) {
+  let best = null;
+  for (const g of groupEvents) {
+    const dayDiff = Math.abs((new Date(iso) - new Date(g.iso)) / 86400000);
+    if (dayDiff > 45) continue;
+    const score = nameOverlap(name, g.name);
+    if (score < 0.4) continue;
+    if (!best || score > best.score || (score === best.score && dayDiff < best.dayDiff)) {
+      best = { score, dayDiff, iso: g.iso, end: g.end, dtid: g.dtid, groupName: g.name };
+    }
+  }
+  return best;
+}
+
+/**
+ * The date entries close, read off the race's actual current registration
+ * page. Only meaningful for UltraSignup: RunSignUp, RaceRoster and
+ * aravaiparunning.com's own registration pages do not carry this text, and
+ * scraping them for it would just as easily match unrelated copy.
+ *
+ * UltraSignup prints "Registration closes: Mon, Sep 7 @ 11:59PM MT" for a
+ * race still open, present tense with no year, or "Registration Closed Mon.
+ * Aug 24, 2026 @ 11:59 PM" for one that has shut, past tense with its own
+ * year. Both have to be matched: reading only the first turns every already
+ * -closed race into one that looks like it never published a close date at
+ * all, which happened here once already.
+ *
+ * fetch() follows the redirect a dtid URL issues to its current did on its
+ * own, so this works the same whether it is given a dtid or a resolved did.
+ *
+ * @param {string} registerUrl
+ * @param {string} raceIso
+ * @return {Promise<string>} Y-m-d, or '' when nothing is published.
  */
 async function fetchRegClose(registerUrl, raceIso) {
   try {
     const res = await fetch(registerUrl, { signal: AbortSignal.timeout(20000) });
-    if (!res.ok) return { close: '', confirmed: false };
+    if (!res.ok) return '';
     const html = await res.text();
 
-    // Confirmed means UltraSignup's own listing agrees this race actually
-    // happens in the year we think it does. Most of this calendar is
-    // recurring events whose organiser has not yet rolled the "did" over to
-    // next year's running, so the page still describes whatever it last
-    // described, sometimes two years stale. Trusting a bumped-forward guess
-    // as though it were a real open registration is how a Register button
-    // ends up pointing at a race that already happened.
-    const schemaYear = html.match(/"startDate":"(\d{4})-\d{2}-\d{2}/);
-    const confirmed = !!schemaYear && parseInt(schemaYear[1], 10) >= parseInt(raceIso.slice(0, 4), 10);
-
-    // Two different messages, and the difference matters. A race that has
-    // already stopped taking entries says "Registration Closed Mon. Aug 24,
-    // 2026 @ 11:59 PM" in the past tense and carries its own year. A race
-    // still open says "Registration closes: Mon, Sep 7 @ 11:59PM MT" with no
-    // year at all. Matching only the second, which is what this did at first,
-    // reads every already-closed race as though no close date were published
-    // and leaves it offering Register after entries have shut.
     const closed = html.match(/Registration Closed\s+(?:[A-Za-z]{3,9}\.?,?\s*)?([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})/);
     if (closed) {
       const mo = MONTHS[closed[1].toLowerCase()];
-      if (mo) return { close: `${closed[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(closed[2],10)).padStart(2,'0')}`, confirmed };
+      if (mo) return `${closed[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(closed[2],10)).padStart(2,'0')}`;
     }
 
     const open = html.match(/Registration closes:\s*(?:[A-Za-z]{3,9},?\s*)?([A-Za-z]{3,9})\.?\s+(\d{1,2})/i);
@@ -115,28 +232,26 @@ async function fetchRegClose(registerUrl, raceIso) {
         let y = parseInt(raceIso.slice(0, 4), 10);
         const iso = () => `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(open[2],10)).padStart(2,'0')}`;
         if (iso() > raceIso) y -= 1;
-        return { close: iso(), confirmed };
+        return iso();
       }
     }
 
-    return { close: '', confirmed };
+    return '';
   } catch {
-    return { close: '', confirmed: false };
+    return '';
   }
 }
-
-
 
 // "September 12-13" and "October 30 - November 1" both describe a race that
 // is still running on its later day. Without an end date the module drops a
 // multi-day race the morning of day two, while runners are still out there.
 function isoEndFor(dateText, startIso) {
-  const sameMonth = dateText.match(/([A-Za-z]+)\s+\d{1,2}\s*[-\u2013]\s*(\d{1,2})/);
+  const sameMonth = dateText.match(/([A-Za-z]+)\s+\d{1,2}\s*[-–]\s*(\d{1,2})/);
   if (sameMonth) {
     const mo = MONTHS[sameMonth[1].toLowerCase()];
     if (mo) return `${startIso.slice(0,4)}-${String(mo).padStart(2,'0')}-${String(parseInt(sameMonth[2],10)).padStart(2,'0')}`;
   }
-  const crossMonth = dateText.match(/[A-Za-z]+\s+\d{1,2}\s*[-\u2013]\s*([A-Za-z]+)\s+(\d{1,2})/);
+  const crossMonth = dateText.match(/[A-Za-z]+\s+\d{1,2}\s*[-–]\s*([A-Za-z]+)\s+(\d{1,2})/);
   if (crossMonth) {
     const mo = MONTHS[crossMonth[1].toLowerCase()];
     if (!mo) return '';
@@ -147,27 +262,26 @@ function isoEndFor(dateText, startIso) {
   return '';
 }
 
-// Returns {iso, guessed}. guessed is true when the listed date has already
-// passed this year and the year was rolled forward, i.e. the day and month
-// are real but the year is this script's assumption rather than anything
-// Aravaipa published. Kept separate from "is registration confirmed",
-// because they are different facts: The Bear Chase has a real, future,
-// site-published date of October 3-4 and no confirmed registration yet.
+// Returns {iso, guessed}, or null when the text carries no day at all (a
+// month range like "April - September" is a series, not a single date).
+// guessed is true when the listed date has already passed this year and the
+// year was rolled forward: the day and month are real, published by
+// Aravaipa, but the year is this script's assumption. Kept separate from
+// whether registration is confirmed, because those are different facts — The
+// Bear Chase has a real, future, site-published date and, independently, may
+// or may not have a live registration set up yet.
 function isoFor(dateText) {
-  // "August 29", "September 12-13", "January 23", "April - September"
   const m = dateText.match(/([A-Za-z]+)\s+(\d{1,2})/);
-  if (!m) return null;                         // a range of months with no day: a series, not a date
+  if (!m) return null;
   const mo = MONTHS[m[1].toLowerCase()];
   if (!mo) return null;
   const day = parseInt(m[2], 10);
   let iso = `${YEAR}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  // Listed on a YEAR page but already past in YEAR: it is next year's running.
   if (iso < TODAY) {
     return { iso: `${YEAR+1}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`, guessed: true };
   }
   return { iso, guessed: false };
 }
-
 
 /**
  * Aravaipa's own timing system, at live.aravaiparunning.com. Real results,
@@ -184,8 +298,6 @@ async function fetchLiveResultsIndex() {
     if (!res.ok) return [];
     const events = await res.json();
     return events.map(e => {
-      // startTime is UTC; timezoneOffset (hours, signed) converts it to the
-      // race's own local date, which is what a runner means by "race day".
       const utc = new Date(e.startTime);
       const local = new Date(utc.getTime() + e.timezoneOffset * 3600000);
       return { name: e.name, slug: e.slug, localDate: local.toISOString().slice(0, 10) };
@@ -195,91 +307,110 @@ async function fetchLiveResultsIndex() {
   }
 }
 
-function normalizeRaceName(s) {
-  return s.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w && !['the','trail','trails','run','runs','race','races','night','ultra','ultras','night','marathon'].includes(w));
-}
-
-function nameOverlap(a, b) {
-  const wa = new Set(normalizeRaceName(a)), wb = new Set(normalizeRaceName(b));
-  if (!wa.size || !wb.size) return 0;
-  let hits = 0;
-  for (const w of wa) if (wb.has(w)) hits++;
-  return hits / Math.max(wa.size, wb.size);
-}
-
 /**
- * Find this race on the live results board, if it is there.
- *
- * Matched on date and name together, neither alone. Date alone collides
- * (Rock Hawk and Black Bear both start 2026-08-29); name alone is too loose
- * across 69 races ("Ram Party" fuzzy-matched "Sierra Prieta" at a score that
- * looked plausible until the date was checked). A wrong match here is worse
- * than no match, since it ships as a live link on the page: the fallback
- * (deriving from the UltraSignup register link) is always safe, so this only
- * overrides it when it is confident.
- *
- * The date window is +/-1 day rather than exact: cross-checked against
- * UltraSignup's own published date for a race the live board placed a day
- * later (Kilkenny Ridge, board says the 20th, UltraSignup and the race's own
- * page both say the 19th), which is close enough to be the same event
- * reported across a date-line-ish quirk rather than a different race.
+ * Find this race on the live results board, if it is there. See the module
+ * doc comment on matchGroupEvent for why both name and date have to agree.
  */
 function findLiveResultsUrl(raceName, raceIso, liveIndex) {
   let best = null;
-  for (const ev of liveIndex) {
-    const dayDiff = Math.abs((new Date(raceIso) - new Date(ev.localDate)) / 86400000);
+  for (const item of liveIndex) {
+    const dayDiff = Math.abs((new Date(raceIso) - new Date(item.localDate)) / 86400000);
     if (dayDiff > 1) continue;
-    const score = nameOverlap(raceName, ev.name);
+    const score = nameOverlap(raceName, item.name);
     if (score < 0.5) continue;
-    if (!best || score > best.score) best = { score, slug: ev.slug };
+    if (!best || score > best.score) best = { score, slug: item.slug };
   }
   return best ? `https://live.aravaiparunning.com/#/${best.slug}` : '';
 }
 
 const rows = [], skipped = [];
-let withClose = 0, withLive = 0, withConfirmed = 0, withGuessed = 0;
-const liveIndex = await fetchLiveResultsIndex();
+let withClose = 0, withLive = 0, withConfirmed = 0, withGuessed = 0, withGroupMatch = 0;
+
+const [liveIndex, groupEvents] = await Promise.all([fetchLiveResultsIndex(), fetchGroupEvents(GID)]);
 console.error(`live results board: ${liveIndex.length} races currently on it`);
+console.error(`UltraSignup group listing: ${groupEvents.length} events dated today or later`);
+
 for (const r of raw) {
   const dateCell = r.cells[0] || '';
   const display  = dateCell.replace(/\s*(Register|Volunteer)\s*/gi, ' ').replace(/\s+/g,' ').trim();
+
+  // A race the site itself has marked cancelled is not a date to publish
+  // anywhere, however cleanly it happens to parse.
+  if (/\bcancell?ed\b/i.test(display)) {
+    skipped.push({ name: r.cells[1] || '(no name)', date: display, why: 'cancelled' });
+    continue;
+  }
+
   const dateInfo = isoFor(display);
-  const iso = dateInfo ? dateInfo.iso : null;
   const name = r.cells[1] || '';
-  if (!iso || !name) { skipped.push({ name: name || '(no name)', date: display, why: !name ? 'no name' : 'no parseable date' }); continue; }
+  if (!dateInfo || !name) {
+    skipped.push({ name: name || '(no name)', date: display, why: !name ? 'no name' : 'no parseable date' });
+    continue;
+  }
+
+  let iso = dateInfo.iso;
+  let end = isoEndFor(display, iso);
+  let guessed = dateInfo.guessed;
+  let confirmed = false;
+  let register = r.reg || '';
+  let closes = '';
+
+  const match = matchGroupEvent(name, iso, groupEvents);
+
+  if (match) {
+    // UltraSignup's own listing settles the date: real, current, and not a
+    // guess, which is why this overrides whatever isoFor() worked out from
+    // the site's undated text.
+    if (args.audit) console.error(`  MATCH  ${name.padEnd(40)} -> ${match.groupName.padEnd(40)} score=${match.score.toFixed(2)} dayDiff=${match.dayDiff}`);
+    iso = match.iso;
+    if (match.end) end = match.end;
+    guessed = false;
+    confirmed = true;
+    register = `https://ultrasignup.com/register.aspx?dtid=${match.dtid}`;
+    withGroupMatch++;
+  } else if (register) {
+    const isUltraSignup = /ultrasignup\.com/i.test(register);
+    // A register link that is not UltraSignup does not suffer from the
+    // stale-did problem this whole pipeline exists to catch: the site
+    // controls that URL directly. Trusted as confirmed as long as the date
+    // itself is not a guess. An UltraSignup link with no group-listing match
+    // is the old problem exactly — a "did" nobody has rolled over — so it
+    // stays unconfirmed even though a link still exists.
+    confirmed = !isUltraSignup && !guessed;
+  }
+
   const liveUrl = findLiveResultsUrl(name, iso, liveIndex);
   if (liveUrl) withLive++;
-  // One request per race, paced. Sequential on purpose: 69 parallel hits on
-  // someone else's site to save a few seconds is not a trade worth making.
-  const regInfo = r.reg ? await fetchRegClose(r.reg, iso) : { close: '', confirmed: false };
-  if (regInfo.close) withClose++;
-  if (regInfo.confirmed) withConfirmed++;
-  if (dateInfo.guessed) withGuessed++;
-  await new Promise(r2 => setTimeout(r2, 200));
+
+  if (register && /ultrasignup\.com/i.test(register)) {
+    // One request per race, paced. Sequential on purpose: dozens of parallel
+    // hits on someone else's site to save a few seconds is not a trade
+    // worth making.
+    closes = await fetchRegClose(register, iso);
+    await new Promise(r2 => setTimeout(r2, 200));
+  }
+
+  if (closes) withClose++;
+  if (confirmed) withConfirmed++;
+  if (guessed) withGuessed++;
+
   rows.push([
     name, iso, display,
     r.cells[2] || '',          // distances, may itself contain " | "
     r.cells[3] || '',          // venue
     r.cells[4] || '',          // city, ST
-    r.reg || '',
+    register,
     r.page || '',
     r.img || '',
-    isoEndFor(display, iso),
-    // The real timing system's results page, when this race happens to be on
-    // its rolling board right now. Left blank otherwise: the element then
-    // derives an UltraSignup results link from the register URL's did, which
-    // is a worse link (an entrants list, not real results) but a safe one.
+    end,
     liveUrl,
-    regInfo.close,
-    regInfo.confirmed ? '1' : '0',
-    dateInfo.guessed ? '1' : '0',
+    closes,
+    confirmed ? '1' : '0',
+    guessed ? '1' : '0',
   ].join(' | '));
 }
 
 rows.sort((a, b) => a.split(' | ')[1].localeCompare(b.split(' | ')[1]));
 console.log(rows.join('\n'));
-console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withConfirmed} with confirmed registration, ${withGuessed} with a rolled-forward (guessed) year, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
+console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withGroupMatch} matched to UltraSignup's group listing, ${withConfirmed} confirmed overall, ${withGuessed} with a rolled-forward (guessed) year, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
 for (const s of skipped) console.error(`  skipped: ${s.name} (${s.date || 'no date'}) - ${s.why}`);

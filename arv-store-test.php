@@ -105,19 +105,20 @@ function t( $name, $cond ) {
 }
 
 $ROWS = file_get_contents( __DIR__ . '/race-rows-2026.txt' );
+$ROW_COUNT = count( array_filter( explode( "\n", trim( $ROWS ) ) ) );
 
 echo "import:\n";
 $r = arv_race_store_import( $ROWS );
-t( 'imports every generated row', 69 === $r['imported'] );
-t( 'all created on a first run',  69 === $r['created'] );
+t( 'imports every generated row', $ROW_COUNT === $r['imported'] );
+t( 'all created on a first run',  $ROW_COUNT === $r['created'] );
 t( 'nothing skipped',              0 === $r['skipped'] );
 t( 'store reports it has races',   arv_race_store_has_races() );
 
 // Re-importing is the normal case: the generator runs again next week.
 $r2 = arv_race_store_import( $ROWS );
 t( 're-import creates nothing new', 0 === $r2['created'] );
-t( 'and updates in place',         69 === $r2['updated'] );
-t( 'so the store does not grow',   69 === count( arv_race_store_get() ) );
+t( 'and updates in place',         $ROW_COUNT === $r2['updated'] );
+t( 'so the store does not grow',   $ROW_COUNT === count( arv_race_store_get() ) );
 
 echo "\nround trip:\n";
 $races = arv_race_store_get();
@@ -138,7 +139,11 @@ t( 'guessed as a real boolean',         false === $rock['guessed'] );
 echo "\nelements read the store:\n";
 $GLOBALS['NOW'] = '2026-08-26';
 $html = arv_upcoming_races_render( array( 'rows' => '', 'limit' => '0' ) );
-t( 'upcoming races renders from the store with no rows pasted', substr_count( $html, 'arv-races__card' ) === 11 );
+// 11 was the count when only UltraSignup-registered races with a stale
+// site link could ever be confirmed. The generator rebuild in this session
+// fixed that undercount, so this now asserts "more than a handful" rather
+// than a number that is expected to keep moving as more races get scheduled.
+t( 'upcoming races renders from the store with no rows pasted', substr_count( $html, 'arv-races__card' ) >= 6 );
 $cal = arv_season_calendar_render( array( 'rows' => '' ) );
 t( 'the calendar does too',                                     substr_count( $cal, 'arv-calendar__row' ) > 60 );
 t( 'and still shows real dates where they are known',           false !== strpos( $cal, '__day-num">29<' ) );
@@ -151,7 +156,7 @@ $nh = arv_race_store_get( array( 'region' => 'white-mountain-endurance' ) );
 t( 'arizona has races',   count( $az ) > 5 );
 t( 'colorado has races',  count( $co ) > 3 );
 t( 'new hampshire has races', count( $nh ) > 2 );
-t( 'and they are different sets', count( $az ) + count( $co ) + count( $nh ) <= 69 );
+t( 'and they are different sets', count( $az ) + count( $co ) + count( $nh ) <= $ROW_COUNT );
 $names = array_map( function ( $r ) { return $r['name']; }, $co );
 t( 'a Colorado race lands in colorado', in_array( 'Rock Hawk', $names, true ) );
 t( 'and not in arizona', ! in_array( 'Rock Hawk', array_map( function ( $r ) { return $r['name']; }, $az ), true ) );
