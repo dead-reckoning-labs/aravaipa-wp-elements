@@ -291,19 +291,32 @@ function arv_season_calendar_bucket( $iso, $today, $grace = 2 ) {
  * @param array $race Parsed row from arv_upcoming_races_parse_row().
  * @return string
  */
-function arv_season_calendar_row( $race ) {
+function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 	$href = '' !== $race['page'] ? $race['page'] : $race['register'];
 
-	$out = '<a class="arv-calendar__row" href="' . esc_url( $href ) . '">';
+	// A date is only real for the running it was published for. Once a race
+	// has been rolled forward past its grace window, the row still carries
+	// last running's day and printing it would assert a date for a running
+	// nobody has scheduled: exactly the mistake the `guessed` column exists
+	// to prevent, arriving from the other direction as time passes rather
+	// than at generation time. Recomputed here so it self-corrects.
+	$rolled  = gmdate( 'Y', strtotime( $today . ' 00:00:00 UTC' ) + ( arv_season_calendar_days_until( $race['iso'], $today, $grace ) * DAY_IN_SECONDS ) )
+		!== substr( $race['iso'], 0, 4 );
+	$show_day = ! $race['guessed'] && ! $rolled;
+
+	// Split into a main link plus an optional action link, rather than one
+	// anchor wrapping everything. A race that is running today needs a way
+	// through to its live results, and nesting that inside the row's own
+	// anchor would be invalid markup. The main link keeps the large tap
+	// target; the action is a separate, smaller one.
+	$out = '<div class="arv-calendar__row">';
+	$out .= '<a class="arv-calendar__main" href="' . esc_url( $href ) . '">';
 
 	if ( '' !== $race['image'] ) {
 		$out .= '<span class="arv-calendar__logo"><img src="' . esc_url( $race['image'] ) . '" alt="" loading="lazy" decoding="async" /></span>';
 	}
 
-	// Keyed on whether the date itself is real, not on whether registration
-	// is open. Those are different questions and only the first one decides
-	// whether a day can be printed.
-	if ( ! $race['guessed'] ) {
+	if ( $show_day ) {
 		$day = gmdate( 'j', strtotime( $race['iso'] . ' 00:00:00 UTC' ) );
 		// A multi-day race states its own span ("September 12-13"); the day
 		// part of that is what belongs next to a month heading.
@@ -325,11 +338,54 @@ function arv_season_calendar_row( $race ) {
 		$out .= '<span class="arv-calendar__where">' . esc_html( implode( ', ', $where ) ) . '</span>';
 	}
 	$out .= '</span>';
-
 	$out .= '<span class="arv-calendar__arrow" aria-hidden="true">&rarr;</span>';
 	$out .= '</a>';
 
+	$out .= arv_season_calendar_action( $race, $today );
+	$out .= '</div>';
+
 	return $out;
+}
+
+/**
+ * The live/results link on a calendar row, when there is a safe one to give.
+ *
+ * Uses arv_upcoming_races_action(), the same function the homepage runs on,
+ * so a race changes state on both pages at the same moment by construction
+ * rather than by two implementations agreeing.
+ *
+ * Only rendered for a race whose registration is confirmed. For the other 58
+ * every URL available is derived from an UltraSignup listing that still
+ * describes a previous running: "results" would be last year's results, and
+ * "Register" would be the stale link this whole element exists to stop
+ * showing. Those rows stay quiet, which is the honest answer for them.
+ *
+ * Register is deliberately not offered here either. Selling entries is the
+ * Upcoming Races element's job; this one is a reference, and two Register
+ * buttons on one page pointing at the same place is noise.
+ *
+ * @param array  $race
+ * @param string $today Y-m-d in site time.
+ * @return string
+ */
+function arv_season_calendar_action( $race, $today ) {
+	if ( ! $race['confirmed'] || $race['guessed'] ) {
+		return '';
+	}
+
+	$action = arv_upcoming_races_action( $race, $today );
+
+	if ( 'live' !== $action['phase'] && 'results' !== $action['phase'] ) {
+		return '';
+	}
+
+	if ( '' === $action['url'] ) {
+		return '';
+	}
+
+	return '<a class="arv-calendar__action arv-calendar__action--' . esc_attr( $action['phase'] ) . '" href="'
+		. esc_url( $action['url'] ) . '" target="_blank" rel="noopener">'
+		. esc_html( $action['label'] ) . '</a>';
 }
 
 /**
@@ -365,9 +421,11 @@ function arv_season_calendar_hiatus( $raw ) {
 
 		// A hiatus race with no page left to point at is still worth listing,
 		// just not as a link to nowhere.
+		$out .= '<div class="arv-calendar__row arv-calendar__row--hiatus">';
 		$out .= '' !== $url
-			? '<a class="arv-calendar__row arv-calendar__row--hiatus" href="' . esc_url( $url ) . '"><span class="arv-calendar__body">' . $inner . '</span><span class="arv-calendar__arrow" aria-hidden="true">&rarr;</span></a>'
-			: '<div class="arv-calendar__row arv-calendar__row--hiatus"><span class="arv-calendar__body">' . $inner . '</span></div>';
+			? '<a class="arv-calendar__main" href="' . esc_url( $url ) . '"><span class="arv-calendar__body">' . $inner . '</span><span class="arv-calendar__arrow" aria-hidden="true">&rarr;</span></a>'
+			: '<span class="arv-calendar__main"><span class="arv-calendar__body">' . $inner . '</span></span>';
+		$out .= '</div>';
 	}
 
 	return $out;
@@ -433,7 +491,7 @@ function arv_season_calendar_render( $data ) {
 		$rows_html .= '<div class="arv-calendar__rows">';
 
 		foreach ( $month_races as $race ) {
-			$rows_html .= arv_season_calendar_row( $race );
+			$rows_html .= arv_season_calendar_row( $race, $today, $grace );
 		}
 
 		$rows_html .= '</div></div>';
