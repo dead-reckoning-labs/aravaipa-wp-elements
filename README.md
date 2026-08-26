@@ -168,7 +168,11 @@ Currently 23 of 69 rows show a real date and 46 read TBD.
 
 Conflating those two facts is a mistake worth not repeating: keying the TBD on "registration confirmed" instead of "date guessed" hid The Bear Chase's real published October date behind a TBD purely because its UltraSignup listing had not rolled over.
 
-It never offers Register, Live Results, or anything else implying you can act right now. Every row links to the race's own page.
+Every row links to the race's own page. A race whose registration is confirmed also gets a small **Live Results** / **Results** link while it is running and just after, driven by the same `arv_upcoming_races_action()` the homepage runs on, so both pages change state at the same moment by construction rather than by two implementations agreeing.
+
+The other 58 rows stay quiet. Every URL available for them is derived from an UltraSignup listing that still describes a previous running, so "results" would be last year's results. Register is never offered here at all: selling entries is Upcoming Races' job, and two Register buttons on one page pointing at the same place is noise.
+
+A published date is only real for the running it was published for. When a race rolls past its grace window into next year, its day stops being printed and becomes TBD, recomputed at render time so it self-corrects rather than asserting a date for a running nobody has scheduled.
 
 **On hiatus** is a hand-maintained list at the bottom, one per line: `Name | race page URL (optional) | note (optional)`. Deliberately not derived from anything, because "next year is not scheduled yet" and "we are not running this again" look identical from outside and only one of them should be told to a runner as a hiatus.
 

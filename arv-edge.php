@@ -377,7 +377,7 @@ t('its note is shown',            strpos($r,'Paused since 2024')!==false);
 t('it links to its page',         strpos($r,'href="https://a.com/old"')!==false);
 // A hiatus race with nowhere left to point is still worth listing, but must
 // not render as a link to nothing.
-t('a hiatus race with no url is not a link', strpos($r,'<div class="arv-calendar__row arv-calendar__row--hiatus">')!==false);
+t('a hiatus race with no url is not a link', strpos($r,'<span class="arv-calendar__main"><span class="arv-calendar__body"><span class="arv-calendar__name">No Link Race')!==false);
 t('the hiatus section has its own heading',  strpos($r,'On hiatus')!==false);
 // The hiatus list is the only content on a page that has no dated races yet.
 t('hiatus alone still renders', strpos(arv_season_calendar_render(array('rows'=>'','hiatus_rows'=>$h)),'Old Race')!==false);
@@ -386,6 +386,48 @@ t('no hiatus rows means no hiatus section', strpos(arv_season_calendar_render(ar
 $x='<script>alert(1)</script>';
 t('race name is escaped',   strpos(arv_season_calendar_render(array('rows'=>"$x | 2027-03-05 | | 50K | V | X, AZ | https://u.com/a | |  |  |  |  | 1 | 0")),'<script>alert')===false);
 t('hiatus name is escaped', strpos(arv_season_calendar_render(array('rows'=>'','hiatus_rows'=>$x)),'<script>alert')===false);
+
+echo "calendar live state:\n";
+// Same phase function the homepage runs on, so both pages change state at the
+// same moment by construction rather than by two implementations agreeing.
+$live = "Rock Hawk | 2026-08-29 | August 29 | 50K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0";
+$GLOBALS['NOW']='2026-08-20'; t('well before the race: no action link', strpos(arv_season_calendar_render(array('rows'=>$live)),'arv-calendar__action')===false);
+$GLOBALS['NOW']='2026-08-29';
+$r = arv_season_calendar_render(array('rows'=>$live));
+t('race day: live results link appears', strpos($r,'arv-calendar__action--live')!==false);
+t('and it says Live Results',            strpos($r,'>Live Results<')!==false);
+t('pointing at the real timing board',   strpos($r,'live.aravaiparunning.com/#/rock_hawk-2026')!==false);
+$GLOBALS['NOW']='2026-08-30';
+t('day after: results link',             strpos(arv_season_calendar_render(array('rows'=>$live)),'arv-calendar__action--results')!==false);
+
+// A published date is only real for the running it was published for. Once a
+// race rolls past its grace window into next year, its old day must stop
+// being printed: the same mistake the `guessed` column prevents at generation
+// time, arriving from the other direction as the calendar moves.
+$GLOBALS['NOW']='2026-08-30';
+t('a just-run race still shows its real day inside grace', strpos(arv_season_calendar_render(array('rows'=>$live)),'__day">29<')!==false);
+$GLOBALS['NOW']='2026-09-05';
+$rolled = arv_season_calendar_render(array('rows'=>$live));
+t('once rolled forward, the day becomes TBD',  strpos($rolled,'day--tbd">TBD<')!==false);
+t('and it is not still asserting the old day', strpos($rolled,'__day">29<')===false);
+t('under next year\'s heading',                strpos($rolled,'August 2027')!==false);
+$GLOBALS['NOW']='2026-08-26';
+
+// Register is never offered here: that is Upcoming Races' job, and two
+// Register buttons on one page pointing at the same place is noise.
+$GLOBALS['NOW']='2026-08-26';
+t('never offers Register', strpos(arv_season_calendar_render(array('rows'=>$live)),'>Register<')===false);
+
+// The 58 unconfirmed races have no safe URL to offer: every one is derived
+// from a listing describing a previous running, so "results" would be last
+// year's. Those rows stay quiet.
+$unconf2 = "Old | 2026-08-29 | August 29 | 50K | V | X, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/o/ |  |  |  |  | 0 | 0";
+$GLOBALS['NOW']='2026-08-29';
+t('an unconfirmed race gets no action link even on its race day', strpos(arv_season_calendar_render(array('rows'=>$unconf2)),'arv-calendar__action')===false);
+$GLOBALS['NOW']='2026-08-26';
+
+// The row is a container now, so the main link must still be the big target.
+t('the row main link still wraps the name and logo', strpos(arv_season_calendar_render(array('rows'=>$live)),'<a class="arv-calendar__main"')!==false);
 
 echo "fixture integrity:\n";
 // Every column added to the row format this session (end date, live URL,
