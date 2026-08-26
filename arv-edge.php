@@ -500,6 +500,25 @@ t('while the mapped race still gets a pin',           strpos($m2,'39.3698')!==fa
 // heading over it reads as broken.
 t('no coordinates anywhere renders nothing', arv_race_map_render(array('rows'=>$noCoord))==='');
 
+// Null island. A race whose coordinates are absent, zero, or not numbers is
+// listed as missing a location, never plotted at 0,0. The live map drew all
+// 84 upcoming races in the Atlantic because the store returned no 'lat' key
+// at all, null was not caught by an '' check, and (float) null is 0.0.
+$zero    = "Zero Race | 2026-09-05 | Sept 5 | 50K | V | X, AZ | https://u.com/z | https://a.com/z |  |  |  |  | 1 | 0 | 0 | 0";
+$mz      = arv_race_map_render(array('rows'=>$mapRow . "\n" . $zero));
+t('a 0,0 race is called out as missing, not plotted', strpos($mz,'arv-map__missing')!==false);
+t('and no pin is placed at null island',              strpos($mz,'"lat":0')===false && strpos($mz,'"lng":0')===false);
+
+$junk = "Junk Race | 2026-09-05 | Sept 5 | 50K | V | X, AZ | https://u.com/j | https://a.com/j |  |  |  |  | 1 | 0 | north | west";
+$mj   = arv_race_map_render(array('rows'=>$mapRow . "\n" . $junk));
+t('non-numeric coordinates are treated as missing',   strpos($mj,'arv-map__missing')!==false);
+
+// The store path is the one that actually feeds the live site, and it is
+// where the bug was: every pin must carry a real coordinate.
+$mAll = arv_race_map_render(array('rows'=>$mapRow));
+t('every rendered pin has a non-zero lat',            strpos($mAll,'"lat":0,')===false);
+t('every rendered pin has a non-zero lng',            strpos($mAll,'"lng":0,')===false);
+
 // Same phase logic as everywhere else, so a popup cannot disagree with the
 // card or the calendar row for the same race.
 $GLOBALS['NOW']='2026-08-29';

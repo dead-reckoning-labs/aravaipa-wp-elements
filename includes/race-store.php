@@ -96,6 +96,13 @@ function arv_race_store_fields() {
 		'_arv_distances' => 'distances',
 		'_arv_venue'     => 'venue',
 		'_arv_location'  => 'location',
+		// Coordinates travel with the race like every other field. Leaving
+		// them out is what put all 84 pins on the map at 0,0: the store
+		// simply never returned a 'lat' or 'lng' key, the race map read a
+		// missing key as null, cast it to 0.0, and drew the entire season
+		// in the Atlantic off the coast of Africa.
+		'_arv_lat'       => 'lat',
+		'_arv_lng'       => 'lng',
 		'_arv_register'  => 'register',
 		'_arv_page'      => 'page',
 		'_arv_image'     => 'image',
