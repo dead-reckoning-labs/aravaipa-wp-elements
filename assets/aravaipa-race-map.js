@@ -46,7 +46,13 @@
 		}
 
 		if ( pin.distances ) {
-			var pills = pin.distances.split( /,\s*/ ).filter( Boolean );
+			// The distances field is pipe-separated ("50K | 25K | 10K | 5K"),
+			// not comma-separated: see arv_upcoming_races_parse_row(), which
+			// rejoins the row's variable-length distance cells with " | ".
+			// Splitting on a comma here found nothing to split on and every
+			// multi-distance race rendered as one pill with the raw pipes
+			// still in it.
+			var pills = pin.distances.split( /\s*\|\s*/ ).filter( Boolean );
 			html += '<p class="arv-map__popup-distances">';
 			for ( var i = 0; i < pills.length; i++ ) {
 				html += '<span class="arv-map__popup-pill">' + escapeHtml( pills[ i ] ) + '</span>';
