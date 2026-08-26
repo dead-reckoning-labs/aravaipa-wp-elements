@@ -10,8 +10,9 @@ function __($s,$d=''){return $s;}
 function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_attr($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_url($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
+function wp_json_encode($d,$f=0){return json_encode($d,$f);}
 $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
-foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map'] as $e) require_once $d."includes/elements/$e.php";
+foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races'] as $e) require_once $d."includes/elements/$e.php";
 
 $pass=0;$fail=0;
 function t($name,$cond){ global $pass,$fail; if($cond){$pass++; echo "  ok   $name\n";} else {$fail++; echo "  FAIL $name\n";} }
@@ -65,6 +66,71 @@ t('x near right edge gets edge-right class', strpos($r,'arv-region-map__pin--edg
 $r=arv_region_map_render(array('rows'=>"Washington | 20 | 5 | https://x/"));
 t('y near top gets label-below class', strpos($r,'arv-region-map__pin--label-below')!==false);
 t('x/y out of range clamped into 0-100', strpos(arv_region_map_render(array('rows'=>"X | 500 | -50 | https://x/")),'left:100%;top:0%')!==false);
+
+echo "upcoming races:\n";
+t('empty rows return nothing', arv_upcoming_races_render(array('rows'=>''))==='');
+t('row with no date is dropped', arv_upcoming_races_render(array('rows'=>"Race | | today"))==='');
+t('row with unparseable date is dropped', arv_upcoming_races_render(array('rows'=>"Race | someday | x | 50K | V | Pine, AZ | https://u.com | https://a.com | "))==='');
+// 2026-02-30 passes a regex but is not a day. Emitting it as an Event startDate
+// makes Google report the whole page as invalid, not just skip the one entry.
+t('impossible calendar date is dropped', arv_upcoming_races_render(array('rows'=>"Race | 2026-02-30 | x | 50K | V | Pine, AZ | https://u.com | https://a.com | "))==='');
+t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2026-02-28 | x | 50K | V | Pine, AZ | https://u.com | https://a.com | ")),'Race')!==false);
+
+// The distances column is written the way the site writes it, with pipes,
+// which is also the column separator. A full-length row is read from both
+// ends so those pipes survive.
+$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2026-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png"));
+t('pipes inside distances are kept, not split into columns', strpos($r,'75K | 50K | 25K | 15K | 7K')!==false);
+t('and the column after distances is still the venue', strpos($r,'McDowell Mountain Regional Park')!==false);
+t('and the register URL is not mistaken for a distance', strpos($r,'ultrasignup.com/register.aspx?did=1')!==false);
+t('image lands in an img, not the location line', strpos($r,'src="https://x/i.png"')!==false);
+
+// Sorting, because the whole point of the module is "what is next".
+$r = arv_upcoming_races_render(array('rows'=>"Later | 2027-01-01 | | 50K | V | Pine, AZ | https://u.com | https://a.com | \nSooner | 2026-09-01 | | 10K | V | Pine, AZ | https://u.com | https://a.com | "));
+t('races are sorted by date regardless of paste order', strpos($r,'Sooner') < strpos($r,'Later'));
+$three = "Zulu | 2026-09-03 | | 1 | V | P, AZ | https://u.com | https://a.com | \nXray | 2026-09-01 | | 1 | V | P, AZ | https://u.com | https://a.com | \nYankee | 2026-09-02 | | 1 | V | P, AZ | https://u.com | https://a.com | ";
+$r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'2'));
+t('limit keeps the two soonest', strpos($r,'Xray')!==false && strpos($r,'Yankee')!==false);
+t('and drops the third', strpos($r,'Zulu')===false);
+t('limit trims the schema too, not just the cards', substr_count($r,'"@type":"SportsEvent"')===2);
+$r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'0'));
+t('limit 0 shows every race', strpos($r,'Zulu')!==false);
+
+echo "event schema:\n";
+$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png";
+$r = arv_upcoming_races_render(array('rows'=>$row));
+$m = array(); preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $r, $m);
+t('schema block is emitted', !empty($m));
+$json = json_decode($m[1] ?? '', true);
+t('schema is valid json', is_array($json));
+// Without @context none of the "@type" values resolve to schema.org and the
+// whole block is silently ignored by every consumer that reads it.
+t('block declares the schema.org context', ($json['@context'] ?? '')==='https://schema.org');
+t('events hang off @graph', isset($json['@graph']) && count($json['@graph'])===1);
+$e = $json['@graph'][0] ?? array();
+t('type is SportsEvent', ($e['@type'] ?? '')==='SportsEvent');
+t('startDate is the ISO date', ($e['startDate'] ?? '')==='2027-02-13');
+t('attendance mode is offline, not Google\'s online default', strpos($e['eventAttendanceMode'] ?? '','Offline')!==false);
+t('location name is the venue', ($e['location']['name'] ?? '')==='Black Canyon Trail');
+t('city is split out of "City, ST"', ($e['location']['address']['addressLocality'] ?? '')==='Mayer');
+t('state is split out of "City, ST"', ($e['location']['address']['addressRegion'] ?? '')==='AZ');
+t('offer points at registration', ($e['offers']['url'] ?? '')==='https://ultrasignup.com/register.aspx?did=9');
+t('no invented price on the offer', !isset($e['offers']['price']));
+t('organizer is named', ($e['organizer']['name'] ?? '')==='Aravaipa Running');
+$r2 = arv_upcoming_races_render(array('rows'=>$row, 'schema'=>'false'));
+t('schema toggle off suppresses the block', strpos($r2,'application/ld+json')===false);
+t('but the cards still render with it off', strpos($r2,'Black Canyon 100K')!==false);
+
+// A race name containing "</script>" would otherwise close the tag early and
+// spill the rest of the JSON into the document as markup.
+$r = arv_upcoming_races_render(array('rows'=>"Bad</script><b>x</b> | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com | "));
+t('script-closing text cannot break out of the json-ld block', strpos($r,'</script><b>')===false);
+t('and cannot break out of the card markup either', strpos($r,'<b>x</b>')===false);
+
+// A region-only location ("Arizona") has no comma to split on.
+$e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
+  arv_upcoming_races_render(array('rows'=>"S | 2026-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | "))), true)['@graph'][0];
+t('region-only location becomes addressRegion with no bogus locality', ($e['location']['address']['addressRegion'] ?? '')==='Arizona' && !isset($e['location']['address']['addressLocality']));
 
 echo "hero overlay clamp:\n";
 t('overlay > 1 clamped', strpos(arv_race_hero_render(array('overlay'=>'9','image'=>'https://x/y.jpg','race_name'=>'R')),'--arv-overlay:1;')!==false);

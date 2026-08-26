@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.6.0
+ * Version:           0.7.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,11 +16,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.6.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.7.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
 require_once ARV_ELEMENTS_PATH . 'includes/helpers.php';
+
+// Front end too, unlike the updater: this one writes to <head> on the page a
+// visitor (and a crawler) actually requests.
+require_once ARV_ELEMENTS_PATH . 'includes/seo.php';
 
 // Admin only: every hook in updater.php answers questions WordPress only
 // asks inside wp-admin (the Plugins screen, the update cron that runs
@@ -59,6 +63,7 @@ function arv_elements_register() {
 		'partner-grid',
 		'countdown',
 		'region-map',
+		'upcoming-races',
 	);
 
 	foreach ( $elements as $element ) {

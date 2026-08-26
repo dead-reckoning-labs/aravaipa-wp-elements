@@ -15,6 +15,7 @@
 .arv-partners,
 .arv-countdown,
 .arv-region-map,
+.arv-races,
 .arv-hero {
 	--arv-accent: #ff2a13;
 	--arv-ink: #272727;
@@ -27,6 +28,7 @@
 .arv-partners *,
 .arv-countdown *,
 .arv-region-map *,
+.arv-races *,
 .arv-hero * {
 	box-sizing: inherit;
 }
@@ -1000,4 +1002,245 @@
 		flex: 1 1 0;
 		padding: 0.85rem 0.35rem;
 	}
+}
+
+
+/* ============================================================ Races == */
+/* Built against the live site's own computed values rather than guessed:
+   body is Lato 15px/1.7 on white, the theme's container is 1200px, its
+   accent is #ff2a13 with #c61300 as the pressed state, its small labels are
+   14px/700 uppercase at 2px letter-spacing, and nothing on the site has a
+   border radius. All of that is reproduced here so the module reads as part
+   of the page rather than a component dropped onto it. */
+
+.arv-races {
+	--arv-races-bg: #ffffff;
+	--arv-races-ink: #272727;
+	--arv-races-muted: #7a7a7a;
+	--arv-races-rule: #ebebeb;
+	--arv-races-card: #f7f7f7;
+	padding: 3.5rem 0;
+	background: var(--arv-races-bg);
+	color: var(--arv-races-ink);
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-races--dark {
+	--arv-races-bg: #1d2624;
+	--arv-races-ink: #f2f2f2;
+	--arv-races-muted: #9aa8a4;
+	--arv-races-rule: #2f3b38;
+	--arv-races-card: #212c2a;
+}
+
+.arv-races__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 1.25rem;
+}
+
+/* The site's own small-label convention, lifted off its h4: 14px, 700,
+   uppercase, 2px tracking. Reused rather than reinvented so this section's
+   eyebrow matches every other label on the site. */
+.arv-races__eyebrow {
+	margin: 0 0 0.4rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-accent);
+}
+
+.arv-races__heading {
+	margin: 0 0 0.5rem;
+	font-size: clamp(1.9rem, 4vw, 2.8rem);
+	font-weight: 700;
+	line-height: 1.15;
+	color: var(--arv-races-ink);
+}
+
+.arv-races__intro {
+	margin: 0 0 2rem;
+	max-width: 46rem;
+	font-size: 1rem;
+	line-height: 1.7;
+	color: var(--arv-races-muted);
+}
+
+.arv-races__heading + .arv-races__grid,
+.arv-races__eyebrow + .arv-races__grid {
+	margin-top: 2rem;
+}
+
+.arv-races__grid {
+	display: grid;
+	gap: 1.5rem;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.arv-races--cols-2 .arv-races__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.arv-races--cols-4 .arv-races__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.arv-races__card {
+	display: flex;
+	flex-direction: column;
+	background: var(--arv-races-card);
+	/* Square, like everything else on this site. */
+	border-radius: 0;
+}
+
+/* Fixed aspect box so a grid of race tiles lines up whatever shape the
+   artwork is. Contain rather than cover, and 4:3 rather than 16:9, because
+   Aravaipa's race images are square badge logos, not landscape photos:
+   cropping them to a letterbox cut the name straight off the top and bottom
+   of the badge. Contain letterboxes a wide photo instead, which is the
+   better failure of the two. */
+.arv-races__media {
+	position: relative;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	background: var(--arv-races-rule);
+}
+
+.arv-races__img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
+
+.arv-races__body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	padding: 1.1rem 1.2rem 1.2rem;
+}
+
+.arv-races__date {
+	display: block;
+	margin-bottom: 0.35rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: var(--arv-accent);
+}
+
+.arv-races__name {
+	margin: 0 0 0.4rem;
+	font-size: 1.18rem;
+	font-weight: 700;
+	line-height: 1.25;
+	color: var(--arv-races-ink);
+}
+
+.arv-races__link {
+	color: inherit;
+	text-decoration: none;
+}
+
+.arv-races__distances {
+	margin: 0 0 0.3rem;
+	font-size: 0.92rem;
+	line-height: 1.5;
+	color: var(--arv-races-ink);
+}
+
+.arv-races__where {
+	margin: 0 0 1rem;
+	font-size: 0.86rem;
+	line-height: 1.5;
+	color: var(--arv-races-muted);
+}
+
+/* Pushed to the bottom of the card so the buttons line up across a row even
+   when one race has four distances and its neighbour has one. */
+.arv-races__actions {
+	display: flex;
+	align-items: center;
+	gap: 0.9rem;
+	margin-top: auto;
+	padding-top: 0.3rem;
+}
+
+.arv-races__cta {
+	display: inline-block;
+	padding: 0.62rem 1.15rem;
+	background: var(--arv-accent);
+	color: #fff;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	text-decoration: none;
+	border-radius: 0;
+	transition: background 0.15s ease;
+}
+
+.arv-races__details {
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	color: var(--arv-races-muted);
+	text-decoration: none;
+	border-bottom: 1px solid transparent;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.arv-races__cta:focus-visible,
+.arv-races__details:focus-visible,
+.arv-races__link:focus-visible {
+	outline: 2px solid var(--arv-accent);
+	outline-offset: 2px;
+}
+
+.arv-races__all {
+	margin: 2rem 0 0;
+	text-align: center;
+}
+
+.arv-races__all a {
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-accent);
+	text-decoration: none;
+	border-bottom: 1px solid currentColor;
+	padding-bottom: 2px;
+}
+
+/* Same gating as the region map: on iOS Safari a :hover rule on a link makes
+   the first tap trigger hover rather than follow the link, so a runner on a
+   phone would have to tap Register twice. */
+@media (hover: hover) and (pointer: fine) {
+	/* #c61300 is the theme's own pressed red, not a shade picked by eye. */
+	.arv-races__cta:hover { background: #c61300; }
+	.arv-races__link:hover { color: var(--arv-accent); }
+	.arv-races__details:hover {
+		color: var(--arv-races-ink);
+		border-bottom-color: var(--arv-accent);
+	}
+	.arv-races__all a:hover { color: #c61300; }
+}
+
+@media (max-width: 979px) {
+	.arv-races__grid,
+	.arv-races--cols-2 .arv-races__grid,
+	.arv-races--cols-4 .arv-races__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 619px) {
+	.arv-races { padding: 2.5rem 0; }
+	.arv-races__grid,
+	.arv-races--cols-2 .arv-races__grid,
+	.arv-races--cols-4 .arv-races__grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	/* Full width on a phone, where a 120px button next to a text link is a
+	   smaller tap target than it looks. */
+	.arv-races__actions { flex-wrap: wrap; }
+	.arv-races__cta { flex: 1 0 auto; text-align: center; }
 }

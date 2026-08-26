@@ -31,7 +31,7 @@ fi
 
 # Lint every file that will ship. A parse error reaching the live site
 # takes down the whole thing, not just the builder.
-for f in "$NAME.php" includes/helpers.php includes/updater.php includes/elements/*.php; do
+for f in "$NAME.php" includes/*.php includes/elements/*.php; do
 	php -l "$f" > /dev/null
 done
 
@@ -39,7 +39,7 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php includes/updater.php "$STAGE/includes/"
+cp includes/helpers.php includes/updater.php includes/seo.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
@@ -57,6 +57,17 @@ missing=0
 while read -r el; do
 	[ -f "$STAGE/includes/elements/$el.php" ] || { echo "element '$el' registered but not packaged" >&2; missing=1; }
 done < <(sed -n "/\$elements = array(/,/);/p" "$NAME.php" | grep -oE "'[a-z-]+'" | tr -d "'")
+[ "$missing" -eq 0 ] || exit 1
+
+# Every includes/*.php the plugin require_once's must actually be in the
+# payload. Unlike the element loop above, these are not guarded by file_exists
+# at runtime: a missing one is a fatal that takes the whole site down, not a
+# quietly absent element. Shipping v0.7.0 without includes/seo.php, which the
+# hand-maintained cp line above had not been updated for, is exactly what this
+# is here to stop happening twice.
+while read -r inc; do
+	[ -f "$STAGE/includes/$inc" ] || { echo "includes/$inc is required by $NAME.php but not packaged" >&2; missing=1; }
+done < <(grep -oE "ARV_ELEMENTS_PATH \. 'includes/[a-z-]+\.php'" "$NAME.php" | sed -E "s#.*includes/##; s#'##")
 [ "$missing" -eq 0 ] || exit 1
 
 # Every bundled logo an element references must actually be in the payload,
