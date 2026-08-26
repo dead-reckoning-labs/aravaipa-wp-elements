@@ -115,6 +115,11 @@ for (const r of raw) {
     r.page || '',
     r.img || '',
     isoEndFor(display, iso),
+    // Live/results override, for a race with its own tracker or broadcast
+    // page. Left blank: the element derives an UltraSignup results link from
+    // the register URL's did, which serves both the live field and the final
+    // results, so most races never need this.
+    '',
   ].join(' | '));
 }
 

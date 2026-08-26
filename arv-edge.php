@@ -14,6 +14,7 @@ function wp_json_encode($d,$f=0){return json_encode($d,$f);}
 $GLOBALS['NOW']='2026-08-25';
 function current_time($f){return $GLOBALS['NOW'];}
 function apply_filters($tag,$v){return $v;}
+define('DAY_IN_SECONDS',86400);
 $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
 foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races'] as $e) require_once $d."includes/elements/$e.php";
 
@@ -82,7 +83,7 @@ t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2
 // The distances column is written the way the site writes it, with pipes,
 // which is also the column separator. A full-length row is read from both
 // ends so those pipes survive.
-$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png | "));
+$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  | "));
 t('pipes inside distances are kept, not split into columns', strpos($r,'75K | 50K | 25K | 15K | 7K')!==false);
 t('and the column after distances is still the venue', strpos($r,'McDowell Mountain Regional Park')!==false);
 t('and the register URL is not mistaken for a distance', strpos($r,'ultrasignup.com/register.aspx?did=1')!==false);
@@ -100,7 +101,7 @@ $r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'0'));
 t('limit 0 shows every race', strpos($r,'Zulu')!==false);
 
 echo "event schema:\n";
-$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png | ";
+$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  | ";
 $r = arv_upcoming_races_render(array('rows'=>$row));
 $m = array(); preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $r, $m);
 t('schema block is emitted', !empty($m));
@@ -132,7 +133,7 @@ t('and cannot break out of the card markup either', strpos($r,'<b>x</b>')===fals
 
 // A region-only location ("Arizona") has no comma to split on.
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
-  arv_upcoming_races_render(array('rows'=>"S | 2027-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | | "))), true)['@graph'][0];
+  arv_upcoming_races_render(array('rows'=>"S | 2027-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | |  | "))), true)['@graph'][0];
 t('region-only location becomes addressRegion with no bogus locality', ($e['location']['address']['addressRegion'] ?? '')==='Arizona' && !isset($e['location']['address']['addressLocality']));
 
 echo "past races drop off:\n";
@@ -149,14 +150,16 @@ t('and the dropped race is out of the schema too', substr_count($r,'"@type":"Spo
 // Cocodona runs the better part of a week. Dropping it on day two, while
 // runners are still on the course, would be worse than leaving it a day long.
 $GLOBALS['NOW']='2026-09-13';
-$multi = "Cocodona | 2026-09-12 | September 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18";
+$multi = "Cocodona | 2026-09-12 | September 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 | ";
 t('a multi-day race stays up mid-race', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
 $GLOBALS['NOW']='2026-09-18';
 t('and through its final day', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
 $GLOBALS['NOW']='2026-09-19';
-t('but is gone the morning after it ends', arv_upcoming_races_render(array('rows'=>$multi))==='');
+t('holds its results through the weekend', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
+$GLOBALS['NOW']='2026-09-21';
+t('and clears on the Monday after', arv_upcoming_races_render(array('rows'=>$multi))==='');
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
-  (function(){ $GLOBALS['NOW']='2026-09-13'; return arv_upcoming_races_render(array('rows'=>"Cocodona | 2026-09-12 | Sept 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18")); })()), true)['@graph'][0];
+  (function(){ $GLOBALS['NOW']='2026-09-13'; return arv_upcoming_races_render(array('rows'=>"Cocodona | 2026-09-12 | Sept 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 | ")); })()), true)['@graph'][0];
 t('multi-day race carries endDate in schema', ($e['endDate'] ?? '')==='2026-09-18');
 $GLOBALS['NOW']='2026-08-25';
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
@@ -165,6 +168,70 @@ t('single-day race omits a pointless endDate', !isset($e['endDate']));
 
 $GLOBALS['NOW']='2030-01-01';
 t('every race in the past renders nothing, not an empty heading', arv_upcoming_races_render(array('rows'=>$list))==='');
+$GLOBALS['NOW']='2026-08-25';
+
+echo "lifecycle:\n";
+// Rock Hawk runs Saturday 2026-08-29.
+$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  | ";
+function phase_of($rows){
+  $r = arv_upcoming_races_render(array('rows'=>$rows));
+  if ($r==='') return 'gone';
+  if (strpos($r,'arv-races__cta--upcoming')!==false) return 'upcoming';
+  if (strpos($r,'arv-races__cta--live')!==false) return 'live';
+  if (strpos($r,'arv-races__cta--results')!==false) return 'results';
+  return 'none';
+}
+$GLOBALS['NOW']='2026-08-25'; t('four days out: entries open',  phase_of($rh)==='upcoming');
+$GLOBALS['NOW']='2026-08-28'; t('day before: still entries',    phase_of($rh)==='upcoming');
+$GLOBALS['NOW']='2026-08-29'; t('race day: live',               phase_of($rh)==='live');
+$GLOBALS['NOW']='2026-08-30'; t('Sunday after: results',        phase_of($rh)==='results');
+$GLOBALS['NOW']='2026-08-31'; t('Monday morning: gone',         phase_of($rh)==='gone');
+
+$GLOBALS['NOW']='2026-08-25';
+$r = arv_upcoming_races_render(array('rows'=>$rh));
+t('primary reads Register while open', strpos($r,'>Register<')!==false);
+t('and points at ultrasignup registration', strpos($r,'register.aspx?did=131056')!==false);
+$GLOBALS['NOW']='2026-08-29';
+$r = arv_upcoming_races_render(array('rows'=>$rh));
+t('primary reads Live Results on race day', strpos($r,'>Live Results<')!==false);
+// Derived from the register link's did rather than carried as a second URL
+// that could fall out of sync with it.
+t('and points at the derived results url', strpos($r,'results_event.aspx?did=131056')!==false);
+$GLOBALS['NOW']='2026-08-30';
+t('primary reads Results after the race', strpos(arv_upcoming_races_render(array('rows'=>$rh)),'>Results<')!==false);
+
+// The configured button label is about selling entries. Once the race is
+// running it would be wrong whatever the setting says.
+$GLOBALS['NOW']='2026-08-25';
+t('custom label used while open', strpos(arv_upcoming_races_render(array('rows'=>$rh,'cta_label'=>'Enter now')),'>Enter now<')!==false);
+$GLOBALS['NOW']='2026-08-29';
+$r = arv_upcoming_races_render(array('rows'=>$rh,'cta_label'=>'Enter now'));
+t('but ignored once the race is running', strpos($r,'Enter now')===false && strpos($r,'>Live Results<')!==false);
+
+echo "race details button:\n";
+$GLOBALS['NOW']='2026-08-25';
+$r = arv_upcoming_races_render(array('rows'=>$rh));
+t('Race Details always present', substr_count($r,'arv-races__details')===1);
+$GLOBALS['NOW']='2026-08-30';
+t('including after the race',   substr_count(arv_upcoming_races_render(array('rows'=>$rh)),'arv-races__details')===1);
+$GLOBALS['NOW']='2026-08-25';
+t('and it stays on-site, not a new tab', preg_match('#arv-races__details" href="[^"]*aravaiparunning[^"]*">#',$r)===1);
+
+echo "monday cutoff:\n";
+t('Saturday race clears the Monday after',   arv_upcoming_races_clears_on('2026-08-29')==='2026-08-31');
+t('Sunday race clears the next day',         arv_upcoming_races_clears_on('2026-08-30')==='2026-08-31');
+// Strictly after, so a Monday race is not gone the instant it finishes.
+t('Monday race gets the following week',     arv_upcoming_races_clears_on('2026-08-31')==='2026-09-07');
+t('Wednesday race clears the Monday after',  arv_upcoming_races_clears_on('2026-09-02')==='2026-09-07');
+
+echo "results url derivation:\n";
+t('derives from a register link', arv_upcoming_races_results_url('https://ultrasignup.com/register.aspx?did=42')==='https://ultrasignup.com/results_event.aspx?did=42');
+t('handles the www host',        arv_upcoming_races_results_url('https://www.ultrasignup.com/register.aspx?did=42')!=='');
+t('non-ultrasignup url derives nothing, rather than a broken link', arv_upcoming_races_results_url('https://runsignup.com/Race/x')==='');
+// A row can override with its own tracker or broadcast page.
+$GLOBALS['NOW']='2026-08-29';
+$withlive = "R | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=7 | https://a.com/r/ |  |  | https://mountainoutpost.com/live/r";
+t('an explicit live url wins over the derived one', strpos(arv_upcoming_races_render(array('rows'=>$withlive)),'mountainoutpost.com/live/r')!==false);
 $GLOBALS['NOW']='2026-08-25';
 
 echo "hero overlay clamp:\n";

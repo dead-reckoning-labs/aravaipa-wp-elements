@@ -1014,6 +1014,11 @@
    of the page rather than a component dropped onto it. */
 
 .arv-races {
+	/* The logo teals, shared with the region map, which is where they are
+	   also defined. Repeated rather than hoisted to :root so the elements
+	   stay self-contained: each one can be dropped into a page on its own. */
+	--arv-teal: #5bb5a2;
+	--arv-teal-deep: #2a5e6b;
 	--arv-races-bg: #ffffff;
 	--arv-races-ink: #272727;
 	--arv-races-muted: #7a7a7a;
@@ -1157,10 +1162,11 @@
    when one race has four distances and its neighbour has one. */
 .arv-races__actions {
 	display: flex;
-	align-items: center;
-	gap: 0.9rem;
+	align-items: stretch;
+	justify-content: center;
+	gap: 0.6rem;
 	margin-top: auto;
-	padding-top: 0.3rem;
+	padding-top: 0.6rem;
 }
 
 .arv-races__cta {
@@ -1177,14 +1183,42 @@
 	transition: background 0.15s ease;
 }
 
+/* The secondary of the pair: same size and shape as the primary, hollow
+   instead of filled. Always present, so the row of buttons keeps its shape
+   whatever phase a race is in and the eye is not re-learning the layout on
+   every card down the list. */
 .arv-races__details {
-	font-size: 0.8rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.62rem 1.15rem;
+	background: transparent;
+	border: 2px solid var(--arv-races-rule);
+	color: var(--arv-races-ink);
+	font-size: 0.78rem;
 	font-weight: 700;
-	letter-spacing: 0.5px;
-	color: var(--arv-races-muted);
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
 	text-decoration: none;
-	border-bottom: 1px solid transparent;
-	transition: color 0.15s ease, border-color 0.15s ease;
+	white-space: nowrap;
+	border-radius: 0;
+	transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+/* The primary carries a border of its own width so the two buttons are the
+   same height, rather than the filled one sitting a couple of pixels short
+   of the hollow one beside it. */
+.arv-races__cta {
+	border: 2px solid var(--arv-accent);
+}
+
+/* Once a race is running or done there is nothing left to sell, and a red
+   button next to it would still read as "buy". Live and results share the
+   teal used elsewhere for information rather than action. */
+.arv-races__cta--live,
+.arv-races__cta--results {
+	background: var(--arv-teal-deep);
+	border-color: var(--arv-teal-deep);
 }
 
 .arv-races__cta:focus-visible,
@@ -1215,11 +1249,13 @@
    phone would have to tap Register twice. */
 @media (hover: hover) and (pointer: fine) {
 	/* #c61300 is the theme's own pressed red, not a shade picked by eye. */
-	.arv-races__cta:hover { background: #c61300; }
+	.arv-races__cta:hover { background: #c61300; border-color: #c61300; }
+	.arv-races__cta--live:hover,
+	.arv-races__cta--results:hover { background: #22505b; border-color: #22505b; }
 	.arv-races__link:hover { color: var(--arv-accent); }
 	.arv-races__details:hover {
-		color: var(--arv-races-ink);
-		border-bottom-color: var(--arv-accent);
+		color: var(--arv-accent);
+		border-color: var(--arv-accent);
 	}
 	.arv-races__all a:hover { color: #c61300; }
 }
@@ -1273,24 +1309,22 @@
 	.arv-races__where { margin-bottom: 0.7rem; font-size: 0.8rem; }
 
 	.arv-races__actions {
-		gap: 0.75rem;
-		padding-top: 0;
+		gap: 0.5rem;
+		padding-top: 0.2rem;
+		justify-content: flex-start;
 	}
 
 	/* 31px measured on a real iPhone viewport, against Apple's 44px minimum
 	   for a touch target. Registration is the one thing on this page anyone
 	   is trying to tap. */
-	.arv-races__cta {
+	.arv-races__cta,
+	.arv-races__details {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		min-height: 44px;
-		padding: 0.5rem 1rem;
-	}
-
-	.arv-races__details {
-		display: inline-flex;
-		align-items: center;
-		min-height: 44px;
+		padding: 0.5rem 0.7rem;
+		font-size: 0.72rem;
+		letter-spacing: 0.8px;
 	}
 }
