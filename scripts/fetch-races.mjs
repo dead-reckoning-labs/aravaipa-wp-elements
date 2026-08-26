@@ -82,8 +82,18 @@ const MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:
 async function fetchRegClose(registerUrl, raceIso) {
   try {
     const res = await fetch(registerUrl, { signal: AbortSignal.timeout(20000) });
-    if (!res.ok) return '';
+    if (!res.ok) return { close: '', confirmed: false };
     const html = await res.text();
+
+    // Confirmed means UltraSignup's own listing agrees this race actually
+    // happens in the year we think it does. Most of this calendar is
+    // recurring events whose organiser has not yet rolled the "did" over to
+    // next year's running, so the page still describes whatever it last
+    // described, sometimes two years stale. Trusting a bumped-forward guess
+    // as though it were a real open registration is how a Register button
+    // ends up pointing at a race that already happened.
+    const schemaYear = html.match(/"startDate":"(\d{4})-\d{2}-\d{2}/);
+    const confirmed = !!schemaYear && parseInt(schemaYear[1], 10) >= parseInt(raceIso.slice(0, 4), 10);
 
     // Two different messages, and the difference matters. A race that has
     // already stopped taking entries says "Registration Closed Mon. Aug 24,
@@ -95,24 +105,26 @@ async function fetchRegClose(registerUrl, raceIso) {
     const closed = html.match(/Registration Closed\s+(?:[A-Za-z]{3,9}\.?,?\s*)?([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})/);
     if (closed) {
       const mo = MONTHS[closed[1].toLowerCase()];
-      if (mo) return `${closed[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(closed[2],10)).padStart(2,'0')}`;
+      if (mo) return { close: `${closed[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(closed[2],10)).padStart(2,'0')}`, confirmed };
     }
 
     const open = html.match(/Registration closes:\s*(?:[A-Za-z]{3,9},?\s*)?([A-Za-z]{3,9})\.?\s+(\d{1,2})/i);
     if (open) {
       const mo = MONTHS[open[1].toLowerCase()];
-      if (!mo) return '';
-      let y = parseInt(raceIso.slice(0, 4), 10);
-      const iso = () => `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(open[2],10)).padStart(2,'0')}`;
-      if (iso() > raceIso) y -= 1;
-      return iso();
+      if (mo) {
+        let y = parseInt(raceIso.slice(0, 4), 10);
+        const iso = () => `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(open[2],10)).padStart(2,'0')}`;
+        if (iso() > raceIso) y -= 1;
+        return { close: iso(), confirmed };
+      }
     }
 
-    return '';
+    return { close: '', confirmed };
   } catch {
-    return '';
+    return { close: '', confirmed: false };
   }
 }
+
 
 
 // "September 12-13" and "October 30 - November 1" both describe a race that
@@ -220,7 +232,7 @@ function findLiveResultsUrl(raceName, raceIso, liveIndex) {
 }
 
 const rows = [], skipped = [];
-let withClose = 0, withLive = 0;
+let withClose = 0, withLive = 0, withConfirmed = 0;
 const liveIndex = await fetchLiveResultsIndex();
 console.error(`live results board: ${liveIndex.length} races currently on it`);
 for (const r of raw) {
@@ -233,8 +245,9 @@ for (const r of raw) {
   if (liveUrl) withLive++;
   // One request per race, paced. Sequential on purpose: 69 parallel hits on
   // someone else's site to save a few seconds is not a trade worth making.
-  const regClose = r.reg ? await fetchRegClose(r.reg, iso) : '';
-  if (regClose) withClose++;
+  const regInfo = r.reg ? await fetchRegClose(r.reg, iso) : { close: '', confirmed: false };
+  if (regInfo.close) withClose++;
+  if (regInfo.confirmed) withConfirmed++;
   await new Promise(r2 => setTimeout(r2, 200));
   rows.push([
     name, iso, display,
@@ -250,11 +263,12 @@ for (const r of raw) {
     // derives an UltraSignup results link from the register URL's did, which
     // is a worse link (an entrants list, not real results) but a safe one.
     liveUrl,
-    regClose,
+    regInfo.close,
+    regInfo.confirmed ? '1' : '0',
   ].join(' | '));
 }
 
 rows.sort((a, b) => a.split(' | ')[1].localeCompare(b.split(' | ')[1]));
 console.log(rows.join('\n'));
-console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
+console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withConfirmed} confirmed for the year shown, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
 for (const s of skipped) console.error(`  skipped: ${s.name} (${s.date || 'no date'}) - ${s.why}`);

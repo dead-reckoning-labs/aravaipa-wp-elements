@@ -16,7 +16,7 @@ function current_time($f){return $GLOBALS['NOW'];}
 function apply_filters($tag,$v){return $v;}
 define('DAY_IN_SECONDS',86400);
 $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
-foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races'] as $e) require_once $d."includes/elements/$e.php";
+foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races','season-calendar'] as $e) require_once $d."includes/elements/$e.php";
 
 $pass=0;$fail=0;
 function t($name,$cond){ global $pass,$fail; if($cond){$pass++; echo "  ok   $name\n";} else {$fail++; echo "  FAIL $name\n";} }
@@ -83,7 +83,7 @@ t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2
 // The distances column is written the way the site writes it, with pipes,
 // which is also the column separator. A full-length row is read from both
 // ends so those pipes survive.
-$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  |  | "));
+$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  |  |  | "));
 t('pipes inside distances are kept, not split into columns', strpos($r,'75K | 50K | 25K | 15K | 7K')!==false);
 t('and the column after distances is still the venue', strpos($r,'McDowell Mountain Regional Park')!==false);
 t('and the register URL is not mistaken for a distance', strpos($r,'ultrasignup.com/register.aspx?did=1')!==false);
@@ -101,7 +101,7 @@ $r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'0'));
 t('limit 0 shows every race', strpos($r,'Zulu')!==false);
 
 echo "event schema:\n";
-$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  |  | ";
+$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  |  |  | ";
 $r = arv_upcoming_races_render(array('rows'=>$row));
 $m = array(); preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $r, $m);
 t('schema block is emitted', !empty($m));
@@ -172,7 +172,7 @@ $GLOBALS['NOW']='2026-08-25';
 
 echo "lifecycle:\n";
 // Rock Hawk runs Saturday 2026-08-29.
-$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  | ";
+$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  |  | ";
 function phase_of($rows, $opts = array()){
   $r = arv_upcoming_races_render(array_merge(array('rows'=>$rows), $opts));
   if ($r==='') return 'gone';
@@ -238,10 +238,10 @@ $GLOBALS['NOW']='2026-08-25';
 echo "registration close date:\n";
 // Entries shut, and no results board and no derivable results link either, so
 // there is genuinely nowhere to send anyone.
-$nolive = "NoLive | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://runsignup.com/x | https://a.com/n/ |  |  |  | 2026-08-24";
+$nolive = "NoLive | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://runsignup.com/x | https://a.com/n/ |  |  |  | 2026-08-24 | ";
 // Snow Mountain Ranch: races Sat 2026-09-12, UltraSignup publishes
 // "Registration closes: Mon, Sep 7 @ 11:59PM MT".
-$smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07";
+$smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07 | ";
 $GLOBALS['NOW']='2026-09-05'; t('before the close date: entries open',  phase_of($smr, array('live_lead'=>'0'))==='upcoming');
 $GLOBALS['NOW']='2026-09-07'; t('on the close date: still open all day', phase_of($smr, array('live_lead'=>'0'))==='upcoming');
 // Once entries close there is a results board to send people to, so closing
@@ -282,7 +282,7 @@ echo "live results lead window:\n";
 // Rock Hawk runs Sat 2026-08-29 and entries closed Mon 2026-08-24. The live
 // board already carries its start list, so there is something worth reaching
 // before race morning.
-$rh2 = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24";
+$rh2 = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | ";
 $GLOBALS['NOW']='2026-08-23'; t('before entries close: still selling',        phase_of($rh2)==='upcoming');
 $GLOBALS['NOW']='2026-08-25'; t('entries closed: live results, not a dead chip', phase_of($rh2)==='live');
 $GLOBALS['NOW']='2026-08-29'; t('race day: still live',                       phase_of($rh2)==='live');
@@ -309,6 +309,53 @@ t('absurd lead is clamped, not obeyed', strpos(arv_upcoming_races_render(array('
 // dead "Entries Closed" chip is still the right answer.
 $GLOBALS['NOW']='2026-08-25'; t('no results link anywhere: entries closed chip', phase_of($nolive)==='closed');
 $GLOBALS['NOW']='2026-08-25';
+
+echo "confirmed flag:\n";
+// Unconfirmed: entries closed, has a live board, would otherwise show Live
+// Results. only_confirmed strips it out regardless of what phase it would
+// have been in, because the whole point is that its date is a guess.
+$unconf = "Guess | 2027-04-25 | | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/g/ |  |  | https://live.aravaiparunning.com/#/g-2027 |  | 0";
+t('unconfirmed race is dropped by default', arv_upcoming_races_render(array('rows'=>$unconf))==='');
+t('unconfirmed race appears with the toggle off', strpos(arv_upcoming_races_render(array('rows'=>$unconf,'only_confirmed'=>'false')),'Guess')!==false);
+
+$conf = "Real | 2026-09-01 | | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/r/ |  |  |  | 1";
+t('confirmed race renders under the default', strpos(arv_upcoming_races_render(array('rows'=>$conf)),'Real')!==false);
+
+// A row from before this column existed, or written by hand without it, has
+// no eleventh tail value. It should behave exactly as it always did rather
+// than silently disappear from every page that filters on confirmed.
+$old = "Legacy | 2026-09-01 | | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/l/ |  |  | ";
+t('a row with no confirmed column is treated as confirmed', strpos(arv_upcoming_races_render(array('rows'=>$old)),'Legacy')!==false);
+
+echo "season calendar:\n";
+t('empty rows return nothing', arv_season_calendar_render(array('rows'=>''))==='');
+
+$cal = "Jan Race | 2027-01-15 | January 15 | 50K | V1 | Reno, NV | https://u.com/1 | https://a.com/1 |  |  |  | 1 | 1\nDec Race | 2026-12-05 | December 5 | 50K | V2 | Denver, CO | https://u.com/2 | https://a.com/2 |  |  |  | 1 | 0";
+$r = arv_season_calendar_render(array('rows'=>$cal));
+t('a race with a guessed year still renders', strpos($r,'Jan Race')!==false);
+t('unconfirmed race is shown, unlike Upcoming Races', strpos($r,'Dec Race')!==false);
+t('unconfirmed race carries the "Details soon" flag', strpos($r,'Details soon')!==false);
+t('confirmed race does not', substr_count($r,'Details soon')===1);
+// A plain Jan-through-Dec calendar, not a window rolling from today: that
+// job already belongs to Upcoming Races. January sorts first even though
+// "Jan Race" is tagged the later calendar year, which is the point: month/day
+// is read off the row directly and the guessed year plays no part in order.
+t('January groups before December, read off month/day not the guessed year', strpos($r,'Jan Race') < strpos($r,'Dec Race'));
+t('month headings are real month names', strpos($r,'>December<')!==false && strpos($r,'>January<')!==false);
+
+// This element never offers registration, on purpose: that is the entire
+// reason it exists rather than reusing Upcoming Races for the whole season.
+t('no register/live/results button anywhere', strpos($r,'arv-races__cta')===false && strpos($r,'>Register<')===false);
+t('the row itself links to the race page', strpos($r,'href="https://a.com/2"')!==false);
+
+// A race with two entries in the same month groups under one heading.
+$two = "A | 2027-03-05 | | 50K | V | X, AZ | https://u.com/a | https://a.com/a |  |  |  |  | 1\nB | 2027-03-20 | | 50K | V | X, AZ | https://u.com/b | https://a.com/b |  |  |  |  | 1";
+t('two races the same month share one heading', substr_count(arv_season_calendar_render(array('rows'=>$two)),'arv-calendar__month-name')===1);
+
+// A race name with no page falls back to the register link rather than a
+// dead href, and escaping still applies to untrusted input.
+$x='<script>alert(1)</script>';
+t('name is escaped', strpos(arv_season_calendar_render(array('rows'=>"$x | 2027-03-05 | | 50K | V | X, AZ | https://u.com/a | |  |  |  |  | 1")),'<script>alert')===false);
 
 echo "hero overlay clamp:\n";
 t('overlay > 1 clamped', strpos(arv_race_hero_render(array('overlay'=>'9','image'=>'https://x/y.jpg','race_name'=>'R')),'--arv-overlay:1;')!==false);
