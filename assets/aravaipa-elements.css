@@ -1232,15 +1232,65 @@
 	}
 }
 
+/* Phones get a different card, not a narrower one.
+   Stacking the desktop card put a full-width 4:3 badge above every race,
+   which measured 422px per card and 3.3 screens of scrolling for six races.
+   The artwork is the least useful thing on a phone and it was taking the
+   most room, so it becomes a small square thumbnail and the card turns into
+   a row. Same information, roughly a third of the height. */
 @media (max-width: 619px) {
 	.arv-races { padding: 2.5rem 0; }
+
 	.arv-races__grid,
 	.arv-races--cols-2 .arv-races__grid,
 	.arv-races--cols-4 .arv-races__grid {
 		grid-template-columns: minmax(0, 1fr);
+		gap: 0.75rem;
 	}
-	/* Full width on a phone, where a 120px button next to a text link is a
-	   smaller tap target than it looks. */
-	.arv-races__actions { flex-wrap: wrap; }
-	.arv-races__cta { flex: 1 0 auto; text-align: center; }
+
+	.arv-races__card {
+		flex-direction: row;
+		align-items: stretch;
+	}
+
+	/* Square, and fixed width so every row's text starts on the same line
+	   down the list however tall the card ends up. */
+	.arv-races__media {
+		flex: 0 0 96px;
+		aspect-ratio: 1 / 1;
+		align-self: flex-start;
+		margin-top: 0.75rem;
+		margin-left: 0.75rem;
+	}
+
+	.arv-races__body {
+		padding: 0.75rem 0.9rem 0.85rem;
+		min-width: 0;
+	}
+
+	.arv-races__name { font-size: 1.05rem; }
+	.arv-races__distances { font-size: 0.86rem; }
+	.arv-races__where { margin-bottom: 0.7rem; font-size: 0.8rem; }
+
+	.arv-races__actions {
+		gap: 0.75rem;
+		padding-top: 0;
+	}
+
+	/* 31px measured on a real iPhone viewport, against Apple's 44px minimum
+	   for a touch target. Registration is the one thing on this page anyone
+	   is trying to tap. */
+	.arv-races__cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 44px;
+		padding: 0.5rem 1rem;
+	}
+
+	.arv-races__details {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+	}
 }
