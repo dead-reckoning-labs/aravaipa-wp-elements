@@ -1221,6 +1221,17 @@
 	border-color: var(--arv-teal-deep);
 }
 
+/* Entries have closed but the race has not run. Nothing to click, so this is
+   a label rather than a button: flat, muted, and deliberately not carrying
+   the accent, so the eye skips it and lands on Race Details beside it, which
+   is the only thing here that does anything. */
+.arv-races__cta--closed {
+	background: transparent;
+	border-color: var(--arv-races-rule);
+	color: var(--arv-races-muted);
+	cursor: default;
+}
+
 .arv-races__cta:focus-visible,
 .arv-races__details:focus-visible,
 .arv-races__link:focus-visible {
@@ -1249,9 +1260,9 @@
    phone would have to tap Register twice. */
 @media (hover: hover) and (pointer: fine) {
 	/* #c61300 is the theme's own pressed red, not a shade picked by eye. */
-	.arv-races__cta:hover { background: #c61300; border-color: #c61300; }
-	.arv-races__cta--live:hover,
-	.arv-races__cta--results:hover { background: #22505b; border-color: #22505b; }
+	a.arv-races__cta:hover { background: #c61300; border-color: #c61300; }
+	a.arv-races__cta--live:hover,
+	a.arv-races__cta--results:hover { background: #22505b; border-color: #22505b; }
 	.arv-races__link:hover { color: var(--arv-accent); }
 	.arv-races__details:hover {
 		color: var(--arv-accent);

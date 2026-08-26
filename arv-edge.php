@@ -83,7 +83,7 @@ t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2
 // The distances column is written the way the site writes it, with pipes,
 // which is also the column separator. A full-length row is read from both
 // ends so those pipes survive.
-$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  | "));
+$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  |  | "));
 t('pipes inside distances are kept, not split into columns', strpos($r,'75K | 50K | 25K | 15K | 7K')!==false);
 t('and the column after distances is still the venue', strpos($r,'McDowell Mountain Regional Park')!==false);
 t('and the register URL is not mistaken for a distance', strpos($r,'ultrasignup.com/register.aspx?did=1')!==false);
@@ -101,7 +101,7 @@ $r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'0'));
 t('limit 0 shows every race', strpos($r,'Zulu')!==false);
 
 echo "event schema:\n";
-$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  | ";
+$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  |  | ";
 $r = arv_upcoming_races_render(array('rows'=>$row));
 $m = array(); preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $r, $m);
 t('schema block is emitted', !empty($m));
@@ -133,14 +133,14 @@ t('and cannot break out of the card markup either', strpos($r,'<b>x</b>')===fals
 
 // A region-only location ("Arizona") has no comma to split on.
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
-  arv_upcoming_races_render(array('rows'=>"S | 2027-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | |  | "))), true)['@graph'][0];
+  arv_upcoming_races_render(array('rows'=>"S | 2027-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | |  |  | "))), true)['@graph'][0];
 t('region-only location becomes addressRegion with no bogus locality', ($e['location']['address']['addressRegion'] ?? '')==='Arizona' && !isset($e['location']['address']['addressLocality']));
 
 echo "past races drop off:\n";
 $GLOBALS['NOW']='2026-09-15';
-$list = "Past | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com |  | \n"
-      . "Today | 2026-09-15 | | 50K | V | P, AZ | https://u.com | https://a.com |  | \n"
-      . "Future | 2026-09-20 | | 50K | V | P, AZ | https://u.com | https://a.com |  | ";
+$list = "Past | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  | \n"
+      . "Today | 2026-09-15 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  | \n"
+      . "Future | 2026-09-20 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  | ";
 $r = arv_upcoming_races_render(array('rows'=>$list));
 t('a race that already ran is gone', strpos($r,'Past')===false);
 t('a race running today is still up', strpos($r,'Today')!==false);
@@ -150,7 +150,7 @@ t('and the dropped race is out of the schema too', substr_count($r,'"@type":"Spo
 // Cocodona runs the better part of a week. Dropping it on day two, while
 // runners are still on the course, would be worse than leaving it a day long.
 $GLOBALS['NOW']='2026-09-13';
-$multi = "Cocodona | 2026-09-12 | September 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 | ";
+$multi = "Cocodona | 2026-09-12 | September 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 |  | ";
 t('a multi-day race stays up mid-race', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
 $GLOBALS['NOW']='2026-09-18';
 t('and through its final day', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
@@ -159,7 +159,7 @@ t('holds its results through the weekend', strpos(arv_upcoming_races_render(arra
 $GLOBALS['NOW']='2026-09-21';
 t('and clears on the Monday after', arv_upcoming_races_render(array('rows'=>$multi))==='');
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
-  (function(){ $GLOBALS['NOW']='2026-09-13'; return arv_upcoming_races_render(array('rows'=>"Cocodona | 2026-09-12 | Sept 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 | ")); })()), true)['@graph'][0];
+  (function(){ $GLOBALS['NOW']='2026-09-13'; return arv_upcoming_races_render(array('rows'=>"Cocodona | 2026-09-12 | Sept 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 |  | ")); })()), true)['@graph'][0];
 t('multi-day race carries endDate in schema', ($e['endDate'] ?? '')==='2026-09-18');
 $GLOBALS['NOW']='2026-08-25';
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
@@ -172,13 +172,14 @@ $GLOBALS['NOW']='2026-08-25';
 
 echo "lifecycle:\n";
 // Rock Hawk runs Saturday 2026-08-29.
-$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  | ";
+$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  | ";
 function phase_of($rows){
   $r = arv_upcoming_races_render(array('rows'=>$rows));
   if ($r==='') return 'gone';
   if (strpos($r,'arv-races__cta--upcoming')!==false) return 'upcoming';
   if (strpos($r,'arv-races__cta--live')!==false) return 'live';
   if (strpos($r,'arv-races__cta--results')!==false) return 'results';
+  if (strpos($r,'arv-races__cta--closed')!==false) return 'closed';
   return 'none';
 }
 $GLOBALS['NOW']='2026-08-25'; t('four days out: entries open',  phase_of($rh)==='upcoming');
@@ -230,8 +231,43 @@ t('handles the www host',        arv_upcoming_races_results_url('https://www.ult
 t('non-ultrasignup url derives nothing, rather than a broken link', arv_upcoming_races_results_url('https://runsignup.com/Race/x')==='');
 // A row can override with its own tracker or broadcast page.
 $GLOBALS['NOW']='2026-08-29';
-$withlive = "R | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=7 | https://a.com/r/ |  |  | https://mountainoutpost.com/live/r";
+$withlive = "R | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=7 | https://a.com/r/ |  |  | https://mountainoutpost.com/live/r | ";
 t('an explicit live url wins over the derived one', strpos(arv_upcoming_races_render(array('rows'=>$withlive)),'mountainoutpost.com/live/r')!==false);
+$GLOBALS['NOW']='2026-08-25';
+
+echo "registration close date:\n";
+// Snow Mountain Ranch: races Sat 2026-09-12, UltraSignup publishes
+// "Registration closes: Mon, Sep 7 @ 11:59PM MT".
+$smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07";
+$GLOBALS['NOW']='2026-09-05'; t('before the close date: entries open',  phase_of($smr)==='upcoming');
+$GLOBALS['NOW']='2026-09-07'; t('on the close date: still open all day', phase_of($smr)==='upcoming');
+$GLOBALS['NOW']='2026-09-08'; t('day after close: entries closed',       phase_of($smr)==='closed');
+$GLOBALS['NOW']='2026-09-11'; t('still closed the day before the race',  phase_of($smr)==='closed');
+$GLOBALS['NOW']='2026-09-13';
+$jr = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
+  arv_upcoming_races_render(array('rows'=>$smr))), true);
+t('a finished race is still rendered on the Sunday', is_array($jr));
+t('and advertises no entries at all', !isset($jr['@graph'][0]['offers']));
+$GLOBALS['NOW']='2026-09-12'; t('race day still flips to live',          phase_of($smr)==='live');
+
+$GLOBALS['NOW']='2026-09-08';
+$r = arv_upcoming_races_render(array('rows'=>$smr));
+t('closed phase says so', strpos($r,'Entries Closed')!==false);
+// No destination, so it must not be a link: not focusable, not clickable.
+t('and is not a link', strpos($r,'<span class="arv-races__cta arv-races__cta--closed"')!==false);
+// The register URL is still in the schema's offer, which is right: the offer
+// describes entries, and entries existing but being closed is a fact worth
+// stating. What must not survive is the claim that they are available.
+$j = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',$r), true)['@graph'][0];
+t('schema no longer claims entries are available', strpos($j['offers']['availability'] ?? '','SoldOut')!==false);
+t('and the offer still points at the registration page', ($j['offers']['url'] ?? '')==='https://ultrasignup.com/register.aspx?did=131162');
+t('Race Details is still there, and is now the only thing to press', substr_count($r,'arv-races__details')===1);
+
+// 60 of the 69 races publish no close date at all. Those must behave exactly
+// as before rather than being treated as closed.
+$nodate = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  |  | ";
+$GLOBALS['NOW']='2026-08-28'; t('no close date: open right up to race day', phase_of($nodate)==='upcoming');
+$GLOBALS['NOW']='2026-08-29'; t('no close date: still flips on race day',   phase_of($nodate)==='live');
 $GLOBALS['NOW']='2026-08-25';
 
 echo "hero overlay clamp:\n";

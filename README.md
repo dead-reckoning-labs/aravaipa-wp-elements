@@ -66,7 +66,7 @@ Bad Beard Events | 71.2 | 61.1 | .../bad-beard/ | Chattanooga, Tennessee. | | | 
 
 Every region now has a mark. Arizona, Tucson, California and Nevada carry the Aravaipa mountain icon; Colorado, Ultra Adventures, Great Lakes Endurance, White Mountain Endurance and Bad Beard Events each carry their own, which is also what distinguishes an Aravaipa region from a partner brand at a glance. Two are crops rather than whole logos, for reasons worth reading before replacing them: see `assets/logos/README.md`.
 
-**Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL | ISO end date | live URL`. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
+**Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL | ISO end date | live URL | ISO registration close date`. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
 
 The tenth column is an optional ISO end date, for races that run more than one day. It keeps a multi-day race up while it is still running and adds `endDate` to its structured data. The eleventh is an optional live/results URL, for a race with its own tracker or broadcast page; leave it blank and the element derives an UltraSignup results link from the register URL's `did`, which serves both the live field and the final results.
 
@@ -76,14 +76,23 @@ The primary button changes with where a race is in its life. "Race Details" is a
 
 | When | Primary button | Goes to |
 |---|---|---|
-| Before race day | **Register** (red) | UltraSignup registration |
+| Before race day, entries open | **Register** (red) | UltraSignup registration |
+| Entries closed, race not yet run | **Entries Closed** (grey, not a link) | nowhere; Race Details beside it is the only thing to press |
 | Race day, through the last day of a multi-day race | **Live Results** (teal) | live URL, or the derived UltraSignup results page |
 | After the race, until the Monday after | **Results** (teal) | same |
 | Monday morning | gone | |
 
 Red means "there is something to buy". Once a race is running or done there is nothing to sell, so those phases use teal.
 
-The flip is driven by dates, not by asking UltraSignup whether entries are still open. UltraSignup does not say so in any way worth trusting: every race page carries "Register Now" in its title whether or not it is accepting entries, and Rock Hawk, which is open, contains the word "Closed". That was checked before relying on dates instead. For most races entries close at or near the start anyway. A race that sells out months early will keep offering Register until race day, which is the known limitation of doing it this way.
+### How the close date is known
+
+UltraSignup prints "Registration closes: Mon, Sep 7 @ 11:59PM MT" above the fold on races whose director has set a hard close, and it is visible without logging in. `scripts/fetch-races.mjs` reads it per race and writes it into the twelfth column.
+
+**Only some races publish one: 9 of the 69 in the current calendar.** The other 60 come back empty and behave as they always did, taking entries until race day, which is what they actually do. So the close date sharpens the answer where it exists and changes nothing where it does not.
+
+Do not try to infer it from registration *status* instead. UltraSignup does not report that in any way worth trusting: every race page carries "Register Now" in its title whether or not entries are open, Rock Hawk (open) contains the word "Closed", Black Canyon returns "Register Now", "Wait List" and "Lottery" together, and the `events.svc` JSON endpoints all 404. That was all checked before settling on the published close date, which is a fact rather than an inference.
+
+The close date carries no year, so it takes the race's, pulled back one if that would put the close after the race it belongs to.
 
 The distances column may contain pipes, because that is how the rest of the site writes them (`50K | 25K | 10K | 5K`). A full-length row is read from both ends, so the first three columns and the last six are fixed and everything between them is the distance list. A short row has no fixed tail to anchor against and falls back to plain positional reading, so it cannot carry pipes.
 
