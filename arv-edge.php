@@ -1,5 +1,6 @@
 <?php
 define('ABSPATH', true); define('ARV_ELEMENTS_URL','./');
+define('ARV_ELEMENTS_VERSION','0.0.0-test');
 define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
 function cs_register_element($n,$c){$GLOBALS['ARV_EL'][$n]=$c;}
 function cs_value($d,$x='markup',$p=false){return $d;}
@@ -11,9 +12,13 @@ function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_attr($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_url($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function wp_json_encode($d,$f=0){return json_encode($d,$f);}
-// race-map.php registers an enqueue hook at load; the harness only exercises
-// render functions, so these just need to exist and do nothing.
+// race-map.php enqueues Leaflet from its render function. Recorded rather
+// than ignored, so a test can assert it actually happens: it silently did
+// not on the live site, which is what left the map an empty grey box.
 function add_action($t,$f,$p=10,$n=1){}
+$GLOBALS['ENQUEUED'] = array();
+function wp_enqueue_script($h,$src='',$deps=array(),$v=false,$footer=false){ $GLOBALS['ENQUEUED'][]='js:'.$h; }
+function wp_enqueue_style($h,$src='',$deps=array(),$v=false){ $GLOBALS['ENQUEUED'][]='css:'.$h; }
 function _n($single,$plural,$count,$domain=''){return $count===1?$single:$plural;}
 $GLOBALS['NOW']='2026-08-25';
 function current_time($f){return $GLOBALS['NOW'];}
@@ -512,6 +517,28 @@ t('tiny height clamped up',     strpos(arv_race_map_render(array('rows'=>$mapRow
 
 $x='<script>alert(1)</script>';
 t('race name escaped in the map config', strpos(arv_race_map_render(array('rows'=>"$x | 2026-09-05 | S | 50K | V | X, AZ | https://u.com | https://a.com |  |  |  |  | 1 | 0 | 34.1 | -112.1")),'<script>alert')===false);
+$GLOBALS['NOW']='2026-08-26';
+
+echo "map asset loading:\n";
+// The bug this covers: the enqueue was gated on the element's name appearing
+// in post_content, which Cornerstone never puts there, so Leaflet was never
+// loaded and the map rendered as an empty grey box on the live site.
+$GLOBALS['ENQUEUED'] = array();
+$GLOBALS['NOW']='2026-08-20';
+arv_race_map_render(array('rows'=>$mapRow));
+t('rendering a map enqueues leaflet js',    in_array('js:leaflet', $GLOBALS['ENQUEUED'], true));
+t('and leaflet css',                        in_array('css:leaflet', $GLOBALS['ENQUEUED'], true));
+t('and our own map script',                 in_array('js:aravaipa-race-map', $GLOBALS['ENQUEUED'], true));
+
+// Nothing to draw means nothing to load: a page with no usable map should
+// not pull a third-party library off a CDN for an element that renders
+// nothing.
+$GLOBALS['ENQUEUED'] = array();
+arv_race_map_render(array('rows'=>$noCoord));
+t('a map with no pins loads nothing',       empty($GLOBALS['ENQUEUED']));
+$GLOBALS['ENQUEUED'] = array();
+arv_race_map_render(array('rows'=>''));
+t('an empty map loads nothing either',      empty($GLOBALS['ENQUEUED']));
 $GLOBALS['NOW']='2026-08-26';
 
 echo "fixture integrity:\n";

@@ -165,6 +165,11 @@ function arv_race_map_render( $data ) {
 		return '';
 	}
 
+	// Only now, with pins to draw, is the library actually needed.
+	if ( function_exists( 'wp_enqueue_script' ) ) {
+		arv_race_map_enqueue();
+	}
+
 	$height = isset( $data['height'] ) ? (int) $data['height'] : 520;
 	$height = max( 300, min( 900, $height ) );
 
@@ -252,22 +257,28 @@ function arv_race_map_render( $data ) {
 }
 
 /**
- * Load Leaflet only on pages that actually place a map.
+ * Load Leaflet, at the moment a map actually renders.
  *
- * Checked against the post content rather than enqueued globally: this is the
- * plugin's only third-party dependency and it has no business loading on a
- * race page, the homepage, or anywhere else that does not draw a map.
+ * The previous version hooked wp_enqueue_scripts and looked for the element's
+ * name in the post content, which is never there: Cornerstone keeps its
+ * element data in postmeta and only assembles markup at render time. The
+ * check silently never matched, so Leaflet was never enqueued and the map
+ * rendered as an empty grey box on the live site.
+ *
+ * Enqueuing from the render function is both simpler and more accurate: it
+ * fires exactly when a map is on the page, rather than guessing from stored
+ * content, and it cannot drift if Cornerstone changes where it stores things.
+ *
+ * Calling this after wp_head has run is fine. The script is registered for
+ * the footer, and WordPress prints styles enqueued this late through
+ * print_late_styles() on wp_footer, which exists for exactly this case.
  */
-function arv_race_map_assets() {
-	if ( ! is_singular() ) {
-		return;
-	}
-
-	$post = get_post();
-	if ( ! $post || false === strpos( (string) $post->post_content, 'aravaipa-race-map' ) ) {
-		return;
-	}
-
+function arv_race_map_enqueue() {
+	// No static "already done" guard. wp_enqueue_style and wp_enqueue_script
+	// both dedupe by handle already, so a page with several maps costs
+	// nothing, and a guard that makes the second call a no-op makes the
+	// function's behaviour depend on what ran before it, which is worth
+	// avoiding for the sake of work WordPress is not doing anyway.
 	wp_enqueue_style(
 		'leaflet',
 		'https://unpkg.com/leaflet@' . ARV_MAP_LEAFLET_VERSION . '/dist/leaflet.css',
@@ -291,4 +302,3 @@ function arv_race_map_assets() {
 		true
 	);
 }
-add_action( 'wp_enqueue_scripts', 'arv_race_map_assets' );
