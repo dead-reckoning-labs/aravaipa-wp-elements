@@ -135,7 +135,21 @@ function arv_race_map_render( $data ) {
 	$missing = array();
 
 	foreach ( $races as $race ) {
-		if ( '' === $race['lat'] || '' === $race['lng'] ) {
+		// Checked for presence and for being a real number, not just against
+		// the empty string. A race array that has no 'lat' key at all reads
+		// as null, and null is not '', so the old check let it through and
+		// (float) null then plotted it at 0,0. Every race on the live map
+		// sat in the Atlantic that way, because the race store was not
+		// carrying coordinates at all. The store is fixed, and this stays
+		// strict so a single bad coordinate can never do it again.
+		$lat = isset( $race['lat'] ) ? trim( (string) $race['lat'] ) : '';
+		$lng = isset( $race['lng'] ) ? trim( (string) $race['lng'] ) : '';
+
+		// 0 is treated as missing rather than as a location. It is what an
+		// empty field becomes the moment anything upstream casts before it
+		// checks, and no Aravaipa race is in the Gulf of Guinea.
+		if ( '' === $lat || '' === $lng || ! is_numeric( $lat ) || ! is_numeric( $lng )
+			|| 0.0 === (float) $lat || 0.0 === (float) $lng ) {
 			// Listed below the map rather than silently dropped. A race
 			// missing from a "complete list" with no explanation is the bug
 			// this whole page has been fighting; saying so is better.

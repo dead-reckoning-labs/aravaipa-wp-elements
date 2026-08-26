@@ -134,6 +134,20 @@ t( 'its close date',                    '2026-08-24' === $rock['closes'] );
 t( 'confirmed as a real boolean',       true === $rock['confirmed'] );
 t( 'guessed as a real boolean',         false === $rock['guessed'] );
 
+// Coordinates round trip like everything else. When they did not, the store
+// returned no 'lat'/'lng' key at all, the race map read the missing key as
+// null, cast it to 0.0, and drew every upcoming race at 0,0 in the Atlantic.
+t( 'its latitude survives the store',   '39.3698155' === $rock['lat'] );
+t( 'its longitude survives the store',  '-104.8785796' === $rock['lng'] );
+t( 'and neither is null island',        0.0 !== (float) $rock['lat'] && 0.0 !== (float) $rock['lng'] );
+
+// A race with no coordinates keeps an empty string rather than becoming 0.
+$blank = null;
+foreach ( $races as $race ) { if ( 'Merry Vertmas' === $race['name'] ) { $blank = $race; } }
+t( 'a race with no coords comes back',  null !== $blank );
+t( 'with lat empty, not zero',          '' === trim( $blank['lat'] ) );
+t( 'and lng empty, not zero',           '' === trim( $blank['lng'] ) );
+
 // The whole reason the meta keys mirror the row shape: every render path
 // written before the store keeps working untouched.
 echo "\nelements read the store:\n";
