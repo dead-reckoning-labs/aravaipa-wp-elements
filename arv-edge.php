@@ -25,6 +25,17 @@ function current_time($f){return $GLOBALS['NOW'];}
 function apply_filters($tag,$v){return $v;}
 define('DAY_IN_SECONDS',86400);
 $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
+// race-map.php now calls arv_race_store_region_for() for the popup's
+// division logo, a real cross-file dependency this harness did not have
+// before. register_post_type/register_post_meta are never called because
+// add_action above is a no-op, but arv_race_store_has_races() (which every
+// element's arv_races_source() calls first) hits get_posts() directly, not
+// through a hook. Stubbed to return none, so every element here keeps
+// exercising the pasted-rows path this harness has always tested, exactly
+// as it did before this file pulled the store in for one pure function.
+function get_posts($args=array()){ return array(); }
+function wp_parse_url($url,$component=-1){ return parse_url($url,$component); }
+require_once $d.'includes/race-store.php';
 foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races','season-calendar','race-map'] as $e) require_once $d."includes/elements/$e.php";
 
 $pass=0;$fail=0;
@@ -486,6 +497,29 @@ t('and the race name',                strpos($m,'Rock Hawk')!==false);
 // The map needs JavaScript and a third-party library; the list underneath
 // needs neither, so the races stay readable and indexable if either fails.
 t('a noscript list of every race is in the markup', strpos($m,'arv-map__fallback')!==false);
+
+// Popup polish (division logo, date+year, distance pills, clickable name).
+// Config is JSON in the markup, read back the same way the browser does
+// rather than string-search, since the whole point of the pill bug this
+// caught is that a wrong delimiter still produces SOME string containing
+// "50K" as a substring of the raw joined text.
+$cfgJson = null;
+if ( preg_match('/data-arv-map-config>(.*?)<\/script>/s', $m, $cm) ) {
+	$cfgJson = json_decode( str_replace('<', '<', $cm[1]), true );
+}
+$rockPin = $cfgJson ? $cfgJson['pins'][0] : null;
+t('config decodes to real pin data',   is_array($rockPin));
+t('date has the year appended',        $rockPin && false !== strpos($rockPin['date'], '2026'));
+t('region resolves to a division',     $rockPin && '' !== $rockPin['logo']);
+t('logo points at the right asset',    $rockPin && false !== strpos($rockPin['logo'], 'colorado.png'));
+// The popup itself (pills, logo img, clickable name) is built client-side
+// in aravaipa-race-map.js from this config, not by PHP, so this only
+// asserts the raw data the JS pill-splitter actually receives: pipe-joined
+// ("50K | 25K"), not comma-joined. The JS side split on "," found nothing
+// to split on there and rendered one pill with the raw " | " still in it;
+// verified directly (`"50K | 25K".split(/\s*\|\s*/)` -> 2 clean tokens)
+// since a PHP harness can't execute the JS that builds the popup.
+t('distances field is intact for the JS splitter', $rockPin && '50K | 25K' === $rockPin['distances']);
 
 // A race with no coordinates must be named, not silently dropped: a race
 // missing from a "complete list" with no explanation is the exact bug this

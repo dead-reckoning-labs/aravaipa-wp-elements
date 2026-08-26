@@ -33,12 +33,33 @@
 	function popupHtml( pin ) {
 		var html = '<div class="arv-map__popup">';
 
+		if ( pin.logo ) {
+			html += '<img class="arv-map__popup-logo" src="' + escapeHtml( pin.logo ) + '" alt="">';
+		}
+
 		html += '<p class="arv-map__popup-date">' + escapeHtml( pin.date ) + '</p>';
-		html += '<h3 class="arv-map__popup-name">' + escapeHtml( pin.name ) + '</h3>';
+
+		if ( pin.page ) {
+			html += '<h3 class="arv-map__popup-name"><a class="arv-map__popup-name-link" href="' + escapeHtml( pin.page ) + '">' + escapeHtml( pin.name ) + '</a></h3>';
+		} else {
+			html += '<h3 class="arv-map__popup-name">' + escapeHtml( pin.name ) + '</h3>';
+		}
 
 		if ( pin.distances ) {
-			html += '<p class="arv-map__popup-distances">' + escapeHtml( pin.distances ) + '</p>';
+			// The distances field is pipe-separated ("50K | 25K | 10K | 5K"),
+			// not comma-separated: see arv_upcoming_races_parse_row(), which
+			// rejoins the row's variable-length distance cells with " | ".
+			// Splitting on a comma here found nothing to split on and every
+			// multi-distance race rendered as one pill with the raw pipes
+			// still in it.
+			var pills = pin.distances.split( /\s*\|\s*/ ).filter( Boolean );
+			html += '<p class="arv-map__popup-distances">';
+			for ( var i = 0; i < pills.length; i++ ) {
+				html += '<span class="arv-map__popup-pill">' + escapeHtml( pills[ i ] ) + '</span>';
+			}
+			html += '</p>';
 		}
+
 		if ( pin.where ) {
 			html += '<p class="arv-map__popup-where">' + escapeHtml( pin.where ) + '</p>';
 		}
