@@ -10,6 +10,8 @@
 
 define( 'ABSPATH', true );
 define( 'HOUR_IN_SECONDS', 3600 );
+// Defined by the main plugin file in WordPress, before this file loads.
+define( 'ARV_ELEMENTS_URL', 'https://example.test/wp-content/plugins/aravaipa-elements/' );
 define( 'MINUTE_IN_SECONDS', 60 );
 
 $GLOBALS['_transients']    = array();
@@ -52,6 +54,7 @@ function wp_remote_retrieve_response_code( $response ) {
 function wp_remote_retrieve_body( $response ) {
 	return $response['body'] ?? '';
 }
+function esc_url( $s ) { return $s; }
 function get_bloginfo( $show = '' ) {
 	return $GLOBALS['_wp_option_ver'];
 }
@@ -261,6 +264,39 @@ t( 'right slug and action returns the release info', '0.3.0' === $result->versio
 t( 'download_link is the real zip asset', 'https://x/z.zip' === $result->download_link );
 t( 'changelog body is escaped', strpos( $result->sections['changelog'], '<script>alert' ) === false );
 t( 'changelog keeps the line break', strpos( $result->sections['changelog'], '<br' ) !== false );
+
+echo "plugin artwork:\n";
+// Without these WordPress shows a generic grey plug on the Plugins and
+// Updates screens, which is exactly what it did before this.
+$art = arv_elements_artwork();
+t( 'icons use the keys WordPress actually reads',   isset( $art['icons']['1x'], $art['icons']['2x'] ) );
+t( 'banners use the keys WordPress actually reads', isset( $art['banners']['low'], $art['banners']['high'] ) );
+t( 'icons point at real files in the plugin',       false !== strpos( $art['icons']['1x'], 'assets/plugin/icon-128x128.png' ) );
+t( 'banners point at real files in the plugin',     false !== strpos( $art['banners']['low'], 'assets/plugin/banner-772x250.png' ) );
+
+// Both places WordPress asks for artwork have to carry it: the update row on
+// the Plugins screen, and the "View details" modal. Populating one and not
+// the other is why half-iconed plugins look broken.
+reset_state();
+arv_test_queue_response( fake_release( 'v0.9.0', $zip_asset ) );
+$transient = (object) array( 'checked' => array( ARV_ELEMENTS_SLUG => '0.3.0' ), 'response' => array(), 'no_update' => array() );
+$out = arv_elements_check_for_update( $transient );
+t( 'the update row carries an icon',   ! empty( $out->response[ ARV_ELEMENTS_SLUG ]->icons['1x'] ) );
+t( 'the update row carries a banner',  ! empty( $out->response[ ARV_ELEMENTS_SLUG ]->banners['low'] ) );
+
+reset_state();
+arv_test_queue_response( fake_release( 'v0.3.0', $zip_asset ) );
+$details = arv_elements_plugins_api( false, 'plugin_information', (object) array( 'slug' => 'aravaipa-elements' ) );
+t( 'the details modal carries an icon',  ! empty( $details->icons['1x'] ) );
+t( 'the details modal carries a banner', ! empty( $details->banners['low'] ) );
+
+// An up-to-date plugin still needs artwork: its no_update entry is what the
+// Plugins screen renders from every day it is not updating.
+reset_state();
+arv_test_queue_response( fake_release( 'v0.3.0', $zip_asset ) );
+$transient = (object) array( 'checked' => array( ARV_ELEMENTS_SLUG => '0.3.0' ), 'response' => array(), 'no_update' => array() );
+$out = arv_elements_check_for_update( $transient );
+t( 'an up-to-date plugin still shows its icon', ! empty( $out->no_update[ ARV_ELEMENTS_SLUG ]->icons['1x'] ) );
 
 echo "row meta:\n";
 t( 'other plugin file is untouched', array( 'a' ) === arv_elements_row_meta( array( 'a' ), 'other/other.php' ) );
