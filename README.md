@@ -68,7 +68,9 @@ Every region now has a mark. Arizona, Tucson, California and Nevada carry the Ar
 
 **Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL | ISO end date | live URL | ISO registration close date`. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
 
-The tenth column is an optional ISO end date, for races that run more than one day. It keeps a multi-day race up while it is still running and adds `endDate` to its structured data. The eleventh is an optional live/results URL, for a race with its own tracker or broadcast page; leave it blank and the element derives an UltraSignup results link from the register URL's `did`, which serves both the live field and the final results.
+The tenth column is an optional ISO end date, for races that run more than one day. It keeps a multi-day race up while it is still running and adds `endDate` to its structured data. The eleventh is an optional live/results URL. `scripts/fetch-races.mjs` fills it automatically when a race is on `live.aravaiparunning.com`, Aravaipa's own timing system, which is a real results page rather than the entrants list UltraSignup falls back to. Leave it blank otherwise and the element derives an UltraSignup results link from the register URL's `did` instead.
+
+Matched on date and name together, never one alone: two races often share a start date, and name matching alone is loose enough to fuzzy-match the wrong race entirely (checked, and it happens). A match within a day of the row's own date and with real word overlap in the name is trusted; anything looser is left for the UltraSignup fallback, which is always safe even when it is the weaker link.
 
 ### The race lifecycle
 
