@@ -36,28 +36,22 @@ cs_register_element(
 function arv_event_timeline_builder() {
 	return cs_compose_controls(
 		array(
-			'control_nav' => array(
-				'timeline' => __( 'Timeline', 'aravaipa-elements' ),
-			),
 			'controls'    => array(
 				array(
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
-					'group' => 'timeline',
 				),
 				array(
 					'key'         => 'rows',
 					'type'        => 'textarea',
 					'label'       => __( 'Schedule', 'aravaipa-elements' ),
 					'description' => __( 'One entry per line: Day | Time | What happens. Consecutive entries sharing a day are grouped under one heading.', 'aravaipa-elements' ),
-					'group'       => 'timeline',
 				),
 				array(
 					'key'   => 'accent',
 					'type'  => 'color',
 					'label' => __( 'Accent', 'aravaipa-elements' ),
-					'group' => 'timeline',
 				),
 			),
 		),

@@ -44,33 +44,26 @@ cs_register_element(
 function arv_race_hero_builder() {
 	return cs_compose_controls(
 		array(
-			'control_nav' => array(
-				'hero' => __( 'Race Hero', 'aravaipa-elements' ),
-			),
 			'controls'    => array(
 				array(
 					'key'   => 'date_line',
 					'type'  => 'text',
 					'label' => __( 'Date line', 'aravaipa-elements' ),
-					'group' => 'hero',
 				),
 				array(
 					'key'   => 'race_name',
 					'type'  => 'text',
 					'label' => __( 'Race name', 'aravaipa-elements' ),
-					'group' => 'hero',
 				),
 				array(
 					'key'   => 'location',
 					'type'  => 'text',
 					'label' => __( 'Location', 'aravaipa-elements' ),
-					'group' => 'hero',
 				),
 				array(
 					'key'     => 'status',
 					'type'    => 'select',
 					'label'   => __( 'Registration status', 'aravaipa-elements' ),
-					'group'   => 'hero',
 					'options' => array(
 						'choices' => array(
 							array(
@@ -101,43 +94,36 @@ function arv_race_hero_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Status note', 'aravaipa-elements' ),
 					'description' => __( 'Optional, shown next to the badge. e.g. "Opens Sept 1".', 'aravaipa-elements' ),
-					'group'       => 'hero',
 				),
 				array(
 					'key'   => 'cta_label',
 					'type'  => 'text',
 					'label' => __( 'Button label', 'aravaipa-elements' ),
-					'group' => 'hero',
 				),
 				array(
 					'key'   => 'cta_url',
 					'type'  => 'text',
 					'label' => __( 'Button URL', 'aravaipa-elements' ),
-					'group' => 'hero',
 				),
 				array(
 					'key'   => 'image',
 					'type'  => 'image',
 					'label' => __( 'Background image', 'aravaipa-elements' ),
-					'group' => 'hero',
 				),
 				array(
 					'key'     => 'overlay',
 					'type'    => 'text',
 					'label'   => __( 'Overlay opacity', 'aravaipa-elements' ),
-					'group'   => 'hero',
 				),
 				array(
 					'key'   => 'accent',
 					'type'  => 'color',
 					'label' => __( 'Accent', 'aravaipa-elements' ),
-					'group' => 'hero',
 				),
 				array(
 					'key'     => 'align',
 					'type'    => 'select',
 					'label'   => __( 'Alignment', 'aravaipa-elements' ),
-					'group'   => 'hero',
 					'options' => array(
 						'choices' => array(
 							array(

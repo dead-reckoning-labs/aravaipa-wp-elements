@@ -36,28 +36,22 @@ cs_register_element(
 function arv_partner_grid_builder() {
 	return cs_compose_controls(
 		array(
-			'control_nav' => array(
-				'partners' => __( 'Partners', 'aravaipa-elements' ),
-			),
 			'controls'    => array(
 				array(
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
-					'group' => 'partners',
 				),
 				array(
 					'key'         => 'rows',
 					'type'        => 'textarea',
 					'label'       => __( 'Partners', 'aravaipa-elements' ),
 					'description' => __( 'One per line: Name | logo URL | link URL | tier. Tier is title, presenting or supporting and defaults to supporting.', 'aravaipa-elements' ),
-					'group'       => 'partners',
 				),
 				array(
 					'key'   => 'grayscale',
 					'type'  => 'toggle',
 					'label' => __( 'Grayscale until hover', 'aravaipa-elements' ),
-					'group' => 'partners',
 				),
 			),
 		),

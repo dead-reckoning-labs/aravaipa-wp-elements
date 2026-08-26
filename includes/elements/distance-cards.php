@@ -40,41 +40,33 @@ cs_register_element(
 function arv_distance_cards_builder() {
 	return cs_compose_controls(
 		array(
-			'control_nav' => array(
-				'distances' => __( 'Distances', 'aravaipa-elements' ),
-			),
 			'controls'    => array(
 				array(
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
-					'group' => 'distances',
 				),
 				array(
 					'key'         => 'stat_labels',
 					'type'        => 'text',
 					'label'       => __( 'Stat labels', 'aravaipa-elements' ),
 					'description' => __( 'Comma separated. These label the stat columns in every card.', 'aravaipa-elements' ),
-					'group'       => 'distances',
 				),
 				array(
 					'key'         => 'rows',
 					'type'        => 'textarea',
 					'label'       => __( 'Distances', 'aravaipa-elements' ),
 					'description' => __( 'One distance per line: Name | stat | stat | stat | register URL. The URL is optional.', 'aravaipa-elements' ),
-					'group'       => 'distances',
 				),
 				array(
 					'key'   => 'cta_label',
 					'type'  => 'text',
 					'label' => __( 'Button label', 'aravaipa-elements' ),
-					'group' => 'distances',
 				),
 				array(
 					'key'     => 'columns',
 					'type'    => 'select',
 					'label'   => __( 'Columns', 'aravaipa-elements' ),
-					'group'   => 'distances',
 					'options' => array(
 						'choices' => array(
 							array(
@@ -96,7 +88,6 @@ function arv_distance_cards_builder() {
 					'key'   => 'accent',
 					'type'  => 'color',
 					'label' => __( 'Accent', 'aravaipa-elements' ),
-					'group' => 'distances',
 				),
 			),
 		),

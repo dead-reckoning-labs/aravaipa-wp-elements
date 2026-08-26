@@ -149,33 +149,26 @@ cs_register_element(
 function arv_upcoming_races_builder() {
 	return cs_compose_controls(
 		array(
-			'control_nav' => array(
-				'races' => __( 'Races', 'aravaipa-elements' ),
-			),
 			'controls'    => array(
 				array(
 					'key'   => 'eyebrow',
 					'type'  => 'text',
 					'label' => __( 'Eyebrow', 'aravaipa-elements' ),
-					'group' => 'races',
 				),
 				array(
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
-					'group' => 'races',
 				),
 				array(
 					'key'   => 'intro',
 					'type'  => 'text',
 					'label' => __( 'Intro line', 'aravaipa-elements' ),
-					'group' => 'races',
 				),
 				array(
 					'key'     => 'theme',
 					'type'    => 'select',
 					'label'   => __( 'Theme', 'aravaipa-elements' ),
-					'group'   => 'races',
 					'options' => array(
 						'choices' => array(
 							array(
@@ -193,7 +186,6 @@ function arv_upcoming_races_builder() {
 					'key'     => 'columns',
 					'type'    => 'select',
 					'label'   => __( 'Columns', 'aravaipa-elements' ),
-					'group'   => 'races',
 					'options' => array(
 						'choices' => array(
 							array(
@@ -216,53 +208,45 @@ function arv_upcoming_races_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Maximum races to show', 'aravaipa-elements' ),
 					'description' => __( 'Rows past this are skipped. Paste the whole season and let this pick the front of it. 0 shows every row.', 'aravaipa-elements' ),
-					'group'       => 'races',
 				),
 				array(
 					'key'   => 'cta_label',
 					'type'  => 'text',
 					'label' => __( 'Button label', 'aravaipa-elements' ),
-					'group' => 'races',
 				),
 				array(
 					'key'         => 'live_lead',
 					'type'        => 'text',
 					'label'       => __( 'Days before race day to show live results', 'aravaipa-elements' ),
 					'description' => __( 'The live board carries the start list, with bib numbers, days before anyone runs, so it is worth reaching before race morning. A race also switches over the moment entries close, whichever happens first. 0 waits for race day.', 'aravaipa-elements' ),
-					'group'       => 'races',
 				),
 				array(
 					'key'   => 'all_label',
 					'type'  => 'text',
 					'label' => __( 'Footer link label', 'aravaipa-elements' ),
-					'group' => 'races',
 				),
 				array(
 					'key'   => 'all_url',
 					'type'  => 'text',
 					'label' => __( 'Footer link URL', 'aravaipa-elements' ),
-					'group' => 'races',
 				),
 				array(
 					'key'         => 'only_confirmed',
 					'type'        => 'toggle',
 					'label'       => __( 'Only show confirmed races', 'aravaipa-elements' ),
 					'description' => __( 'Most recurring races do not have next year\'s UltraSignup listing yet, so the generator marks them unconfirmed rather than guess a date is really open for entries. On (the safe default), this element skips them entirely rather than offer a Register button that leads to a stale page. Turn off only for a list meant to show the whole season regardless of registration status.', 'aravaipa-elements' ),
-					'group'       => 'races',
 				),
 				array(
 					'key'         => 'schema',
 					'type'        => 'toggle',
 					'label'       => __( 'Event structured data', 'aravaipa-elements' ),
 					'description' => __( 'Emits schema.org Event JSON-LD for each race, which is what makes them eligible for Google event results and readable by AI answer engines. Turn off only if another plugin is already emitting Event schema for the same races, so they are not described twice.', 'aravaipa-elements' ),
-					'group'       => 'races',
 				),
 				array(
 					'key'         => 'rows',
 					'type'        => 'textarea',
 					'label'       => __( 'Races', 'aravaipa-elements' ),
 					'description' => __( 'One per line: Name | ISO date (2026-08-29) | display date | distances | venue | city, ST | register URL | race page URL | image URL. The ISO date is required and drives both the sort order and the structured data. Display date is optional and is for ranges a single date cannot express, like "September 12-13".', 'aravaipa-elements' ),
-					'group'       => 'races',
 				),
 			),
 		),

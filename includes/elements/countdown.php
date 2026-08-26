@@ -38,28 +38,22 @@ cs_register_element(
 function arv_countdown_builder() {
 	return cs_compose_controls(
 		array(
-			'control_nav' => array(
-				'countdown' => __( 'Countdown', 'aravaipa-elements' ),
-			),
 			'controls'    => array(
 				array(
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
-					'group' => 'countdown',
 				),
 				array(
 					'key'         => 'target',
 					'type'        => 'text',
 					'label'       => __( 'Start time', 'aravaipa-elements' ),
 					'description' => __( 'Local race time as YYYY-MM-DD HH:MM, 24 hour.', 'aravaipa-elements' ),
-					'group'       => 'countdown',
 				),
 				array(
 					'key'     => 'offset',
 					'type'    => 'select',
 					'label'   => __( 'Time zone', 'aravaipa-elements' ),
-					'group'   => 'countdown',
 					'options' => array(
 						'choices' => array(
 							array(
@@ -81,13 +75,11 @@ function arv_countdown_builder() {
 					'key'   => 'expired',
 					'type'  => 'text',
 					'label' => __( 'Message after start', 'aravaipa-elements' ),
-					'group' => 'countdown',
 				),
 				array(
 					'key'   => 'accent',
 					'type'  => 'color',
 					'label' => __( 'Accent', 'aravaipa-elements' ),
-					'group' => 'countdown',
 				),
 			),
 		),

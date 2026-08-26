@@ -73,33 +73,26 @@ cs_register_element(
 function arv_region_map_builder() {
 	return cs_compose_controls(
 		array(
-			'control_nav' => array(
-				'map' => __( 'Map', 'aravaipa-elements' ),
-			),
 			'controls'    => array(
 				array(
 					'key'   => 'eyebrow',
 					'type'  => 'text',
 					'label' => __( 'Eyebrow', 'aravaipa-elements' ),
-					'group' => 'map',
 				),
 				array(
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
-					'group' => 'map',
 				),
 				array(
 					'key'   => 'intro',
 					'type'  => 'text',
 					'label' => __( 'Intro line', 'aravaipa-elements' ),
-					'group' => 'map',
 				),
 				array(
 					'key'     => 'theme',
 					'type'    => 'select',
 					'label'   => __( 'Theme', 'aravaipa-elements' ),
-					'group'   => 'map',
 					'options' => array(
 						'choices' => array(
 							array(
@@ -118,7 +111,6 @@ function arv_region_map_builder() {
 					'type'        => 'toggle',
 					'label'       => __( 'Region list below map', 'aravaipa-elements' ),
 					'description' => __( 'Repeats every region as a text link under the map. Carries the section on a phone, where the pins are small, and gives search engines the region names as real text.', 'aravaipa-elements' ),
-					'group'       => 'map',
 				),
 				array(
 					'key'         => 'rows',
@@ -128,7 +120,6 @@ function arv_region_map_builder() {
 						'One per line: Name | X% | Y% | landing page URL | detail (optional) | primary (optional, marks the HQ pin). X/Y are a position on the map image as a percentage of its width and height, left edge and top edge are 0. To place a new pin: open assets/us-outline.svg full size, find the spot, and read off its position as a percentage of the image\'s width (X) and height (Y).',
 						'aravaipa-elements'
 					),
-					'group'       => 'map',
 				),
 			),
 		),
