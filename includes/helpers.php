@@ -129,3 +129,90 @@ function arv_maybe_link( $url, $label, $classes = '', $new_tab = false ) {
 
 	return '<a href="' . esc_url( $url ) . '"' . $class_attr . $target . '>' . $label . '</a>';
 }
+
+/**
+ * US state and territory codes to full names.
+ *
+ * Races store their location as "City, ST", which is what a runner reads on
+ * a race page and what the state filter matches on. Search needs the other
+ * direction too: someone typing "california" into the calendar's search box
+ * found nothing, because the only thing in the row was "CA". The full name
+ * is folded into each row's searchable text (see season-calendar.php) so
+ * both spellings hit, and it labels the state dropdown so that reads as
+ * "California" rather than a bare "CA".
+ *
+ * Every state is listed, not just the ones Aravaipa currently races in: the
+ * schedule grows (Bad Beard added Tennessee, White Mountain added New
+ * Hampshire), and a partial map would silently fail for the next one.
+ *
+ * @return array<string, string> Uppercase code => full name.
+ */
+function arv_state_names() {
+	return array(
+		'AL' => 'Alabama',
+		'AK' => 'Alaska',
+		'AZ' => 'Arizona',
+		'AR' => 'Arkansas',
+		'CA' => 'California',
+		'CO' => 'Colorado',
+		'CT' => 'Connecticut',
+		'DE' => 'Delaware',
+		'DC' => 'District of Columbia',
+		'FL' => 'Florida',
+		'GA' => 'Georgia',
+		'HI' => 'Hawaii',
+		'ID' => 'Idaho',
+		'IL' => 'Illinois',
+		'IN' => 'Indiana',
+		'IA' => 'Iowa',
+		'KS' => 'Kansas',
+		'KY' => 'Kentucky',
+		'LA' => 'Louisiana',
+		'ME' => 'Maine',
+		'MD' => 'Maryland',
+		'MA' => 'Massachusetts',
+		'MI' => 'Michigan',
+		'MN' => 'Minnesota',
+		'MS' => 'Mississippi',
+		'MO' => 'Missouri',
+		'MT' => 'Montana',
+		'NE' => 'Nebraska',
+		'NV' => 'Nevada',
+		'NH' => 'New Hampshire',
+		'NJ' => 'New Jersey',
+		'NM' => 'New Mexico',
+		'NY' => 'New York',
+		'NC' => 'North Carolina',
+		'ND' => 'North Dakota',
+		'OH' => 'Ohio',
+		'OK' => 'Oklahoma',
+		'OR' => 'Oregon',
+		'PA' => 'Pennsylvania',
+		'PR' => 'Puerto Rico',
+		'RI' => 'Rhode Island',
+		'SC' => 'South Carolina',
+		'SD' => 'South Dakota',
+		'TN' => 'Tennessee',
+		'TX' => 'Texas',
+		'UT' => 'Utah',
+		'VT' => 'Vermont',
+		'VA' => 'Virginia',
+		'WA' => 'Washington',
+		'WV' => 'West Virginia',
+		'WI' => 'Wisconsin',
+		'WY' => 'Wyoming',
+	);
+}
+
+/**
+ * The full name for a state code, or the code itself when it is not one.
+ *
+ * @param string $code Two-letter code, any case.
+ * @return string
+ */
+function arv_state_name( $code ) {
+	$names = arv_state_names();
+	$key   = strtoupper( trim( (string) $code ) );
+
+	return isset( $names[ $key ] ) ? $names[ $key ] : $key;
+}

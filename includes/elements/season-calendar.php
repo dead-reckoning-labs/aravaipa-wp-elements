@@ -347,9 +347,17 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 		$state = strtoupper( $m[1] );
 	}
 
+	// The full state name rides along in the searchable text, not just the
+	// two-letter code the location carries. Someone typing "california" got
+	// "No races match" because the row only ever contained "CA".
+	$where = $race['venue'] . ' ' . $race['location'];
+	if ( '' !== $state ) {
+		$where .= ' ' . arv_state_name( $state );
+	}
+
 	$out = '<div class="arv-calendar__row"'
 		. ' data-name="' . esc_attr( strtolower( $race['name'] ) ) . '"'
-		. ' data-where="' . esc_attr( strtolower( $race['venue'] . ' ' . $race['location'] ) ) . '"'
+		. ' data-where="' . esc_attr( strtolower( $where ) ) . '"'
 		. ' data-distances="' . esc_attr( strtolower( $race['distances'] ) ) . '"'
 		. ' data-state="' . esc_attr( $state ) . '"'
 		. ' data-month="' . esc_attr( substr( $race['iso'], 5, 2 ) ) . '"'
@@ -524,7 +532,15 @@ function arv_season_calendar_filters( $races ) {
 		$months[ substr( $race['iso'], 5, 2 ) ] = true;
 	}
 
-	ksort( $states );
+	// Sorted by the name the reader actually sees, not by the code behind it.
+	// ksort on the code puts NH before NV, which renders as "New Hampshire"
+	// above "Nevada": alphabetical by a string the dropdown never shows.
+	uksort(
+		$states,
+		function ( $a, $b ) {
+			return strcasecmp( arv_state_name( $a ), arv_state_name( $b ) );
+		}
+	);
 	ksort( $months );
 
 	$out  = '<div class="arv-calendar__filters" data-arv-filters>';
@@ -540,7 +556,9 @@ function arv_season_calendar_filters( $races ) {
 		$out .= '<select class="arv-calendar__select" data-arv-state>';
 		$out .= '<option value="">' . esc_html( __( 'Anywhere', 'aravaipa-elements' ) ) . '</option>';
 		foreach ( array_keys( $states ) as $code ) {
-			$out .= '<option value="' . esc_attr( $code ) . '">' . esc_html( $code ) . '</option>';
+			// Value stays the code, since that is what data-state carries and
+			// what the JS compares; only the label spells it out.
+			$out .= '<option value="' . esc_attr( $code ) . '">' . esc_html( arv_state_name( $code ) ) . '</option>';
 		}
 		$out .= '</select></label>';
 	}

@@ -380,6 +380,39 @@ t('and shows the published span', strpos($rb,'>3-4<')!==false);
 t('the unconfirmed race in this pair has no Register', substr_count($r,'arv-calendar__action--upcoming')===0 || substr_count($r,'arv-calendar__action--upcoming')===1);
 t('and this element never renders a card-style cta', strpos($r,'arv-races__cta')===false);
 
+echo "calendar state search and filter:\n";
+// Searching a state by its full name found nothing, because the only thing
+// in a row was the two-letter code: "california" never matched "CA". The
+// full name now rides along in the row's searchable text.
+$stateCal = "Moon | 2026-10-10 | October 10 | 50 Mile | Black Star Canyon | Silverado, CA | https://u.com/m | https://a.com/m |  |  |  |  | 1 | 0\n"
+          . "Roost | 2026-11-14 | November 14 | 4 Mile | Sabino Canyon | Tucson, AZ | https://u.com/r | https://a.com/r |  |  |  |  | 1 | 0";
+$sc = arv_season_calendar_render(array('rows'=>$stateCal));
+t('the row search text carries the full state name', strpos($sc,'california')!==false);
+t('and still carries the code it came from',         strpos($sc,'silverado, ca')!==false);
+t('the other state resolves too',                    strpos($sc,'arizona')!==false);
+// data-state stays the raw code: the dropdown compares against it, and only
+// the visible label was ever meant to change.
+t('data-state is still the two-letter code',         strpos($sc,'data-state="CA"')!==false);
+
+// The filter bar only renders above 5 races (below that the whole list fits
+// on screen and a filter is noise), so the dropdown assertions need a
+// fixture that clears that bar. NV and NH are in here deliberately: sorting
+// on the CODE puts NH above NV, which renders as "New Hampshire" above
+// "Nevada", alphabetical by a string the dropdown never shows.
+$many = '';
+$sixStates = array('Silverado, CA', 'Tucson, AZ', 'Reno, NV', 'Lincoln, NH', 'Denver, CO', 'Marquette, MI');
+foreach ( $sixStates as $i => $place ) {
+	$many .= sprintf(
+		"R%d | 2026-%02d-10 | Month 10 | 50K | V | %s | https://u.com/%d | https://a.com/%d |  |  |  |  | 1 | 0\n",
+		$i, 9 + ( $i % 4 ), $place, $i, $i
+	);
+}
+$sm = arv_season_calendar_render(array('rows'=>trim($many)));
+t('the filter bar renders once past the threshold', strpos($sm,'data-arv-state')!==false);
+t('the dropdown labels states in full',             strpos($sm,'>California<')!==false);
+t('and keeps the code as the option value',         strpos($sm,'value="CA"')!==false);
+t('Nevada is listed before New Hampshire',          strpos($sm,'>Nevada<') < strpos($sm,'>New Hampshire<'));
+
 echo "calendar grace period:\n";
 // A race that ran two days ago keeps its place; the same race outside the
 // grace window has flipped forward a year.
