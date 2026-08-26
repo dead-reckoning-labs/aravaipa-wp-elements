@@ -36,17 +36,18 @@ for f in "$NAME.php" includes/*.php includes/elements/*.php; do
 done
 
 rm -rf "$STAGE" "$OUT/$NAME.zip"
-mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos"
+mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 
 cp "$NAME.php" "$STAGE/"
 cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
+cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
 # WordPress convention: an empty index.php in every directory so a server
 # with directory listing enabled serves nothing instead of the file tree.
-for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/assets" "$STAGE/assets/logos"; do
+for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin"; do
 	printf '<?php // Silence is golden.' > "$d/index.php"
 done
 
@@ -79,6 +80,14 @@ fi
 while read -r inc; do
 	[ -f "$STAGE/includes/$inc" ] || { echo "includes/$inc is required by $NAME.php but not packaged" >&2; missing=1; }
 done < <(grep -oE "ARV_ELEMENTS_PATH \. 'includes/[a-z-]+\.php'" "$NAME.php" | sed -E "s#.*includes/##; s#'##")
+[ "$missing" -eq 0 ] || exit 1
+
+# The artwork WordPress renders on its own screens. A missing icon is not a
+# fatal, it just silently reverts to the generic grey plug, which is the exact
+# state this replaced and would be easy not to notice again.
+for art in icon-128x128.png icon-256x256.png banner-772x250.png banner-1544x500.png; do
+	[ -f "$STAGE/assets/plugin/$art" ] || { echo "plugin artwork '$art' missing from the payload" >&2; missing=1; }
+done
 [ "$missing" -eq 0 ] || exit 1
 
 # Every bundled logo an element references must actually be in the payload,

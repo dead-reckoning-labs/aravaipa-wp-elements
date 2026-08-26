@@ -136,6 +136,49 @@ function arv_elements_version_from_tag( $tag_name ) {
 }
 
 /**
+ * Artwork WordPress shows for this plugin.
+ *
+ * Without these it falls back to a generic grey plug icon on the Plugins and
+ * Updates screens, which is what it did until now.
+ *
+ * The keys are WordPress's own and are not arbitrary: '1x' and '2x' for
+ * icons, 'low' and 'high' for banners. Anything else is ignored silently.
+ *
+ * URLs point at the installed plugin's own directory rather than at GitHub,
+ * so they always resolve to whatever version is actually on the site and do
+ * not depend on a release asset staying reachable.
+ *
+ * @return array {icons, banners}
+ */
+function arv_elements_artwork() {
+	// Guarded rather than assumed. This constant is defined by the main
+	// plugin file before this one loads, so in WordPress it is always there,
+	// but every other hook in this file already degrades to "return what you
+	// were given" rather than fataling, and a fatal raised from an update
+	// check takes wp-admin down with it. Artwork is not worth that.
+	if ( ! defined( 'ARV_ELEMENTS_URL' ) ) {
+		return array(
+			'icons'   => array(),
+			'banners' => array(),
+		);
+	}
+
+	$base = ARV_ELEMENTS_URL . 'assets/plugin/';
+
+	return array(
+		'icons'   => array(
+			'1x'      => $base . 'icon-128x128.png',
+			'2x'      => $base . 'icon-256x256.png',
+			'default' => $base . 'icon-256x256.png',
+		),
+		'banners' => array(
+			'low'  => $base . 'banner-772x250.png',
+			'high' => $base . 'banner-1544x500.png',
+		),
+	);
+}
+
+/**
  * site_transient_update_plugins filter.
  *
  * @param object $transient
@@ -169,14 +212,16 @@ function arv_elements_check_for_update( $transient ) {
 
 	$zip_url = arv_elements_release_zip_url( $release );
 
+	$art = arv_elements_artwork();
+
 	$info = (object) array(
 		'slug'        => 'aravaipa-elements',
 		'plugin'      => ARV_ELEMENTS_SLUG,
 		'new_version' => $remote_version,
 		'url'         => $release->html_url,
 		'package'     => $zip_url ? $zip_url : '',
-		'icons'       => array(),
-		'banners'     => array(),
+		'icons'       => $art['icons'],
+		'banners'     => $art['banners'],
 		'banners_rtl' => array(),
 		'tested'      => get_bloginfo( 'version' ),
 	);
@@ -228,6 +273,7 @@ function arv_elements_plugins_api( $result, $action, $args ) {
 
 	$zip_url = arv_elements_release_zip_url( $release );
 	$body    = isset( $release->body ) ? trim( (string) $release->body ) : '';
+	$art     = arv_elements_artwork();
 
 	return (object) array(
 		'name'          => 'Aravaipa Elements',
@@ -244,6 +290,8 @@ function arv_elements_plugins_api( $result, $action, $args ) {
 			'changelog'   => '' !== $body ? '<p>' . nl2br( esc_html( $body ) ) . '</p>' : '<p>No release notes provided.</p>',
 		),
 		'download_link' => $zip_url ? $zip_url : '',
+		'icons'         => $art['icons'],
+		'banners'       => $art['banners'],
 	);
 }
 add_filter( 'plugins_api', 'arv_elements_plugins_api', 10, 3 );

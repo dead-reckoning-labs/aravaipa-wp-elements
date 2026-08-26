@@ -271,6 +271,16 @@ php arv-standalone.php     # rewrites standalone-region-map.html
 
 Editing `standalone-region-map.html` directly works until the next regeneration overwrites it, which is why the generated file says so in its own header comment.
 
+## Plugin artwork
+
+`assets/plugin/` holds the icon and banner WordPress renders on its own screens. Without them it falls back to a generic grey plug, which is what it showed until v0.21.0.
+
+Built from Aravaipa's real marks rather than redrawn, on `#1d2624`, the site's own dark sampled from its CSS. The banners use the **white** variant of the mark: the standard lockup sets "ARAVAIPA" in a dark navy that disappears against that background. The banner says only "ELEMENTS" beside the mark, because the mark already reads "ARAVAIPA RUNNING" and an earlier version that spelled it out again said the word twice.
+
+Quantized to a small palette, which took them from 195KB to 19KB with no visible change: they are flat colour and a two-tone mark, and they ship in every download.
+
+They are referenced from `includes/updater.php` by absolute URL into the installed plugin's own directory, so they resolve for whatever version is actually on the site rather than depending on a release asset staying reachable. Both places WordPress asks for artwork are populated: the update row on the Plugins screen and the "View details" modal. `build.sh` fails if any of the four files is missing from the payload, since a missing icon is not an error, it just quietly reverts to the grey plug.
+
 ## Install
 
 1. Download `aravaipa-elements.zip`.
