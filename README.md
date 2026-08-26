@@ -88,9 +88,11 @@ Red means "there is something to buy". Once a race is running or done there is n
 
 ### How the close date is known
 
-UltraSignup prints "Registration closes: Mon, Sep 7 @ 11:59PM MT" above the fold on races whose director has set a hard close, and it is visible without logging in. `scripts/fetch-races.mjs` reads it per race and writes it into the twelfth column.
+UltraSignup prints the close date above the fold, visible without logging in, and `scripts/fetch-races.mjs` reads it per race into the twelfth column.
 
-**Only some races publish one: 9 of the 69 in the current calendar.** The other 60 come back empty and behave as they always did, taking entries until race day, which is what they actually do. So the close date sharpens the answer where it exists and changes nothing where it does not.
+There are **two different messages** and both have to be matched. A race still taking entries says `Registration closes: Mon, Sep 7 @ 11:59PM MT`, present tense, no year. A race that has already stopped says `Registration Closed Mon. Aug 24, 2026 @ 11:59 PM`, past tense, with the year. Matching only the first, which is what this did originally, reads every already-closed race as though no close date were published at all and leaves it offering Register after entries have shut.
+
+**Only some races publish one: 11 of the 69 in the current calendar.** The other 60 come back empty and behave as they always did, taking entries until race day, which is what they actually do. So the close date sharpens the answer where it exists and changes nothing where it does not.
 
 Do not try to infer it from registration *status* instead. UltraSignup does not report that in any way worth trusting: every race page carries "Register Now" in its title whether or not entries are open, Rock Hawk (open) contains the word "Closed", Black Canyon returns "Register Now", "Wait List" and "Lottery" together, and the `events.svc` JSON endpoints all 404. That was all checked before settling on the published close date, which is a fact rather than an inference.
 

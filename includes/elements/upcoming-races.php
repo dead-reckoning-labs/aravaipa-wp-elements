@@ -59,8 +59,8 @@ cs_register_element(
 					// showing the right six as races pass, with no edit at all.
 					// Regenerate with scripts/fetch-races.mjs when the calendar moves;
 					// race-rows-2026.txt in the repo root is the same content.
-					"Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | 10K | 5K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/bear-chase-series/rock-hawk/ | https://i0.wp.com/www.aravaiparunning.com/avr/wp-content/uploads/2024/10/Jallucinations-8.png?fit=1080%2C1080&ssl=1 |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | \n" .
-					"Black Bear Trail Race | 2026-08-29 | August 29 | 50KM | 23K | 4 Mile | 1 Mile | Waterville Valley Town Square | Waterville Valley, NH | https://ultrasignup.com/register.aspx?did=130629 | https://www.aravaiparunning.com/white-mountain-endurance/black-bear-trail-races/ | https://i0.wp.com/www.aravaiparunning.com/avr/wp-content/uploads/Black-Bear-Trail-Races_Logo-01.png?fit=1875%2C1920&ssl=1 |  | https://live.aravaiparunning.com/#/black_bear-2026 | \n" .
+					"Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | 10K | 5K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/bear-chase-series/rock-hawk/ | https://i0.wp.com/www.aravaiparunning.com/avr/wp-content/uploads/2024/10/Jallucinations-8.png?fit=1080%2C1080&ssl=1 |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24\n" .
+					"Black Bear Trail Race | 2026-08-29 | August 29 | 50KM | 23K | 4 Mile | 1 Mile | Waterville Valley Town Square | Waterville Valley, NH | https://ultrasignup.com/register.aspx?did=130629 | https://www.aravaiparunning.com/white-mountain-endurance/black-bear-trail-races/ | https://i0.wp.com/www.aravaiparunning.com/avr/wp-content/uploads/Black-Bear-Trail-Races_Logo-01.png?fit=1875%2C1920&ssl=1 |  | https://live.aravaiparunning.com/#/black_bear-2026 | 2026-08-24\n" .
 					"Mogollon Monster Trail Runs | 2026-09-12 | September 12-13 | 100 Mile, 42K | Mogollon Rim | Pine, AZ | https://ultrasignup.com/register.aspx?did=130408 | https://www.aravaiparunning.com/mogollon-monster/ | https://i0.wp.com/www.aravaiparunning.com/avr/wp-content/uploads/2019/06/Mogollon-Monster-Run-logo.png?w=810&ssl=1 | 2026-09-13 | https://live.aravaiparunning.com/#/mogollon_monster-2026 | 2026-09-07\n" .
 					"Snow Mountain Ranch Trail Running Festival | 2026-09-12 | September 12 | 50KM | 33KM | Half-Marathon | 10 KM | 5KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://www.aravaiparunning.com/snow-mountain-ranch/ | https://i0.wp.com/www.aravaiparunning.com/avr/wp-content/uploads/2025-SnowMountainRanch-Logo-v1.png?fit=1708%2C1920&ssl=1 |  |  | 2026-09-07\n" .
 					"Race The Cog | 2026-09-13 | September 13 | 2.75 Miles w/ 3500ft Gain | Mount Washington Cog Railway | Bretton Woods, NH | https://ultrasignup.com/register.aspx?did=130509 | https://www.aravaiparunning.com/white-mountain-endurance/cog/ | https://i0.wp.com/www.aravaiparunning.com/avr/wp-content/uploads/2023/05/Race-the-Cog-Logo-Full-Color.png?fit=1438%2C1376&ssl=1 |  |  | 2026-09-07\n" .
@@ -562,7 +562,18 @@ function arv_upcoming_races_render( $data ) {
 			// Race name as alt rather than empty: unlike the region map's
 			// brand marks, this image is the only thing identifying the race
 			// visually, and it sits above the name rather than beside it.
-			$cards .= '<img class="arv-races__img" src="' . esc_url( $race['image'] ) . '" alt="' . esc_attr( $race['name'] ) . '" loading="lazy" decoding="async" />';
+			$img = '<img class="arv-races__img" src="' . esc_url( $race['image'] ) . '" alt="' . esc_attr( $race['name'] ) . '" loading="lazy" decoding="async" />';
+			// Wrapped in a link to the race page when there is one. It is the
+			// most obviously clickable thing on the card and was doing
+			// nothing. aria-hidden with tabindex -1 because the race name
+			// directly below is already a link to the same page: a screen
+			// reader or keyboard user hitting the same destination twice in a
+			// row is noise, not access.
+			if ( '' !== $card_url ) {
+				$cards .= '<a class="arv-races__media-link" href="' . esc_url( $card_url ) . '" aria-hidden="true" tabindex="-1">' . $img . '</a>';
+			} else {
+				$cards .= $img;
+			}
 			$cards .= '</div>';
 		}
 

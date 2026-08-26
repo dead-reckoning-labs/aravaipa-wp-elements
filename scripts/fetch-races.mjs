@@ -84,18 +84,36 @@ async function fetchRegClose(registerUrl, raceIso) {
     const res = await fetch(registerUrl, { signal: AbortSignal.timeout(20000) });
     if (!res.ok) return '';
     const html = await res.text();
-    const m = html.match(/Registration closes:\s*(?:[A-Za-z]{3},\s*)?([A-Za-z]+)\s+(\d{1,2})/i);
-    if (!m) return '';
-    const mo = MONTHS[m[1].toLowerCase()];
-    if (!mo) return '';
-    let y = parseInt(raceIso.slice(0, 4), 10);
-    const iso = () => `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(m[2],10)).padStart(2,'0')}`;
-    if (iso() > raceIso) y -= 1;
-    return iso();
+
+    // Two different messages, and the difference matters. A race that has
+    // already stopped taking entries says "Registration Closed Mon. Aug 24,
+    // 2026 @ 11:59 PM" in the past tense and carries its own year. A race
+    // still open says "Registration closes: Mon, Sep 7 @ 11:59PM MT" with no
+    // year at all. Matching only the second, which is what this did at first,
+    // reads every already-closed race as though no close date were published
+    // and leaves it offering Register after entries have shut.
+    const closed = html.match(/Registration Closed\s+(?:[A-Za-z]{3,9}\.?,?\s*)?([A-Za-z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})/);
+    if (closed) {
+      const mo = MONTHS[closed[1].toLowerCase()];
+      if (mo) return `${closed[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(closed[2],10)).padStart(2,'0')}`;
+    }
+
+    const open = html.match(/Registration closes:\s*(?:[A-Za-z]{3,9},?\s*)?([A-Za-z]{3,9})\.?\s+(\d{1,2})/i);
+    if (open) {
+      const mo = MONTHS[open[1].toLowerCase()];
+      if (!mo) return '';
+      let y = parseInt(raceIso.slice(0, 4), 10);
+      const iso = () => `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(open[2],10)).padStart(2,'0')}`;
+      if (iso() > raceIso) y -= 1;
+      return iso();
+    }
+
+    return '';
   } catch {
     return '';
   }
 }
+
 
 // "September 12-13" and "October 30 - November 1" both describe a race that
 // is still running on its later day. Without an end date the module drops a

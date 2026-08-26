@@ -1100,10 +1100,14 @@
    cropping them to a letterbox cut the name straight off the top and bottom
    of the badge. Contain letterboxes a wide photo instead, which is the
    better failure of the two. */
+/* 3:2 rather than 4:3, and padded, so the badge reads as a mark on the card
+   rather than the card being a frame around a badge. At three across on a
+   1200px container this is about 100px of artwork instead of 190. */
 .arv-races__media {
 	position: relative;
-	aspect-ratio: 4 / 3;
+	aspect-ratio: 3 / 2;
 	overflow: hidden;
+	padding: 0.9rem;
 	background: var(--arv-races-rule);
 }
 
@@ -1112,6 +1116,19 @@
 	height: 100%;
 	object-fit: contain;
 	display: block;
+}
+
+/* The artwork links to the race page, because it is the most obviously
+   clickable thing on the card and was doing nothing. */
+.arv-races__media-link {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.arv-races__media-link:focus-visible {
+	outline: 2px solid var(--arv-accent);
+	outline-offset: -2px;
 }
 
 .arv-races__body {
@@ -1169,7 +1186,9 @@
 	padding-top: 0.6rem;
 }
 
-.arv-races__cta {
+.arv-races__cta,
+.arv-races__cta:link,
+.arv-races__cta:visited {
 	display: inline-block;
 	padding: 0.62rem 1.15rem;
 	background: var(--arv-accent);
@@ -1260,9 +1279,26 @@
    phone would have to tap Register twice. */
 @media (hover: hover) and (pointer: fine) {
 	/* #c61300 is the theme's own pressed red, not a shade picked by eye. */
-	a.arv-races__cta:hover { background: #c61300; border-color: #c61300; }
+	/* Colour is restated on every hover state, not just background. The X
+	   theme sets its own a:hover colour site-wide, which won here and turned
+	   the label the same red as the button it sits on: a solid red rectangle
+	   with the word gone. */
+	a.arv-races__cta:hover,
+	a.arv-races__cta:focus,
+	a.arv-races__cta:active {
+		background: #c61300;
+		border-color: #c61300;
+		color: #fff;
+	}
+
 	a.arv-races__cta--live:hover,
-	a.arv-races__cta--results:hover { background: #22505b; border-color: #22505b; }
+	a.arv-races__cta--live:focus,
+	a.arv-races__cta--results:hover,
+	a.arv-races__cta--results:focus {
+		background: #22505b;
+		border-color: #22505b;
+		color: #fff;
+	}
 	.arv-races__link:hover { color: var(--arv-accent); }
 	.arv-races__details:hover {
 		color: var(--arv-accent);
