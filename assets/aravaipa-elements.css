@@ -1014,6 +1014,7 @@
    of the page rather than a component dropped onto it. */
 
 .arv-races {
+	text-align: left;
 	/* The logo teals, shared with the region map, which is where they are
 	   also defined. Repeated rather than hoisted to :root so the elements
 	   stay self-contained: each one can be dropped into a page on its own. */
@@ -1394,6 +1395,11 @@
    reads as an index rather than a second copy of the Upcoming Races grid. */
 
 .arv-calendar {
+	/* Set explicitly, not left to inherit. These elements get dropped into
+	   whatever Cornerstone column an editor happens to pick, and a centred
+	   column turned the entire calendar into centred text on mobile. An
+	   element should not change shape based on the box it lands in. */
+	text-align: left;
 	--arv-teal: #5bb5a2;
 	--arv-teal-deep: #2a5e6b;
 	padding: 3.5rem 0;
@@ -1747,5 +1753,32 @@
 		margin-left: 0.5rem;
 		padding: 0.4rem 0.5rem;
 		font-size: 0.62rem;
+	}
+}
+
+
+/* ------------------------------------------------ Calendar, phones -- */
+/* These come last on purpose. The base .arv-calendar__info rule was appended
+   to this file after the mobile block that hides it, so on equal specificity
+   source order handed the win to the wrong one and Race Info stayed visible
+   on every row. Restating here removes the dependency on where in the file a
+   rule happens to sit. */
+@media (max-width: 619px) {
+	.arv-calendar__info {
+		display: none;
+	}
+
+	/* One button left, so the row does not need to give it a whole line. */
+	.arv-calendar__actions {
+		flex-basis: auto;
+		width: auto;
+		margin-left: auto;
+		padding-left: 0;
+	}
+
+	/* Long race names wrap; keeping the button clear of them stops the row
+	   collapsing into a stack. */
+	.arv-calendar__body {
+		min-width: 0;
 	}
 }

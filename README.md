@@ -103,9 +103,9 @@ The **Entries Closed** chip is now the rare case: it only appears for a race who
 
 UltraSignup prints the close date above the fold, visible without logging in, and `scripts/fetch-races.mjs` reads it per race into the twelfth column.
 
-There are **two different messages** and both have to be matched. A race still taking entries says `Registration closes: Mon, Sep 7 @ 11:59PM MT`, present tense, no year. A race that has already stopped says `Registration Closed Mon. Aug 24, 2026 @ 11:59 PM`, past tense, with the year. Matching only the first, which is what this did originally, reads every already-closed race as though no close date were published at all and leaves it offering Register after entries have shut.
+There are **two different messages** and both have to be matched (see below for how the URL checked is now always the current one, not whatever `/races/` happens to link). A race still taking entries says `Registration closes: Mon, Sep 7 @ 11:59PM MT`, present tense, no year. A race that has already stopped says `Registration Closed Mon. Aug 24, 2026 @ 11:59 PM`, past tense, with the year. Matching only the first, which is what this did originally, reads every already-closed race as though no close date were published at all and leaves it offering Register after entries have shut.
 
-**Only some races publish one: 11 of the 69 in the current calendar.** The other 60 come back empty and behave as they always did, taking entries until race day, which is what they actually do. So the close date sharpens the answer where it exists and changes nothing where it does not.
+**Only some races publish one, tracked per race.** The other 60 come back empty and behave as they always did, taking entries until race day, which is what they actually do. So the close date sharpens the answer where it exists and changes nothing where it does not.
 
 Do not try to infer it from registration *status* instead. UltraSignup does not report that in any way worth trusting: every race page carries "Register Now" in its title whether or not entries are open, Rock Hawk (open) contains the word "Closed", Black Canyon returns "Register Now", "Wait List" and "Lottery" together, and the `events.svc` JSON endpoints all 404. That was all checked before settling on the published close date, which is a fact rather than an inference.
 
@@ -151,6 +151,25 @@ Two blocks, both of which the site had none of before.
 **Event**, from the Upcoming Races element, one `SportsEvent` per race it shows, wrapped in a single `@context`/`@graph` script. This is what makes a race eligible for Google's event results and legible to an AI answer engine. Only fields we actually have are emitted: no invented entry price (they vary by distance and by how early you enter, and a wrong price is worse than no price), no guessed end date. `eventAttendanceMode` is set explicitly because Google otherwise assumes online.
 
 **Organization and WebSite**, from `includes/seo.php`, on the front page only, along with a meta description. That file also stands down entirely if Yoast, Rank Math, All in One SEO or SEOPress is ever activated, so it can never produce a second competing description. The front page description is filterable via `arv_seo_front_page_description`, and the Organization node via `arv_seo_organization`.
+
+## Where the race data actually comes from
+
+`scripts/fetch-races.mjs` was rebuilt this session after two real problems surfaced, both worth recording because they were silent: nothing errored, the generator just quietly produced less and worse data than the site actually has.
+
+**It was dropping every race that did not register through UltraSignup.** Registration was matched by scanning for `ultrasignup.com/register` links only, so a race using RunSignUp, RaceRoster, or a page on aravaiparunning.com's own registration system vanished from the output entirely, with no error. That included Javelina Jundred, three RunSignUp-hosted virtual races (Javelina Jallucinations, Merry Vertmas, Across The Globe), Sonoma Fall Classic, Tucson Marathon, and about a dozen more. Fixed by reading whichever link the page's own "Register" button points to, by its text, not its domain: **69 rows became 84.**
+
+**It was checking the wrong identifier for whether a race is actually scheduled.** `/races/` links every race with UltraSignup's "did", a per-year ID a director only updates by hand when they roll a recurring race over to its next running. Most of Aravaipa's races had not been rolled over yet, so their `did` link still pointed at last year's finished event, and the generator read that as "not scheduled" for races that UltraSignup itself has always had a live listing for. **Cocodona 250, Black Canyon, Zion Ultras and 30 others were reading as unconfirmed for this reason alone.**
+
+The fix is UltraSignup's own group listing, `events.svc/groupevents?gid=7`, which reports a "dtid" per year's actual running rather than a hand-maintained `did`. The generator now cross-references every race against it by name and date, and when a match is found, trusts the API's own date and mints a fresh `register.aspx?dtid=...` link that always points at the current running rather than whatever the site happens to link. **Confirmed races went from 11 to 51.**
+
+Matching two live catalogs by name is exactly the kind of thing that produces plausible-looking wrong answers, and it did, twice, both caught before shipping rather than after:
+
+- **Javelina Jallucinations** (a real RunSignUp virtual race in October) matched **Javelina Jangover Night Runs** (a real, unrelated September race) purely because both names contain "Javelina" — Aravaipa's own umbrella brand for an entire race weekend covering three distinct races. Fixed by adding it to the matcher's stopword list.
+- **Across The Globe** (RunSignUp, December) matched **Across the Years** (Aravaipa's own multi-day track race, also December) on the shared word "across". A stopword does not fix this one, because "across" is not a generic word in general, just a coincidence between these two specific names. Fixed structurally instead: a single shared word is only trusted when one whole name collapses to just that word (`Cocodona` inside `Cocodona 250` is a real subset relationship; `Across The Globe` and `Across the Years` share one word each while each also carries a different one, which is not).
+
+Regression-tested in `scripts/test/name-matcher.test.mjs`, run with `bun scripts/test/name-matcher.test.mjs`, separately from the PHP harnesses since this logic lives in the Node generator.
+
+A race the site itself marks cancelled (Tushars Ultras, wildfire) is now dropped rather than parsed as a normally-scheduled date with no register button.
 
 ## The race store
 
