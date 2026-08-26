@@ -131,6 +131,17 @@ function arv_race_map_render( $data ) {
 		)
 	);
 
+	$logo_map = array(
+		'arizona'                  => ARV_ELEMENTS_URL . 'assets/logos/aravaipa.png',
+		'california'               => ARV_ELEMENTS_URL . 'assets/logos/aravaipa.png',
+		'colorado'                 => ARV_ELEMENTS_URL . 'assets/logos/colorado.png',
+		'nevada'                   => ARV_ELEMENTS_URL . 'assets/logos/aravaipa.png',
+		'bad-beard'                => ARV_ELEMENTS_URL . 'assets/logos/bad-beard.png',
+		'great-lakes-endurance'    => ARV_ELEMENTS_URL . 'assets/logos/great-lakes-endurance.png',
+		'ultra-adventures'         => ARV_ELEMENTS_URL . 'assets/logos/ultra-adventures.png',
+		'white-mountain-endurance' => ARV_ELEMENTS_URL . 'assets/logos/white-mountain-endurance.png',
+	);
+
 	$pins    = array();
 	$missing = array();
 
@@ -159,11 +170,22 @@ function arv_race_map_render( $data ) {
 
 		$action = arv_upcoming_races_action( $race, $today );
 
+		// Append the year to whatever display date we have so the popup is
+		// unambiguous for a race someone might be planning travel around.
+		$year_str     = gmdate( 'Y', strtotime( $race['iso'] . ' 00:00:00 UTC' ) );
+		$display_date = '' !== $race['display'] ? $race['display'] : gmdate( 'F j', strtotime( $race['iso'] . ' 00:00:00 UTC' ) );
+		if ( false === strpos( $display_date, $year_str ) ) {
+			$display_date .= ', ' . $year_str;
+		}
+
+		$region = arv_race_store_region_for( $race );
+		$logo   = isset( $logo_map[ $region ] ) ? $logo_map[ $region ] : '';
+
 		$pins[] = array(
 			'name'      => $race['name'],
 			'lat'       => (float) $race['lat'],
 			'lng'       => (float) $race['lng'],
-			'date'      => '' !== $race['display'] ? $race['display'] : gmdate( 'F j', strtotime( $race['iso'] . ' 00:00:00 UTC' ) ),
+			'date'      => $display_date,
 			'distances' => $race['distances'],
 			'where'     => trim( implode( ', ', array_filter( array( $race['venue'], $race['location'] ) ) ) ),
 			'page'      => $race['page'],
@@ -172,6 +194,7 @@ function arv_race_map_render( $data ) {
 			'cta'       => '' !== $action['url'] ? $action['label'] : '',
 			'ctaUrl'    => $action['url'],
 			'phase'     => $action['phase'],
+			'logo'      => $logo,
 		);
 	}
 
@@ -294,9 +317,16 @@ function arv_race_map_enqueue() {
 	// function's behaviour depend on what ran before it, which is worth
 	// avoiding for the sake of work WordPress is not doing anyway.
 	wp_enqueue_style(
+		'bitter-font',
+		'https://fonts.googleapis.com/css2?family=Bitter:ital,wght@1,600&display=swap',
+		array(),
+		null
+	);
+
+	wp_enqueue_style(
 		'leaflet',
 		'https://unpkg.com/leaflet@' . ARV_MAP_LEAFLET_VERSION . '/dist/leaflet.css',
-		array(),
+		array( 'bitter-font' ),
 		ARV_MAP_LEAFLET_VERSION
 	);
 

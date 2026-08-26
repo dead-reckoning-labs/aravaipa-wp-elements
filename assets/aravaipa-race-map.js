@@ -33,12 +33,27 @@
 	function popupHtml( pin ) {
 		var html = '<div class="arv-map__popup">';
 
+		if ( pin.logo ) {
+			html += '<img class="arv-map__popup-logo" src="' + escapeHtml( pin.logo ) + '" alt="">';
+		}
+
 		html += '<p class="arv-map__popup-date">' + escapeHtml( pin.date ) + '</p>';
-		html += '<h3 class="arv-map__popup-name">' + escapeHtml( pin.name ) + '</h3>';
+
+		if ( pin.page ) {
+			html += '<h3 class="arv-map__popup-name"><a class="arv-map__popup-name-link" href="' + escapeHtml( pin.page ) + '">' + escapeHtml( pin.name ) + '</a></h3>';
+		} else {
+			html += '<h3 class="arv-map__popup-name">' + escapeHtml( pin.name ) + '</h3>';
+		}
 
 		if ( pin.distances ) {
-			html += '<p class="arv-map__popup-distances">' + escapeHtml( pin.distances ) + '</p>';
+			var pills = pin.distances.split( /,\s*/ ).filter( Boolean );
+			html += '<p class="arv-map__popup-distances">';
+			for ( var i = 0; i < pills.length; i++ ) {
+				html += '<span class="arv-map__popup-pill">' + escapeHtml( pills[ i ] ) + '</span>';
+			}
+			html += '</p>';
 		}
+
 		if ( pin.where ) {
 			html += '<p class="arv-map__popup-where">' + escapeHtml( pin.where ) + '</p>';
 		}
