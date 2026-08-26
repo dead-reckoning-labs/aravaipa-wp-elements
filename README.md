@@ -79,12 +79,23 @@ The primary button changes with where a race is in its life. "Race Details" is a
 | When | Primary button | Goes to |
 |---|---|---|
 | Before race day, entries open | **Register** (red) | UltraSignup registration |
-| Entries closed, race not yet run | **Entries Closed** (grey, not a link) | nowhere; Race Details beside it is the only thing to press |
+| Entries closed, or within the lead window | **Live Results** (teal) | the timing board, which carries the start list before anyone runs |
+| Entries closed with no results board at all | **Entries Closed** (grey, not a link) | nowhere; Race Details beside it is the only thing to press |
 | Race day, through the last day of a multi-day race | **Live Results** (teal) | live URL, or the derived UltraSignup results page |
 | After the race, until the Monday after | **Results** (teal) | same |
 | Monday morning | gone | |
 
 Red means "there is something to buy". Once a race is running or done there is nothing to sell, so those phases use teal.
+
+### Why live results appear before the race
+
+`live.aravaiparunning.com` populates a race's board well before the gun: four days out from Rock Hawk it already carried the full start list with bib numbers. That is worth reaching, so the switch does not wait for race morning.
+
+It happens at whichever comes first: **entries closing**, which is the natural moment because there is nothing left to sell, or **the lead window**, which defaults to 5 days and covers races that never published a close date. Set **Days before race day to show live results** to 0 to wait for race day.
+
+The lead is clamped to 30 days. A lead longer than the gap between races would put the whole list into its live phase at once and read as though the entire season were running today.
+
+The **Entries Closed** chip is now the rare case: it only appears for a race whose entries have shut and which has no results board and no derivable results link, so there is genuinely nowhere to send anyone.
 
 ### How the close date is known
 
