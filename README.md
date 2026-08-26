@@ -16,6 +16,7 @@ Each appears in the Cornerstone builder's element list under its own name.
 | **Aravaipa Partner Grid** | The "Thank you to our partners!" logo wall, with sponsor tiers |
 | **Aravaipa Countdown** | Countdown to the start gun |
 | **Aravaipa Region Map** | The "Where to find us" regional choropleth |
+| **Aravaipa Upcoming Races** | Nothing. New: the next races with dates and a real Register button, plus their Event structured data |
 
 ## Repeating rows
 
@@ -64,6 +65,35 @@ Bad Beard Events | 71.2 | 61.1 | .../bad-beard/ | Chattanooga, Tennessee. | | | 
 ```
 
 Every region now has a mark. Arizona, Tucson, California and Nevada carry the Aravaipa mountain icon; Colorado, Ultra Adventures, Great Lakes Endurance, White Mountain Endurance and Bad Beard Events each carry their own, which is also what distinguishes an Aravaipa region from a partner brand at a glance. Two are crops rather than whole logos, for reasons worth reading before replacing them: see `assets/logos/README.md`.
+
+**Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL`. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
+
+The distances column may contain pipes, because that is how the rest of the site writes them (`50K | 25K | 10K | 5K`). A full-length row is read from both ends, so the first three columns and the last five are fixed and everything between them is the distance list. A short row has no fixed tail to anchor against and falls back to plain positional reading, so it cannot carry pipes.
+
+```
+Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | 10K | 5K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/bear-chase-series/rock-hawk/ | https://.../rock-hawk.png
+```
+
+Races are sorted by date whatever order they are pasted in, and **Maximum races to show** trims to the front of that list, so the whole season can live in the box while the page shows the next six. Set it to 0 to show everything.
+
+### Where the rows come from
+
+`scripts/fetch-races.mjs` generates them from https://www.aravaiparunning.com/races/, which is the page that already has every race and every UltraSignup link on it.
+
+```bash
+# headless Chrome with a debugging port, then:
+node scripts/fetch-races.mjs --year 2026 > rows.txt
+```
+
+It drives a real browser rather than fetching HTML because the races page is built in Cornerstone and its markup is generated class names with no stable hooks. Two things it handles that are easy to get wrong: the page states dates without a year (a date already past in the stated year is next year's running), and WP Rocket lazy-loads the artwork, so the real image URL is in `data-lazy-src` and `img.src` is a placeholder. Series with a month range rather than a date ("April - September") have no start date to give schema, so they are skipped and reported on stderr rather than guessed at.
+
+## Structured data
+
+Two blocks, both of which the site had none of before.
+
+**Event**, from the Upcoming Races element, one `SportsEvent` per race it shows, wrapped in a single `@context`/`@graph` script. This is what makes a race eligible for Google's event results and legible to an AI answer engine. Only fields we actually have are emitted: no invented entry price (they vary by distance and by how early you enter, and a wrong price is worse than no price), no guessed end date. `eventAttendanceMode` is set explicitly because Google otherwise assumes online.
+
+**Organization and WebSite**, from `includes/seo.php`, on the front page only, along with a meta description. That file also stands down entirely if Yoast, Rank Math, All in One SEO or SEOPress is ever activated, so it can never produce a second competing description. The front page description is filterable via `arv_seo_front_page_description`, and the Organization node via `arv_seo_organization`.
 
 ## Region Map without the plugin
 
