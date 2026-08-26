@@ -64,7 +64,38 @@ const EXTRACT = [
 const raw = JSON.parse(await ev(EXTRACT));
 ws.close();
 
-const MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+const MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,
+                jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
+
+/**
+ * The date entries close, from the race's own UltraSignup page.
+ *
+ * UltraSignup prints "Registration closes: Mon, Sep 7 @ 11:59PM MT" above the
+ * fold, with no year, and only on races whose director has set a hard close:
+ * 9 of the 69 in the current calendar. The rest simply take entries until
+ * race day, which is what the element assumes when this comes back empty.
+ *
+ * The year is taken from the race, then pulled back one if that would put the
+ * close after the race it belongs to, which is how a January close for a
+ * February race lands correctly.
+ */
+async function fetchRegClose(registerUrl, raceIso) {
+  try {
+    const res = await fetch(registerUrl, { signal: AbortSignal.timeout(20000) });
+    if (!res.ok) return '';
+    const html = await res.text();
+    const m = html.match(/Registration closes:\s*(?:[A-Za-z]{3},\s*)?([A-Za-z]+)\s+(\d{1,2})/i);
+    if (!m) return '';
+    const mo = MONTHS[m[1].toLowerCase()];
+    if (!mo) return '';
+    let y = parseInt(raceIso.slice(0, 4), 10);
+    const iso = () => `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(m[2],10)).padStart(2,'0')}`;
+    if (iso() > raceIso) y -= 1;
+    return iso();
+  } catch {
+    return '';
+  }
+}
 
 // "September 12-13" and "October 30 - November 1" both describe a race that
 // is still running on its later day. Without an end date the module drops a
@@ -100,12 +131,18 @@ function isoFor(dateText) {
 }
 
 const rows = [], skipped = [];
+let withClose = 0;
 for (const r of raw) {
   const dateCell = r.cells[0] || '';
   const display  = dateCell.replace(/\s*(Register|Volunteer)\s*/gi, ' ').replace(/\s+/g,' ').trim();
   const iso = isoFor(display);
   const name = r.cells[1] || '';
   if (!iso || !name) { skipped.push({ name: name || '(no name)', date: display, why: !name ? 'no name' : 'no parseable date' }); continue; }
+  // One request per race, paced. Sequential on purpose: 69 parallel hits on
+  // someone else's site to save a few seconds is not a trade worth making.
+  const regClose = r.reg ? await fetchRegClose(r.reg, iso) : '';
+  if (regClose) withClose++;
+  await new Promise(r2 => setTimeout(r2, 200));
   rows.push([
     name, iso, display,
     r.cells[2] || '',          // distances, may itself contain " | "
@@ -120,10 +157,11 @@ for (const r of raw) {
     // the register URL's did, which serves both the live field and the final
     // results, so most races never need this.
     '',
+    regClose,
   ].join(' | '));
 }
 
 rows.sort((a, b) => a.split(' | ')[1].localeCompare(b.split(' | ')[1]));
 console.log(rows.join('\n'));
-console.error(`\n${rows.length} races, ${skipped.length} skipped`);
+console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withClose} with a published registration close date`);
 for (const s of skipped) console.error(`  skipped: ${s.name} (${s.date || 'no date'}) - ${s.why}`);
