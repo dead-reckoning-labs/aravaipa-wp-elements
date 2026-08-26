@@ -66,6 +66,26 @@ ws.close();
 
 const MONTHS = {january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
 
+// "September 12-13" and "October 30 - November 1" both describe a race that
+// is still running on its later day. Without an end date the module drops a
+// multi-day race the morning of day two, while runners are still out there.
+function isoEndFor(dateText, startIso) {
+  const sameMonth = dateText.match(/([A-Za-z]+)\s+\d{1,2}\s*[-\u2013]\s*(\d{1,2})/);
+  if (sameMonth) {
+    const mo = MONTHS[sameMonth[1].toLowerCase()];
+    if (mo) return `${startIso.slice(0,4)}-${String(mo).padStart(2,'0')}-${String(parseInt(sameMonth[2],10)).padStart(2,'0')}`;
+  }
+  const crossMonth = dateText.match(/[A-Za-z]+\s+\d{1,2}\s*[-\u2013]\s*([A-Za-z]+)\s+(\d{1,2})/);
+  if (crossMonth) {
+    const mo = MONTHS[crossMonth[1].toLowerCase()];
+    if (!mo) return '';
+    // A range that runs backwards through the calendar has crossed a year.
+    const y = mo < parseInt(startIso.slice(5,7),10) ? parseInt(startIso.slice(0,4),10)+1 : parseInt(startIso.slice(0,4),10);
+    return `${y}-${String(mo).padStart(2,'0')}-${String(parseInt(crossMonth[2],10)).padStart(2,'0')}`;
+  }
+  return '';
+}
+
 function isoFor(dateText) {
   // "August 29", "September 12-13", "January 23", "April - September"
   const m = dateText.match(/([A-Za-z]+)\s+(\d{1,2})/);
@@ -94,6 +114,7 @@ for (const r of raw) {
     r.reg || '',
     r.page || '',
     r.img || '',
+    isoEndFor(display, iso),
   ].join(' | '));
 }
 

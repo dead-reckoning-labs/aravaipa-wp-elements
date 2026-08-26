@@ -11,6 +11,9 @@ function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_attr($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_url($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function wp_json_encode($d,$f=0){return json_encode($d,$f);}
+$GLOBALS['NOW']='2026-08-25';
+function current_time($f){return $GLOBALS['NOW'];}
+function apply_filters($tag,$v){return $v;}
 $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
 foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races'] as $e) require_once $d."includes/elements/$e.php";
 
@@ -70,25 +73,25 @@ t('x/y out of range clamped into 0-100', strpos(arv_region_map_render(array('row
 echo "upcoming races:\n";
 t('empty rows return nothing', arv_upcoming_races_render(array('rows'=>''))==='');
 t('row with no date is dropped', arv_upcoming_races_render(array('rows'=>"Race | | today"))==='');
-t('row with unparseable date is dropped', arv_upcoming_races_render(array('rows'=>"Race | someday | x | 50K | V | Pine, AZ | https://u.com | https://a.com | "))==='');
+t('row with unparseable date is dropped', arv_upcoming_races_render(array('rows'=>"Race | someday | x | 50K | V | Pine, AZ | https://u.com | https://a.com | | "))==='');
 // 2026-02-30 passes a regex but is not a day. Emitting it as an Event startDate
 // makes Google report the whole page as invalid, not just skip the one entry.
-t('impossible calendar date is dropped', arv_upcoming_races_render(array('rows'=>"Race | 2026-02-30 | x | 50K | V | Pine, AZ | https://u.com | https://a.com | "))==='');
-t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2026-02-28 | x | 50K | V | Pine, AZ | https://u.com | https://a.com | ")),'Race')!==false);
+t('impossible calendar date is dropped', arv_upcoming_races_render(array('rows'=>"Race | 2027-02-30 | x | 50K | V | Pine, AZ | https://u.com | https://a.com | | "))==='');
+t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2027-02-28 | x | 50K | V | Pine, AZ | https://u.com | https://a.com | | ")),'Race')!==false);
 
 // The distances column is written the way the site writes it, with pipes,
 // which is also the column separator. A full-length row is read from both
 // ends so those pipes survive.
-$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2026-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png"));
+$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png | "));
 t('pipes inside distances are kept, not split into columns', strpos($r,'75K | 50K | 25K | 15K | 7K')!==false);
 t('and the column after distances is still the venue', strpos($r,'McDowell Mountain Regional Park')!==false);
 t('and the register URL is not mistaken for a distance', strpos($r,'ultrasignup.com/register.aspx?did=1')!==false);
 t('image lands in an img, not the location line', strpos($r,'src="https://x/i.png"')!==false);
 
 // Sorting, because the whole point of the module is "what is next".
-$r = arv_upcoming_races_render(array('rows'=>"Later | 2027-01-01 | | 50K | V | Pine, AZ | https://u.com | https://a.com | \nSooner | 2026-09-01 | | 10K | V | Pine, AZ | https://u.com | https://a.com | "));
+$r = arv_upcoming_races_render(array('rows'=>"Later | 2028-01-01 | | 50K | V | Pine, AZ | https://u.com | https://a.com | | \nSooner | 2027-09-01 | | 10K | V | Pine, AZ | https://u.com | https://a.com | | "));
 t('races are sorted by date regardless of paste order', strpos($r,'Sooner') < strpos($r,'Later'));
-$three = "Zulu | 2026-09-03 | | 1 | V | P, AZ | https://u.com | https://a.com | \nXray | 2026-09-01 | | 1 | V | P, AZ | https://u.com | https://a.com | \nYankee | 2026-09-02 | | 1 | V | P, AZ | https://u.com | https://a.com | ";
+$three = "Zulu | 2027-09-03 | | 1 | V | P, AZ | https://u.com | https://a.com | | \nXray | 2027-09-01 | | 1 | V | P, AZ | https://u.com | https://a.com | | \nYankee | 2027-09-02 | | 1 | V | P, AZ | https://u.com | https://a.com | | ";
 $r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'2'));
 t('limit keeps the two soonest', strpos($r,'Xray')!==false && strpos($r,'Yankee')!==false);
 t('and drops the third', strpos($r,'Zulu')===false);
@@ -97,7 +100,7 @@ $r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'0'));
 t('limit 0 shows every race', strpos($r,'Zulu')!==false);
 
 echo "event schema:\n";
-$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png";
+$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png | ";
 $r = arv_upcoming_races_render(array('rows'=>$row));
 $m = array(); preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $r, $m);
 t('schema block is emitted', !empty($m));
@@ -123,14 +126,46 @@ t('but the cards still render with it off', strpos($r2,'Black Canyon 100K')!==fa
 
 // A race name containing "</script>" would otherwise close the tag early and
 // spill the rest of the JSON into the document as markup.
-$r = arv_upcoming_races_render(array('rows'=>"Bad</script><b>x</b> | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com | "));
+$r = arv_upcoming_races_render(array('rows'=>"Bad</script><b>x</b> | 2027-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com | | "));
 t('script-closing text cannot break out of the json-ld block', strpos($r,'</script><b>')===false);
 t('and cannot break out of the card markup either', strpos($r,'<b>x</b>')===false);
 
 // A region-only location ("Arizona") has no comma to split on.
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
-  arv_upcoming_races_render(array('rows'=>"S | 2026-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | "))), true)['@graph'][0];
+  arv_upcoming_races_render(array('rows'=>"S | 2027-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | | "))), true)['@graph'][0];
 t('region-only location becomes addressRegion with no bogus locality', ($e['location']['address']['addressRegion'] ?? '')==='Arizona' && !isset($e['location']['address']['addressLocality']));
+
+echo "past races drop off:\n";
+$GLOBALS['NOW']='2026-09-15';
+$list = "Past | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com |  | \n"
+      . "Today | 2026-09-15 | | 50K | V | P, AZ | https://u.com | https://a.com |  | \n"
+      . "Future | 2026-09-20 | | 50K | V | P, AZ | https://u.com | https://a.com |  | ";
+$r = arv_upcoming_races_render(array('rows'=>$list));
+t('a race that already ran is gone', strpos($r,'Past')===false);
+t('a race running today is still up', strpos($r,'Today')!==false);
+t('a future race is still up', strpos($r,'Future')!==false);
+t('and the dropped race is out of the schema too', substr_count($r,'"@type":"SportsEvent"')===2);
+
+// Cocodona runs the better part of a week. Dropping it on day two, while
+// runners are still on the course, would be worse than leaving it a day long.
+$GLOBALS['NOW']='2026-09-13';
+$multi = "Cocodona | 2026-09-12 | September 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18";
+t('a multi-day race stays up mid-race', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
+$GLOBALS['NOW']='2026-09-18';
+t('and through its final day', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
+$GLOBALS['NOW']='2026-09-19';
+t('but is gone the morning after it ends', arv_upcoming_races_render(array('rows'=>$multi))==='');
+$e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
+  (function(){ $GLOBALS['NOW']='2026-09-13'; return arv_upcoming_races_render(array('rows'=>"Cocodona | 2026-09-12 | Sept 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18")); })()), true)['@graph'][0];
+t('multi-day race carries endDate in schema', ($e['endDate'] ?? '')==='2026-09-18');
+$GLOBALS['NOW']='2026-08-25';
+$e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
+  arv_upcoming_races_render(array('rows'=>"One | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com |  | 2026-09-01"))), true)['@graph'][0];
+t('single-day race omits a pointless endDate', !isset($e['endDate']));
+
+$GLOBALS['NOW']='2030-01-01';
+t('every race in the past renders nothing, not an empty heading', arv_upcoming_races_render(array('rows'=>$list))==='');
+$GLOBALS['NOW']='2026-08-25';
 
 echo "hero overlay clamp:\n";
 t('overlay > 1 clamped', strpos(arv_race_hero_render(array('overlay'=>'9','image'=>'https://x/y.jpg','race_name'=>'R')),'--arv-overlay:1;')!==false);
