@@ -17,6 +17,7 @@ Each appears in the Cornerstone builder's element list under its own name.
 | **Aravaipa Countdown** | Countdown to the start gun |
 | **Aravaipa Region Map** | The "Where to find us" regional choropleth |
 | **Aravaipa Upcoming Races** | Nothing. New: the next races with dates and a real Register button, plus their Event structured data |
+| **Aravaipa Season Calendar** | The full-year race table on /races/, which mixed already-run races with a live Register button on 46 of its 72 rows |
 
 ## Repeating rows
 
@@ -66,7 +67,7 @@ Bad Beard Events | 71.2 | 61.1 | .../bad-beard/ | Chattanooga, Tennessee. | | | 
 
 Every region now has a mark. Arizona, Tucson, California and Nevada carry the Aravaipa mountain icon; Colorado, Ultra Adventures, Great Lakes Endurance, White Mountain Endurance and Bad Beard Events each carry their own, which is also what distinguishes an Aravaipa region from a partner brand at a glance. Two are crops rather than whole logos, for reasons worth reading before replacing them: see `assets/logos/README.md`.
 
-**Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL | ISO end date | live URL | ISO registration close date`. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
+**Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL | ISO end date | live URL | ISO registration close date | confirmed (1 or 0)`. Season Calendar takes the identical row format, so one paste works for both. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
 
 The tenth column is an optional ISO end date, for races that run more than one day. It keeps a multi-day race up while it is still running and adds `endDate` to its structured data. The eleventh is an optional live/results URL. `scripts/fetch-races.mjs` fills it automatically when a race is on `live.aravaiparunning.com`, Aravaipa's own timing system, which is a real results page rather than the entrants list UltraSignup falls back to. Leave it blank otherwise and the element derives an UltraSignup results link from the register URL's `did` instead.
 
@@ -115,6 +116,12 @@ The distances column may contain pipes, because that is how the rest of the site
 Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | 10K | 5K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/bear-chase-series/rock-hawk/ | https://.../rock-hawk.png
 ```
 
+### Confirmed vs. guessed dates
+
+Most of this calendar is recurring races. When a race's date has already passed for the year shown, the row's year gets bumped forward by a generator heuristic, a guess, not a fact. `scripts/fetch-races.mjs` now checks that guess against UltraSignup's own listing for the race and records whether the year actually agrees: **11 of 69 races in the current calendar are confirmed; the other 58 are guesses**, because their organiser has not rolled the UltraSignup listing over to the next running yet. That is normal (races open a few months out, not a year ahead for the whole season) but it means a Register button on an unconfirmed row would send someone to whatever UltraSignup is still showing, which is very often last year's, already-finished race.
+
+**Only show confirmed races** (on by default) makes Upcoming Races skip anything unconfirmed rather than guess. A row from before this column existed, or written without it, is treated as confirmed, so nothing that already worked silently disappears.
+
 ### How current it stays
 
 Two of the three things you would want are automatic, and it is worth being clear about which is which.
@@ -143,6 +150,14 @@ Two blocks, both of which the site had none of before.
 **Event**, from the Upcoming Races element, one `SportsEvent` per race it shows, wrapped in a single `@context`/`@graph` script. This is what makes a race eligible for Google's event results and legible to an AI answer engine. Only fields we actually have are emitted: no invented entry price (they vary by distance and by how early you enter, and a wrong price is worse than no price), no guessed end date. `eventAttendanceMode` is set explicitly because Google otherwise assumes online.
 
 **Organization and WebSite**, from `includes/seo.php`, on the front page only, along with a meta description. That file also stands down entirely if Yoast, Rank Math, All in One SEO or SEOPress is ever activated, so it can never produce a second competing description. The front page description is filterable via `arv_seo_front_page_description`, and the Organization node via `arv_seo_organization`.
+
+## Season Calendar
+
+`/races/` was one table doing two jobs at once: "what can I enter right now" and "what does the year look like." Those need different treatment, and trying to do both in one place is what let 46 of 72 rows sit there with a live Register button months after the race had already run.
+
+**Aravaipa Upcoming Races**, with **Only show confirmed races** left on and **Maximum races to show** set to 0, is the first job: every race that is genuinely open, full stop.
+
+**Aravaipa Season Calendar** is the second: every race in the calendar, grouped by month, sorted by month and day rather than the literal date (a guessed year must never reorder a January race after a December one). It never offers Register, Live Results, or anything else that implies you can act on it right now, because roughly 84% of the rows have not had their next running confirmed. It says so plainly instead: a row with no confirmed match to UltraSignup carries a "Details soon" tag rather than staying silent about it or pretending otherwise. Every row still links to the race's own page.
 
 ## Region Map without the plugin
 

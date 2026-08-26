@@ -1233,9 +1233,21 @@
 
 /* Once a race is running or done there is nothing left to sell, and a red
    button next to it would still read as "buy". Live and results share the
-   teal used elsewhere for information rather than action. */
+   teal used elsewhere for information rather than action.
+
+   :link and :visited are restated here at the same specificity as the base
+   rule's, not left to source order: ".arv-races__cta:link" is two classes
+   worth of specificity (a pseudo-class counts as one), so without a matching
+   ":link" of its own this rule would lose to the red base rule on every
+   actual anchor tag regardless of which came second in the file. Exactly
+   what happened the first time this shipped: every Live Results button
+   rendered red with only a teal border. */
 .arv-races__cta--live,
-.arv-races__cta--results {
+.arv-races__cta--live:link,
+.arv-races__cta--live:visited,
+.arv-races__cta--results,
+.arv-races__cta--results:link,
+.arv-races__cta--results:visited {
 	background: var(--arv-teal-deep);
 	border-color: var(--arv-teal-deep);
 }
@@ -1374,4 +1386,166 @@
 		font-size: 0.72rem;
 		letter-spacing: 0.8px;
 	}
+}
+
+/* ======================================================== Calendar == */
+/* The full-season reference: one line per race, grouped by month, no
+   registration claim of any kind. Deliberately plain, list-not-cards, so it
+   reads as an index rather than a second copy of the Upcoming Races grid. */
+
+.arv-calendar {
+	--arv-teal: #5bb5a2;
+	--arv-teal-deep: #2a5e6b;
+	padding: 3.5rem 0;
+	background: #ffffff;
+	color: #272727;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-calendar--dark {
+	background: #1d2624;
+	color: #f2f2f2;
+}
+
+.arv-calendar__inner {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 0 1.25rem;
+}
+
+.arv-calendar__eyebrow {
+	margin: 0 0 0.4rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-calendar__heading {
+	margin: 0 0 0.5rem;
+	font-size: clamp(1.9rem, 4vw, 2.6rem);
+	font-weight: 700;
+}
+
+.arv-calendar__intro {
+	margin: 0 0 2.5rem;
+	max-width: 40rem;
+	font-size: 0.95rem;
+	line-height: 1.6;
+	opacity: 0.72;
+}
+
+.arv-calendar__month + .arv-calendar__month {
+	margin-top: 2rem;
+}
+
+.arv-calendar__month-name {
+	margin: 0 0 0.6rem;
+	padding-bottom: 0.4rem;
+	border-bottom: 2px solid var(--arv-accent, #ff2a13);
+	font-size: 1rem;
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+}
+
+.arv-calendar__rows {
+	display: flex;
+	flex-direction: column;
+}
+
+.arv-calendar__row {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.7rem 0;
+	border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+	color: inherit;
+	text-decoration: none;
+}
+
+.arv-calendar__logo {
+	flex: 0 0 40px;
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.arv-calendar__logo img {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+	display: block;
+}
+
+.arv-calendar__day {
+	flex: 0 0 2.4rem;
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-calendar__body {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.arv-calendar__name {
+	font-weight: 700;
+	font-size: 0.98rem;
+}
+
+.arv-calendar__distances,
+.arv-calendar__where {
+	font-size: 0.82rem;
+	opacity: 0.65;
+}
+
+.arv-calendar__status {
+	flex: 0 0 auto;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	color: var(--arv-teal-deep);
+	white-space: nowrap;
+}
+
+.arv-calendar--dark .arv-calendar__status {
+	color: var(--arv-teal);
+}
+
+.arv-calendar__arrow {
+	flex: 0 0 auto;
+	opacity: 0.35;
+	transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.arv-calendar__row:hover .arv-calendar__arrow {
+		opacity: 1;
+		transform: translateX(3px);
+	}
+	.arv-calendar__row:hover .arv-calendar__name {
+		color: var(--arv-accent, #ff2a13);
+	}
+}
+
+.arv-calendar__row:focus-visible {
+	outline: 2px solid var(--arv-accent, #ff2a13);
+	outline-offset: -2px;
+}
+
+@media (max-width: 619px) {
+	.arv-calendar { padding: 2.5rem 0; }
+	.arv-calendar__row { gap: 0.7rem; }
+	.arv-calendar__logo { flex-basis: 32px; width: 32px; height: 32px; }
+	.arv-calendar__day { flex-basis: 2rem; font-size: 0.85rem; }
+	.arv-calendar__name { font-size: 0.9rem; }
+	.arv-calendar__status { display: none; }
 }
