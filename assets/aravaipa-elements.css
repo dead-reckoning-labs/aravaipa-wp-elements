@@ -1549,3 +1549,35 @@
 	.arv-calendar__name { font-size: 0.9rem; }
 	.arv-calendar__status { display: none; }
 }
+
+/* A date nobody has committed to yet. Muted rather than accent-coloured: it
+   is genuinely less informative than a real date and should not compete with
+   one for attention down the list. */
+.arv-calendar__day--tbd {
+	color: inherit;
+	opacity: 0.45;
+	font-size: 0.78rem;
+	letter-spacing: 0.5px;
+}
+
+.arv-calendar__hiatus {
+	margin-top: 2.5rem;
+	padding-top: 0.5rem;
+}
+
+.arv-calendar__hiatus-intro {
+	margin: 0.5rem 0 0.75rem;
+	font-size: 0.85rem;
+	opacity: 0.65;
+}
+
+/* No date column at all, so the body starts where a dated row's logo would.
+   Left as a plain block rather than faked with an empty spacer: these rows
+   are a different kind of thing and reading slightly differently is correct. */
+.arv-calendar__row--hiatus {
+	opacity: 0.75;
+}
+
+.arv-calendar__month-name + .arv-calendar__hiatus-intro {
+	margin-top: 0.5rem;
+}

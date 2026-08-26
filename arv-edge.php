@@ -83,7 +83,7 @@ t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2
 // The distances column is written the way the site writes it, with pipes,
 // which is also the column separator. A full-length row is read from both
 // ends so those pipes survive.
-$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  |  |  | "));
+$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  |  |  |  | "));
 t('pipes inside distances are kept, not split into columns', strpos($r,'75K | 50K | 25K | 15K | 7K')!==false);
 t('and the column after distances is still the venue', strpos($r,'McDowell Mountain Regional Park')!==false);
 t('and the register URL is not mistaken for a distance', strpos($r,'ultrasignup.com/register.aspx?did=1')!==false);
@@ -101,7 +101,7 @@ $r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'0'));
 t('limit 0 shows every race', strpos($r,'Zulu')!==false);
 
 echo "event schema:\n";
-$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  |  |  | ";
+$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  |  |  |  | ";
 $r = arv_upcoming_races_render(array('rows'=>$row));
 $m = array(); preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $r, $m);
 t('schema block is emitted', !empty($m));
@@ -133,14 +133,14 @@ t('and cannot break out of the card markup either', strpos($r,'<b>x</b>')===fals
 
 // A region-only location ("Arizona") has no comma to split on.
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
-  arv_upcoming_races_render(array('rows'=>"S | 2027-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | |  |  | "))), true)['@graph'][0];
+  arv_upcoming_races_render(array('rows'=>"S | 2027-09-01 | | 5K | Multiple Regional Parks | Arizona | https://u.com | https://a.com | |  |  |  |  | "))), true)['@graph'][0];
 t('region-only location becomes addressRegion with no bogus locality', ($e['location']['address']['addressRegion'] ?? '')==='Arizona' && !isset($e['location']['address']['addressLocality']));
 
 echo "past races drop off:\n";
 $GLOBALS['NOW']='2026-09-15';
-$list = "Past | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  | \n"
-      . "Today | 2026-09-15 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  | \n"
-      . "Future | 2026-09-20 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  | ";
+$list = "Past | 2026-09-01 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  |  |  |  | \n"
+      . "Today | 2026-09-15 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  |  |  |  | \n"
+      . "Future | 2026-09-20 | | 50K | V | P, AZ | https://u.com | https://a.com |  |  |  |  |  | ";
 $r = arv_upcoming_races_render(array('rows'=>$list));
 t('a race that already ran is gone', strpos($r,'Past')===false);
 t('a race running today is still up', strpos($r,'Today')!==false);
@@ -150,7 +150,7 @@ t('and the dropped race is out of the schema too', substr_count($r,'"@type":"Spo
 // Cocodona runs the better part of a week. Dropping it on day two, while
 // runners are still on the course, would be worse than leaving it a day long.
 $GLOBALS['NOW']='2026-09-13';
-$multi = "Cocodona | 2026-09-12 | September 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 |  | ";
+$multi = "Cocodona | 2026-09-12 | September 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 |  |  |  | ";
 t('a multi-day race stays up mid-race', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
 $GLOBALS['NOW']='2026-09-18';
 t('and through its final day', strpos(arv_upcoming_races_render(array('rows'=>$multi)),'Cocodona')!==false);
@@ -159,7 +159,7 @@ t('holds its results through the weekend', strpos(arv_upcoming_races_render(arra
 $GLOBALS['NOW']='2026-09-21';
 t('and clears on the Monday after', arv_upcoming_races_render(array('rows'=>$multi))==='');
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
-  (function(){ $GLOBALS['NOW']='2026-09-13'; return arv_upcoming_races_render(array('rows'=>"Cocodona | 2026-09-12 | Sept 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 |  | ")); })()), true)['@graph'][0];
+  (function(){ $GLOBALS['NOW']='2026-09-13'; return arv_upcoming_races_render(array('rows'=>"Cocodona | 2026-09-12 | Sept 12-18 | 250 Mile | Start | Black Canyon City, AZ | https://u.com | https://a.com |  | 2026-09-18 |  |  |  | ")); })()), true)['@graph'][0];
 t('multi-day race carries endDate in schema', ($e['endDate'] ?? '')==='2026-09-18');
 $GLOBALS['NOW']='2026-08-25';
 $e = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
@@ -172,7 +172,7 @@ $GLOBALS['NOW']='2026-08-25';
 
 echo "lifecycle:\n";
 // Rock Hawk runs Saturday 2026-08-29.
-$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  |  | ";
+$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  |  |  | ";
 function phase_of($rows, $opts = array()){
   $r = arv_upcoming_races_render(array_merge(array('rows'=>$rows), $opts));
   if ($r==='') return 'gone';
@@ -241,7 +241,7 @@ echo "registration close date:\n";
 $nolive = "NoLive | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://runsignup.com/x | https://a.com/n/ |  |  |  | 2026-08-24 | ";
 // Snow Mountain Ranch: races Sat 2026-09-12, UltraSignup publishes
 // "Registration closes: Mon, Sep 7 @ 11:59PM MT".
-$smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07 | ";
+$smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07 | 1 | 0";
 $GLOBALS['NOW']='2026-09-05'; t('before the close date: entries open',  phase_of($smr, array('live_lead'=>'0'))==='upcoming');
 $GLOBALS['NOW']='2026-09-07'; t('on the close date: still open all day', phase_of($smr, array('live_lead'=>'0'))==='upcoming');
 // Once entries close there is a results board to send people to, so closing
@@ -282,7 +282,7 @@ echo "live results lead window:\n";
 // Rock Hawk runs Sat 2026-08-29 and entries closed Mon 2026-08-24. The live
 // board already carries its start list, so there is something worth reaching
 // before race morning.
-$rh2 = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | ";
+$rh2 = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0";
 $GLOBALS['NOW']='2026-08-23'; t('before entries close: still selling',        phase_of($rh2)==='upcoming');
 $GLOBALS['NOW']='2026-08-25'; t('entries closed: live results, not a dead chip', phase_of($rh2)==='live');
 $GLOBALS['NOW']='2026-08-29'; t('race day: still live',                       phase_of($rh2)==='live');
@@ -314,11 +314,11 @@ echo "confirmed flag:\n";
 // Unconfirmed: entries closed, has a live board, would otherwise show Live
 // Results. only_confirmed strips it out regardless of what phase it would
 // have been in, because the whole point is that its date is a guess.
-$unconf = "Guess | 2027-04-25 | | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/g/ |  |  | https://live.aravaiparunning.com/#/g-2027 |  | 0";
+$unconf = "Guess | 2027-04-25 | | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/g/ |  |  | https://live.aravaiparunning.com/#/g-2027 |  | 0 | 1";
 t('unconfirmed race is dropped by default', arv_upcoming_races_render(array('rows'=>$unconf))==='');
 t('unconfirmed race appears with the toggle off', strpos(arv_upcoming_races_render(array('rows'=>$unconf,'only_confirmed'=>'false')),'Guess')!==false);
 
-$conf = "Real | 2026-09-01 | | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/r/ |  |  |  | 1";
+$conf = "Real | 2026-09-01 | | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=9 | https://a.com/r/ |  |  |  |  | 1 | 0";
 t('confirmed race renders under the default', strpos(arv_upcoming_races_render(array('rows'=>$conf)),'Real')!==false);
 
 // A row from before this column existed, or written by hand without it, has
@@ -330,32 +330,92 @@ t('a row with no confirmed column is treated as confirmed', strpos(arv_upcoming_
 echo "season calendar:\n";
 t('empty rows return nothing', arv_season_calendar_render(array('rows'=>''))==='');
 
-$cal = "Jan Race | 2027-01-15 | January 15 | 50K | V1 | Reno, NV | https://u.com/1 | https://a.com/1 |  |  |  | 1 | 1\nDec Race | 2026-12-05 | December 5 | 50K | V2 | Denver, CO | https://u.com/2 | https://a.com/2 |  |  |  | 1 | 0";
+// Today is pinned to 2026-08-26 by the harness.
+$GLOBALS['NOW']='2026-08-26';
+// Soon: real published future date. Ran: date already passed, so the
+// generator rolled its year forward and flagged it as a guess.
+$cal = "Soon | 2026-09-15 | September 15 | 50K | V1 | Reno, NV | https://u.com/1 | https://a.com/1 |  |  |  |  | 1 | 0\n"
+     . "Ran | 2027-03-01 | March 1 | 50K | V2 | Denver, CO | https://u.com/2 | https://a.com/2 |  |  |  |  | 0 | 1";
 $r = arv_season_calendar_render(array('rows'=>$cal));
-t('a race with a guessed year still renders', strpos($r,'Jan Race')!==false);
-t('unconfirmed race is shown, unlike Upcoming Races', strpos($r,'Dec Race')!==false);
-t('unconfirmed race carries the "Details soon" flag', strpos($r,'Details soon')!==false);
-t('confirmed race does not', substr_count($r,'Details soon')===1);
-// A plain Jan-through-Dec calendar, not a window rolling from today: that
-// job already belongs to Upcoming Races. January sorts first even though
-// "Jan Race" is tagged the later calendar year, which is the point: month/day
-// is read off the row directly and the guessed year plays no part in order.
-t('January groups before December, read off month/day not the guessed year', strpos($r,'Jan Race') < strpos($r,'Dec Race'));
-t('month headings are real month names', strpos($r,'>December<')!==false && strpos($r,'>January<')!==false);
 
-// This element never offers registration, on purpose: that is the entire
-// reason it exists rather than reusing Upcoming Races for the whole season.
-t('no register/live/results button anywhere', strpos($r,'arv-races__cta')===false && strpos($r,'>Register<')===false);
-t('the row itself links to the race page', strpos($r,'href="https://a.com/2"')!==false);
+// The whole model: forward-looking, never a Jan-to-Dec table. A race in three
+// weeks comes first; one that ran in March is eleven months out, not five
+// months back, so it sorts last rather than at the top of the year.
+t('a race coming up sorts before one that already ran', strpos($r,'Soon') < strpos($r,'Ran'));
+t('the upcoming race is bucketed under its real month', strpos($r,'September 2026')!==false);
+t('the rolled-forward race sits in next year', strpos($r,'March 2027')!==false);
+t('and not back into this year', strpos($r,'March 2026')===false);
 
-// A race with two entries in the same month groups under one heading.
-$two = "A | 2027-03-05 | | 50K | V | X, AZ | https://u.com/a | https://a.com/a |  |  |  |  | 1\nB | 2027-03-20 | | 50K | V | X, AZ | https://u.com/b | https://a.com/b |  |  |  |  | 1";
-t('two races the same month share one heading', substr_count(arv_season_calendar_render(array('rows'=>$two)),'arv-calendar__month-name')===1);
+// A confirmed date is stated; an unconfirmed one is not invented.
+t('confirmed race shows its day', strpos($r,'arv-calendar__day">15<')!==false);
+t('a rolled-forward date says TBD rather than a guessed day', strpos($r,'arv-calendar__day--tbd">TBD<')!==false);
+// The distinction that matters: a real published date must still print even
+// when registration has not opened, or a race five weeks out reads as TBD.
+$realdate = "Bear | 2026-10-03 | October 3-4 | 100K | V | Lakewood, CO | https://u.com/b | https://a.com/b |  |  |  |  | 0 | 0";
+$rb = arv_season_calendar_render(array('rows'=>$realdate));
+t('a real future date prints even with registration unconfirmed', strpos($rb,'TBD')===false);
+t('and shows the published span', strpos($rb,'>3-4<')!==false);
+t('and no Register button anywhere in this element', strpos($r,'arv-races__cta')===false && strpos($r,'>Register<')===false);
 
-// A race name with no page falls back to the register link rather than a
-// dead href, and escaping still applies to untrusted input.
+echo "calendar grace period:\n";
+// A race that ran two days ago keeps its place; the same race outside the
+// grace window has flipped forward a year.
+$just = "Just | 2026-08-24 | August 24 | 50K | V | X, AZ | https://u.com/j | https://a.com/j |  |  |  |  | 1 | 0";
+t('within grace, a finished race stays in the current month', strpos(arv_season_calendar_render(array('rows'=>$just,'grace'=>'5')),'August 2026')!==false);
+t('outside grace, it flips to next year',                    strpos(arv_season_calendar_render(array('rows'=>$just,'grace'=>'0')),'August 2027')!==false);
+t('grace is clamped rather than trusted', strpos(arv_season_calendar_render(array('rows'=>$just,'grace'=>'99999')),'August 2026')!==false);
+
+// Feb 29 is not a date in 2027. It must not silently become March.
+$leap = "Leap | 2028-02-29 | February 29 | 50K | V | X, AZ | https://u.com/l | https://a.com/l |  |  |  |  | 1 | 0";
+t('Feb 29 in a non-leap year does not roll into March', strpos(arv_season_calendar_render(array('rows'=>$leap)),'February')!==false);
+
+echo "calendar hiatus list:\n";
+$h = "Old Race | https://a.com/old | Paused since 2024\nNo Link Race";
+$r = arv_season_calendar_render(array('rows'=>$cal, 'hiatus_rows'=>$h));
+t('hiatus race is listed',        strpos($r,'Old Race')!==false);
+t('its note is shown',            strpos($r,'Paused since 2024')!==false);
+t('it links to its page',         strpos($r,'href="https://a.com/old"')!==false);
+// A hiatus race with nowhere left to point is still worth listing, but must
+// not render as a link to nothing.
+t('a hiatus race with no url is not a link', strpos($r,'<div class="arv-calendar__row arv-calendar__row--hiatus">')!==false);
+t('the hiatus section has its own heading',  strpos($r,'On hiatus')!==false);
+// The hiatus list is the only content on a page that has no dated races yet.
+t('hiatus alone still renders', strpos(arv_season_calendar_render(array('rows'=>'','hiatus_rows'=>$h)),'Old Race')!==false);
+t('no hiatus rows means no hiatus section', strpos(arv_season_calendar_render(array('rows'=>$cal)),'arv-calendar__hiatus')===false);
+
 $x='<script>alert(1)</script>';
-t('name is escaped', strpos(arv_season_calendar_render(array('rows'=>"$x | 2027-03-05 | | 50K | V | X, AZ | https://u.com/a | |  |  |  |  | 1")),'<script>alert')===false);
+t('race name is escaped',   strpos(arv_season_calendar_render(array('rows'=>"$x | 2027-03-05 | | 50K | V | X, AZ | https://u.com/a | |  |  |  |  | 1 | 0")),'<script>alert')===false);
+t('hiatus name is escaped', strpos(arv_season_calendar_render(array('rows'=>'','hiatus_rows'=>$x)),'<script>alert')===false);
+
+echo "fixture integrity:\n";
+// Every column added to the row format this session (end date, live URL,
+// registration close, confirmed, guessed) silently shifted every fixture that
+// was a field short, because the format is anchored from the end. Twice that
+// produced a test which passed for the wrong reason. This scans every race
+// row literal in this file and checks it actually parses into the shape it
+// claims, so the next column addition fails loudly here instead of quietly
+// mis-parsing somewhere downstream.
+$src = file_get_contents(__FILE__);
+preg_match_all('/"((?:[^"\\\\]|\\\\.)*)"/', $src, $lits);
+$checked = 0; $broken = array();
+foreach ($lits[1] as $lit) {
+  foreach (explode("\n", str_replace('\n', "\n", $lit)) as $row) {
+    if (!preg_match('/^[^|]+\|\s*\d{4}-\d{2}-\d{2}\s*\|/', $row)) continue;
+    // Rows that exist precisely to be rejected (an impossible calendar date)
+    // are not fixture drift and must not be flagged as such.
+    if (preg_match('/\|\s*\d{4}-02-(?:30|31)\s*\|/', $row)) continue;
+    $cells = array_map('trim', explode('|', $row));
+    $p = arv_upcoming_races_parse_row($cells);
+    $checked++;
+    if (!$p) { $broken[] = substr($row,0,40).' (did not parse)'; continue; }
+    // register must be a URL or empty; venue must never be one. A shifted row
+    // fails one of these immediately.
+    if ($p['register'] !== '' && strpos($p['register'],'http') !== 0) $broken[] = $cells[0].': register="'.substr($p['register'],0,30).'"';
+    elseif (strpos($p['venue'],'http') === 0) $broken[] = $cells[0].': venue is a URL';
+  }
+}
+t("every race row fixture parses into the right shape ($checked checked)", empty($broken));
+if (!empty($broken)) foreach (array_slice($broken,0,6) as $b) echo "       $b\n";
 
 echo "hero overlay clamp:\n";
 t('overlay > 1 clamped', strpos(arv_race_hero_render(array('overlay'=>'9','image'=>'https://x/y.jpg','race_name'=>'R')),'--arv-overlay:1;')!==false);
