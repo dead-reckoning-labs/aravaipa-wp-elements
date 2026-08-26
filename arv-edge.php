@@ -173,8 +173,8 @@ $GLOBALS['NOW']='2026-08-25';
 echo "lifecycle:\n";
 // Rock Hawk runs Saturday 2026-08-29.
 $rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  | ";
-function phase_of($rows){
-  $r = arv_upcoming_races_render(array('rows'=>$rows));
+function phase_of($rows, $opts = array()){
+  $r = arv_upcoming_races_render(array_merge(array('rows'=>$rows), $opts));
   if ($r==='') return 'gone';
   if (strpos($r,'arv-races__cta--upcoming')!==false) return 'upcoming';
   if (strpos($r,'arv-races__cta--live')!==false) return 'live';
@@ -182,14 +182,14 @@ function phase_of($rows){
   if (strpos($r,'arv-races__cta--closed')!==false) return 'closed';
   return 'none';
 }
-$GLOBALS['NOW']='2026-08-25'; t('four days out: entries open',  phase_of($rh)==='upcoming');
-$GLOBALS['NOW']='2026-08-28'; t('day before: still entries',    phase_of($rh)==='upcoming');
-$GLOBALS['NOW']='2026-08-29'; t('race day: live',               phase_of($rh)==='live');
-$GLOBALS['NOW']='2026-08-30'; t('Sunday after: results',        phase_of($rh)==='results');
-$GLOBALS['NOW']='2026-08-31'; t('Monday morning: gone',         phase_of($rh)==='gone');
+$GLOBALS['NOW']='2026-08-25'; t('four days out: entries open',  phase_of($rh, array('live_lead'=>'0'))==='upcoming');
+$GLOBALS['NOW']='2026-08-28'; t('day before: still entries',    phase_of($rh, array('live_lead'=>'0'))==='upcoming');
+$GLOBALS['NOW']='2026-08-29'; t('race day: live',               phase_of($rh, array('live_lead'=>'0'))==='live');
+$GLOBALS['NOW']='2026-08-30'; t('Sunday after: results',        phase_of($rh, array('live_lead'=>'0'))==='results');
+$GLOBALS['NOW']='2026-08-31'; t('Monday morning: gone',         phase_of($rh, array('live_lead'=>'0'))==='gone');
 
 $GLOBALS['NOW']='2026-08-25';
-$r = arv_upcoming_races_render(array('rows'=>$rh));
+$r = arv_upcoming_races_render(array('rows'=>$rh,'live_lead'=>'0'));
 t('primary reads Register while open', strpos($r,'>Register<')!==false);
 t('and points at ultrasignup registration', strpos($r,'register.aspx?did=131056')!==false);
 $GLOBALS['NOW']='2026-08-29';
@@ -204,7 +204,7 @@ t('primary reads Results after the race', strpos(arv_upcoming_races_render(array
 // The configured button label is about selling entries. Once the race is
 // running it would be wrong whatever the setting says.
 $GLOBALS['NOW']='2026-08-25';
-t('custom label used while open', strpos(arv_upcoming_races_render(array('rows'=>$rh,'cta_label'=>'Enter now')),'>Enter now<')!==false);
+t('custom label used while open', strpos(arv_upcoming_races_render(array('rows'=>$rh,'cta_label'=>'Enter now','live_lead'=>'0')),'>Enter now<')!==false);
 $GLOBALS['NOW']='2026-08-29';
 $r = arv_upcoming_races_render(array('rows'=>$rh,'cta_label'=>'Enter now'));
 t('but ignored once the race is running', strpos($r,'Enter now')===false && strpos($r,'>Live Results<')!==false);
@@ -236,22 +236,30 @@ t('an explicit live url wins over the derived one', strpos(arv_upcoming_races_re
 $GLOBALS['NOW']='2026-08-25';
 
 echo "registration close date:\n";
+// Entries shut, and no results board and no derivable results link either, so
+// there is genuinely nowhere to send anyone.
+$nolive = "NoLive | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://runsignup.com/x | https://a.com/n/ |  |  |  | 2026-08-24";
 // Snow Mountain Ranch: races Sat 2026-09-12, UltraSignup publishes
 // "Registration closes: Mon, Sep 7 @ 11:59PM MT".
 $smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07";
-$GLOBALS['NOW']='2026-09-05'; t('before the close date: entries open',  phase_of($smr)==='upcoming');
-$GLOBALS['NOW']='2026-09-07'; t('on the close date: still open all day', phase_of($smr)==='upcoming');
-$GLOBALS['NOW']='2026-09-08'; t('day after close: entries closed',       phase_of($smr)==='closed');
-$GLOBALS['NOW']='2026-09-11'; t('still closed the day before the race',  phase_of($smr)==='closed');
+$GLOBALS['NOW']='2026-09-05'; t('before the close date: entries open',  phase_of($smr, array('live_lead'=>'0'))==='upcoming');
+$GLOBALS['NOW']='2026-09-07'; t('on the close date: still open all day', phase_of($smr, array('live_lead'=>'0'))==='upcoming');
+// Once entries close there is a results board to send people to, so closing
+// hands straight over to live rather than parking on a dead chip. The chip is
+// now only for a race with no results link at all, which $nolive covers below.
+$GLOBALS['NOW']='2026-09-08'; t('day after close: hands over to live',   phase_of($smr, array('live_lead'=>'0'))==='live');
+$GLOBALS['NOW']='2026-09-11'; t('still live the day before the race',    phase_of($smr, array('live_lead'=>'0'))==='live');
 $GLOBALS['NOW']='2026-09-13';
 $jr = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
   arv_upcoming_races_render(array('rows'=>$smr))), true);
 t('a finished race is still rendered on the Sunday', is_array($jr));
 t('and advertises no entries at all', !isset($jr['@graph'][0]['offers']));
-$GLOBALS['NOW']='2026-09-12'; t('race day still flips to live',          phase_of($smr)==='live');
+$GLOBALS['NOW']='2026-09-12'; t('race day still flips to live',          phase_of($smr, array('live_lead'=>'0'))==='live');
 
-$GLOBALS['NOW']='2026-09-08';
-$r = arv_upcoming_races_render(array('rows'=>$smr));
+// The closed chip needs a race with nowhere to send anyone: entries shut and
+// no results board, so there is genuinely nothing to press.
+$GLOBALS['NOW']='2026-08-25';
+$r = arv_upcoming_races_render(array('rows'=>$nolive));
 t('closed phase says so', strpos($r,'Entries Closed')!==false);
 // No destination, so it must not be a link: not focusable, not clickable.
 t('and is not a link', strpos($r,'<span class="arv-races__cta arv-races__cta--closed"')!==false);
@@ -260,14 +268,46 @@ t('and is not a link', strpos($r,'<span class="arv-races__cta arv-races__cta--cl
 // stating. What must not survive is the claim that they are available.
 $j = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',$r), true)['@graph'][0];
 t('schema no longer claims entries are available', strpos($j['offers']['availability'] ?? '','SoldOut')!==false);
-t('and the offer still points at the registration page', ($j['offers']['url'] ?? '')==='https://ultrasignup.com/register.aspx?did=131162');
+t('and the offer still points at the registration page', ($j['offers']['url'] ?? '')==='https://runsignup.com/x');
 t('Race Details is still there, and is now the only thing to press', substr_count($r,'arv-races__details')===1);
 
 // 60 of the 69 races publish no close date at all. Those must behave exactly
 // as before rather than being treated as closed.
 $nodate = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  |  | ";
-$GLOBALS['NOW']='2026-08-28'; t('no close date: open right up to race day', phase_of($nodate)==='upcoming');
-$GLOBALS['NOW']='2026-08-29'; t('no close date: still flips on race day',   phase_of($nodate)==='live');
+$GLOBALS['NOW']='2026-08-28'; t('no close date: open right up to race day', phase_of($nodate, array('live_lead'=>'0'))==='upcoming');
+$GLOBALS['NOW']='2026-08-29'; t('no close date: still flips on race day',   phase_of($nodate, array('live_lead'=>'0'))==='live');
+$GLOBALS['NOW']='2026-08-25';
+
+echo "live results lead window:\n";
+// Rock Hawk runs Sat 2026-08-29 and entries closed Mon 2026-08-24. The live
+// board already carries its start list, so there is something worth reaching
+// before race morning.
+$rh2 = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24";
+$GLOBALS['NOW']='2026-08-23'; t('before entries close: still selling',        phase_of($rh2)==='upcoming');
+$GLOBALS['NOW']='2026-08-25'; t('entries closed: live results, not a dead chip', phase_of($rh2)==='live');
+$GLOBALS['NOW']='2026-08-29'; t('race day: still live',                       phase_of($rh2)==='live');
+$GLOBALS['NOW']='2026-08-30'; t('day after: results',                         phase_of($rh2)==='results');
+
+$GLOBALS['NOW']='2026-08-25';
+$r = arv_upcoming_races_render(array('rows'=>$rh2));
+t('and it points at the real timing board', strpos($r,'live.aravaiparunning.com/#/rock_hawk-2026')!==false);
+
+// A race with no published close date falls back to the lead window.
+$noclose = "Later | 2026-09-20 | Sept 20 | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=5 | https://a.com/l/ |  |  | https://live.aravaiparunning.com/#/later-2026 | ";
+$GLOBALS['NOW']='2026-09-14'; t('outside the lead window: still selling', phase_of($noclose)==='upcoming');
+$GLOBALS['NOW']='2026-09-15'; t('lead window opens 5 days out',           phase_of($noclose)==='live');
+
+// Lead is configurable, and 0 means wait for race day.
+$GLOBALS['NOW']='2026-09-15';
+t('lead 0 waits for race day', strpos(arv_upcoming_races_render(array('rows'=>$noclose,'live_lead'=>'0')),'arv-races__cta--upcoming')!==false);
+t('lead 10 opens earlier',     strpos(arv_upcoming_races_render(array('rows'=>"Later | 2026-09-24 | S | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=5 | https://a.com/l/ |  |  | https://live.aravaiparunning.com/#/x-2026 | ",'live_lead'=>'10')),'arv-races__cta--live')!==false);
+// A lead longer than the gap between races would put the whole season live at
+// once, so it is clamped rather than trusted.
+t('absurd lead is clamped, not obeyed', strpos(arv_upcoming_races_render(array('rows'=>"Far | 2027-06-01 | J | 50K | V | P, AZ | https://ultrasignup.com/register.aspx?did=5 | https://a.com/f/ |  |  | https://live.aravaiparunning.com/#/f-2027 | ",'live_lead'=>'9999')),'arv-races__cta--live')===false);
+
+// With entries closed but no live board and no derivable results link, the
+// dead "Entries Closed" chip is still the right answer.
+$GLOBALS['NOW']='2026-08-25'; t('no results link anywhere: entries closed chip', phase_of($nolive)==='closed');
 $GLOBALS['NOW']='2026-08-25';
 
 echo "hero overlay clamp:\n";

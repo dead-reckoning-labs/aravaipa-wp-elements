@@ -41,6 +41,7 @@ cs_register_element(
 				'columns'   => cs_value( '3', 'markup' ),
 				'limit'     => cs_value( '6', 'markup' ),
 				'cta_label' => cs_value( 'Register', 'markup' ),
+				'live_lead' => cs_value( '5', 'markup' ),
 				'all_label' => cs_value( 'See all races', 'markup' ),
 				'all_url'   => cs_value( 'https://www.aravaiparunning.com/races/', 'markup' ),
 				'schema'    => cs_value( 'true', 'style' ),
@@ -223,6 +224,13 @@ function arv_upcoming_races_builder() {
 					'group' => 'races',
 				),
 				array(
+					'key'         => 'live_lead',
+					'type'        => 'text',
+					'label'       => __( 'Days before race day to show live results', 'aravaipa-elements' ),
+					'description' => __( 'The live board carries the start list, with bib numbers, days before anyone runs, so it is worth reaching before race morning. A race also switches over the moment entries close, whichever happens first. 0 waits for race day.', 'aravaipa-elements' ),
+					'group'       => 'races',
+				),
+				array(
 					'key'   => 'all_label',
 					'type'  => 'text',
 					'label' => __( 'Footer link label', 'aravaipa-elements' ),
@@ -359,11 +367,32 @@ function arv_upcoming_races_clears_on( $end_iso ) {
  *
  * @param array  $race
  * @param string $today Y-m-d in site time.
+ * @param int    $lead  Days before race day that live results become the
+ *                      offer, even though nobody has run yet.
  * @return array {phase, label, url}
  */
-function arv_upcoming_races_action( $race, $today ) {
+function arv_upcoming_races_action( $race, $today, $lead = 5 ) {
 	$last    = '' !== $race['end'] ? $race['end'] : $race['iso'];
 	$results = '' !== $race['live'] ? $race['live'] : arv_upcoming_races_results_url( $race['register'] );
+
+	if ( $today < $race['iso'] ) {
+		// The live board is populated well before the gun: it carries the
+		// start list, with bib numbers, for anyone wanting to see who is
+		// running. So the switch happens either once entries close, which is
+		// the natural moment because there is nothing left to sell, or a few
+		// days out for a race that never published a close date, whichever
+		// comes first.
+		$entries_closed = ( '' !== $race['closes'] && $today > $race['closes'] );
+		$within_lead    = ( $lead > 0 && $today >= gmdate( 'Y-m-d', strtotime( $race['iso'] . ' 00:00:00 UTC' ) - ( $lead * DAY_IN_SECONDS ) ) );
+
+		if ( '' !== $results && ( $entries_closed || $within_lead ) ) {
+			return array(
+				'phase' => 'live',
+				'label' => __( 'Live Results', 'aravaipa-elements' ),
+				'url'   => $results,
+			);
+		}
+	}
 
 	if ( $today < $race['iso'] ) {
 		// UltraSignup publishes a registration close date on some races and
@@ -543,6 +572,12 @@ function arv_upcoming_races_render( $data ) {
 
 	$cta_label = isset( $data['cta_label'] ) && '' !== trim( $data['cta_label'] ) ? $data['cta_label'] : __( 'Register', 'aravaipa-elements' );
 
+	// Clamped rather than trusted: a lead longer than the gap between races
+	// would put every race on the list into its live phase at once, which
+	// would read as though the whole season were running today.
+	$live_lead = isset( $data['live_lead'] ) ? (int) $data['live_lead'] : 5;
+	$live_lead = max( 0, min( 30, $live_lead ) );
+
 	$cards  = '';
 	$events = array();
 
@@ -599,7 +634,7 @@ function arv_upcoming_races_render( $data ) {
 
 		// What the primary button offers depends on where the race is in its
 		// life: entries before it, the live field during it, results after.
-		$action = arv_upcoming_races_action( $race, $today );
+		$action = arv_upcoming_races_action( $race, $today, $live_lead );
 
 		// The configured label is about selling entries. Once the race is
 		// running, "Register" would be wrong whatever the setting says, so
