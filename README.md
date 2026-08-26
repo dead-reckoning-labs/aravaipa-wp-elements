@@ -157,7 +157,20 @@ Two blocks, both of which the site had none of before.
 
 **Aravaipa Upcoming Races**, with **Only show confirmed races** left on and **Maximum races to show** set to 0, is the first job: every race that is genuinely open, full stop.
 
-**Aravaipa Season Calendar** is the second: every race in the calendar, grouped by month, sorted by month and day rather than the literal date (a guessed year must never reorder a January race after a December one). It never offers Register, Live Results, or anything else that implies you can act on it right now, because roughly 84% of the rows have not had their next running confirmed. It says so plainly instead: a row with no confirmed match to UltraSignup carries a "Details soon" tag rather than staying silent about it or pretending otherwise. Every row still links to the race's own page.
+**Aravaipa Season Calendar** is the second, and it only ever looks forward. Races are ordered by how many days until they next come round, so a race three weeks out sits near the top and one that ran last month sits near the bottom under next year's heading. The list rolls over on its own as the year turns; nothing needs re-editing in January. A race that has just run keeps its place for a short grace period (default 2 days) before flipping forward.
+
+The date shown depends on whether it is actually known, which is a different question from whether registration is open:
+
+- **Date published by Aravaipa** (real, future): the day is shown, even if registration has not opened yet. The Bear Chase reads "3-4" under October 2026.
+- **Year rolled forward by the generator** (the listed date has already passed): the month is real but the day belongs to a running nobody has scheduled, so it reads **TBD** rather than stating a date no one committed to.
+
+Currently 23 of 69 rows show a real date and 46 read TBD.
+
+Conflating those two facts is a mistake worth not repeating: keying the TBD on "registration confirmed" instead of "date guessed" hid The Bear Chase's real published October date behind a TBD purely because its UltraSignup listing had not rolled over.
+
+It never offers Register, Live Results, or anything else implying you can act right now. Every row links to the race's own page.
+
+**On hiatus** is a hand-maintained list at the bottom, one per line: `Name | race page URL (optional) | note (optional)`. Deliberately not derived from anything, because "next year is not scheduled yet" and "we are not running this again" look identical from outside and only one of them should be told to a runner as a hiatus.
 
 ## Region Map without the plugin
 

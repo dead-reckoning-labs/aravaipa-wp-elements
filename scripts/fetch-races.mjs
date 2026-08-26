@@ -147,6 +147,12 @@ function isoEndFor(dateText, startIso) {
   return '';
 }
 
+// Returns {iso, guessed}. guessed is true when the listed date has already
+// passed this year and the year was rolled forward, i.e. the day and month
+// are real but the year is this script's assumption rather than anything
+// Aravaipa published. Kept separate from "is registration confirmed",
+// because they are different facts: The Bear Chase has a real, future,
+// site-published date of October 3-4 and no confirmed registration yet.
 function isoFor(dateText) {
   // "August 29", "September 12-13", "January 23", "April - September"
   const m = dateText.match(/([A-Za-z]+)\s+(\d{1,2})/);
@@ -156,8 +162,10 @@ function isoFor(dateText) {
   const day = parseInt(m[2], 10);
   let iso = `${YEAR}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
   // Listed on a YEAR page but already past in YEAR: it is next year's running.
-  if (iso < TODAY) iso = `${YEAR+1}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  return iso;
+  if (iso < TODAY) {
+    return { iso: `${YEAR+1}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`, guessed: true };
+  }
+  return { iso, guessed: false };
 }
 
 
@@ -232,13 +240,14 @@ function findLiveResultsUrl(raceName, raceIso, liveIndex) {
 }
 
 const rows = [], skipped = [];
-let withClose = 0, withLive = 0, withConfirmed = 0;
+let withClose = 0, withLive = 0, withConfirmed = 0, withGuessed = 0;
 const liveIndex = await fetchLiveResultsIndex();
 console.error(`live results board: ${liveIndex.length} races currently on it`);
 for (const r of raw) {
   const dateCell = r.cells[0] || '';
   const display  = dateCell.replace(/\s*(Register|Volunteer)\s*/gi, ' ').replace(/\s+/g,' ').trim();
-  const iso = isoFor(display);
+  const dateInfo = isoFor(display);
+  const iso = dateInfo ? dateInfo.iso : null;
   const name = r.cells[1] || '';
   if (!iso || !name) { skipped.push({ name: name || '(no name)', date: display, why: !name ? 'no name' : 'no parseable date' }); continue; }
   const liveUrl = findLiveResultsUrl(name, iso, liveIndex);
@@ -248,6 +257,7 @@ for (const r of raw) {
   const regInfo = r.reg ? await fetchRegClose(r.reg, iso) : { close: '', confirmed: false };
   if (regInfo.close) withClose++;
   if (regInfo.confirmed) withConfirmed++;
+  if (dateInfo.guessed) withGuessed++;
   await new Promise(r2 => setTimeout(r2, 200));
   rows.push([
     name, iso, display,
@@ -265,10 +275,11 @@ for (const r of raw) {
     liveUrl,
     regInfo.close,
     regInfo.confirmed ? '1' : '0',
+    dateInfo.guessed ? '1' : '0',
   ].join(' | '));
 }
 
 rows.sort((a, b) => a.split(' | ')[1].localeCompare(b.split(' | ')[1]));
 console.log(rows.join('\n'));
-console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withConfirmed} confirmed for the year shown, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
+console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withConfirmed} with confirmed registration, ${withGuessed} with a rolled-forward (guessed) year, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
 for (const s of skipped) console.error(`  skipped: ${s.name} (${s.date || 'no date'}) - ${s.why}`);
