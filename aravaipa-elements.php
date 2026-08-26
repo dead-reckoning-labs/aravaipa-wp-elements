@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.19.0
+ * Version:           0.20.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.19.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.20.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -71,6 +71,7 @@ function arv_elements_register() {
 		'upcoming-races',
 		'season-calendar',
 		'race-status',
+		'race-map',
 	);
 
 	foreach ( $elements as $element ) {
@@ -101,6 +102,17 @@ function arv_elements_assets() {
 	// Enqueued here rather than from countdown.php because that file is only
 	// required during cs_register_elements, which is not guaranteed to run
 	// before wp_enqueue_scripts. The script no-ops on pages with no countdown.
+	// Filtering for the season calendar. Deferred and dependency-free: the
+	// list it filters is already complete in the HTML, so nothing waits on
+	// this to render, and it no-ops on pages with no calendar.
+	wp_enqueue_script(
+		'aravaipa-calendar',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-calendar.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
 	wp_enqueue_script(
 		'aravaipa-countdown',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-countdown.js',

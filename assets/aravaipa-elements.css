@@ -1782,3 +1782,250 @@
 		min-width: 0;
 	}
 }
+
+/* ------------------------------------------------ Calendar filters -- */
+/* Hidden until the script that drives it has run. A search box that does
+   nothing because its JavaScript failed to load is worse than no search box:
+   it reads as broken rather than absent, and the list underneath is complete
+   either way. */
+.arv-calendar__filters {
+	display: none;
+}
+
+.arv-calendar__filters.is-ready {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 0.9rem;
+	margin: 0 0 1.75rem;
+	padding-bottom: 1.25rem;
+	border-bottom: 1px solid rgba(128, 128, 128, 0.22);
+}
+
+.arv-calendar__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.arv-calendar__field--search {
+	flex: 1 1 16rem;
+	min-width: 0;
+}
+
+.arv-calendar__field-label {
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	opacity: 0.6;
+}
+
+.arv-calendar__search,
+.arv-calendar__select {
+	padding: 0.55rem 0.7rem;
+	border: 1px solid rgba(128, 128, 128, 0.4);
+	border-radius: 0;
+	background: transparent;
+	color: inherit;
+	font-family: inherit;
+	font-size: 0.92rem;
+	/* iOS zooms the whole page in when a focused input is under 16px. The
+	   label above carries the small type instead. */
+	min-height: 44px;
+}
+
+.arv-calendar__search:focus,
+.arv-calendar__select:focus {
+	outline: 2px solid var(--arv-accent, #ff2a13);
+	outline-offset: -1px;
+	border-color: transparent;
+}
+
+.arv-calendar__toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	min-height: 44px;
+	font-size: 0.85rem;
+	cursor: pointer;
+}
+
+.arv-calendar__toggle input {
+	width: 1rem;
+	height: 1rem;
+	accent-color: var(--arv-accent, #ff2a13);
+}
+
+.arv-calendar__count {
+	flex: 1 0 100%;
+	margin: 0;
+	font-size: 0.82rem;
+	opacity: 0.7;
+}
+
+/* Every month heading hidden means the filter matched nothing, and the
+   section would otherwise be a heading over blank space. */
+.arv-calendar.is-empty .arv-calendar__list {
+	opacity: 0.35;
+}
+
+@media (max-width: 619px) {
+	.arv-calendar__filters.is-ready {
+		gap: 0.6rem;
+	}
+	.arv-calendar__field--search {
+		flex-basis: 100%;
+	}
+	.arv-calendar__field {
+		flex: 1 1 8rem;
+	}
+}
+
+/* ========================================================= Race map == */
+
+.arv-map {
+	text-align: left;
+	padding: 3.5rem 0;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: #272727;
+}
+
+.arv-map__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 1.25rem;
+}
+
+.arv-map__eyebrow {
+	margin: 0 0 0.4rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-map__heading {
+	margin: 0 0 1.5rem;
+	font-size: clamp(1.9rem, 4vw, 2.6rem);
+	font-weight: 700;
+	line-height: 1.15;
+}
+
+.arv-map__canvas {
+	width: 100%;
+	background: #eceff1;
+}
+
+.arv-map__missing {
+	margin: 1rem 0 0;
+	font-size: 0.85rem;
+	opacity: 0.7;
+}
+
+.arv-map__fallback ul {
+	margin: 1rem 0 0;
+	padding-left: 1.1rem;
+	font-size: 0.9rem;
+}
+
+/* Leaflet's popup is a white rounded card by default. These rules bring the
+   contents into the site's own language without fighting the container it
+   draws, which it positions and sizes itself. */
+.arv-map__popup {
+	min-width: 12rem;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-map__popup-date {
+	margin: 0 0 0.15rem;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-map__popup-name {
+	margin: 0 0 0.3rem;
+	font-size: 1rem;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.arv-map__popup-distances,
+.arv-map__popup-where {
+	margin: 0 0 0.2rem;
+	font-size: 0.82rem;
+	line-height: 1.4;
+	opacity: 0.75;
+}
+
+.arv-map__popup-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 0.7rem 0 0;
+}
+
+.arv-map__popup-cta,
+.arv-map__popup-info {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.4rem 0.7rem;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	text-decoration: none;
+	white-space: nowrap;
+	border: 1px solid transparent;
+}
+
+.arv-map__popup-cta--upcoming {
+	background: var(--arv-accent, #ff2a13);
+	border-color: var(--arv-accent, #ff2a13);
+	color: #fff;
+}
+
+.arv-map__popup-cta--live,
+.arv-map__popup-cta--results {
+	background: #2a5e6b;
+	border-color: #2a5e6b;
+	color: #fff;
+}
+
+.arv-map__popup-info {
+	border-color: rgba(128, 128, 128, 0.45);
+	color: #272727;
+}
+
+/* Leaflet sets its own link colour globally; these are buttons, not links,
+   and must not inherit it. */
+.arv-map__popup a.arv-map__popup-cta,
+.arv-map__popup a.arv-map__popup-cta:hover,
+.arv-map__popup a.arv-map__popup-info:hover {
+	text-decoration: none;
+}
+
+.arv-map__popup a.arv-map__popup-cta--upcoming,
+.arv-map__popup a.arv-map__popup-cta--upcoming:hover {
+	color: #fff;
+}
+
+.arv-map__popup a.arv-map__popup-cta--live,
+.arv-map__popup a.arv-map__popup-cta--results,
+.arv-map__popup a.arv-map__popup-cta--live:hover,
+.arv-map__popup a.arv-map__popup-cta--results:hover {
+	color: #fff;
+}
+
+.arv-map__popup a.arv-map__popup-info,
+.arv-map__popup a.arv-map__popup-info:hover {
+	color: #272727;
+}
+
+@media (max-width: 619px) {
+	.arv-map { padding: 2.5rem 0; }
+}

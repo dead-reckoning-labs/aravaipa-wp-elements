@@ -41,7 +41,7 @@ mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos"
 cp "$NAME.php" "$STAGE/"
 cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 
 # WordPress convention: an empty index.php in every directory so a server
@@ -58,6 +58,17 @@ while read -r el; do
 	[ -f "$STAGE/includes/elements/$el.php" ] || { echo "element '$el' registered but not packaged" >&2; missing=1; }
 done < <(sed -n "/\$elements = array(/,/);/p" "$NAME.php" | grep -oE "'[a-z-]+'" | tr -d "'")
 [ "$missing" -eq 0 ] || exit 1
+
+# str_replace( '<', '<', ... ) is a no-op that reads exactly like the fix it
+# is meant to be, and shipped as one in race-map.php until a test caught it.
+# The real escape is \u003C. Cheap to check, and the failure mode is an XSS
+# hole in a JSON-LD or config block, so it is worth checking every build.
+# Comment lines are stripped first, so the explanation of this very trap
+# written above the real call is not mistaken for the trap itself.
+if grep -rn "str_replace( *'<', *'<'" "$NAME.php" includes/ 2>/dev/null | grep -v ':[0-9]*:[[:space:]]*[*/]'; then
+	echo "no-op '<' escape found: use '\\u003C' as the replacement" >&2
+	exit 1
+fi
 
 # Every includes/*.php the plugin require_once's must actually be in the
 # payload. Unlike the element loop above, these are not guarded by file_exists
