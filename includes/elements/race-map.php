@@ -1,0 +1,294 @@
+<?php
+/**
+ * Race Map.
+ *
+ * Every race as a pin, with a popup carrying the basics and links through to
+ * Race Info and registration.
+ *
+ * Coordinates come from UltraSignup's own group listing, which carries a real
+ * latitude and longitude for all 121 of its Aravaipa events, so nothing here
+ * geocodes anything or guesses a location from a place name.
+ *
+ * Leaflet with OpenStreetMap tiles by default rather than Mapbox: it needs no
+ * account, no token, no billing relationship, and nothing to rotate when
+ * someone leaves. The tile URL is a setting, so pointing it at Mapbox (or
+ * anything else serving XYZ tiles) is a field change rather than a rewrite —
+ * Mapbox's styling is the reason to do that, and it can be decided later
+ * without this element being rebuilt for it.
+ *
+ * The library loads from a CDN and only on pages that actually place this
+ * element. It is the one external dependency in this plugin, which is worth
+ * stating plainly: everything else here renders without third-party
+ * JavaScript, and a map genuinely cannot.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+define( 'ARV_MAP_LEAFLET_VERSION', '1.9.4' );
+
+cs_register_element(
+	'aravaipa-race-map',
+	array(
+		'title'   => __( 'Aravaipa Race Map', 'aravaipa-elements' ),
+		'values'  => cs_compose_values(
+			array(
+				'eyebrow'   => cs_value( 'Every race', 'markup' ),
+				'heading'   => cs_value( 'Find a race near you', 'markup' ),
+				'height'    => cs_value( '520', 'markup' ),
+				'region'    => cs_value( '', 'markup' ),
+				'tile_url'  => cs_value( '', 'markup' ),
+				'tile_attr' => cs_value( '', 'markup' ),
+				'rows'      => cs_value( '', 'markup' ),
+			),
+			'omega'
+		),
+		'builder' => 'arv_race_map_builder',
+		'render'  => 'arv_race_map_render',
+	)
+);
+
+/**
+ * Builder controls.
+ *
+ * @return array
+ */
+function arv_race_map_builder() {
+	return cs_compose_controls(
+		array(
+			'controls' => array(
+				array(
+					'key'   => 'eyebrow',
+					'type'  => 'text',
+					'label' => __( 'Eyebrow', 'aravaipa-elements' ),
+				),
+				array(
+					'key'   => 'heading',
+					'type'  => 'text',
+					'label' => __( 'Heading', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'height',
+					'type'        => 'text',
+					'label'       => __( 'Map height in pixels', 'aravaipa-elements' ),
+					'description' => __( 'Clamped to 300-900. A map shorter than about 300px cannot show a popup without covering itself.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'region',
+					'type'        => 'text',
+					'label'       => __( 'Region slug (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Limits the map to one region, for a division page. Leave blank for every race.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'tile_url',
+					'type'        => 'text',
+					'label'       => __( 'Tile URL (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Leave blank for OpenStreetMap, which needs no account. To use Mapbox instead, paste its raster tile URL including your access token.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'tile_attr',
+					'type'        => 'text',
+					'label'       => __( 'Tile attribution (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Required when using a custom tile URL. Most tile providers, including Mapbox and OpenStreetMap, require visible attribution in their terms.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'rows',
+					'type'        => 'textarea',
+					'label'       => __( 'Races', 'aravaipa-elements' ),
+					'description' => __( 'Same format as the other race elements. Ignored once races are in the store. Races with no coordinates are listed below the map rather than dropped.', 'aravaipa-elements' ),
+				),
+			),
+		),
+		cs_partial_controls( 'omega' )
+	);
+}
+
+/**
+ * Render callback.
+ *
+ * @param array $data Element values.
+ * @return string
+ */
+function arv_race_map_render( $data ) {
+	$races = arv_races_source( $data );
+
+	if ( empty( $races ) ) {
+		return '';
+	}
+
+	$today = arv_upcoming_races_today();
+
+	// Past races are dropped the same way they are everywhere else, so the
+	// map agrees with the list next to it rather than quietly showing more.
+	$races = array_values(
+		array_filter(
+			$races,
+			function ( $race ) use ( $today ) {
+				$last = '' !== $race['end'] ? $race['end'] : $race['iso'];
+				return $today < arv_upcoming_races_clears_on( $last );
+			}
+		)
+	);
+
+	$pins    = array();
+	$missing = array();
+
+	foreach ( $races as $race ) {
+		if ( '' === $race['lat'] || '' === $race['lng'] ) {
+			// Listed below the map rather than silently dropped. A race
+			// missing from a "complete list" with no explanation is the bug
+			// this whole page has been fighting; saying so is better.
+			$missing[] = $race;
+			continue;
+		}
+
+		$action = arv_upcoming_races_action( $race, $today );
+
+		$pins[] = array(
+			'name'      => $race['name'],
+			'lat'       => (float) $race['lat'],
+			'lng'       => (float) $race['lng'],
+			'date'      => '' !== $race['display'] ? $race['display'] : gmdate( 'F j', strtotime( $race['iso'] . ' 00:00:00 UTC' ) ),
+			'distances' => $race['distances'],
+			'where'     => trim( implode( ', ', array_filter( array( $race['venue'], $race['location'] ) ) ) ),
+			'page'      => $race['page'],
+			// Only offered when the phase actually has somewhere to send
+			// someone, matching the cards and the calendar exactly.
+			'cta'       => '' !== $action['url'] ? $action['label'] : '',
+			'ctaUrl'    => $action['url'],
+			'phase'     => $action['phase'],
+		);
+	}
+
+	if ( empty( $pins ) ) {
+		return '';
+	}
+
+	$height = isset( $data['height'] ) ? (int) $data['height'] : 520;
+	$height = max( 300, min( 900, $height ) );
+
+	$tile_url  = isset( $data['tile_url'] ) ? trim( $data['tile_url'] ) : '';
+	$tile_attr = isset( $data['tile_attr'] ) ? trim( $data['tile_attr'] ) : '';
+
+	if ( '' === $tile_url ) {
+		$tile_url  = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+		$tile_attr = '&copy; OpenStreetMap contributors';
+	}
+
+	$config = array(
+		'pins'     => $pins,
+		'tileUrl'  => $tile_url,
+		'tileAttr' => $tile_attr,
+	);
+
+	$json = wp_json_encode( $config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	if ( false === $json ) {
+		return '';
+	}
+	// A "</script>" inside a race name would close this tag early and drop
+	// the rest of the JSON into the document as markup. Escaping the "<"
+	// itself is what prevents that; JSON parsers read \u003C back as "<", so
+	// the data arrives intact.
+	//
+	// Written out as an escape sequence deliberately: the obvious-looking
+	// str_replace( '<', '<', ... ) is a no-op that reads like a fix, and
+	// shipped as one here until a test caught it.
+	$json = str_replace( '<', '\u003C', $json );
+
+	$base = 'arv-map';
+	$out  = '<div class="' . arv_wrapper_class( $data, $base ) . '">';
+	$out .= '<div class="arv-map__inner">';
+
+	$eyebrow = isset( $data['eyebrow'] ) ? $data['eyebrow'] : '';
+	$heading = isset( $data['heading'] ) ? $data['heading'] : '';
+
+	if ( '' !== trim( $eyebrow ) ) {
+		$out .= '<p class="arv-map__eyebrow">' . esc_html( $eyebrow ) . '</p>';
+	}
+	if ( '' !== trim( $heading ) ) {
+		$out .= '<h2 class="arv-map__heading">' . esc_html( $heading ) . '</h2>';
+	}
+
+	$out .= '<div class="arv-map__canvas" data-arv-map style="height:' . esc_attr( $height ) . 'px"></div>';
+	$out .= '<script type="application/json" data-arv-map-config>' . $json . '</script>';
+
+	// A plain list of every pin, in the markup, always. The map needs
+	// JavaScript and a third-party library to draw anything; this does not,
+	// so the races are still readable and indexable if either fails, and a
+	// screen reader gets a list rather than an empty box.
+	$out .= '<noscript class="arv-map__fallback"><ul>';
+	foreach ( $pins as $pin ) {
+		$label = esc_html( $pin['name'] . ' — ' . $pin['date'] . ( '' !== $pin['where'] ? ', ' . $pin['where'] : '' ) );
+		$out  .= '' !== $pin['page']
+			? '<li><a href="' . esc_url( $pin['page'] ) . '">' . $label . '</a></li>'
+			: '<li>' . $label . '</li>';
+	}
+	$out .= '</ul></noscript>';
+
+	if ( ! empty( $missing ) ) {
+		$out .= '<p class="arv-map__missing">';
+		$out .= esc_html(
+			sprintf(
+				/* translators: race count */
+				_n( '%d race has no map location yet:', '%d races have no map location yet:', count( $missing ), 'aravaipa-elements' ),
+				count( $missing )
+			)
+		);
+		$out .= ' ';
+		$names = array();
+		foreach ( $missing as $race ) {
+			$names[] = '' !== $race['page']
+				? '<a href="' . esc_url( $race['page'] ) . '">' . esc_html( $race['name'] ) . '</a>'
+				: esc_html( $race['name'] );
+		}
+		$out .= implode( ', ', $names );
+		$out .= '</p>';
+	}
+
+	$out .= '</div></div>';
+
+	return $out;
+}
+
+/**
+ * Load Leaflet only on pages that actually place a map.
+ *
+ * Checked against the post content rather than enqueued globally: this is the
+ * plugin's only third-party dependency and it has no business loading on a
+ * race page, the homepage, or anywhere else that does not draw a map.
+ */
+function arv_race_map_assets() {
+	if ( ! is_singular() ) {
+		return;
+	}
+
+	$post = get_post();
+	if ( ! $post || false === strpos( (string) $post->post_content, 'aravaipa-race-map' ) ) {
+		return;
+	}
+
+	wp_enqueue_style(
+		'leaflet',
+		'https://unpkg.com/leaflet@' . ARV_MAP_LEAFLET_VERSION . '/dist/leaflet.css',
+		array(),
+		ARV_MAP_LEAFLET_VERSION
+	);
+
+	wp_enqueue_script(
+		'leaflet',
+		'https://unpkg.com/leaflet@' . ARV_MAP_LEAFLET_VERSION . '/dist/leaflet.js',
+		array(),
+		ARV_MAP_LEAFLET_VERSION,
+		true
+	);
+
+	wp_enqueue_script(
+		'aravaipa-race-map',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-race-map.js',
+		array( 'leaflet' ),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+}
+add_action( 'wp_enqueue_scripts', 'arv_race_map_assets' );

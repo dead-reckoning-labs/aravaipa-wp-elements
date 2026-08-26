@@ -11,12 +11,16 @@ function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_attr($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function esc_url($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}
 function wp_json_encode($d,$f=0){return json_encode($d,$f);}
+// race-map.php registers an enqueue hook at load; the harness only exercises
+// render functions, so these just need to exist and do nothing.
+function add_action($t,$f,$p=10,$n=1){}
+function _n($single,$plural,$count,$domain=''){return $count===1?$single:$plural;}
 $GLOBALS['NOW']='2026-08-25';
 function current_time($f){return $GLOBALS['NOW'];}
 function apply_filters($tag,$v){return $v;}
 define('DAY_IN_SECONDS',86400);
 $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
-foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races','season-calendar'] as $e) require_once $d."includes/elements/$e.php";
+foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races','season-calendar','race-map'] as $e) require_once $d."includes/elements/$e.php";
 
 $pass=0;$fail=0;
 function t($name,$cond){ global $pass,$fail; if($cond){$pass++; echo "  ok   $name\n";} else {$fail++; echo "  FAIL $name\n";} }
@@ -83,7 +87,7 @@ t('valid date renders', strpos(arv_upcoming_races_render(array('rows'=>"Race | 2
 // The distances column is written the way the site writes it, with pipes,
 // which is also the column separator. A full-length row is read from both
 // ends so those pipes survive.
-$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  |  |  |  | "));
+$r = arv_upcoming_races_render(array('rows'=>"Jangover | 2027-09-19 | September 19 | 75K | 50K | 25K | 15K | 7K | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?did=1 | https://www.aravaiparunning.com/insomniac/jangover/ | https://x/i.png |  |  |  |  |  |  | "));
 t('pipes inside distances are kept, not split into columns', strpos($r,'75K | 50K | 25K | 15K | 7K')!==false);
 t('and the column after distances is still the venue', strpos($r,'McDowell Mountain Regional Park')!==false);
 t('and the register URL is not mistaken for a distance', strpos($r,'ultrasignup.com/register.aspx?did=1')!==false);
@@ -101,7 +105,7 @@ $r = arv_upcoming_races_render(array('rows'=>$three, 'limit'=>'0'));
 t('limit 0 shows every race', strpos($r,'Zulu')!==false);
 
 echo "event schema:\n";
-$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  |  |  |  | ";
+$row = "Black Canyon 100K | 2027-02-13 | February 13 | 100K | 60K | Black Canyon Trail | Mayer, AZ | https://ultrasignup.com/register.aspx?did=9 | https://www.aravaiparunning.com/blackcanyon/ | https://x/bc.png |  |  |  |  |  |  | ";
 $r = arv_upcoming_races_render(array('rows'=>$row));
 $m = array(); preg_match('#<script type="application/ld\+json">(.*?)</script>#s', $r, $m);
 t('schema block is emitted', !empty($m));
@@ -172,7 +176,7 @@ $GLOBALS['NOW']='2026-08-25';
 
 echo "lifecycle:\n";
 // Rock Hawk runs Saturday 2026-08-29.
-$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  |  |  | ";
+$rh = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/rock-hawk/ |  |  |  |  |  |  |  | ";
 function phase_of($rows, $opts = array()){
   $r = arv_upcoming_races_render(array_merge(array('rows'=>$rows), $opts));
   if ($r==='') return 'gone';
@@ -241,7 +245,7 @@ echo "registration close date:\n";
 $nolive = "NoLive | 2026-08-29 | Aug 29 | 50K | V | P, AZ | https://runsignup.com/x | https://a.com/n/ |  |  |  | 2026-08-24 | ";
 // Snow Mountain Ranch: races Sat 2026-09-12, UltraSignup publishes
 // "Registration closes: Mon, Sep 7 @ 11:59PM MT".
-$smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07 | 1 | 0";
+$smr = "Snow Mountain Ranch | 2026-09-12 | September 12 | 50KM | 33KM | Snow Mountain Ranch | Granby, CO | https://ultrasignup.com/register.aspx?did=131162 | https://a.com/smr/ |  |  |  | 2026-09-07 | 1 | 0 |  | ";
 $GLOBALS['NOW']='2026-09-05'; t('before the close date: entries open',  phase_of($smr, array('live_lead'=>'0'))==='upcoming');
 $GLOBALS['NOW']='2026-09-07'; t('on the close date: still open all day', phase_of($smr, array('live_lead'=>'0'))==='upcoming');
 // Once entries close there is a results board to send people to, so closing
@@ -282,7 +286,7 @@ echo "live results lead window:\n";
 // Rock Hawk runs Sat 2026-08-29 and entries closed Mon 2026-08-24. The live
 // board already carries its start list, so there is something worth reaching
 // before race morning.
-$rh2 = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0";
+$rh2 = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0 |  | ";
 $GLOBALS['NOW']='2026-08-23'; t('before entries close: still selling',        phase_of($rh2)==='upcoming');
 $GLOBALS['NOW']='2026-08-25'; t('entries closed: live results, not a dead chip', phase_of($rh2)==='live');
 $GLOBALS['NOW']='2026-08-29'; t('race day: still live',                       phase_of($rh2)==='live');
@@ -393,7 +397,7 @@ t('hiatus name is escaped', strpos(arv_season_calendar_render(array('rows'=>'','
 echo "calendar live state:\n";
 // Same phase function the homepage runs on, so both pages change state at the
 // same moment by construction rather than by two implementations agreeing.
-$live = "Rock Hawk | 2026-08-29 | August 29 | 50K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0";
+$live = "Rock Hawk | 2026-08-29 | August 29 | 50K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0 |  | ";
 // Well before the race a confirmed row now shows Register rather than
 // nothing; what it must not show is a live/results link.
 $GLOBALS['NOW']='2026-08-20'; t('well before the race: no live or results link', strpos(arv_season_calendar_render(array('rows'=>$live)),'arv-calendar__action--live')===false);
@@ -451,6 +455,63 @@ $GLOBALS['NOW']='2026-08-20';
 $r = arv_season_calendar_render(array('rows'=>$live));
 t('the day carries its month abbreviation', strpos($r,'arv-calendar__day-month">Aug<')!==false);
 t('alongside the day number',               strpos($r,'arv-calendar__day-num">29<')!==false);
+$GLOBALS['NOW']='2026-08-26';
+
+echo "coordinates:\n";
+// Validated, not trusted. A pin at a plausible-looking wrong coordinate is
+// worse than no pin, because nothing about the map looks broken.
+t('a real latitude passes',        arv_upcoming_races_coord('34.0813', 90) === '34.0813');
+t('a real longitude passes',       arv_upcoming_races_coord('-112.1574', 180) === '-112.1574');
+t('out-of-range latitude rejected',arv_upcoming_races_coord('91.5', 90) === '');
+t('out-of-range longitude rejected',arv_upcoming_races_coord('-181', 180) === '');
+t('non-numeric rejected',          arv_upcoming_races_coord('Pine, AZ', 90) === '');
+t('empty rejected',                arv_upcoming_races_coord('', 90) === '');
+// 0,0 is in the Atlantic: it is what an empty field becomes when something
+// upstream casts before checking, not a race location.
+t('zero treated as missing, not the Atlantic', arv_upcoming_races_coord('0', 90) === '');
+
+echo "race map:\n";
+$mapRow = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://a.com/rh/ |  |  |  | 2026-08-24 | 1 | 0 | 39.3698 | -104.8785";
+$GLOBALS['NOW']='2026-08-20';
+$m = arv_race_map_render(array('rows'=>$mapRow));
+t('map renders with a canvas',        strpos($m,'data-arv-map')!==false);
+t('and a json config block',          strpos($m,'data-arv-map-config')!==false);
+t('carrying the coordinates',         strpos($m,'39.3698')!==false && strpos($m,'-104.8785')!==false);
+t('and the race name',                strpos($m,'Rock Hawk')!==false);
+// The map needs JavaScript and a third-party library; the list underneath
+// needs neither, so the races stay readable and indexable if either fails.
+t('a noscript list of every race is in the markup', strpos($m,'arv-map__fallback')!==false);
+
+// A race with no coordinates must be named, not silently dropped: a race
+// missing from a "complete list" with no explanation is the exact bug this
+// page has been fighting.
+$noCoord = "Ghost Race | 2026-09-05 | Sept 5 | 50K | V | X, AZ | https://u.com/g | https://a.com/g |  |  |  |  | 1 | 0 |  | ";
+$m2 = arv_race_map_render(array('rows'=>$mapRow . "\n" . $noCoord));
+t('a race with no coordinates is named below the map', strpos($m2,'Ghost Race')!==false);
+t('and called out as missing a location',             strpos($m2,'arv-map__missing')!==false);
+t('while the mapped race still gets a pin',           strpos($m2,'39.3698')!==false);
+
+// Nothing to plot at all is nothing to render: an empty grey box with a
+// heading over it reads as broken.
+t('no coordinates anywhere renders nothing', arv_race_map_render(array('rows'=>$noCoord))==='');
+
+// Same phase logic as everywhere else, so a popup cannot disagree with the
+// card or the calendar row for the same race.
+$GLOBALS['NOW']='2026-08-29';
+t('on race day the popup offers live results', strpos(arv_race_map_render(array('rows'=>$mapRow)),'Live Results')!==false);
+$GLOBALS['NOW']='2026-08-20';
+t('before the race it offers registration',    strpos(arv_race_map_render(array('rows'=>$mapRow)),'Register')!==false);
+
+// OpenStreetMap by default: no account, no token, nothing to rotate.
+t('defaults to OpenStreetMap tiles', strpos(arv_race_map_render(array('rows'=>$mapRow)),'tile.openstreetmap.org')!==false);
+t('a custom tile url is used when given', strpos(arv_race_map_render(array('rows'=>$mapRow,'tile_url'=>'https://api.mapbox.com/x/{z}/{x}/{y}','tile_attr'=>'Mapbox')),'api.mapbox.com')!==false);
+
+// Height is clamped: a map shorter than a popup covers itself.
+t('absurd height clamped down', strpos(arv_race_map_render(array('rows'=>$mapRow,'height'=>'99999')),'height:900px')!==false);
+t('tiny height clamped up',     strpos(arv_race_map_render(array('rows'=>$mapRow,'height'=>'10')),'height:300px')!==false);
+
+$x='<script>alert(1)</script>';
+t('race name escaped in the map config', strpos(arv_race_map_render(array('rows'=>"$x | 2026-09-05 | S | 50K | V | X, AZ | https://u.com | https://a.com |  |  |  |  | 1 | 0 | 34.1 | -112.1")),'<script>alert')===false);
 $GLOBALS['NOW']='2026-08-26';
 
 echo "fixture integrity:\n";

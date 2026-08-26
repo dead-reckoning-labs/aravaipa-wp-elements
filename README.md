@@ -17,6 +17,7 @@ Each appears in the Cornerstone builder's element list under its own name.
 | **Aravaipa Countdown** | Countdown to the start gun |
 | **Aravaipa Region Map** | The "Where to find us" regional choropleth |
 | **Aravaipa Upcoming Races** | Nothing. New: the next races with dates and a real Register button, plus their Event structured data |
+| **Aravaipa Race Map** | Nothing. New: every race as a pin, with a popup carrying the basics and links to Race Info and registration |
 | **Aravaipa Race Status** | The hand-written registration button on each race's own page, which is why some still point at a registration that closed months ago |
 | **Aravaipa Season Calendar** | The full-year race table on /races/, which mixed already-run races with a live Register button on 46 of its 72 rows |
 
@@ -170,6 +171,28 @@ Matching two live catalogs by name is exactly the kind of thing that produces pl
 Regression-tested in `scripts/test/name-matcher.test.mjs`, run with `bun scripts/test/name-matcher.test.mjs`, separately from the PHP harnesses since this logic lives in the Node generator.
 
 A race the site itself marks cancelled (Tushars Ultras, wildfire) is now dropped rather than parsed as a normally-scheduled date with no register button.
+
+## Search and filter
+
+The Season Calendar carries a search box and state / month / open-only filters above the list once it holds more than five races.
+
+Filtering happens in the browser on rows that are **already rendered**, which is the whole design: every race is in the HTML before any JavaScript runs, so the page is a complete list with JavaScript off, and search engines index all 84 races regardless of what any filter is set to. A page whose entire job is being the complete list should not be an empty shell waiting on a fetch.
+
+The bar itself is hidden until its script has run. A search box that does nothing because its JavaScript failed to load reads as broken; absent is better than broken, and the list underneath is complete either way.
+
+Search matches name, venue, town and distances together, word by word in any order, so "tucson 50k" finds a 50K near Tucson. The state and month dropdowns are built from the races actually present, so neither can offer an option that returns nothing. The hiatus list hides while any filter is active: it sits outside the filtered list because those races have no date to filter on, but leaving it visible during a search reads as the filter having missed something.
+
+## The race map
+
+Every race as a pin, popup carrying date, distances, location, and the same phase-aware buttons as everywhere else (Register / Live Results / Results, plus Race Info).
+
+Coordinates come from UltraSignup's group listing, which carries a real latitude and longitude for all 121 of its Aravaipa events. Nothing is geocoded or guessed from a place name. Coordinates are looked up across **every** running of a race, including past ones, unlike scheduling which only ever trusts a current listing: a venue does not move when a date rolls over, and using the wider pool took coverage from 44 races to 74.
+
+Coordinates are validated rather than trusted: out of range, non-numeric, and `0` (the Atlantic, which is what an empty field becomes when something casts before checking) all resolve to "no pin". A race with no usable location is **named underneath the map** rather than dropped, because a race missing from a complete list with no explanation is exactly the bug this page has spent a while fixing.
+
+**Leaflet with OpenStreetMap tiles by default**, not Mapbox: no account, no token, no billing relationship, nothing to rotate when someone leaves. The tile URL and attribution are settings, so pointing it at Mapbox for their styling is a field change rather than a rewrite. Leaflet is this plugin's only third-party dependency and loads only on pages that actually place a map, checked against post content rather than enqueued globally.
+
+The markup includes a `<noscript>` list of every pinned race. The map genuinely cannot work without JavaScript and a CDN; the list can, so the races stay readable and indexable if either fails.
 
 ## The race store
 

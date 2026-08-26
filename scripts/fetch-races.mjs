@@ -120,8 +120,13 @@ async function fetchGroupEvents(gid) {
         iso: toIso(e.EventDate),
         end: toIso(e.EventDateEnd),
         dtid: e.EventDateId,
+        // Every one of the 121 events in this listing carries real
+        // coordinates, which is what makes a pin map possible without
+        // geocoding anything ourselves.
+        lat: e.Latitude || '',
+        lng: e.Longitude || '',
       }))
-      .filter(e => e.iso && e.iso >= TODAY);
+      .filter(e => e.iso);
   } catch {
     return [];
   }
@@ -182,15 +187,50 @@ function nameOverlap(a, b) {
 function matchGroupEvent(name, iso, groupEvents) {
   let best = null;
   for (const g of groupEvents) {
+    if (g.iso < TODAY) continue;
     const dayDiff = Math.abs((new Date(iso) - new Date(g.iso)) / 86400000);
     if (dayDiff > 45) continue;
     const score = nameOverlap(name, g.name);
     if (score < 0.4) continue;
     if (!best || score > best.score || (score === best.score && dayDiff < best.dayDiff)) {
-      best = { score, dayDiff, iso: g.iso, end: g.end, dtid: g.dtid, groupName: g.name };
+      best = { score, dayDiff, iso: g.iso, end: g.end, dtid: g.dtid, groupName: g.name, lat: g.lat, lng: g.lng };
     }
   }
   return best;
+}
+
+
+/**
+ * Coordinates for a race, from any running of it the group listing knows
+ * about, including ones already past.
+ *
+ * Separate from matchGroupEvent because the two questions have different
+ * evidence requirements. "Is this race scheduled" must only ever be answered
+ * by a current listing: a finished event proves nothing about next year.
+ * "Where is this race held" is answered fine by last year's entry, because a
+ * venue does not move when a date rolls over, and using the wider pool takes
+ * map coverage from 44 races to most of the calendar.
+ *
+ * Name-only, with the same subset rule the dated matcher uses, so the two
+ * name collisions found earlier (Javelina, Across The) cannot reappear here
+ * through the back door.
+ *
+ * @param {string} name
+ * @param {Array} groupEvents
+ * @return {{lat:string, lng:string}}
+ */
+function findCoords(name, groupEvents) {
+  let best = null;
+  for (const g of groupEvents) {
+    if (!g.lat || !g.lng) continue;
+    const score = nameOverlap(name, g.name);
+    if (score < 0.5) continue;
+    // Ties go to the most recent running, whose venue is likeliest current.
+    if (!best || score > best.score || (score === best.score && g.iso > best.iso)) {
+      best = { score, iso: g.iso, lat: g.lat, lng: g.lng };
+    }
+  }
+  return best ? { lat: best.lat, lng: best.lng } : { lat: '', lng: '' };
 }
 
 /**
@@ -324,11 +364,11 @@ function findLiveResultsUrl(raceName, raceIso, liveIndex) {
 }
 
 const rows = [], skipped = [];
-let withClose = 0, withLive = 0, withConfirmed = 0, withGuessed = 0, withGroupMatch = 0;
+let withClose = 0, withLive = 0, withConfirmed = 0, withGuessed = 0, withGroupMatch = 0, withGeo = 0;
 
 const [liveIndex, groupEvents] = await Promise.all([fetchLiveResultsIndex(), fetchGroupEvents(GID)]);
 console.error(`live results board: ${liveIndex.length} races currently on it`);
-console.error(`UltraSignup group listing: ${groupEvents.length} events dated today or later`);
+console.error(`UltraSignup group listing: ${groupEvents.length} events total, ${groupEvents.filter(g => g.iso >= TODAY).length} dated today or later`);
 
 for (const r of raw) {
   const dateCell = r.cells[0] || '';
@@ -354,6 +394,8 @@ for (const r of raw) {
   let confirmed = false;
   let register = r.reg || '';
   let closes = '';
+  let lat = '';
+  let lng = '';
 
   const match = matchGroupEvent(name, iso, groupEvents);
 
@@ -379,6 +421,10 @@ for (const r of raw) {
     confirmed = !isUltraSignup && !guessed;
   }
 
+  const coords = findCoords(name, groupEvents);
+  lat = coords.lat;
+  lng = coords.lng;
+
   const liveUrl = findLiveResultsUrl(name, iso, liveIndex);
   if (liveUrl) withLive++;
 
@@ -393,6 +439,7 @@ for (const r of raw) {
   if (closes) withClose++;
   if (confirmed) withConfirmed++;
   if (guessed) withGuessed++;
+  if (lat && lng) withGeo++;
 
   rows.push([
     name, iso, display,
@@ -407,10 +454,12 @@ for (const r of raw) {
     closes,
     confirmed ? '1' : '0',
     guessed ? '1' : '0',
+    lat,
+    lng,
   ].join(' | '));
 }
 
 rows.sort((a, b) => a.split(' | ')[1].localeCompare(b.split(' | ')[1]));
 console.log(rows.join('\n'));
-console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withGroupMatch} matched to UltraSignup's group listing, ${withConfirmed} confirmed overall, ${withGuessed} with a rolled-forward (guessed) year, ${withClose} with a published registration close date, ${withLive} matched to the live results board`);
+console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withGroupMatch} matched to UltraSignup's group listing, ${withConfirmed} confirmed overall, ${withGuessed} with a rolled-forward (guessed) year, ${withClose} with a published registration close date, ${withLive} matched to the live results board, ${withGeo} with map coordinates`);
 for (const s of skipped) console.error(`  skipped: ${s.name} (${s.date || 'no date'}) - ${s.why}`);
