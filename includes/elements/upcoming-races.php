@@ -46,6 +46,7 @@ cs_register_element(
 				'all_url'   => cs_value( 'https://www.aravaiparunning.com/races/', 'markup' ),
 				'schema'         => cs_value( 'true', 'style' ),
 				'only_confirmed' => cs_value( 'true', 'style' ),
+				'region'         => cs_value( '', 'markup' ),
 				'rows'      => cs_value(
 					// Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL
 					//
@@ -229,6 +230,12 @@ function arv_upcoming_races_builder() {
 					'key'   => 'all_url',
 					'type'  => 'text',
 					'label' => __( 'Footer link URL', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'region',
+					'type'        => 'text',
+					'label'       => __( 'Region slug (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Limits the list to one region, for a division page: arizona, colorado, nevada, california, ultra-adventures, great-lakes-endurance, white-mountain-endurance, bad-beard. Leave blank for every race. Only applies once races are in the store.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'only_confirmed',
@@ -500,31 +507,49 @@ function arv_upcoming_races_parse_row( $row ) {
 }
 
 /**
+ * Where an element's races come from.
+ *
+ * The store when it has anything in it, the element's own pasted or bundled
+ * rows otherwise. That order matters for the migration: installing the store
+ * changes nothing until races are actually imported, so a half-migrated site
+ * keeps rendering exactly what it rendered yesterday rather than going blank
+ * between two deploys.
+ *
+ * @param array $data Element values.
+ * @return array<int, array>
+ */
+function arv_races_source( $data ) {
+	if ( function_exists( 'arv_race_store_has_races' ) && arv_race_store_has_races() ) {
+		return arv_race_store_get(
+			array(
+				'region' => isset( $data['region'] ) ? trim( $data['region'] ) : '',
+			)
+		);
+	}
+
+	$races = array();
+
+	foreach ( arv_parse_rows( isset( $data['rows'] ) ? $data['rows'] : '', 2 ) as $row ) {
+		$race = arv_upcoming_races_parse_row( $row );
+
+		// A race with no name or no usable date cannot be sorted, displayed
+		// or described, so there is nothing useful to render for it.
+		if ( null !== $race ) {
+			$races[] = $race;
+		}
+	}
+
+	return $races;
+}
+
+/**
  * Render callback.
  *
  * @param array $data Element values.
  * @return string
  */
 function arv_upcoming_races_render( $data ) {
-	$rows = arv_parse_rows( isset( $data['rows'] ) ? $data['rows'] : '', 2 );
-
-	if ( empty( $rows ) ) {
-		return '';
-	}
-
-	$races = array();
-
-	foreach ( $rows as $row ) {
-		$race = arv_upcoming_races_parse_row( $row );
-
-		// A race with no name or no usable date cannot be sorted, displayed
-		// or described, so there is nothing useful to render for it.
-		if ( null === $race ) {
-			continue;
-		}
-
-		$races[] = $race;
-	}
+	$races = arv_races_source( $data );
 
 	if ( empty( $races ) ) {
 		return '';

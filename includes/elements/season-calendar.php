@@ -37,6 +37,7 @@ cs_register_element(
 				'heading' => cs_value( 'Every Aravaipa race', 'markup' ),
 				'intro'   => cs_value( 'Grouped by month. Registration for most races opens a few months out; check Race Details for the latest.', 'markup' ),
 				'theme'   => cs_value( 'light', 'style' ),
+				'region'  => cs_value( '', 'markup' ),
 				'grace'   => cs_value( '2', 'markup' ),
 				'hiatus_heading' => cs_value( 'On hiatus', 'markup' ),
 				'hiatus_intro'   => cs_value( 'Not on the calendar right now. Watch this space.', 'markup' ),
@@ -171,6 +172,12 @@ function arv_season_calendar_builder() {
 							),
 						),
 					),
+				),
+				array(
+					'key'         => 'region',
+					'type'        => 'text',
+					'label'       => __( 'Region slug (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Limits the calendar to one region, for a division page. Leave blank for every race. Only applies once races are in the store.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'grace',
@@ -438,15 +445,9 @@ function arv_season_calendar_hiatus( $raw ) {
  * @return string
  */
 function arv_season_calendar_render( $data ) {
-	$rows = arv_parse_rows( isset( $data['rows'] ) ? $data['rows'] : '', 2 );
-
-	$races = array();
-	foreach ( $rows as $row ) {
-		$race = arv_upcoming_races_parse_row( $row );
-		if ( null !== $race ) {
-			$races[] = $race;
-		}
-	}
+	// Same source rule as Upcoming Races: the store when it has races, this
+	// element's own rows otherwise.
+	$races = arv_races_source( $data );
 
 	// No dated races is not necessarily nothing to show: a page could be
 	// down to its hiatus list alone, and silently rendering empty would hide

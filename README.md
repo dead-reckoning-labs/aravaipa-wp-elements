@@ -17,6 +17,7 @@ Each appears in the Cornerstone builder's element list under its own name.
 | **Aravaipa Countdown** | Countdown to the start gun |
 | **Aravaipa Region Map** | The "Where to find us" regional choropleth |
 | **Aravaipa Upcoming Races** | Nothing. New: the next races with dates and a real Register button, plus their Event structured data |
+| **Aravaipa Race Status** | The hand-written registration button on each race's own page, which is why some still point at a registration that closed months ago |
 | **Aravaipa Season Calendar** | The full-year race table on /races/, which mixed already-run races with a live Register button on 46 of its 72 rows |
 
 ## Repeating rows
@@ -150,6 +151,41 @@ Two blocks, both of which the site had none of before.
 **Event**, from the Upcoming Races element, one `SportsEvent` per race it shows, wrapped in a single `@context`/`@graph` script. This is what makes a race eligible for Google's event results and legible to an AI answer engine. Only fields we actually have are emitted: no invented entry price (they vary by distance and by how early you enter, and a wrong price is worse than no price), no guessed end date. `eventAttendanceMode` is set explicitly because Google otherwise assumes online.
 
 **Organization and WebSite**, from `includes/seo.php`, on the front page only, along with a meta description. That file also stands down entirely if Yoast, Rank Math, All in One SEO or SEOPress is ever activated, so it can never produce a second competing description. The front page description is filterable via `arv_seo_front_page_description`, and the Organization node via `arv_seo_organization`.
+
+## The race store
+
+One race, one record, in WordPress. Everything else reads from it.
+
+Before this the same 69 races existed in **five places**: a flat file in the repo, baked into two element files as PHP defaults, and a copy saved into postmeta for every element instance placed on a page. Changing one date meant regenerating, rebuilding, releasing, and re-adding elements to pick up new defaults, which is absurd for a date change.
+
+Now: **Races** in the WordPress admin. Edit a date in thirty seconds. Every element on every page reflects it immediately.
+
+**Why a custom post type and not an external database.** The data is tens of rows, read almost exclusively by WordPress, which already has querying, caching, an editing UI, revisions and permissions for exactly this. An external database would add a service, a bill, a credential and a sync problem while solving nothing `wp_posts` does not. If something outside WordPress ever needs it, that is the moment to revisit, and it will most likely be RaceGoat becoming the upstream source rather than another copy.
+
+The post type is **not public**. Races already have real pages (`/blackcanyon/`, `/cocodona/`), and a second competing URL per race would split the SEO value of the first. Each record links out to the page that already exists.
+
+### What it feeds
+
+| Where | Element | Notes |
+|---|---|---|
+| Homepage | Upcoming Races | the next few open races |
+| /races/ | Upcoming Races + Season Calendar | open now, then the full forward-looking year |
+| Division pages | either, with a **region slug** | `arizona`, `colorado`, `nevada`, `california`, `ultra-adventures`, `great-lakes-endurance`, `white-mountain-endurance`, `bad-beard` |
+| A race's own page | **Race Status** | finds its own race by matching the page URL, no configuration |
+
+Region is read off the race's own page path first (`/white-mountain-endurance/black-bear-trail-races/` is unambiguous in a way that "Waterville Valley, NH" is not, and survives a venue move), falling back to the state in the location.
+
+### Importing
+
+**Races → Import** in the admin. Takes the same rows `scripts/fetch-races.mjs` produces, so the generator's output goes straight in. Races are matched and updated in place, so re-importing is safe.
+
+Matched on the registration URL **qualified by race name**, not the URL alone. Two pairs of unrelated races on the live site currently share a registration link: Vegas Golden Night & Day points at Elephant Mountain's, and Zion Ultras at Dam Good Run's, both verified against UltraSignup's own listing. Keying on the URL alone silently collapses each pair into one record and loses a race with nothing failing.
+
+Optional pruning removes races an import does not mention. They are **trashed, not deleted**, so a bad import that drops half the calendar is recoverable from the admin.
+
+### Migration safety
+
+Every element checks the store first and falls back to its own bundled rows when it is empty, so installing this changes nothing until races are actually imported. A half-migrated site keeps rendering exactly what it rendered yesterday.
 
 ## Season Calendar
 
