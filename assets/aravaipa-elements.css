@@ -1490,6 +1490,17 @@
 	text-decoration: none;
 }
 
+/* The filter JS hides a non-matching row by setting the `hidden` attribute.
+   That only works if nothing else claims the `display` property for this
+   selector: an unconditional `display: flex` above has equal specificity to
+   the browser's own `[hidden] { display: none }` default and, being an
+   author rule, always wins the tie regardless of source order. Without this,
+   every filter (search, state, month, open-only) sets `hidden` correctly and
+   nothing visibly changes. */
+.arv-calendar__row[hidden] {
+	display: none;
+}
+
 .arv-calendar__logo {
 	flex: 0 0 56px;
 	width: 56px;

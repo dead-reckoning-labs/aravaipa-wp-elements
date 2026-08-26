@@ -182,6 +182,8 @@ The bar itself is hidden until its script has run. A search box that does nothin
 
 Search matches name, venue, town and distances together, word by word in any order, so "tucson 50k" finds a 50K near Tucson. The state and month dropdowns are built from the races actually present, so neither can offer an option that returns nothing. The hiatus list hides while any filter is active: it sits outside the filtered list because those races have no date to filter on, but leaving it visible during a search reads as the filter having missed something.
 
+The JS hides a non-matching row by setting its `hidden` attribute, which relies on the browser's own `[hidden] { display: none }` default. `.arv-calendar__row` also carries an unconditional `display: flex` for its own layout, and an author rule always wins a specificity tie against a user-agent default regardless of source order — so every filter set `hidden` correctly and nothing visibly changed (shipped this way, fixed in v0.21.2 with an explicit `.arv-calendar__row[hidden] { display: none; }` override, and guarded in `build.sh` so it can't silently regress).
+
 ## The race map
 
 Every race as a pin, popup carrying date, distances, location, and the same phase-aware buttons as everywhere else (Register / Live Results / Results, plus Race Info).
@@ -190,7 +192,7 @@ Coordinates come from UltraSignup's group listing, which carries a real latitude
 
 Coordinates are validated rather than trusted: out of range, non-numeric, and `0` (the Atlantic, which is what an empty field becomes when something casts before checking) all resolve to "no pin". A race with no usable location is **named underneath the map** rather than dropped, because a race missing from a complete list with no explanation is exactly the bug this page has spent a while fixing.
 
-**Leaflet with OpenStreetMap tiles by default**, not Mapbox: no account, no token, no billing relationship, nothing to rotate when someone leaves. The tile URL and attribution are settings, so pointing it at Mapbox for their styling is a field change rather than a rewrite. Leaflet is this plugin's only third-party dependency and loads only on pages that actually place a map, checked against post content rather than enqueued globally.
+**Leaflet with OpenStreetMap tiles by default**, not Mapbox: no account, no token, no billing relationship, nothing to rotate when someone leaves. The tile URL and attribution are settings, so pointing it at Mapbox for their styling is a field change rather than a rewrite. Leaflet is this plugin's only third-party dependency and loads only when the map actually renders pins, from inside the render function itself: an earlier version gated the enqueue on the page's `post_content`, which Cornerstone never populates since it stores element data in postmeta, so Leaflet silently never loaded at all (shipped broken in v0.20.0/v0.21.0, fixed in v0.21.1).
 
 The markup includes a `<noscript>` list of every pinned race. The map genuinely cannot work without JavaScript and a CDN; the list can, so the races stay readable and indexable if either fails.
 

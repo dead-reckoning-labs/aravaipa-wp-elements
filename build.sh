@@ -101,6 +101,16 @@ while read -r logo; do
 done < <(grep -hv '^[[:space:]]*[*/]' includes/elements/*.php | grep -oE 'ARV_LOGO:[A-Za-z0-9._-]+' | sed 's/ARV_LOGO://' | sort -u)
 [ "$missing" -eq 0 ] || exit 1
 
+# .arv-calendar__row sets its own unconditional `display: flex`, which has
+# equal specificity to the browser's `[hidden] { display: none }` default
+# and, being an author rule, always wins the tie regardless of source order.
+# Shipped this way in v0.21.1: the calendar's search, state and month filters
+# all set `row.hidden = true` correctly and nothing visibly happened. Cheap
+# to check for the specific override that fixes it.
+grep -q '\.arv-calendar__row\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-calendar__row[hidden] override is missing, calendar filters will silently do nothing" >&2; missing=1; }
+[ "$missing" -eq 0 ] || exit 1
+
 ( cd "$OUT" && zip -qr "$NAME.zip" "$NAME" )
 
 echo "built $OUT/$NAME.zip (v$VERSION, $(find "$STAGE" -type f | wc -l | tr -d ' ') files, $(du -h "$OUT/$NAME.zip" | cut -f1))"
