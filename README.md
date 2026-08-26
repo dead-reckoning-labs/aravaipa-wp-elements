@@ -66,15 +66,25 @@ Bad Beard Events | 71.2 | 61.1 | .../bad-beard/ | Chattanooga, Tennessee. | | | 
 
 Every region now has a mark. Arizona, Tucson, California and Nevada carry the Aravaipa mountain icon; Colorado, Ultra Adventures, Great Lakes Endurance, White Mountain Endurance and Bad Beard Events each carry their own, which is also what distinguishes an Aravaipa region from a partner brand at a glance. Two are crops rather than whole logos, for reasons worth reading before replacing them: see `assets/logos/README.md`.
 
-**Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL`. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
+**Upcoming Races**: `Name | ISO date | display date | distances | venue | city, ST | register URL | race page URL | image URL | ISO end date`. The ISO date (`2026-08-29`) is required: it drives the sort and the structured data, and a row without a real one is dropped rather than shown with a guessed date. Display date is optional and exists for what a single date cannot say, like `September 12-13`. Leave it blank and it is formatted from the ISO date.
 
-The distances column may contain pipes, because that is how the rest of the site writes them (`50K | 25K | 10K | 5K`). A full-length row is read from both ends, so the first three columns and the last five are fixed and everything between them is the distance list. A short row has no fixed tail to anchor against and falls back to plain positional reading, so it cannot carry pipes.
+The tenth column is an optional ISO end date, for races that run more than one day. It keeps a multi-day race up while it is still running and adds `endDate` to its structured data.
+
+The distances column may contain pipes, because that is how the rest of the site writes them (`50K | 25K | 10K | 5K`). A full-length row is read from both ends, so the first three columns and the last six are fixed and everything between them is the distance list. A short row has no fixed tail to anchor against and falls back to plain positional reading, so it cannot carry pipes.
 
 ```
 Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | 10K | 5K | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/register.aspx?did=131056 | https://www.aravaiparunning.com/bear-chase-series/rock-hawk/ | https://.../rock-hawk.png
 ```
 
-Races are sorted by date whatever order they are pasted in, and **Maximum races to show** trims to the front of that list, so the whole season can live in the box while the page shows the next six. Set it to 0 to show everything.
+### How current it stays
+
+Two of the three things you would want are automatic, and it is worth being clear about which is which.
+
+**Automatic, on every page load.** Races that have already happened are dropped, the rest are sorted by date, and the first few are shown. A race stays up through its own race day, and through the final day of a multi-day race when an end date is given, then disappears the next morning. So the whole season lives in the box and the page shows the correct next six on its own, indefinitely, with nobody touching it. "Today" is the site's timezone, not the server's, so an Arizona race drops the morning after it ran in Arizona.
+
+**Not automatic.** A race that did not exist when the rows were generated will not appear, and a date or link that changed on `/races/` will not update. Rerun `scripts/fetch-races.mjs` when the calendar moves. The element ships with the season baked in as its default value, so a freshly placed element is correct without any editing at all.
+
+If every race in the list is in the past, the element renders nothing rather than a heading over an empty grid, which is the signal that the rows need regenerating.
 
 ### Where the rows come from
 
