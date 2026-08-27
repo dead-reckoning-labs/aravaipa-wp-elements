@@ -271,12 +271,23 @@ function arv_split_distances( $distances ) {
  * them as series would put a "Races" chip on one race and a "Virtual" chip
  * on another.
  *
- * DRT Series cannot be read off the path at all. Of its 7 races, only San
- * Tan Scramble is published under /drt-series/; the other 6 (Cave Creek
- * Thriller, Pass Mountain, McDowell Mountain Frenzy, Elephant Mountain,
- * Mesquite Canyon, Dam Good Run) sit at plain top-level paths that look
- * identical to a standalone race. Confirmed by name with Jamil rather than
- * guessed, and checked before the path logic runs.
+ * DRT Series (Desert Runner Trail Series) cannot be read off the path at
+ * all. Of its 7 races, only San Tan Scramble is published under
+ * /drt-series/; the other 6 (Cave Creek Thriller, Pass Mountain, McDowell
+ * Mountain Frenzy, Elephant Mountain, Mesquite Canyon, Dam Good Run) sit at
+ * plain top-level paths that look identical to a standalone race. Confirmed
+ * by name with Jamil rather than guessed, and checked before the path logic
+ * runs.
+ *
+ * Bad Beard Events is the same situation one level worse: all 3 of its
+ * races (Rabid Raccoon 25k, Stump Jump 50k & 10 Miler, Stillhouse 100K)
+ * share one literal page URL, https://www.aravaiparunning.com/bad-beard/,
+ * so there is no per-race path segment to key off at all. By name, same as
+ * DRT.
+ *
+ * Bear Chase Series (Rock Hawk, The Bear Chase, Chase The Moon) is
+ * deliberately absent per Jamil, 2026-08-27: pulled from the series list
+ * entirely rather than left path-detectable but unlabeled.
  *
  * @param array $race Race array.
  * @return array|null {slug, label, url} or null when the race is standalone.
@@ -295,8 +306,22 @@ function arv_race_series_for( $race ) {
 	if ( isset( $race['name'] ) && isset( $drt[ $race['name'] ] ) ) {
 		return array(
 			'slug'  => 'drt-series',
-			'label' => 'DRT Series',
+			'label' => 'Desert Runner Trail Series',
 			'url'   => 'https://www.aravaiparunning.com/drt-series/',
+		);
+	}
+
+	$bad_beard = array(
+		'Rabid Raccoon 25k'          => true,
+		'Stump Jump 50k & 10 Miler'  => true,
+		'Stillhouse 100K'            => true,
+	);
+
+	if ( isset( $race['name'] ) && isset( $bad_beard[ $race['name'] ] ) ) {
+		return array(
+			'slug'  => 'bad-beard-events',
+			'label' => 'Bad Beard Events',
+			'url'   => 'https://www.aravaiparunning.com/bad-beard/',
 		);
 	}
 
@@ -306,8 +331,7 @@ function arv_race_series_for( $race ) {
 		// under the long form while its nine siblings use the short one, so
 		// without this alias one race would sit in a series of its own.
 		'insomniac-night-trail-series' => 'Insomniac Night Series',
-		'bear-chase-series'        => 'Bear Chase Series',
-		'drt-series'               => 'DRT Series',
+		'drt-series'               => 'Desert Runner Trail Series',
 		'great-lakes-endurance'    => 'Great Lakes Endurance',
 		'white-mountain-endurance' => 'White Mountain Endurance',
 	);

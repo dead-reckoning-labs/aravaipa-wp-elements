@@ -407,6 +407,19 @@ foreach (array('Cave Creek Thriller','Pass Mountain','McDowell Mountain Frenzy',
 	t("$drtName resolves to DRT Series despite its own URL", 'drt-series' === arv_race_series_for($mk('https://www.aravaiparunning.com/'.strtolower(str_replace(' ','-',$drtName)).'/', $drtName))['slug']);
 }
 t('a same-shaped race NOT on the DRT roster does not resolve', null === arv_race_series_for($mk('https://www.aravaiparunning.com/some-other-race/', 'Some Other Race')));
+t('DRT Series is labeled Desert Runner Trail Series now', 'Desert Runner Trail Series' === arv_race_series_for($mk('https://www.aravaiparunning.com/dam-good-run/', 'Dam Good Run'))['label']);
+
+// Bad Beard is DRT's situation one level worse: all 3 races share one
+// literal page URL, no per-race path segment to key off at all.
+foreach (array('Rabid Raccoon 25k','Stump Jump 50k & 10 Miler','Stillhouse 100K') as $bbName) {
+	$bb = arv_race_series_for($mk('https://www.aravaiparunning.com/bad-beard/', $bbName));
+	t("$bbName resolves to Bad Beard Events", 'bad-beard-events' === $bb['slug'] && 'Bad Beard Events' === $bb['label']);
+}
+
+// Bear Chase Series is deliberately gone per Jamil, 2026-08-27: the path is
+// still real (Rock Hawk really is published under /bear-chase-series/) but
+// the series is no longer surfaced anywhere.
+t('Bear Chase Series no longer resolves', null === arv_race_series_for($mk('https://www.aravaiparunning.com/bear-chase-series/rock-hawk/', 'Rock Hawk')));
 
 echo "series chip and filter:\n";
 $serCal = '';
