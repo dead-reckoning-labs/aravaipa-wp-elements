@@ -1264,15 +1264,21 @@
 	cursor: default;
 }
 
-/* Sold out, but there is still somewhere to click: amber rather than the
-   red "buy" accent, since the offer is a waitlist, not open entries, and
-   rather than the closed style's grey, since it is not a dead end either. */
+/* Sold out, but there is still somewhere to click: goldenrod rather than
+   the red "buy" accent, since the offer is a waitlist and not open entries,
+   and rather than the closed style's grey, since it is not a dead end
+   either.
+
+   Dark text on this, not white, and that is not a style preference. White
+   on #daa520 measures 2.24:1, under even the 3:1 floor for large text;
+   the ink colour measures 6.68:1 and clears AA comfortably. Goldenrod is
+   simply too light a background to carry white type. */
 .arv-races__cta--waitlist,
 .arv-races__cta--waitlist:link,
 .arv-races__cta--waitlist:visited {
-	background: #b45f00;
-	border-color: #b45f00;
-	color: #fff;
+	background: #daa520;
+	border-color: #daa520;
+	color: var(--arv-ink, #272727);
 }
 
 .arv-races__cta:focus-visible,
@@ -1326,9 +1332,9 @@
 
 	a.arv-races__cta--waitlist:hover,
 	a.arv-races__cta--waitlist:focus {
-		background: #8c4900;
-		border-color: #8c4900;
-		color: #fff;
+		background: #c9971d;
+		border-color: #c9971d;
+		color: var(--arv-ink, #272727);
 	}
 	.arv-races__link:hover { color: var(--arv-accent); }
 	.arv-races__details:hover {
@@ -1420,7 +1426,8 @@
 	text-align: left;
 	--arv-teal: #5bb5a2;
 	--arv-teal-deep: #2a5e6b;
-	padding: 3.5rem 0;
+	/* Matches .arv-map's, and for the same reason: the two stack. */
+	padding: 2rem 0;
 	background: #ffffff;
 	color: #272727;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -1751,15 +1758,16 @@
 	color: #fff;
 }
 
-/* Same amber as the homepage cards: sold out, but a waitlist is still a
-   real place to click, so it stays filled rather than falling back to the
-   default outlined style live/results use. */
+/* Same goldenrod as the homepage cards: sold out, but a waitlist is still
+   a real place to click, so it stays filled rather than falling back to the
+   default outlined style live/results use. Dark text for the contrast
+   reason spelled out on the cards' rule. */
 .arv-calendar__action--waitlist,
 .arv-calendar__action--waitlist:link,
 .arv-calendar__action--waitlist:visited {
-	background: #b45f00;
-	border-color: #b45f00;
-	color: #fff;
+	background: #daa520;
+	border-color: #daa520;
+	color: var(--arv-ink, #272727);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1777,9 +1785,9 @@
 		color: #fff;
 	}
 	a.arv-calendar__action--waitlist:hover {
-		background: #8c4900;
-		border-color: #8c4900;
-		color: #fff;
+		background: #c9971d;
+		border-color: #c9971d;
+		color: var(--arv-ink, #272727);
 	}
 	.arv-calendar--dark .arv-calendar__action:hover {
 		background: var(--arv-teal);
@@ -1938,7 +1946,12 @@
 
 .arv-map {
 	text-align: left;
-	padding: 3.5rem 0;
+	/* The map and the calendar sit directly on top of each other on /races/,
+	   so these paddings stack: 3.5rem each made a 7rem trench between "Find a
+	   race near you" and the heading below it, which read as a gap rather
+	   than as separation. 2rem each still separates them clearly at 4rem
+	   total. */
+	padding: 2rem 0;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
 	color: #272727;
 }
@@ -1959,7 +1972,7 @@
 }
 
 .arv-map__heading {
-	margin: 0 0 1.5rem;
+	margin: 0 0 1rem;
 	font-size: clamp(1.9rem, 4vw, 2.6rem);
 	font-weight: 700;
 	line-height: 1.15;
@@ -2133,20 +2146,27 @@
 /* Series affiliation on a calendar row. Set apart from the distance pills
    sitting next to it: those are what you can enter, this is what the race
    belongs to, and they should not read as the same kind of thing. Outlined
-   in the accent rather than filled grey, and it does not wrap. */
+   rather than filled grey, and it does not wrap.
+
+   Teal, not the accent red. Red is already doing two jobs on this page: it
+   is the month heading and it is the Register button. A series chip is
+   neither a heading nor an action, it is metadata, and a third red thing
+   in the same row made the list read as busier than it is. Teal is what
+   the rest of the plugin already uses for "information, not an offer",
+   which is exactly what this is. */
 .arv-calendar__series {
 	display: inline-block;
 	align-self: flex-start;
 	margin: 0.1rem 0;
 	padding: 0.05rem 0.35rem;
-	border: 1px solid var(--arv-accent, #ff2a13);
+	border: 1px solid var(--arv-teal-deep, #2a5e6b);
 	font-size: 0.65rem;
 	font-weight: 700;
 	letter-spacing: 0.4px;
 	text-transform: uppercase;
 	line-height: 1.6;
 	white-space: nowrap;
-	color: var(--arv-accent, #ff2a13);
+	color: var(--arv-teal-deep, #2a5e6b);
 }
 
 /* Distance chips in the calendar list, matching the map popup's. */
@@ -2406,9 +2426,9 @@
 }
 
 .arv-map__popup-cta--waitlist {
-	background: #b45f00;
-	border-color: #b45f00;
-	color: #fff;
+	background: #daa520;
+	border-color: #daa520;
+	color: #272727;
 }
 
 .arv-map__popup-info {
@@ -2438,7 +2458,7 @@
 
 .arv-map__popup a.arv-map__popup-cta--waitlist,
 .arv-map__popup a.arv-map__popup-cta--waitlist:hover {
-	color: #fff;
+	color: #272727;
 }
 
 .arv-map__popup a.arv-map__popup-info,
