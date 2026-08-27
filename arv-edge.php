@@ -381,7 +381,7 @@ t('the unconfirmed race in this pair has no Register', substr_count($r,'arv-cale
 t('and this element never renders a card-style cta', strpos($r,'arv-races__cta')===false);
 
 echo "series resolution:\n";
-$mk = function ( $page ) { return array( 'page' => $page ); };
+$mk = function ( $page, $name = 'Test Race' ) { return array( 'page' => $page, 'name' => $name ); };
 t('an insomniac race resolves',        'insomniac' === arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac/thrasher/'))['slug']);
 // Adrenaline Night Runs is published under the long path while its nine
 // siblings use the short one. Without the alias it would sit alone in a
@@ -398,7 +398,15 @@ t('/colorado/ is not a series',        null === arv_race_series_for($mk('https:/
 // One segment is the series' own landing page, not a race inside it.
 t('a series page itself is not a race in it', null === arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac/')));
 t('a standalone race has no series',   null === arv_race_series_for($mk('https://www.aravaiparunning.com/javelina/')));
-t('an empty page is safe',             null === arv_race_series_for(array('page'=>'')));
+t('an empty page is safe',             null === arv_race_series_for(array('page'=>'','name'=>'X')));
+
+// DRT Series cannot be read off the path: only 1 of its 7 races uses
+// /drt-series/, the other 6 sit at plain top-level paths indistinguishable
+// from a standalone race. Confirmed by name with Jamil instead.
+foreach (array('Cave Creek Thriller','Pass Mountain','McDowell Mountain Frenzy','San Tan Scramble','Elephant Mountain','Mesquite Canyon','Dam Good Run') as $drtName) {
+	t("$drtName resolves to DRT Series despite its own URL", 'drt-series' === arv_race_series_for($mk('https://www.aravaiparunning.com/'.strtolower(str_replace(' ','-',$drtName)).'/', $drtName))['slug']);
+}
+t('a same-shaped race NOT on the DRT roster does not resolve', null === arv_race_series_for($mk('https://www.aravaiparunning.com/some-other-race/', 'Some Other Race')));
 
 echo "series chip and filter:\n";
 $serCal = '';
