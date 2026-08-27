@@ -1979,34 +1979,27 @@
    the window edge stops lining up with every other heading on the page;
    only the panel holding the canvas escapes.
 
-   Negative margins against the inner's own padding, rather than 100vw
-   tricks: 100vw includes the scrollbar on desktop Windows and Linux, which
-   is how full-bleed sections end up with a horizontal scrollbar nobody can
-   reproduce on a Mac. This cannot overflow because it is undoing a padding
-   that is already there. */
-.arv-map--full .arv-map__panel {
-	margin-left: -1.25rem;
-	margin-right: -1.25rem;
-}
+   This has to break out of an ancestor whose width this stylesheet does not
+   know: the element is dropped into a Cornerstone section, row and column,
+   each with its own max-width and padding. Undoing only this plugin's own
+   padding, which is what the first version did, gets the map to the edge of
+   the Cornerstone column and no further, which looked identical to full
+   width not working at all.
 
-@media (min-width: 1200px) {
-	.arv-map--full .arv-map__inner {
-		max-width: none;
-		padding: 0;
-	}
-	/* The heading is put back into the content column by hand, since its
-	   parent no longer provides one. */
-	.arv-map--full .arv-map__eyebrow,
-	.arv-map--full .arv-map__heading {
-		max-width: 1200px;
-		margin-left: auto;
-		margin-right: auto;
-		padding: 0 1.25rem;
-	}
-	.arv-map--full .arv-map__panel {
-		margin-left: 0;
-		margin-right: 0;
-	}
+   So it is measured from the viewport instead. 50% is half the parent,
+   50vw is half the window, and the difference between them is exactly how
+   far the parent's left edge sits from the window's, whatever chain of
+   containers produced it.
+
+   --arv-sbw is the scrollbar width, measured once in JS and set on <html>.
+   It is the whole reason this is not a plain calc(50% - 50vw): 100vw counts
+   the scrollbar on Windows and Linux but not on macOS's overlay scrollbars,
+   so the unadjusted version overhangs by ~15px and adds a horizontal
+   scrollbar that is invisible to anyone checking on a Mac. It defaults to
+   0px, which is correct when there is no scrollbar and when JS never runs. */
+.arv-map--full .arv-map__panel {
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 }
 
 /* Sits flush under whatever is above it when full width, so a hero and the
