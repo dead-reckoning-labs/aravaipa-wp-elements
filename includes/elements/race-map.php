@@ -45,6 +45,7 @@ cs_register_element(
 				'heading'   => cs_value( 'Find a race near you', 'markup' ),
 				'height'    => cs_value( '520', 'markup' ),
 				'collapsible' => cs_value( 'true', 'markup' ),
+				'full_width'  => cs_value( 'false', 'markup' ),
 				'region'    => cs_value( '', 'markup' ),
 				'tile_url'  => cs_value( '', 'markup' ),
 				'tile_attr' => cs_value( '', 'markup' ),
@@ -87,6 +88,12 @@ function arv_race_map_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Collapsible', 'aravaipa-elements' ),
 					'description' => __( 'true or false. Adds a Hide map / Show map toggle. The map still starts open either way; this only decides whether a visitor can fold it away.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'full_width',
+					'type'        => 'text',
+					'label'       => __( 'Full width', 'aravaipa-elements' ),
+					'description' => __( 'true or false. Runs the map edge to edge instead of inside the page content column, so it can sit flush under a hero. A heading, if there is one, stays in the content column either way.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'region',
@@ -285,7 +292,18 @@ function arv_race_map_render( $data ) {
 	// shipped as one here until a test caught it.
 	$json = str_replace( '<', '\u003C', $json );
 
+	// Full bleed runs the map edge to edge so it can sit flush under a hero
+	// with no seam between them. Only the canvas bleeds: a heading dropped to
+	// the window edge stops lining up with every other heading on the page,
+	// so the text stays in the content column and the map escapes it.
+	$full_width = isset( $data['full_width'] ) ? $data['full_width'] : false;
+	$full_width = ! ( 'false' === $full_width || false === $full_width || '0' === $full_width || '' === $full_width );
+
 	$base = 'arv-map';
+	if ( $full_width ) {
+		$base .= ' arv-map--full';
+	}
+
 	$out  = '<div class="' . arv_wrapper_class( $data, $base ) . '">';
 	$out .= '<div class="arv-map__inner">';
 

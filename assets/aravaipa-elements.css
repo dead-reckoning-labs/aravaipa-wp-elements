@@ -1960,6 +1960,49 @@
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 0 1.25rem;
+	/* Anchors the collapse toggle, which is absolutely positioned over the
+	   map's top right corner while the map is open. */
+	position: relative;
+}
+
+/* Full bleed. The heading stays in the content column, since a heading at
+   the window edge stops lining up with every other heading on the page;
+   only the panel holding the canvas escapes.
+
+   Negative margins against the inner's own padding, rather than 100vw
+   tricks: 100vw includes the scrollbar on desktop Windows and Linux, which
+   is how full-bleed sections end up with a horizontal scrollbar nobody can
+   reproduce on a Mac. This cannot overflow because it is undoing a padding
+   that is already there. */
+.arv-map--full .arv-map__panel {
+	margin-left: -1.25rem;
+	margin-right: -1.25rem;
+}
+
+@media (min-width: 1200px) {
+	.arv-map--full .arv-map__inner {
+		max-width: none;
+		padding: 0;
+	}
+	/* The heading is put back into the content column by hand, since its
+	   parent no longer provides one. */
+	.arv-map--full .arv-map__eyebrow,
+	.arv-map--full .arv-map__heading {
+		max-width: 1200px;
+		margin-left: auto;
+		margin-right: auto;
+		padding: 0 1.25rem;
+	}
+	.arv-map--full .arv-map__panel {
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+/* Sits flush under whatever is above it when full width, so a hero and the
+   map read as one surface rather than two stacked boxes. */
+.arv-map--full {
+	padding-top: 0;
 }
 
 .arv-map__eyebrow {
@@ -2196,9 +2239,9 @@
 	align-items: center;
 	gap: 0.35rem;
 	margin: 0 0 0.5rem auto;
-	padding: 0.25rem 0.5rem;
-	border: 1px solid rgba(128, 128, 128, 0.45);
-	background: transparent;
+	padding: 0.35rem 0.6rem;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	background: #fff;
 	font-family: inherit;
 	font-size: 0.7rem;
 	font-weight: 700;
@@ -2206,6 +2249,43 @@
 	text-transform: uppercase;
 	color: var(--arv-ink, #272727);
 	cursor: pointer;
+}
+
+/* While the map is open the toggle floats over its top right corner, the
+   same treatment the other map controls get, so the strip of page above the
+   map disappears and the map starts immediately.
+
+   Only while open, deliberately. A control positioned over a collapsed map
+   would be positioned over nothing: the panel it was covering is display
+   none and has no height, so the button would land on whatever followed.
+   Collapsed, it drops back into normal flow where it is still the only
+   thing to press. */
+.arv-map__toggle[aria-expanded="true"] {
+	position: absolute;
+	top: 10px;
+	right: 22px;
+	z-index: 800;
+	margin: 0;
+	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.arv-map--full .arv-map__toggle[aria-expanded="true"] {
+	right: 10px;
+}
+
+/* Collapsed and full width, the toggle is back in normal flow inside an
+   inner that no longer has side padding, so it would otherwise sit flush
+   against the window edge. Explicitly scoped to the collapsed state so it
+   cannot fight the absolute rule above, which the two would otherwise tie
+   with on specificity and settle by source order. */
+.arv-map--full .arv-map__toggle[aria-expanded="false"] {
+	margin-right: 1.25rem;
+}
+
+/* Push Leaflet's own top-right controls clear of the overlaid toggle, so
+   Near Me sits under it rather than behind it. */
+.arv-map__canvas .leaflet-top.leaflet-right {
+	margin-top: 34px;
 }
 
 .arv-map__toggle:hover {
