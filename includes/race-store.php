@@ -483,3 +483,185 @@ function arv_race_store_find_by_page( $page_url = '' ) {
 
 	return null;
 }
+
+/**
+ * REST import: the same importer the admin screen uses, reachable without
+ * an admin login.
+ *
+ * The admin screen at Races -> Import is gated on manage_options
+ * deliberately (it can prune every race in the store), and that gate should
+ * stay. But that also means the only way to automate an import was to hand
+ * out full Administrator credentials to whatever runs the cron. This gives
+ * the generator (scripts/fetch-races.mjs) a door of its own, scoped to
+ * edit_posts, so the automation account never needs to be an admin.
+ *
+ * Split into a pure core function and a thin REST wrapper on purpose: the
+ * core takes and returns plain values, so arv-store-test.php can exercise
+ * the guardrail logic directly without constructing a WP_REST_Request.
+ *
+ * arv_upcoming_races_parse_row(), which arv_race_store_import() calls,
+ * lives in includes/elements/upcoming-races.php. That file is normally
+ * only loaded by arv_elements_register(), hooked to Cornerstone's
+ * cs_register_elements, a hook this plugin's own main file already
+ * documents as "not guaranteed to run" before other standard WordPress
+ * hooks (see the countdown.php script enqueue in aravaipa-elements.php
+ * hitting the same problem with wp_enqueue_scripts). A bare REST request
+ * never fires a Cornerstone hook at all, so without this the import route
+ * would call an undefined function on its very first request.
+ *
+ * Required here, on rest_api_init, rather than unconditionally at the top
+ * of this file: upcoming-races.php calls cs_register_element() at its own
+ * top level, and requiring it before Cornerstone itself has loaded would
+ * fatal the entire site on every request, not just REST ones. rest_api_init
+ * fires well after plugins_loaded, so every active plugin (Cornerstone
+ * included, if it is even active) is already loaded by the time this runs,
+ * which is the same function_exists( 'cs_register_element' ) guarantee
+ * arv_elements_register() already relies on elsewhere in this plugin.
+ */
+function arv_race_store_register_rest_route() {
+	if ( function_exists( 'cs_register_element' ) && ! function_exists( 'arv_upcoming_races_parse_row' ) ) {
+		require_once ARV_ELEMENTS_PATH . 'includes/elements/upcoming-races.php';
+	}
+
+	register_rest_route(
+		'aravaipa/v1',
+		'/races/import',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_race_store_rest_import',
+			// edit_posts, not manage_options: this is the whole point. An
+			// Editor-scoped Application Password can reach this route and
+			// nothing else an admin could do.
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'rows'    => array(
+					'required' => true,
+					'type'     => 'string',
+				),
+				'prune'   => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+				'dry_run' => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+				'force'   => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_race_store_register_rest_route' );
+
+/**
+ * The importer's guardrails and dry-run reporting, independent of REST.
+ *
+ * A scraper that fails partway through (a timeout, a changed page structure,
+ * UltraSignup's group API returning an error page) tends to produce a
+ * short, still-technically-valid file rather than an obvious error, a
+ * handful of rows instead of eighty. Run that through a pruning import
+ * unattended and it looks identical to a season legitimately ending: most
+ * of the calendar gets trashed. This is the check a human pasting into the
+ * admin screen effectively did by eye every time ("that count looks low, let
+ * me check before I hit import"), made explicit so the unattended path has
+ * it too.
+ *
+ * Comparing against valid rows, not raw lines: a scrape that returns 80
+ * lines where 60 fail to parse should trip this exactly like a scrape that
+ * returns 20 lines outright, since either way the store would end up with
+ * a fifth of what it has now.
+ *
+ * @param string $raw     Pipe-separated rows, the same format the admin
+ *                         screen and every element take.
+ * @param bool   $prune   Remove stored races the import did not mention.
+ * @param bool   $dry_run Report what would happen without writing anything.
+ * @param bool   $force   Skip the row-count guardrail for an intentional
+ *                         shrink (a season legitimately ending, an explicit
+ *                         cleanup).
+ * @return array {status, ...} status is 'ok', 'dry_run', or 'refused'.
+ */
+function arv_race_store_import_guarded( $raw, $prune = false, $dry_run = false, $force = false ) {
+	$rows  = arv_parse_rows( $raw, 2 );
+	$valid = 0;
+
+	foreach ( $rows as $row ) {
+		if ( null !== arv_upcoming_races_parse_row( $row ) ) {
+			$valid++;
+		}
+	}
+
+	$current = count( arv_race_store_get() );
+
+	// The guardrail only matters when prune is on: without it, a short
+	// import just updates/creates the races it mentions and leaves
+	// everything else alone, so there is nothing destructive to refuse.
+	if ( $prune && ! $force && $current > 0 && $valid < $current * 0.8 ) {
+		return array(
+			'status'   => 'refused',
+			'reason'   => 'row_count_drop',
+			'message'  => sprintf(
+				'Refusing to prune: import has %1$d valid race(s), the store currently has %2$d. That is more than a 20%% drop, which usually means the scrape failed rather than the season shrinking. Pass force=true to override.',
+				$valid,
+				$current
+			),
+			'incoming' => $valid,
+			'current'  => $current,
+		);
+	}
+
+	if ( $dry_run ) {
+		return array(
+			'status'  => 'dry_run',
+			'valid'   => $valid,
+			'skipped' => count( $rows ) - $valid,
+			'current' => $current,
+		);
+	}
+
+	$result           = arv_race_store_import( $raw, $prune );
+	$result['status'] = 'ok';
+
+	return $result;
+}
+
+/**
+ * REST wrapper. Reads the request, defers everything to
+ * arv_race_store_import_guarded(), maps its status to an HTTP code.
+ *
+ * @param WP_REST_Request $request
+ * @return WP_REST_Response
+ */
+function arv_race_store_rest_import( $request ) {
+	// The route registration function tries to load the parser this depends
+	// on, but only when Cornerstone is active (see the long comment there
+	// for why). If Cornerstone is deactivated between that check and this
+	// call, or was never active, this fails as a clean REST error instead
+	// of an uncaught "call to undefined function" fatal reaching the client
+	// as a raw PHP error page.
+	if ( ! function_exists( 'arv_upcoming_races_parse_row' ) ) {
+		return new WP_REST_Response(
+			array(
+				'status'  => 'refused',
+				'reason'  => 'parser_unavailable',
+				'message' => 'The race row parser is not loaded, which normally means Cornerstone is not active. This endpoint depends on it the same way the rest of the plugin does.',
+			),
+			503
+		);
+	}
+
+	$result = arv_race_store_import_guarded(
+		(string) $request->get_param( 'rows' ),
+		(bool) $request->get_param( 'prune' ),
+		(bool) $request->get_param( 'dry_run' ),
+		(bool) $request->get_param( 'force' )
+	);
+
+	$code = ( 'refused' === $result['status'] ) ? 409 : 200;
+
+	return new WP_REST_Response( $result, $code );
+}
