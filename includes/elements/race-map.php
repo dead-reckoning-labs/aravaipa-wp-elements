@@ -28,6 +28,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'ARV_MAP_LEAFLET_VERSION', '1.9.4' );
 
+// Leaflet.markercluster, the de facto clustering plugin for Leaflet and the
+// one that does what was actually asked for: a count bubble while pins
+// overlap, splitting apart as you zoom, and spiderfying the last few that
+// share a venue. Pinned rather than floated, same as Leaflet itself, since
+// this is a third-party CDN script running on aravaiparunning.com.
+define( 'ARV_MAP_CLUSTER_VERSION', '1.5.3' );
+
 cs_register_element(
 	'aravaipa-race-map',
 	array(
@@ -198,13 +205,29 @@ function arv_race_map_render( $data ) {
 		// re-cutting the asset this flags it for a dark backing chip in CSS.
 		$logo_dark = ( 'bad-beard' === $region );
 
+		$where = trim( implode( ', ', array_filter( array( $race['venue'], $race['location'] ) ) ) );
+
+		// What the jump-to-a-race search matches on, lowercased here rather
+		// than in the browser on every keystroke.
+		//
+		// The full state name is folded in because a location only ever
+		// carries the two-letter code. Searching "tennessee" found nothing
+		// while three races sat in Chattanooga, since the only thing in the
+		// pin was "TN". Exactly the bug the calendar's search already hit and
+		// fixed the same way; the map inherited it by being written second.
+		$search = strtolower( $race['name'] . ' ' . $where );
+		if ( preg_match( '/,\s*([A-Za-z]{2})\s*$/', $race['location'], $sm ) ) {
+			$search .= ' ' . strtolower( arv_state_name( strtoupper( $sm[1] ) ) );
+		}
+
 		$pins[] = array(
 			'name'      => $race['name'],
 			'lat'       => (float) $race['lat'],
 			'lng'       => (float) $race['lng'],
 			'date'      => $display_date,
 			'distances' => $race['distances'],
-			'where'     => trim( implode( ', ', array_filter( array( $race['venue'], $race['location'] ) ) ) ),
+			'where'     => $where,
+			'search'    => $search,
 			'page'      => $race['page'],
 			// Only offered when the phase actually has somewhere to send
 			// someone, matching the cards and the calendar exactly.
@@ -293,6 +316,27 @@ function arv_race_map_render( $data ) {
 	}
 
 	$out .= '<div class="arv-map__panel" data-arv-map-panel>';
+
+	// Jump-to-a-race search. Sits above the canvas rather than inside it as a
+	// Leaflet control: a dropdown drawn inside the map has to fight the map's
+	// own stacking context and gets clipped by the canvas at the bottom of
+	// the list, which is exactly where the results appear.
+	//
+	// combobox rather than a bare input, so the results are announced as
+	// options and the arrow keys are expected rather than a surprise. Only
+	// useful with enough races to be worth searching; below that the pins
+	// are all visible anyway.
+	if ( count( $pins ) > 8 ) {
+		$out .= '<div class="arv-map__search" data-arv-map-search>';
+		$out .= '<input type="search" class="arv-map__search-input"'
+			. ' placeholder="' . esc_attr( __( 'Jump to a race', 'aravaipa-elements' ) ) . '"'
+			. ' aria-label="' . esc_attr( __( 'Jump to a race on the map', 'aravaipa-elements' ) ) . '"'
+			. ' role="combobox" aria-expanded="false" aria-controls="arv-map-results"'
+			. ' aria-autocomplete="list" autocomplete="off" />';
+		$out .= '<ul class="arv-map__results" id="arv-map-results" role="listbox" data-arv-map-results></ul>';
+		$out .= '</div>';
+	}
+
 	$out .= '<div class="arv-map__canvas" data-arv-map style="height:' . esc_attr( $height ) . 'px"></div>';
 	$out .= '<script type="application/json" data-arv-map-config>' . $json . '</script>';
 	$out .= '</div>';
@@ -352,6 +396,18 @@ function arv_race_map_enqueue() {
 		ARV_MAP_LEAFLET_VERSION
 	);
 
+	// MarkerCluster.css is the plugin's structural CSS and is required;
+	// MarkerCluster.Default.css is its stock green/yellow bubble skin, which
+	// is deliberately NOT loaded. Our own stylesheet draws the bubbles in
+	// Aravaipa's teal instead, and loading the default first would only mean
+	// overriding it.
+	wp_enqueue_style(
+		'leaflet-markercluster',
+		'https://unpkg.com/leaflet.markercluster@' . ARV_MAP_CLUSTER_VERSION . '/dist/MarkerCluster.css',
+		array( 'leaflet' ),
+		ARV_MAP_CLUSTER_VERSION
+	);
+
 	wp_enqueue_script(
 		'leaflet',
 		'https://unpkg.com/leaflet@' . ARV_MAP_LEAFLET_VERSION . '/dist/leaflet.js',
@@ -361,9 +417,17 @@ function arv_race_map_enqueue() {
 	);
 
 	wp_enqueue_script(
+		'leaflet-markercluster',
+		'https://unpkg.com/leaflet.markercluster@' . ARV_MAP_CLUSTER_VERSION . '/dist/leaflet.markercluster.js',
+		array( 'leaflet' ),
+		ARV_MAP_CLUSTER_VERSION,
+		true
+	);
+
+	wp_enqueue_script(
 		'aravaipa-race-map',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-race-map.js',
-		array( 'leaflet' ),
+		array( 'leaflet', 'leaflet-markercluster' ),
 		ARV_ELEMENTS_VERSION,
 		true
 	);
