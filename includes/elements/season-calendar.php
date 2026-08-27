@@ -27,6 +27,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Off pending feedback from Jamil (2026-08-27) on how series should actually
+// be presented. The data-series attribute, the search-text folding and
+// arv_race_series_for() itself all stay live; only the visible chip and the
+// filter dropdown are gated, so turning this back on is a one-line flip.
+if ( ! defined( 'ARV_SERIES_CHIPS_ENABLED' ) ) {
+	define( 'ARV_SERIES_CHIPS_ENABLED', false );
+}
+
 cs_register_element(
 	'aravaipa-season-calendar',
 	array(
@@ -419,7 +427,7 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 	// above the list is the interactive route to a whole series, and it is
 	// the better one anyway: it shows the season in place rather than
 	// navigating away from the calendar someone is already reading.
-	if ( $series ) {
+	if ( $series && ARV_SERIES_CHIPS_ENABLED ) {
 		$out .= '<span class="arv-calendar__series">' . esc_html( $series['label'] ) . '</span>';
 	}
 	$where = array_filter( array( $race['venue'], $race['location'] ) );
@@ -600,7 +608,7 @@ function arv_season_calendar_filters( $races ) {
 	// Only worth a control when there is a choice to make: a page showing one
 	// series would otherwise offer a dropdown whose every option is the same
 	// answer, and a single-series division page is a real case.
-	if ( count( $series ) > 1 ) {
+	if ( ARV_SERIES_CHIPS_ENABLED && count( $series ) > 1 ) {
 		$out .= '<label class="arv-calendar__field">';
 		$out .= '<span class="arv-calendar__field-label">' . esc_html( __( 'Series', 'aravaipa-elements' ) ) . '</span>';
 		$out .= '<select class="arv-calendar__select" data-arv-series>';

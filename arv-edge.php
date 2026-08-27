@@ -24,6 +24,9 @@ $GLOBALS['NOW']='2026-08-25';
 function current_time($f){return $GLOBALS['NOW'];}
 function apply_filters($tag,$v){return $v;}
 define('DAY_IN_SECONDS',86400);
+// Chips ship disabled by default (season-calendar.php's own guard); forced on
+// here so the suite keeps exercising the feature itself while it's off live.
+define('ARV_SERIES_CHIPS_ENABLED', true);
 $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
 // race-map.php now calls arv_race_store_region_for() for the popup's
 // division logo, a real cross-file dependency this harness did not have
