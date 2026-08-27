@@ -1851,10 +1851,20 @@
 	display: flex;
 	flex-direction: column;
 	gap: 0.3rem;
+	/* State, Series and Month share one width so they wrap together as a
+	   clean row rather than however many happen to fit next to Search. Search
+	   itself overrides this below to claim the full row on its own instead. */
+	flex: 1 1 9rem;
 }
 
 .arv-calendar__field--search {
-	flex: 1 1 16rem;
+	/* Full width, always, not just on the mobile breakpoint below: a text
+	   input is a different kind of control than the three dropdowns beside
+	   it, and at in-between widths letting it share a row with them was what
+	   pushed Month (and the checkbox trailing it) onto an orphaned line of
+	   their own. Search on its own row, dropdowns together on the next,
+	   wrapping evenly, is the same shape at every width. */
+	flex: 1 1 100%;
 	min-width: 0;
 }
 
@@ -1918,9 +1928,6 @@
 @media (max-width: 619px) {
 	.arv-calendar__filters.is-ready {
 		gap: 0.6rem;
-	}
-	.arv-calendar__field--search {
-		flex-basis: 100%;
 	}
 	.arv-calendar__field {
 		flex: 1 1 8rem;

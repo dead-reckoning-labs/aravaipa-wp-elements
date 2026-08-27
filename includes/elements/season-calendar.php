@@ -33,9 +33,13 @@ cs_register_element(
 		'title'   => __( 'Aravaipa Season Calendar', 'aravaipa-elements' ),
 		'values'  => cs_compose_values(
 			array(
-				'eyebrow' => cs_value( 'The full season', 'markup' ),
-				'heading' => cs_value( 'Every Aravaipa race', 'markup' ),
-				'intro'   => cs_value( 'Grouped by month. Registration for most races opens a few months out; check Race Details for the latest.', 'markup' ),
+				// Minimal on purpose, per Jamil 2026-08-27: the map section
+				// above already carries the "every race" framing ("Find a
+				// race near you"), so this one just needs to say what it is
+				// and get out of the way, not repeat it with different words.
+				'eyebrow' => cs_value( '', 'markup' ),
+				'heading' => cs_value( 'All Races', 'markup' ),
+				'intro'   => cs_value( '', 'markup' ),
 				'theme'   => cs_value( 'light', 'style' ),
 				'region'  => cs_value( '', 'markup' ),
 				'grace'   => cs_value( '2', 'markup' ),
