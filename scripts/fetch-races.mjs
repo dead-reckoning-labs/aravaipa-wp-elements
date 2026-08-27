@@ -34,6 +34,13 @@
  * three RunSignUp-hosted virtual events, and about a dozen more.
  *
  *   node scripts/fetch-races.mjs [--year 2026] [--port 9360] [--gid 7]
+ *   node scripts/fetch-races.mjs --post              # scrape and write to the site
+ *   node scripts/fetch-races.mjs --post --dry-run     # scrape and report, write nothing
+ *
+ * --post requires ARAVAIPA_WP_URL, ARAVAIPA_WP_USER and
+ * ARAVAIPA_WP_APP_PASSWORD in the environment (an Application Password on a
+ * plain Editor-role user, not an Administrator: see includes/race-store.php's
+ * /wp-json/aravaipa/v1/races/import for why that split exists).
  */
 const args = Object.fromEntries(
   process.argv.slice(2).join(' ').split('--').filter(Boolean)
@@ -460,6 +467,73 @@ for (const r of raw) {
 }
 
 rows.sort((a, b) => a.split(' | ')[1].localeCompare(b.split(' | ')[1]));
-console.log(rows.join('\n'));
+const outputText = rows.join('\n');
+console.log(outputText);
 console.error(`\n${rows.length} races, ${skipped.length} skipped, ${withGroupMatch} matched to UltraSignup's group listing, ${withConfirmed} confirmed overall, ${withGuessed} with a rolled-forward (guessed) year, ${withClose} with a published registration close date, ${withLive} matched to the live results board, ${withGeo} with map coordinates`);
 for (const s of skipped) console.error(`  skipped: ${s.name} (${s.date || 'no date'}) - ${s.why}`);
+
+/**
+ * --post: send the rows straight to the site instead of leaving them for a
+ * human to copy into Races -> Import.
+ *
+ * Off by default. Every invocation above this line is unchanged: stdout
+ * still gets the rows, stderr still gets the summary, so a manual run
+ * (`node scripts/fetch-races.mjs > rows.txt`) behaves exactly as it always
+ * has. This only runs the extra step of also POSTing them.
+ *
+ * prune=true is not optional here, unlike the admin screen's checkbox: this
+ * script's whole output IS the current, complete state of the races page,
+ * so anything it does not mention is not there anymore and belongs pruned.
+ * A manual admin-screen import might reasonably paste a partial list; a
+ * cron re-running this same scrape every time never has a reason to.
+ *
+ * The receiving endpoint (POST /wp-json/aravaipa/v1/races/import, added in
+ * v0.21.12) is the one that actually enforces safety: it refuses to prune
+ * when the row count drops more than 20% from what's currently stored,
+ * which is exactly the "the scrape half-failed" case this cron is most at
+ * risk of. --dry-run here still exercises that same check server-side (a
+ * dry run WITH prune=true reports what prune would have refused), it just
+ * never writes.
+ */
+if (args.post) {
+  const url = process.env.ARAVAIPA_WP_URL;
+  const user = process.env.ARAVAIPA_WP_USER;
+  const pass = process.env.ARAVAIPA_WP_APP_PASSWORD;
+
+  if (!url || !user || !pass) {
+    console.error('\n--post given but ARAVAIPA_WP_URL / ARAVAIPA_WP_USER / ARAVAIPA_WP_APP_PASSWORD is not set. Not posting anything.');
+    process.exit(1);
+  }
+
+  const body = new URLSearchParams({ rows: outputText, prune: 'true' });
+  if (args['dry-run']) body.set('dry_run', 'true');
+
+  console.error(`\nPOSTing to ${url}/wp-json/aravaipa/v1/races/import${args['dry-run'] ? ' (dry run)' : ''}...`);
+
+  let res;
+  try {
+    res = await fetch(`${url}/wp-json/aravaipa/v1/races/import`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+  } catch (err) {
+    console.error(`request failed: ${err.message}`);
+    process.exit(1);
+  }
+
+  const json = await res.json().catch(() => null);
+  console.error(JSON.stringify(json, null, 2));
+
+  // A non-2xx status, or a body the endpoint itself flagged as refused
+  // (the row-count guardrail, or the parser-unavailable fallback), both
+  // mean the calendar was not updated. Either has to fail the cron run
+  // loudly rather than exit 0 on a no-op.
+  if (!res.ok || !json || 'refused' === json.status) {
+    console.error(`\nimport did not apply (HTTP ${res.status}).`);
+    process.exit(1);
+  }
+}
