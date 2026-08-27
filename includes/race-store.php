@@ -665,3 +665,160 @@ function arv_race_store_rest_import( $request ) {
 
 	return new WP_REST_Response( $result, $code );
 }
+
+/**
+ * The option holding scraped sold-out/waitlist state, keyed by race name.
+ *
+ * Deliberately not a column on the race row, which was the obvious first
+ * instinct. Two reasons, one practical and one structural.
+ *
+ * Practical: the row format counts backwards from ARV_RACES_COLUMNS to find
+ * its fixed tail, so adding a seventeenth field silently re-slices every
+ * existing row that carries multi-cell distances. The plugin and the stored
+ * rows would then have to update in lockstep, and whichever landed first
+ * would misparse the calendar until the other caught up. Not a risk worth
+ * taking for one field.
+ *
+ * Structural, and the real reason: this changes on a completely different
+ * cadence to everything else in a row. A race's date, venue, distances and
+ * page URL are set once a season and then sit still; whether it is sold out
+ * flips without warning and can flip back when someone withdraws. Data that
+ * changes hourly does not belong in the same record as data that changes
+ * yearly, because the write patterns are different: this wants a small,
+ * frequent, unattended overwrite, and the rows want a rare, careful,
+ * guardrailed one.
+ */
+define( 'ARV_WAITLIST_OPTION', 'arv_race_waitlists' );
+
+/**
+ * The stored waitlist map: race name => waitlist URL.
+ *
+ * @return array<string, string>
+ */
+function arv_race_waitlist_store_get() {
+	$stored = get_option( ARV_WAITLIST_OPTION, array() );
+
+	return is_array( $stored ) ? $stored : array();
+}
+
+/**
+ * Replace the stored waitlist map wholesale.
+ *
+ * A full replace rather than a merge, on purpose: a race selling out is only
+ * half the story, and the half that a merge would silently get wrong is a
+ * race coming *back* from sold out when entries are released or someone
+ * withdraws. Merging would leave the waitlist button up forever on a race
+ * that reopened. The scraper always reports the complete current picture, so
+ * absence from that picture is meaningful and has to be honoured.
+ *
+ * @param array<string, string> $map Race name => waitlist URL.
+ * @return int Number of races stored.
+ */
+function arv_race_waitlist_store_set( $map ) {
+	$clean = array();
+
+	foreach ( (array) $map as $name => $url ) {
+		$name = trim( (string) $name );
+		$url  = esc_url_raw( trim( (string) $url ) );
+
+		if ( '' === $name || '' === $url ) {
+			continue;
+		}
+
+		$clean[ $name ] = $url;
+	}
+
+	update_option( ARV_WAITLIST_OPTION, $clean, false );
+
+	return count( $clean );
+}
+
+/**
+ * Register the waitlist write route.
+ *
+ * Same edit_posts scoping as the row importer, for the same reason: this is
+ * reachable by the Editor-scoped Application Password the scraper runs as,
+ * and by nothing with more reach than that.
+ */
+function arv_race_waitlist_register_rest_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/races/waitlists',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_race_waitlist_rest_set',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'waitlists' => array(
+					'required' => true,
+					'type'     => 'string',
+				),
+				'dry_run'   => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_race_waitlist_register_rest_route' );
+
+/**
+ * Write the scraped waitlist map.
+ *
+ * Takes JSON as a string rather than a structured parameter so the payload
+ * survives a plain form-encoded POST, which is what the scraper sends and
+ * what curl sends by hand when checking this by eye.
+ *
+ * No row-count guardrail here, unlike the row importer, and that asymmetry
+ * is deliberate. Zero sold-out races is an ordinary, correct answer that
+ * happens every time the last sold-out race on the calendar runs, whereas
+ * zero *races* only ever means the scrape broke. Refusing an empty write
+ * here would mean a stale waitlist button outliving the race it points at.
+ *
+ * @param WP_REST_Request $request
+ * @return WP_REST_Response
+ */
+function arv_race_waitlist_rest_set( $request ) {
+	$raw    = (string) $request->get_param( 'waitlists' );
+	$parsed = json_decode( $raw, true );
+
+	if ( ! is_array( $parsed ) ) {
+		return new WP_REST_Response(
+			array(
+				'status'  => 'refused',
+				'reason'  => 'bad_json',
+				'message' => 'The waitlists parameter must be a JSON object of race name => waitlist URL.',
+			),
+			400
+		);
+	}
+
+	$before = arv_race_waitlist_store_get();
+
+	if ( $request->get_param( 'dry_run' ) ) {
+		return new WP_REST_Response(
+			array(
+				'status'   => 'dry_run',
+				'incoming' => count( $parsed ),
+				'current'  => count( $before ),
+				'races'    => array_keys( $parsed ),
+			),
+			200
+		);
+	}
+
+	$count = arv_race_waitlist_store_set( $parsed );
+
+	return new WP_REST_Response(
+		array(
+			'status'  => 'ok',
+			'stored'  => $count,
+			'was'     => count( $before ),
+			'races'   => array_keys( arv_race_waitlist_store_get() ),
+		),
+		200
+	);
+}
