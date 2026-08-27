@@ -548,7 +548,22 @@
 
 		var markers = config.pins.map( function ( pin ) {
 			return window.L.marker( [ pin.lat, pin.lng ], { icon: raceIcon() } )
-				.bindPopup( popupHtml( pin ) );
+				.bindPopup( popupHtml( pin ), {
+					// Leaflet pans a popup into view by default, but only far
+					// enough to clear the container edge by 5px. This map has
+					// its own furniture floating over those edges: the collapse
+					// toggle across the top right, the search and Near me
+					// across the bottom left. Clearing the edge by 5px puts a
+					// popup underneath them instead of off the map, which is
+					// the same problem one layer in. These paddings are sized
+					// to the controls, so a popup comes to rest in open map.
+					autoPan: true,
+					autoPanPaddingTopLeft: [ 20, 56 ],
+					autoPanPaddingBottomRight: [ 20, 76 ],
+					// A pin near an edge can otherwise be dragged so its popup
+					// leaves the map while still open.
+					keepInView: true,
+				} );
 		} );
 
 		// Clustered rather than added straight to the map. At the country
@@ -610,8 +625,34 @@
 		}
 	}
 
+	/**
+	 * Publish the scrollbar's width so CSS can subtract it.
+	 *
+	 * The full-bleed map breaks out of its container with
+	 * calc(50% - 50vw), and 100vw counts the scrollbar on Windows and Linux
+	 * but not on macOS's overlay scrollbars. Unadjusted, that overhangs the
+	 * window by the scrollbar's width and adds a horizontal scrollbar,
+	 * which is invisible to anyone checking the work on a Mac. Measuring it
+	 * is the only way to be right on both.
+	 *
+	 * Re-measured on resize because the scrollbar can appear and disappear
+	 * as the page reflows, and because a window moved between a laptop
+	 * screen and an external monitor can change it.
+	 */
+	function measureScrollbar() {
+		var width = window.innerWidth - document.documentElement.clientWidth;
+		document.documentElement.style.setProperty( '--arv-sbw', Math.max( 0, width ) + 'px' );
+	}
+
 	function init() {
 		var canvases = document.querySelectorAll( '[data-arv-map]' );
+		if ( ! canvases.length ) {
+			return;
+		}
+
+		measureScrollbar();
+		window.addEventListener( 'resize', measureScrollbar );
+
 		Array.prototype.forEach.call( canvases, setUp );
 	}
 
