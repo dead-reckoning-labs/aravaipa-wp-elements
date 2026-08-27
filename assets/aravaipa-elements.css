@@ -488,7 +488,41 @@
 
 .arv-region-map__pin {
 	position: absolute;
-	/* Headquarters, distinguished by size and ring weight rather than by hue.
+	/* Zero size on purpose: this is a positioning point, not a box. The dot
+	   and name used to be flex children centred by this element's own box,
+	   which broke the moment a long name (White Mountain Endurance) landed
+	   near the map's right edge: centring a wide label under a point 92% of
+	   the way across the stage pushes half of it straight out past the
+	   stage, and past the whole page after it, since nothing here was ever
+	   clipped. Both are now absolutely positioned against this single point
+	   instead, free to anchor to whichever edge has room. */
+	display: block;
+	width: 0;
+	height: 0;
+	text-decoration: none;
+	color: inherit;
+	z-index: 1;
+}
+
+.arv-region-map__pin:focus-visible {
+	z-index: 3;
+	outline: none;
+}
+
+.arv-region-map__dot {
+	position: absolute;
+	top: 0;
+	left: 0;
+	transform: translate(-50%, -50%);
+	width: 0.7rem;
+	height: 0.7rem;
+	border-radius: 50%;
+	background: var(--arv-teal);
+	box-shadow: 0 0 0 3px rgba(91, 181, 162, 0.25);
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Headquarters, distinguished by size and ring weight rather than by hue.
 
    It used to be the accent red. Red means one thing everywhere else on this
    site, "there is something to buy", and it was already doing that job on
