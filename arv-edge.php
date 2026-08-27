@@ -791,6 +791,28 @@ arv_race_map_render(array('rows'=>$mapRow));
 t('rendering a map enqueues leaflet js',    in_array('js:leaflet', $GLOBALS['ENQUEUED'], true));
 t('and leaflet css',                        in_array('css:leaflet', $GLOBALS['ENQUEUED'], true));
 t('and our own map script',                 in_array('js:aravaipa-race-map', $GLOBALS['ENQUEUED'], true));
+t('and the clustering plugin',              in_array('js:leaflet-markercluster', $GLOBALS['ENQUEUED'], true));
+t('and its structural css',                 in_array('css:leaflet-markercluster', $GLOBALS['ENQUEUED'], true));
+
+echo "map search box:\n";
+// Only worth a search box when there are enough races that hunting for one
+// on the map is a real task; below that every pin is already visible.
+$manyRows = '';
+for ($i = 0; $i < 12; $i++) {
+  $manyRows .= sprintf("Race %d | 2026-09-%02d | Sep | 50K | Venue %d | Town, AZ |  | https://a.com/r%d/ |  |  |  |  | 1 | 0 | %s | -111.5\n",
+    $i, ($i % 27) + 1, $i, $i, 33.1 + ($i / 10));
+}
+$ms = arv_race_map_render(array('rows'=>trim($manyRows)));
+t('a big map offers a jump-to search',      strpos($ms,'data-arv-map-search')!==false);
+t('the results list is a listbox',          strpos($ms,'role="listbox"')!==false);
+t('and the input is a combobox',            strpos($ms,'role="combobox"')!==false);
+// The search moves the map to one race; it does not filter. Every pin stays
+// in the config regardless, which is what keeps it a different tool from the
+// calendar's filter below rather than a second copy of it.
+$mcfg = json_decode(preg_replace('#.*data-arv-map-config>(.*?)</script>.*#s','$1',$ms), true);
+t('and every race is still on the map',     count($mcfg['pins'])===12);
+// A small map does not need one.
+t('a small map has no search box',          strpos(arv_race_map_render(array('rows'=>$mapRow)),'data-arv-map-search')===false);
 
 // Nothing to draw means nothing to load: a page with no usable map should
 // not pull a third-party library off a CDN for an element that renders

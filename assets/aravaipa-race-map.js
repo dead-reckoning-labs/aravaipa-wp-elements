@@ -90,6 +90,51 @@
 	}
 
 	/**
+	 * A race pin, in Aravaipa's teal rather than Leaflet's stock blue.
+	 *
+	 * Drawn as an inline SVG divIcon instead of loading Leaflet's default PNG
+	 * pair: the stock marker is a fixed image that cannot be recoloured, and
+	 * it also depends on Leaflet resolving its own image path, which breaks
+	 * when the CSS comes from a CDN and the images are looked for relative to
+	 * the page. This has neither problem and is one fewer request.
+	 *
+	 * Teal, not the accent red, on purpose. Red means "there is something to
+	 * buy" everywhere else on the site, and a map of every race is not an
+	 * offer. The register button inside the popup stays red.
+	 */
+	function raceIcon() {
+		return window.L.divIcon( {
+			className: 'arv-map__pin',
+			html: '<svg viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">' +
+				'<path d="M12 0C5.4 0 0 5.4 0 12c0 8.4 12 22 12 22s12-13.6 12-22C24 5.4 18.6 0 12 0z" fill="#2a5e6b"/>' +
+				'<circle cx="12" cy="12" r="4.4" fill="#ffffff"/></svg>',
+			iconSize: [ 24, 34 ],
+			// Anchored at the point of the pin, not its centre, so it marks
+			// the venue rather than hovering above it.
+			iconAnchor: [ 12, 34 ],
+			popupAnchor: [ 0, -32 ],
+		} );
+	}
+
+	/**
+	 * The count bubble for a cluster of races.
+	 *
+	 * Sized in three steps rather than continuously: the useful signal is "a
+	 * few / a lot / most of the calendar", and a radius that grows smoothly
+	 * with the count just makes two adjacent clusters hard to tell apart.
+	 */
+	function clusterIcon( cluster ) {
+		var count = cluster.getChildCount();
+		var size  = count < 10 ? 34 : ( count < 25 ? 42 : 50 );
+
+		return window.L.divIcon( {
+			className: 'arv-map__cluster',
+			html: '<span>' + count + '</span>',
+			iconSize: [ size, size ],
+		} );
+	}
+
+	/**
 	 * Great-circle distance in miles between two lat/lng pairs.
 	 *
 	 * Haversine rather than a flat Pythagorean approximation: the pins span
@@ -150,6 +195,165 @@
 		map.addControl( new Control() );
 	}
 
+	/**
+	 * Open a race's popup, even when its pin is currently inside a cluster.
+	 *
+	 * openPopup() on a clustered marker does nothing at all: the marker is not
+	 * on the map, the cluster bubble standing in for it is. This was a real
+	 * silent break, not a hypothetical one, the moment clustering went in:
+	 * Near Me's "open the closest race" stopped doing anything for any race
+	 * that happened to be in a cluster, which at the country view is all of
+	 * them. zoomToShowLayer flies in and splits the cluster first, then runs
+	 * the callback.
+	 */
+	function revealMarker( group, marker ) {
+		if ( group && typeof group.zoomToShowLayer === 'function' ) {
+			group.zoomToShowLayer( marker, function () {
+				marker.openPopup();
+			} );
+			return;
+		}
+
+		marker.openPopup();
+	}
+
+	/**
+	 * A type-as-you-go search that flies to one race.
+	 *
+	 * Deliberately not a second filter. The calendar below already filters a
+	 * list, and putting a near-identical control here that did the same thing
+	 * to a different view is how the two "every race" headings happened. This
+	 * answers a different question: "where is Javelina", one race, go there.
+	 * So it moves the map and opens a popup rather than hiding pins.
+	 *
+	 * Matches name and location together, because "phoenix" and "tennessee"
+	 * are both things a runner would type looking for a race whose name
+	 * contains neither.
+	 */
+	function addSearch( canvas, map, pins, markers, group ) {
+		var wrap = canvas.parentNode.querySelector( '[data-arv-map-search]' );
+		if ( ! wrap ) {
+			return;
+		}
+
+		var input = wrap.querySelector( 'input' );
+		var list  = wrap.querySelector( '[data-arv-map-results]' );
+		if ( ! input || ! list ) {
+			return;
+		}
+
+		var active = -1;
+		var shown  = [];
+
+		function close() {
+			list.innerHTML = '';
+			wrap.classList.remove( 'is-open' );
+			input.setAttribute( 'aria-expanded', 'false' );
+			active = -1;
+			shown  = [];
+		}
+
+		function choose( i ) {
+			if ( ! shown[ i ] ) {
+				return;
+			}
+			var index = shown[ i ].index;
+			close();
+			input.value = pins[ index ].name;
+			map.setView( [ pins[ index ].lat, pins[ index ].lng ], 11 );
+			revealMarker( group, markers[ index ] );
+		}
+
+		function render() {
+			var q = input.value.trim().toLowerCase();
+			if ( q.length < 2 ) {
+				close();
+				return;
+			}
+
+			shown = [];
+			for ( var i = 0; i < pins.length && shown.length < 6; i++ ) {
+				// pin.search is built server side and already lowercased, and
+				// carries the full state name as well as the two-letter code,
+				// so "tennessee" finds a race whose row only ever said "TN".
+				var hay = pins[ i ].search || ( pins[ i ].name + ' ' + ( pins[ i ].where || '' ) ).toLowerCase();
+				if ( hay.indexOf( q ) !== -1 ) {
+					shown.push( { index: i } );
+				}
+			}
+
+			if ( ! shown.length ) {
+				close();
+				return;
+			}
+
+			var html = '';
+			for ( var j = 0; j < shown.length; j++ ) {
+				var p = pins[ shown[ j ].index ];
+				html += '<li role="option" id="arv-map-opt-' + j + '" aria-selected="false" data-i="' + j + '">' +
+					'<span class="arv-map__result-name">' + escapeHtml( p.name ) + '</span>' +
+					( p.where ? '<span class="arv-map__result-where">' + escapeHtml( p.where ) + '</span>' : '' ) +
+					'</li>';
+			}
+			list.innerHTML = html;
+			wrap.classList.add( 'is-open' );
+			input.setAttribute( 'aria-expanded', 'true' );
+			active = -1;
+		}
+
+		function highlight( next ) {
+			var items = list.querySelectorAll( 'li' );
+			if ( ! items.length ) {
+				return;
+			}
+			// Wraps at both ends, so holding Down cycles rather than sticking.
+			active = ( next + items.length ) % items.length;
+			for ( var i = 0; i < items.length; i++ ) {
+				var on = i === active;
+				items[ i ].classList.toggle( 'is-active', on );
+				items[ i ].setAttribute( 'aria-selected', on ? 'true' : 'false' );
+			}
+			input.setAttribute( 'aria-activedescendant', 'arv-map-opt-' + active );
+		}
+
+		input.addEventListener( 'input', render );
+
+		input.addEventListener( 'keydown', function ( e ) {
+			if ( 'ArrowDown' === e.key ) {
+				e.preventDefault();
+				highlight( active + 1 );
+			} else if ( 'ArrowUp' === e.key ) {
+				e.preventDefault();
+				highlight( active - 1 );
+			} else if ( 'Enter' === e.key ) {
+				// Enter with nothing highlighted takes the top match, which is
+				// what someone who typed a full race name and hit return means.
+				if ( shown.length ) {
+					e.preventDefault();
+					choose( active === -1 ? 0 : active );
+				}
+			} else if ( 'Escape' === e.key ) {
+				close();
+			}
+		} );
+
+		// mousedown, not click: the input's blur fires first on click and
+		// would close the list out from under the pointer.
+		list.addEventListener( 'mousedown', function ( e ) {
+			var li = e.target.closest( 'li' );
+			if ( li ) {
+				e.preventDefault();
+				choose( parseInt( li.getAttribute( 'data-i' ), 10 ) );
+			}
+		} );
+
+		document.addEventListener( 'click', function ( e ) {
+			if ( ! wrap.contains( e.target ) ) {
+				close();
+			}
+		} );
+	}
+
 	function locate( link, map, pins, markers, group ) {
 		if ( link.classList.contains( 'is-busy' ) ) {
 			return;
@@ -188,7 +392,7 @@
 					fillOpacity: 1,
 				} ).addTo( map ).bindPopup( 'You are here' );
 
-				markers[ ranked[ 0 ].i ].openPopup();
+				revealMarker( group, markers[ ranked[ 0 ].i ] );
 			},
 			function () {
 				// Denied, unavailable, or timed out. All three mean the same
@@ -278,15 +482,41 @@
 		} ).addTo( map );
 
 		var markers = config.pins.map( function ( pin ) {
-			return window.L.marker( [ pin.lat, pin.lng ] )
-				.addTo( map )
+			return window.L.marker( [ pin.lat, pin.lng ], { icon: raceIcon() } )
 				.bindPopup( popupHtml( pin ) );
 		} );
+
+		// Clustered rather than added straight to the map. At the country
+		// view the Arizona races sat on top of each other as one indistinct
+		// blob, so a state with thirty races read as a state with one. A
+		// count bubble says thirty, and splits as you zoom.
+		//
+		// Falls back to plain markers if the plugin did not load, rather than
+		// throwing and leaving an empty grey box: it is a third-party CDN
+		// script, and the map is still useful without it.
+		var group;
+		if ( window.L.markerClusterGroup ) {
+			group = window.L.markerClusterGroup( {
+				// Below this the pins no longer overlap, so clustering past it
+				// hides races the map has room to show.
+				disableClusteringAtZoom: 9,
+				// Races sharing one venue (the whole Javelina weekend is at
+				// McDowell Mountain) can never separate by zooming, so the
+				// last few fan out on click instead.
+				spiderfyOnMaxZoom: true,
+				showCoverageOnHover: false,
+				maxClusterRadius: 45,
+				iconCreateFunction: clusterIcon,
+			} );
+			group.addLayers( markers );
+		} else {
+			group = window.L.featureGroup( markers );
+		}
+		map.addLayer( group );
 
 		// Fit to the pins rather than hardcoding a view: the same element is
 		// used for the whole country and for a single region's page, and a
 		// fixed centre would be wrong for one of them.
-		var group = window.L.featureGroup( markers );
 		map.fitBounds( group.getBounds(), { padding: [ 30, 30 ] } );
 
 		// One pin gives fitBounds a zero-size box, which zooms to maximum
@@ -296,6 +526,7 @@
 		}
 
 		addNearMe( map, config.pins, markers, group );
+		addSearch( canvas, map, config.pins, markers, group );
 		addCollapse( canvas, map );
 
 		// Leaflet measures its container on creation. Inside a Cornerstone

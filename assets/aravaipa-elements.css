@@ -1970,6 +1970,117 @@
 	background: #eceff1;
 }
 
+/* Race pin. A divIcon, so this is styling a real element rather than an
+   image: Leaflet's stock marker is a fixed PNG that cannot be recoloured,
+   and it also resolves its own image path relative to the CSS, which breaks
+   when the CSS is on a CDN and the page is not. */
+.arv-map__pin {
+	background: none;
+	border: 0;
+}
+
+.arv-map__pin svg {
+	display: block;
+	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+/* Cluster count bubble. MarkerCluster.Default.css, the plugin's stock
+   green-and-yellow skin, is deliberately not loaded; this replaces it in
+   Aravaipa's teal rather than overriding it. */
+.arv-map__cluster {
+	background: none;
+	border: 0;
+}
+
+.arv-map__cluster span {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	background: #2a5e6b;
+	/* A ring in the tile background's colour, not white, so the bubble reads
+	   as sitting on the map rather than as a hole punched through it. */
+	box-shadow: 0 0 0 4px rgba(42, 94, 107, 0.28);
+	color: #fff;
+	font-weight: 700;
+	font-size: 0.85rem;
+	line-height: 1;
+}
+
+/* Jump-to-a-race search. Above the canvas, not a Leaflet control inside it:
+   a dropdown drawn inside the map gets clipped by the canvas edge, which is
+   exactly where the results list opens. */
+.arv-map__search {
+	position: relative;
+	margin: 0 0 0.75rem;
+	max-width: 22rem;
+}
+
+.arv-map__search-input {
+	width: 100%;
+	padding: 0.55rem 0.7rem;
+	border: 1px solid rgba(128, 128, 128, 0.4);
+	border-radius: 0;
+	background: transparent;
+	color: inherit;
+	font-family: inherit;
+	font-size: 0.92rem;
+	/* iOS zooms the page when a focused input is under 16px. */
+	min-height: 44px;
+}
+
+.arv-map__search-input:focus {
+	outline: 2px solid var(--arv-accent, #ff2a13);
+	outline-offset: -1px;
+	border-color: transparent;
+}
+
+.arv-map__results {
+	display: none;
+	position: absolute;
+	z-index: 1000;
+	top: 100%;
+	left: 0;
+	right: 0;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	background: #fff;
+	border: 1px solid rgba(128, 128, 128, 0.35);
+	border-top: 0;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+}
+
+.arv-map__search.is-open .arv-map__results {
+	display: block;
+}
+
+.arv-map__results li {
+	display: flex;
+	flex-direction: column;
+	gap: 0.1rem;
+	padding: 0.5rem 0.7rem;
+	cursor: pointer;
+	color: #272727;
+}
+
+.arv-map__results li.is-active,
+.arv-map__results li:hover {
+	background: rgba(42, 94, 107, 0.1);
+}
+
+.arv-map__result-name {
+	font-size: 0.9rem;
+	font-weight: 700;
+}
+
+.arv-map__result-where {
+	font-size: 0.78rem;
+	opacity: 0.7;
+}
+
 .arv-map__missing {
 	margin: 1rem 0 0;
 	font-size: 0.85rem;
