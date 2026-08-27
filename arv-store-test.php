@@ -102,6 +102,7 @@ require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/elements/upcoming-races.php';
 require_once __DIR__ . '/includes/elements/season-calendar.php';
 require_once __DIR__ . '/includes/elements/race-status.php';
+require_once __DIR__ . '/includes/elements/featured-race.php';
 require_once __DIR__ . '/includes/race-store.php';
 
 $pass = 0; $fail = 0;
@@ -205,6 +206,46 @@ t( 'before the race it shows registration',        false !== strpos( $status, 'R
 t( 'and when entries close',                       false !== strpos( $status, 'Entries close' ) );
 $GLOBALS['NOW'] = '2026-08-26';
 t( 'no matching race renders nothing, not an error', '' === arv_race_status_render( array( 'race_page' => 'https://www.aravaiparunning.com/about/' ) ) );
+
+echo "\nfeatured race:\n";
+t( 'no race_page at all renders nothing', '' === arv_featured_race_render( array() ) );
+t( 'and neither does one that matches no page', '' === arv_featured_race_render( array( 'race_page' => 'https://www.aravaiparunning.com/about/' ) ) );
+
+$GLOBALS['NOW'] = '2026-08-20';
+$feat = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+	'eyebrow'   => 'Featured',
+) );
+t( 'finds the same race race status finds, by the same page url', false !== strpos( $feat, 'Rock Hawk' ) );
+t( 'carries the eyebrow',            false !== strpos( $feat, '>Featured<' ) );
+t( 'and the phase-driven label',     false !== strpos( $feat, '>Register<' ) );
+t( 'distances render as pills',      false !== strpos( $feat, 'arv-featured__pill' ) );
+t( 'links through to the race page', false !== strpos( $feat, 'Race Info' ) );
+
+// A CTA override must not silently break the phase-driven schema-equivalent
+// logic underneath it: it swaps the label, nothing else. Confirmed by the
+// class still carrying the real phase.
+$featOverride = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+	'cta_label' => 'Enter Now',
+) );
+t( 'a label override replaces the text', false !== strpos( $featOverride, '>Enter Now<' ) );
+t( 'without hiding the real phase',      false !== strpos( $featOverride, 'arv-featured__cta--upcoming' ) );
+
+// The whole reason this element exists: a race a plain date sort buries.
+$GLOBALS['NOW'] = '2026-09-05';
+$jall = arv_featured_race_render( array( 'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/' ) );
+t( 'a virtual race sorted far down the calendar still renders here', false !== strpos( $jall, 'Javelina Jallucinations' ) );
+
+// The other real, live case: a sold-out race must show Join Waitlist here
+// too, not a stale Register, since this reads the same phase logic as
+// everywhere else rather than keeping its own.
+arv_race_waitlist_store_set( array( 'Mogollon Monster Trail Runs' => 'https://ultrasignup.com/event_waitlist.aspx?did=130408' ) );
+$mog = arv_featured_race_render( array( 'race_page' => 'https://www.aravaiparunning.com/mogollon-monster/' ) );
+t( 'a sold-out race shows Join Waitlist here too', false !== strpos( $mog, 'Join Waitlist' ) );
+t( 'styled with the waitlist phase class',         false !== strpos( $mog, 'arv-featured__cta--waitlist' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+$GLOBALS['NOW'] = '2026-08-26';
 
 
 echo "\nshared registration links:\n";
