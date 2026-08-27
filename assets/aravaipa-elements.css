@@ -2009,26 +2009,43 @@
 	line-height: 1;
 }
 
-/* Jump-to-a-race search. Above the canvas, not a Leaflet control inside it:
-   a dropdown drawn inside the map gets clipped by the canvas edge, which is
-   exactly where the results list opens. */
+/* Jump-to-a-race search. Lives inside the map as a bottom-left Leaflet
+   control, with its results opening upward.
+   
+   Upward is what makes this possible. A list dropping downward from a
+   control sitting near the bottom of the canvas gets clipped by the canvas
+   edge, which is exactly where it would open from; opening upward it
+   expands into the map instead, over the tiles, where there is always room.
+   
+   z-index sits above Leaflet's marker and popup panes (600 and 700) so a
+   result is never drawn behind a pin or an open popup. */
 .arv-map__search {
 	position: relative;
-	margin: 0 0 0.75rem;
-	max-width: 22rem;
+	width: 19rem;
+	max-width: calc(100vw - 4rem);
+	margin: 0;
+	z-index: 900;
 }
 
 .arv-map__search-input {
 	width: 100%;
 	padding: 0.55rem 0.7rem;
-	border: 1px solid rgba(128, 128, 128, 0.4);
+	border: 1px solid rgba(0, 0, 0, 0.2);
 	border-radius: 0;
-	background: transparent;
-	color: inherit;
+	/* Opaque, not transparent: this sits over map tiles now, and a
+	   see-through input over a road map is unreadable. */
+	background: #fff;
+	color: #272727;
 	font-family: inherit;
 	font-size: 0.92rem;
+	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	/* iOS zooms the page when a focused input is under 16px. */
 	min-height: 44px;
+}
+
+.arv-map__search-input::placeholder {
+	color: #6b6b6b;
+	opacity: 1;
 }
 
 .arv-map__search-input:focus {
@@ -2040,17 +2057,24 @@
 .arv-map__results {
 	display: none;
 	position: absolute;
-	z-index: 1000;
-	top: 100%;
+	z-index: 1;
+	/* Opens upward, so it never runs off the bottom of the canvas. */
+	bottom: 100%;
 	left: 0;
 	right: 0;
-	margin: 0;
+	margin: 0 0 4px;
 	padding: 0;
 	list-style: none;
 	background: #fff;
-	border: 1px solid rgba(128, 128, 128, 0.35);
-	border-top: 0;
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+	/* Sized to fit all six results exactly, given the fixed row height the
+	   truncation below guarantees. Without that, a long race name wrapped to
+	   two lines and the sixth result was clipped mid-word against this
+	   ceiling, which reads as broken rather than as "scroll for more".
+	   overflow stays on as a backstop for large text settings. */
+	max-height: 22rem;
+	overflow-y: auto;
 }
 
 .arv-map__search.is-open .arv-map__results {
@@ -2069,6 +2093,19 @@
 .arv-map__results li.is-active,
 .arv-map__results li:hover {
 	background: rgba(42, 94, 107, 0.1);
+}
+
+/* One line each, ellipsised. Race names run long ("Javelina Jundred
+   Presented by: HOKA", "Snow Mountain Ranch Trail Running Festival") and
+   wrapping them made every row a different height, which both looked
+   unsettled and made the list's height unpredictable enough to clip the
+   last result. The distinguishing part of a race name is at the front, so
+   the tail is the safe thing to lose. */
+.arv-map__result-name,
+.arv-map__result-where {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .arv-map__result-name {

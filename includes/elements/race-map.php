@@ -317,10 +317,15 @@ function arv_race_map_render( $data ) {
 
 	$out .= '<div class="arv-map__panel" data-arv-map-panel>';
 
-	// Jump-to-a-race search. Sits above the canvas rather than inside it as a
-	// Leaflet control: a dropdown drawn inside the map has to fight the map's
-	// own stacking context and gets clipped by the canvas at the bottom of
-	// the list, which is exactly where the results appear.
+	// Jump-to-a-race search. Rendered here, above the canvas, and then moved
+	// into the map by the script as a bottom-left Leaflet control.
+	//
+	// Server-rendering it and relocating it, rather than building it in JS,
+	// keeps a real focusable input in the HTML for anything that never runs
+	// the script, and means it exists before Leaflet has finished starting
+	// up. Where it ends up is a presentation decision and lives with the
+	// presentation; whether it exists at all is a content decision and lives
+	// here.
 	//
 	// combobox rather than a bare input, so the results are announced as
 	// options and the arrow keys are expected rather than a surprise. Only

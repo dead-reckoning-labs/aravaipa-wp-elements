@@ -242,6 +242,30 @@
 			return;
 		}
 
+		// Rendered above the map in the markup, then moved inside it here.
+		// Server-rendering it outside and relocating it, rather than building
+		// it in JS, keeps it in the HTML for anything that never runs the
+		// script, and means the input is real and focusable before Leaflet
+		// has finished starting up.
+		//
+		// Bottom left, with the results opening upward. That direction is the
+		// whole reason this can live inside the map at all: a list dropping
+		// downward from a control gets clipped at the canvas edge, which is
+		// exactly where it would open from. Upward it expands into the map.
+		var Control = window.L.Control.extend( {
+			options: { position: 'bottomleft' },
+			onAdd: function () {
+				return wrap;
+			},
+		} );
+		map.addControl( new Control() );
+
+		// Without this, typing drags the map and a click on a result is
+		// treated as a map gesture. Scroll propagation stays enabled: the
+		// results list can overflow, and it should scroll rather than zoom.
+		window.L.DomEvent.disableClickPropagation( wrap );
+		window.L.DomEvent.disableScrollPropagation( wrap );
+
 		var active = -1;
 		var shown  = [];
 
