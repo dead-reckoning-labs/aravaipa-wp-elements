@@ -34,6 +34,12 @@ $d=__DIR__.'/'; require_once $d.'includes/helpers.php';
 // exercising the pasted-rows path this harness has always tested, exactly
 // as it did before this file pulled the store in for one pure function.
 function get_posts($args=array()){ return array(); }
+// Options API, backing the scraped waitlist store. In-memory so a test can
+// write one and assert the store wins over the hardcoded fallback.
+$GLOBALS['ARV_OPTIONS'] = array();
+function get_option($k,$d=false){ return array_key_exists($k,$GLOBALS['ARV_OPTIONS']) ? $GLOBALS['ARV_OPTIONS'][$k] : $d; }
+function update_option($k,$v,$a=null){ $GLOBALS['ARV_OPTIONS'][$k]=$v; return true; }
+function esc_url_raw($u){ return $u; }
 function wp_parse_url($url,$component=-1){ return parse_url($url,$component); }
 require_once $d.'includes/race-store.php';
 foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races','season-calendar','race-map'] as $e) require_once $d."includes/elements/$e.php";

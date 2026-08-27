@@ -63,6 +63,11 @@ function get_post_meta( $id, $k, $single = false ) { return $GLOBALS['meta'][ $i
 function wp_set_object_terms( $id, $terms, $tax, $append = false ) { $GLOBALS['terms'][ $id ] = (array) $terms; }
 function wp_count_posts( $t ) { $o = new stdClass(); $o->publish = 0; foreach ( $GLOBALS['posts'] as $p ) { if ( 'publish' === $p['status'] ) { $o->publish++; } } return $o; }
 
+$GLOBALS['ARV_OPTIONS'] = array();
+function get_option($k,$d=false){ return array_key_exists($k,$GLOBALS['ARV_OPTIONS']) ? $GLOBALS['ARV_OPTIONS'][$k] : $d; }
+function update_option($k,$v,$a=null){ $GLOBALS['ARV_OPTIONS'][$k]=$v; return true; }
+function esc_url_raw($u){ return $u; }
+
 function get_posts( $args ) {
 	$out = array();
 	$statuses = (array) ( $args['post_status'] ?? 'publish' );
@@ -278,6 +283,36 @@ $junk = "not a valid race row at all";
 $g5   = arv_race_store_import_guarded( $junk, true );
 t( 'an unparseable row is 0 valid, not 1',              0 === $g5['incoming'] );
 t( 'and prune is refused rather than wiping the store', 'refused' === $g5['status'] );
+
+
+echo "\nwaitlist store:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+
+// Empty store: the hardcoded fallback still answers, so the feature works on
+// an install where the scraper has never run.
+t( 'falls back to the hardcoded map when nothing is stored',
+   'https://ultrasignup.com/event_waitlist.aspx?did=130408' === arv_race_waitlist_for( array( 'name' => 'Mogollon Monster Trail Runs' ) ) );
+
+// Once the scraper has written, the store is authoritative.
+arv_race_waitlist_store_set( array( 'Some New Race' => 'https://ultrasignup.com/event_waitlist.aspx?did=999' ) );
+t( 'a stored race resolves',
+   'https://ultrasignup.com/event_waitlist.aspx?did=999' === arv_race_waitlist_for( array( 'name' => 'Some New Race' ) ) );
+// The important one: a race that WAS sold out and has since reopened must
+// stop showing a waitlist button, even though it is still in the hardcoded
+// fallback. A merge instead of a replace would get this wrong forever.
+t( 'a race absent from a non-empty store is no longer sold out',
+   '' === arv_race_waitlist_for( array( 'name' => 'Mogollon Monster Trail Runs' ) ) );
+
+// Writes are cleaned, not trusted wholesale.
+$n = arv_race_waitlist_store_set( array( 'Good' => 'https://x.test/w', '' => 'https://x.test/y', 'NoUrl' => '  ' ) );
+t( 'blank names and blank urls are dropped on write', 1 === $n );
+t( 'and the good one survived', 'https://x.test/w' === arv_race_waitlist_for( array( 'name' => 'Good' ) ) );
+
+// A nameless race must never match a stored entry by accident.
+t( 'a race with no name is safe', '' === arv_race_waitlist_for( array() ) );
+t( 'a race with a blank name is safe', '' === arv_race_waitlist_for( array( 'name' => '   ' ) ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );

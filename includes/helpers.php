@@ -367,35 +367,57 @@ function arv_race_series_for( $race ) {
 /**
  * Waitlist link for a race that has sold out, keyed by name.
  *
- * Not derivable from anything already in a row. UltraSignup does carry this
- * as real structured data (JSON-LD `"availability":"SoldOut"` plus a
- * separate `hlWaitlist` link, both confirmed live on Javelina Jundred and
- * Mogollon Monster's own registration pages), but nothing in this codebase
- * fetches a live UltraSignup page at render time, and the registration
- * status label rendered elsewhere on that same page does not mention it at
- * all: Javelina's said "Registration closes: Mon, Oct 5" with no hint the
- * event was sold out underneath. Told directly by Jamil instead, 2026-08-27,
- * same as DRT and Bad Beard's series membership: a fact about the real
- * world this file has no other way to reach.
+ * Not derivable from anything already in a row, but it is derivable from
+ * UltraSignup, which carries it as real structured data: JSON-LD
+ * `"availability":"SoldOut"` plus a separate `hlWaitlist` link on the race's
+ * own registration page. What it does *not* do is say so anywhere a person
+ * or a naive scraper would look. Javelina's visible status line read
+ * "Registration closes: Mon, Oct 5" with no hint the event was already sold
+ * out underneath, which is exactly why this started as a hand-kept list.
+ *
+ * scripts/fetch-waitlists.mjs now reads that structured data across every
+ * race and writes the result to the store below. Run against the live
+ * calendar it independently found the same three races Jamil had named by
+ * hand (Mogollon Monster, Javelina Jundred, Jackass Night Trail) with the
+ * same waitlist URLs, which is what earned it the job.
+ *
+ * The hardcoded map is kept as a fallback rather than deleted, so the
+ * feature still works on an install where the scraper has never run, and so
+ * a scrape that breaks degrades to slightly stale rather than to nothing.
+ * The store wins when it has an answer.
  *
  * Jackass Night Trail shares Javelina Jundred's exact registration link
  * (both are `dtid=64465`, one UltraSignup listing sells entry to both), so
- * it is sold out and on the same waitlist for the same reason, confirmed
- * by Jamil rather than re-derived.
+ * it is sold out and on the same waitlist for the same reason.
  *
  * @param array $race Race array.
  * @return string Waitlist URL, or '' when the race is not known to be sold out.
  */
 function arv_race_waitlist_for( $race ) {
-	$waitlist = array(
-		'Mogollon Monster Trail Runs'         => 'https://ultrasignup.com/event_waitlist.aspx?did=130408',
-		'Javelina Jundred Presented by: HOKA' => 'https://ultrasignup.com/event_waitlist.aspx?did=133229',
-		'Jackass Night Trail Presented by: HOKA' => 'https://ultrasignup.com/event_waitlist.aspx?did=133229',
-	);
-
-	if ( ! isset( $race['name'] ) || ! isset( $waitlist[ $race['name'] ] ) ) {
+	if ( ! isset( $race['name'] ) || '' === trim( (string) $race['name'] ) ) {
 		return '';
 	}
 
-	return $waitlist[ $race['name'] ];
+	$name = $race['name'];
+
+	// The scraped store first, when this is running inside WordPress and the
+	// scraper has ever written to it. An empty store is not the same as no
+	// store: once the scraper has run, "this race is absent" is a real answer
+	// meaning not sold out, so only fall through when there is nothing stored
+	// at all.
+	if ( function_exists( 'arv_race_waitlist_store_get' ) ) {
+		$stored = arv_race_waitlist_store_get();
+
+		if ( ! empty( $stored ) ) {
+			return isset( $stored[ $name ] ) ? $stored[ $name ] : '';
+		}
+	}
+
+	$waitlist = array(
+		'Mogollon Monster Trail Runs'            => 'https://ultrasignup.com/event_waitlist.aspx?did=130408',
+		'Javelina Jundred Presented by: HOKA'    => 'https://ultrasignup.com/event_waitlist.aspx?did=133229',
+		'Jackass Night Trail Presented by: HOKA' => 'https://ultrasignup.com/event_waitlist.aspx?did=133229',
+	);
+
+	return isset( $waitlist[ $name ] ) ? $waitlist[ $name ] : '';
 }
