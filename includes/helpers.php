@@ -271,10 +271,35 @@ function arv_split_distances( $distances ) {
  * them as series would put a "Races" chip on one race and a "Virtual" chip
  * on another.
  *
+ * DRT Series cannot be read off the path at all. Of its 7 races, only San
+ * Tan Scramble is published under /drt-series/; the other 6 (Cave Creek
+ * Thriller, Pass Mountain, McDowell Mountain Frenzy, Elephant Mountain,
+ * Mesquite Canyon, Dam Good Run) sit at plain top-level paths that look
+ * identical to a standalone race. Confirmed by name with Jamil rather than
+ * guessed, and checked before the path logic runs.
+ *
  * @param array $race Race array.
  * @return array|null {slug, label, url} or null when the race is standalone.
  */
 function arv_race_series_for( $race ) {
+	$drt = array(
+		'Cave Creek Thriller'      => true,
+		'Pass Mountain'            => true,
+		'McDowell Mountain Frenzy' => true,
+		'San Tan Scramble'         => true,
+		'Elephant Mountain'        => true,
+		'Mesquite Canyon'          => true,
+		'Dam Good Run'             => true,
+	);
+
+	if ( isset( $race['name'] ) && isset( $drt[ $race['name'] ] ) ) {
+		return array(
+			'slug'  => 'drt-series',
+			'label' => 'DRT Series',
+			'url'   => 'https://www.aravaiparunning.com/drt-series/',
+		);
+	}
+
 	$series = array(
 		'insomniac'                => 'Insomniac Night Series',
 		// Same series, second spelling. Adrenaline Night Runs is published
