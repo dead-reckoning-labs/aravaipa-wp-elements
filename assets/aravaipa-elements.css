@@ -1264,15 +1264,21 @@
 	cursor: default;
 }
 
-/* Sold out, but there is still somewhere to click: amber rather than the
-   red "buy" accent, since the offer is a waitlist, not open entries, and
-   rather than the closed style's grey, since it is not a dead end either. */
+/* Sold out, but there is still somewhere to click: goldenrod rather than
+   the red "buy" accent, since the offer is a waitlist and not open entries,
+   and rather than the closed style's grey, since it is not a dead end
+   either.
+
+   Dark text on this, not white, and that is not a style preference. White
+   on #daa520 measures 2.24:1, under even the 3:1 floor for large text;
+   the ink colour measures 6.68:1 and clears AA comfortably. Goldenrod is
+   simply too light a background to carry white type. */
 .arv-races__cta--waitlist,
 .arv-races__cta--waitlist:link,
 .arv-races__cta--waitlist:visited {
-	background: #b45f00;
-	border-color: #b45f00;
-	color: #fff;
+	background: #daa520;
+	border-color: #daa520;
+	color: var(--arv-ink, #272727);
 }
 
 .arv-races__cta:focus-visible,
@@ -1326,9 +1332,9 @@
 
 	a.arv-races__cta--waitlist:hover,
 	a.arv-races__cta--waitlist:focus {
-		background: #8c4900;
-		border-color: #8c4900;
-		color: #fff;
+		background: #c9971d;
+		border-color: #c9971d;
+		color: var(--arv-ink, #272727);
 	}
 	.arv-races__link:hover { color: var(--arv-accent); }
 	.arv-races__details:hover {
@@ -1420,7 +1426,8 @@
 	text-align: left;
 	--arv-teal: #5bb5a2;
 	--arv-teal-deep: #2a5e6b;
-	padding: 3.5rem 0;
+	/* Matches .arv-map's, and for the same reason: the two stack. */
+	padding: 2rem 0;
 	background: #ffffff;
 	color: #272727;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -1751,15 +1758,16 @@
 	color: #fff;
 }
 
-/* Same amber as the homepage cards: sold out, but a waitlist is still a
-   real place to click, so it stays filled rather than falling back to the
-   default outlined style live/results use. */
+/* Same goldenrod as the homepage cards: sold out, but a waitlist is still
+   a real place to click, so it stays filled rather than falling back to the
+   default outlined style live/results use. Dark text for the contrast
+   reason spelled out on the cards' rule. */
 .arv-calendar__action--waitlist,
 .arv-calendar__action--waitlist:link,
 .arv-calendar__action--waitlist:visited {
-	background: #b45f00;
-	border-color: #b45f00;
-	color: #fff;
+	background: #daa520;
+	border-color: #daa520;
+	color: var(--arv-ink, #272727);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -1777,9 +1785,9 @@
 		color: #fff;
 	}
 	a.arv-calendar__action--waitlist:hover {
-		background: #8c4900;
-		border-color: #8c4900;
-		color: #fff;
+		background: #c9971d;
+		border-color: #c9971d;
+		color: var(--arv-ink, #272727);
 	}
 	.arv-calendar--dark .arv-calendar__action:hover {
 		background: var(--arv-teal);
@@ -1938,7 +1946,12 @@
 
 .arv-map {
 	text-align: left;
-	padding: 3.5rem 0;
+	/* The map and the calendar sit directly on top of each other on /races/,
+	   so these paddings stack: 3.5rem each made a 7rem trench between "Find a
+	   race near you" and the heading below it, which read as a gap rather
+	   than as separation. 2rem each still separates them clearly at 4rem
+	   total. */
+	padding: 2rem 0;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
 	color: #272727;
 }
@@ -1947,6 +1960,49 @@
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 0 1.25rem;
+	/* Anchors the collapse toggle, which is absolutely positioned over the
+	   map's top right corner while the map is open. */
+	position: relative;
+}
+
+/* Full bleed. The heading stays in the content column, since a heading at
+   the window edge stops lining up with every other heading on the page;
+   only the panel holding the canvas escapes.
+
+   Negative margins against the inner's own padding, rather than 100vw
+   tricks: 100vw includes the scrollbar on desktop Windows and Linux, which
+   is how full-bleed sections end up with a horizontal scrollbar nobody can
+   reproduce on a Mac. This cannot overflow because it is undoing a padding
+   that is already there. */
+.arv-map--full .arv-map__panel {
+	margin-left: -1.25rem;
+	margin-right: -1.25rem;
+}
+
+@media (min-width: 1200px) {
+	.arv-map--full .arv-map__inner {
+		max-width: none;
+		padding: 0;
+	}
+	/* The heading is put back into the content column by hand, since its
+	   parent no longer provides one. */
+	.arv-map--full .arv-map__eyebrow,
+	.arv-map--full .arv-map__heading {
+		max-width: 1200px;
+		margin-left: auto;
+		margin-right: auto;
+		padding: 0 1.25rem;
+	}
+	.arv-map--full .arv-map__panel {
+		margin-left: 0;
+		margin-right: 0;
+	}
+}
+
+/* Sits flush under whatever is above it when full width, so a hero and the
+   map read as one surface rather than two stacked boxes. */
+.arv-map--full {
+	padding-top: 0;
 }
 
 .arv-map__eyebrow {
@@ -1959,7 +2015,7 @@
 }
 
 .arv-map__heading {
-	margin: 0 0 1.5rem;
+	margin: 0 0 1rem;
 	font-size: clamp(1.9rem, 4vw, 2.6rem);
 	font-weight: 700;
 	line-height: 1.15;
@@ -2009,26 +2065,43 @@
 	line-height: 1;
 }
 
-/* Jump-to-a-race search. Above the canvas, not a Leaflet control inside it:
-   a dropdown drawn inside the map gets clipped by the canvas edge, which is
-   exactly where the results list opens. */
+/* Jump-to-a-race search. Lives inside the map as a bottom-left Leaflet
+   control, with its results opening upward.
+   
+   Upward is what makes this possible. A list dropping downward from a
+   control sitting near the bottom of the canvas gets clipped by the canvas
+   edge, which is exactly where it would open from; opening upward it
+   expands into the map instead, over the tiles, where there is always room.
+   
+   z-index sits above Leaflet's marker and popup panes (600 and 700) so a
+   result is never drawn behind a pin or an open popup. */
 .arv-map__search {
 	position: relative;
-	margin: 0 0 0.75rem;
-	max-width: 22rem;
+	width: 19rem;
+	max-width: calc(100vw - 4rem);
+	margin: 0;
+	z-index: 900;
 }
 
 .arv-map__search-input {
 	width: 100%;
 	padding: 0.55rem 0.7rem;
-	border: 1px solid rgba(128, 128, 128, 0.4);
+	border: 1px solid rgba(0, 0, 0, 0.2);
 	border-radius: 0;
-	background: transparent;
-	color: inherit;
+	/* Opaque, not transparent: this sits over map tiles now, and a
+	   see-through input over a road map is unreadable. */
+	background: #fff;
+	color: #272727;
 	font-family: inherit;
 	font-size: 0.92rem;
+	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	/* iOS zooms the page when a focused input is under 16px. */
 	min-height: 44px;
+}
+
+.arv-map__search-input::placeholder {
+	color: #6b6b6b;
+	opacity: 1;
 }
 
 .arv-map__search-input:focus {
@@ -2040,17 +2113,24 @@
 .arv-map__results {
 	display: none;
 	position: absolute;
-	z-index: 1000;
-	top: 100%;
+	z-index: 1;
+	/* Opens upward, so it never runs off the bottom of the canvas. */
+	bottom: 100%;
 	left: 0;
 	right: 0;
-	margin: 0;
+	margin: 0 0 4px;
 	padding: 0;
 	list-style: none;
 	background: #fff;
-	border: 1px solid rgba(128, 128, 128, 0.35);
-	border-top: 0;
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+	/* Sized to fit all six results exactly, given the fixed row height the
+	   truncation below guarantees. Without that, a long race name wrapped to
+	   two lines and the sixth result was clipped mid-word against this
+	   ceiling, which reads as broken rather than as "scroll for more".
+	   overflow stays on as a backstop for large text settings. */
+	max-height: 22rem;
+	overflow-y: auto;
 }
 
 .arv-map__search.is-open .arv-map__results {
@@ -2069,6 +2149,19 @@
 .arv-map__results li.is-active,
 .arv-map__results li:hover {
 	background: rgba(42, 94, 107, 0.1);
+}
+
+/* One line each, ellipsised. Race names run long ("Javelina Jundred
+   Presented by: HOKA", "Snow Mountain Ranch Trail Running Festival") and
+   wrapping them made every row a different height, which both looked
+   unsettled and made the list's height unpredictable enough to clip the
+   last result. The distinguishing part of a race name is at the front, so
+   the tail is the safe thing to lose. */
+.arv-map__result-name,
+.arv-map__result-where {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .arv-map__result-name {
@@ -2096,20 +2189,27 @@
 /* Series affiliation on a calendar row. Set apart from the distance pills
    sitting next to it: those are what you can enter, this is what the race
    belongs to, and they should not read as the same kind of thing. Outlined
-   in the accent rather than filled grey, and it does not wrap. */
+   rather than filled grey, and it does not wrap.
+
+   Teal, not the accent red. Red is already doing two jobs on this page: it
+   is the month heading and it is the Register button. A series chip is
+   neither a heading nor an action, it is metadata, and a third red thing
+   in the same row made the list read as busier than it is. Teal is what
+   the rest of the plugin already uses for "information, not an offer",
+   which is exactly what this is. */
 .arv-calendar__series {
 	display: inline-block;
 	align-self: flex-start;
 	margin: 0.1rem 0;
 	padding: 0.05rem 0.35rem;
-	border: 1px solid var(--arv-accent, #ff2a13);
+	border: 1px solid var(--arv-teal-deep, #2a5e6b);
 	font-size: 0.65rem;
 	font-weight: 700;
 	letter-spacing: 0.4px;
 	text-transform: uppercase;
 	line-height: 1.6;
 	white-space: nowrap;
-	color: var(--arv-accent, #ff2a13);
+	color: var(--arv-teal-deep, #2a5e6b);
 }
 
 /* Distance chips in the calendar list, matching the map popup's. */
@@ -2139,9 +2239,9 @@
 	align-items: center;
 	gap: 0.35rem;
 	margin: 0 0 0.5rem auto;
-	padding: 0.25rem 0.5rem;
-	border: 1px solid rgba(128, 128, 128, 0.45);
-	background: transparent;
+	padding: 0.35rem 0.6rem;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	background: #fff;
 	font-family: inherit;
 	font-size: 0.7rem;
 	font-weight: 700;
@@ -2149,6 +2249,43 @@
 	text-transform: uppercase;
 	color: var(--arv-ink, #272727);
 	cursor: pointer;
+}
+
+/* While the map is open the toggle floats over its top right corner, the
+   same treatment the other map controls get, so the strip of page above the
+   map disappears and the map starts immediately.
+
+   Only while open, deliberately. A control positioned over a collapsed map
+   would be positioned over nothing: the panel it was covering is display
+   none and has no height, so the button would land on whatever followed.
+   Collapsed, it drops back into normal flow where it is still the only
+   thing to press. */
+.arv-map__toggle[aria-expanded="true"] {
+	position: absolute;
+	top: 10px;
+	right: 22px;
+	z-index: 800;
+	margin: 0;
+	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+}
+
+.arv-map--full .arv-map__toggle[aria-expanded="true"] {
+	right: 10px;
+}
+
+/* Collapsed and full width, the toggle is back in normal flow inside an
+   inner that no longer has side padding, so it would otherwise sit flush
+   against the window edge. Explicitly scoped to the collapsed state so it
+   cannot fight the absolute rule above, which the two would otherwise tie
+   with on specificity and settle by source order. */
+.arv-map--full .arv-map__toggle[aria-expanded="false"] {
+	margin-right: 1.25rem;
+}
+
+/* Push Leaflet's own top-right controls clear of the overlaid toggle, so
+   Near Me sits under it rather than behind it. */
+.arv-map__canvas .leaflet-top.leaflet-right {
+	margin-top: 34px;
 }
 
 .arv-map__toggle:hover {
@@ -2369,9 +2506,9 @@
 }
 
 .arv-map__popup-cta--waitlist {
-	background: #b45f00;
-	border-color: #b45f00;
-	color: #fff;
+	background: #daa520;
+	border-color: #daa520;
+	color: #272727;
 }
 
 .arv-map__popup-info {
@@ -2401,7 +2538,7 @@
 
 .arv-map__popup a.arv-map__popup-cta--waitlist,
 .arv-map__popup a.arv-map__popup-cta--waitlist:hover {
-	color: #fff;
+	color: #272727;
 }
 
 .arv-map__popup a.arv-map__popup-info,

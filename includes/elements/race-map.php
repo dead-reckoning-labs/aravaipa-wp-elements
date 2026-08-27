@@ -45,6 +45,7 @@ cs_register_element(
 				'heading'   => cs_value( 'Find a race near you', 'markup' ),
 				'height'    => cs_value( '520', 'markup' ),
 				'collapsible' => cs_value( 'true', 'markup' ),
+				'full_width'  => cs_value( 'false', 'markup' ),
 				'region'    => cs_value( '', 'markup' ),
 				'tile_url'  => cs_value( '', 'markup' ),
 				'tile_attr' => cs_value( '', 'markup' ),
@@ -87,6 +88,12 @@ function arv_race_map_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Collapsible', 'aravaipa-elements' ),
 					'description' => __( 'true or false. Adds a Hide map / Show map toggle. The map still starts open either way; this only decides whether a visitor can fold it away.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'full_width',
+					'type'        => 'text',
+					'label'       => __( 'Full width', 'aravaipa-elements' ),
+					'description' => __( 'true or false. Runs the map edge to edge instead of inside the page content column, so it can sit flush under a hero. A heading, if there is one, stays in the content column either way.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'region',
@@ -285,7 +292,18 @@ function arv_race_map_render( $data ) {
 	// shipped as one here until a test caught it.
 	$json = str_replace( '<', '\u003C', $json );
 
+	// Full bleed runs the map edge to edge so it can sit flush under a hero
+	// with no seam between them. Only the canvas bleeds: a heading dropped to
+	// the window edge stops lining up with every other heading on the page,
+	// so the text stays in the content column and the map escapes it.
+	$full_width = isset( $data['full_width'] ) ? $data['full_width'] : false;
+	$full_width = ! ( 'false' === $full_width || false === $full_width || '0' === $full_width || '' === $full_width );
+
 	$base = 'arv-map';
+	if ( $full_width ) {
+		$base .= ' arv-map--full';
+	}
+
 	$out  = '<div class="' . arv_wrapper_class( $data, $base ) . '">';
 	$out .= '<div class="arv-map__inner">';
 
@@ -317,10 +335,15 @@ function arv_race_map_render( $data ) {
 
 	$out .= '<div class="arv-map__panel" data-arv-map-panel>';
 
-	// Jump-to-a-race search. Sits above the canvas rather than inside it as a
-	// Leaflet control: a dropdown drawn inside the map has to fight the map's
-	// own stacking context and gets clipped by the canvas at the bottom of
-	// the list, which is exactly where the results appear.
+	// Jump-to-a-race search. Rendered here, above the canvas, and then moved
+	// into the map by the script as a bottom-left Leaflet control.
+	//
+	// Server-rendering it and relocating it, rather than building it in JS,
+	// keeps a real focusable input in the HTML for anything that never runs
+	// the script, and means it exists before Leaflet has finished starting
+	// up. Where it ends up is a presentation decision and lives with the
+	// presentation; whether it exists at all is a content decision and lives
+	// here.
 	//
 	// combobox rather than a bare input, so the results are announced as
 	// options and the arrow keys are expected rather than a surprise. Only

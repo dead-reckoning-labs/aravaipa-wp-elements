@@ -170,8 +170,16 @@
 			return;
 		}
 
+		// Top right, deliberately, rather than under the zoom buttons on the
+		// left where it started. The search sits bottom left and its results
+		// open upward, so the entire left edge is the column that list grows
+		// into; anything parked there gets covered the moment someone types.
+		// Moving this is a cleaner fix than shortening the results list,
+		// because it holds at any map height rather than depending on how
+		// much room happens to be left. Bottom right is not free either,
+		// that is where Leaflet puts the tile attribution.
 		var Control = window.L.Control.extend( {
-			options: { position: 'topleft' },
+			options: { position: 'topright' },
 			onAdd: function () {
 				var wrap = window.L.DomUtil.create( 'div', 'leaflet-bar arv-map__nearme' );
 				var link = window.L.DomUtil.create( 'a', '', wrap );
@@ -242,6 +250,30 @@
 			return;
 		}
 
+		// Rendered above the map in the markup, then moved inside it here.
+		// Server-rendering it outside and relocating it, rather than building
+		// it in JS, keeps it in the HTML for anything that never runs the
+		// script, and means the input is real and focusable before Leaflet
+		// has finished starting up.
+		//
+		// Bottom left, with the results opening upward. That direction is the
+		// whole reason this can live inside the map at all: a list dropping
+		// downward from a control gets clipped at the canvas edge, which is
+		// exactly where it would open from. Upward it expands into the map.
+		var Control = window.L.Control.extend( {
+			options: { position: 'bottomleft' },
+			onAdd: function () {
+				return wrap;
+			},
+		} );
+		map.addControl( new Control() );
+
+		// Without this, typing drags the map and a click on a result is
+		// treated as a map gesture. Scroll propagation stays enabled: the
+		// results list can overflow, and it should scroll rather than zoom.
+		window.L.DomEvent.disableClickPropagation( wrap );
+		window.L.DomEvent.disableScrollPropagation( wrap );
+
 		var active = -1;
 		var shown  = [];
 
@@ -297,8 +329,25 @@
 			}
 			list.innerHTML = html;
 			wrap.classList.add( 'is-open' );
+			clampHeight();
 			input.setAttribute( 'aria-expanded', 'true' );
 			active = -1;
+		}
+
+		/**
+		 * Never let the results grow past the top of the map.
+		 *
+		 * The CSS max-height is sized for six results on a normal map, but
+		 * the map's height is an element setting an editor can drop to 300px,
+		 * and on a short one a six-result list would run off the top of the
+		 * canvas. Measured against the real canvas rather than assumed, so
+		 * this holds at whatever height the element is configured to and on
+		 * a phone in landscape, where the map is short for a different
+		 * reason. Below the cap nothing changes; the CSS still decides.
+		 */
+		function clampHeight() {
+			var room = input.getBoundingClientRect().top - canvas.getBoundingClientRect().top - 12;
+			list.style.maxHeight = Math.max( 96, room ) + 'px';
 		}
 
 		function highlight( next ) {
