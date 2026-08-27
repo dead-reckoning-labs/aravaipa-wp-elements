@@ -34,7 +34,11 @@
 		var html = '<div class="arv-map__popup">';
 
 		if ( pin.logo ) {
-			html += '<img class="arv-map__popup-logo" src="' + escapeHtml( pin.logo ) + '" alt="">';
+			// logoDark marks artwork that is white-on-transparent and so
+			// vanishes against this popup's white card. It gets a dark chip
+			// behind it rather than a re-cut asset.
+			html += '<img class="arv-map__popup-logo' + ( pin.logoDark ? ' arv-map__popup-logo--dark' : '' ) +
+				'" src="' + escapeHtml( pin.logo ) + '" alt="">';
 		}
 
 		html += '<p class="arv-map__popup-date">' + escapeHtml( pin.date ) + '</p>';

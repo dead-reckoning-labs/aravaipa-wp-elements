@@ -2100,6 +2100,18 @@
 
 /* Division logo at the top of the card. Max-height keeps a square badge and
    a wide lockup at roughly the same visual weight. */
+/* White-on-transparent artwork needs something to sit against. Only Bad
+   Beard's mark is like this; the other five average a luminance of 74-149
+   against its 255, so this is deliberately opt-in per logo rather than a
+   backing behind all of them. Padded and inline-block so the chip hugs the
+   mark instead of spanning the card. */
+.arv-map__popup-logo--dark {
+	padding: 0.2rem 0.3rem;
+	background: var(--arv-ink, #272727);
+	border-radius: 2px;
+	box-sizing: content-box;
+}
+
 .arv-map__popup-logo {
 	display: block;
 	max-width: 100%;
