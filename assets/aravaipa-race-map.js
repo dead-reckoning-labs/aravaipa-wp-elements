@@ -25,8 +25,8 @@
 	 * two.
 	 */
 	var FIT = {
-		paddingTopLeft: [ 20, 56 ],
-		paddingBottomRight: [ 20, 76 ],
+		paddingTopLeft: [ 20, 72 ],
+		paddingBottomRight: [ 20, 84 ],
 	};
 
 	function escapeHtml( value ) {
@@ -190,7 +190,19 @@
 			link.href = '#';
 			link.title = 'Find races near me';
 			link.setAttribute( 'role', 'button' );
-			link.innerHTML = '<span aria-hidden="true">&#9678;</span><span class="arv-map__nearme-label">Near me</span>';
+			// An inline SVG rather than the &#9678; character it used to be.
+			// That glyph is a text codepoint: its weight, size and vertical
+			// alignment come from whatever font happens to resolve it, which
+			// on a phone rendered as a faint hairline circle sitting off
+			// centre in the button. This draws the same idea at a known
+			// weight and scales with the button.
+			link.innerHTML =
+				'<svg class="arv-map__nearme-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">' +
+					'<circle cx="12" cy="12" r="3.2" fill="currentColor"/>' +
+					'<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/>' +
+					'<path d="M12 1.6v3M12 19.4v3M1.6 12h3M19.4 12h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
+				'</svg>' +
+				'<span class="arv-map__nearme-label">Near me</span>';
 
 			// Without this Leaflet treats the click as a map drag/zoom
 			// gesture and the anchor also tries to navigate to "#".
@@ -577,8 +589,8 @@
 					// the same problem one layer in. These paddings are sized
 					// to the controls, so a popup comes to rest in open map.
 					autoPan: true,
-					autoPanPaddingTopLeft: [ 20, 56 ],
-					autoPanPaddingBottomRight: [ 20, 76 ],
+					autoPanPaddingTopLeft: [ 20, 72 ],
+					autoPanPaddingBottomRight: [ 20, 84 ],
 					// A pin near an edge can otherwise be dragged so its popup
 					// leaves the map while still open.
 					keepInView: true,
