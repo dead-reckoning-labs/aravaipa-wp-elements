@@ -198,6 +198,46 @@
 		);
 	}
 
+	/**
+	 * Wire up the Hide map / Show map toggle, if the element rendered one.
+	 *
+	 * The critical part is invalidateSize() on expand. Leaflet measures its
+	 * container when it draws; a map that was display:none at that moment
+	 * measures zero and comes back as a grey box with the tiles bunched into
+	 * one corner. Re-measuring after the panel is visible again is the fix,
+	 * and it is the same failure the ResizeObserver in setUp() already
+	 * guards against for the Cornerstone-still-settling case.
+	 */
+	function addCollapse( canvas, map ) {
+		var wrap = canvas.closest( '.arv-map__inner' );
+		if ( ! wrap ) {
+			return;
+		}
+
+		var toggle = wrap.querySelector( '[data-arv-map-toggle]' );
+		var panel  = wrap.querySelector( '[data-arv-map-panel]' );
+		if ( ! toggle || ! panel ) {
+			return;
+		}
+
+		toggle.addEventListener( 'click', function () {
+			var open = toggle.getAttribute( 'aria-expanded' ) === 'true';
+			var next = ! open;
+
+			toggle.setAttribute( 'aria-expanded', next ? 'true' : 'false' );
+			panel.hidden = ! next;
+			toggle.querySelector( '.arv-map__toggle-label' ).textContent = next ? 'Hide map' : 'Show map';
+
+			if ( next ) {
+				// Next frame, so the panel has actually been laid out before
+				// Leaflet asks how big it is.
+				window.requestAnimationFrame( function () {
+					map.invalidateSize();
+				} );
+			}
+		} );
+	}
+
 	function setUp( canvas ) {
 		if ( typeof window.L === 'undefined' ) {
 			return;
@@ -252,6 +292,7 @@
 		}
 
 		addNearMe( map, config.pins, markers, group );
+		addCollapse( canvas, map );
 
 		// Leaflet measures its container on creation. Inside a Cornerstone
 		// section that is still settling, or a tab that was not visible yet,

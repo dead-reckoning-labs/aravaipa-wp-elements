@@ -380,6 +380,41 @@ t('and shows the published span', strpos($rb,'>3-4<')!==false);
 t('the unconfirmed race in this pair has no Register', substr_count($r,'arv-calendar__action--upcoming')===0 || substr_count($r,'arv-calendar__action--upcoming')===1);
 t('and this element never renders a card-style cta', strpos($r,'arv-races__cta')===false);
 
+echo "shared distance splitter:\n";
+// One function now backs both the calendar pills and the map popup pills,
+// because the popup shipped the split bug twice, once in each direction,
+// while the two lived apart.
+t('splits a pipe-joined race',      array('50K','25K','10K','5K') === arv_split_distances('50K | 25K | 10K | 5K'));
+t('splits a comma-joined race',     array('50 Mile','50K','30K') === arv_split_distances('50 Mile, 50K, 30K'));
+t('a single distance stays single', array('31K') === arv_split_distances('31K'));
+t('a range keeps its wording',      array('10K to 50K') === arv_split_distances('10K to 50K'));
+t('empty in, empty out',            array() === arv_split_distances(''));
+t('drops empty segments',           array('50K','25K') === arv_split_distances('50K | | 25K'));
+
+echo "calendar distance pills:\n";
+$pillCal = "Bear | 2026-10-03 | October 3 | 100K, 50 Mile, 50K | Bear Creek | Lakewood, CO | https://u.com/b | https://a.com/b |  |  |  |  | 1 | 0";
+$pc = arv_season_calendar_render(array('rows'=>$pillCal));
+t('each distance becomes its own chip',   substr_count($pc,'arv-calendar__pill') === 3);
+t('and the raw comma list is gone',       strpos($pc,'>100K, 50 Mile, 50K<') === false);
+t('while data-distances keeps it intact', strpos($pc,'data-distances="100k, 50 mile, 50k"') !== false);
+
+echo "map collapse toggle:\n";
+// Own fixture: $mapRow is defined further down, in the "race map:" section.
+$togRow = "Rock Hawk | 2026-08-29 | August 29 | 50K | 25K | Phillip S. Miller Park | Castle Rock, CO | https://u.com/r | https://a.com/rh/ |  |  |  | 2026-08-24 | 1 | 0 | 39.3698 | -104.8785";
+// Restored below: the grace-period tests further down assert against the
+// harness clock, and leaving this set silently flipped one of them.
+$togWas = $GLOBALS['NOW'];
+$GLOBALS['NOW']='2026-08-20';
+$tm = arv_race_map_render(array('rows'=>$togRow));
+t('a toggle is rendered by default',    strpos($tm,'data-arv-map-toggle')!==false);
+t('it starts expanded',                 strpos($tm,'aria-expanded="true"')!==false);
+t('it is a real button, not a div',     strpos($tm,'<button type="button" class="arv-map__toggle"')!==false);
+t('the map sits in a panel it can fold', strpos($tm,'data-arv-map-panel')!==false);
+$tmOff = arv_race_map_render(array('rows'=>$togRow,'collapsible'=>'false'));
+t('collapsible=false renders no toggle', strpos($tmOff,'data-arv-map-toggle')===false);
+t('but the map itself still renders',    strpos($tmOff,'data-arv-map')!==false);
+$GLOBALS['NOW'] = $togWas;
+
 echo "calendar state search and filter:\n";
 // Searching a state by its full name found nothing, because the only thing
 // in a row was the two-letter code: "california" never matched "CA". The

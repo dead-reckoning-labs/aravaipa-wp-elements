@@ -37,6 +37,7 @@ cs_register_element(
 				'eyebrow'   => cs_value( 'Every race', 'markup' ),
 				'heading'   => cs_value( 'Find a race near you', 'markup' ),
 				'height'    => cs_value( '520', 'markup' ),
+				'collapsible' => cs_value( 'true', 'markup' ),
 				'region'    => cs_value( '', 'markup' ),
 				'tile_url'  => cs_value( '', 'markup' ),
 				'tile_attr' => cs_value( '', 'markup' ),
@@ -73,6 +74,12 @@ function arv_race_map_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Map height in pixels', 'aravaipa-elements' ),
 					'description' => __( 'Clamped to 300-900. A map shorter than about 300px cannot show a popup without covering itself.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'collapsible',
+					'type'        => 'text',
+					'label'       => __( 'Collapsible', 'aravaipa-elements' ),
+					'description' => __( 'true or false. Adds a Hide map / Show map toggle. The map still starts open either way; this only decides whether a visitor can fold it away.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'region',
@@ -210,6 +217,12 @@ function arv_race_map_render( $data ) {
 		arv_race_map_enqueue();
 	}
 
+	// Same "anything but an explicit false" reading the season calendar's
+	// `filters` control uses, so the two behave identically for an editor
+	// typing into a text field.
+	$collapsible = isset( $data['collapsible'] ) ? $data['collapsible'] : true;
+	$collapsible = ! ( 'false' === $collapsible || false === $collapsible || '0' === $collapsible );
+
 	$height = isset( $data['height'] ) ? (int) $data['height'] : 520;
 	$height = max( 300, min( 900, $height ) );
 
@@ -255,8 +268,26 @@ function arv_race_map_render( $data ) {
 		$out .= '<h2 class="arv-map__heading">' . esc_html( $heading ) . '</h2>';
 	}
 
+	// Collapse toggle. Rendered here rather than injected by JavaScript so
+	// that a visitor who scrolls past before the script runs never sees the
+	// control appear late and shift the page under them.
+	//
+	// Open by default, and it is a real <button> with aria-expanded: this is
+	// a disclosure, not decoration, so a screen reader and a keyboard both
+	// get it for free. Nothing is hidden from a crawler either way, since the
+	// map's own content is a canvas and the <noscript> list below carries the
+	// races in markup regardless of this state.
+	if ( $collapsible ) {
+		$out .= '<button type="button" class="arv-map__toggle" data-arv-map-toggle aria-expanded="true">';
+		$out .= '<span class="arv-map__toggle-label">' . esc_html( __( 'Hide map', 'aravaipa-elements' ) ) . '</span>';
+		$out .= '<span class="arv-map__toggle-caret" aria-hidden="true"></span>';
+		$out .= '</button>';
+	}
+
+	$out .= '<div class="arv-map__panel" data-arv-map-panel>';
 	$out .= '<div class="arv-map__canvas" data-arv-map style="height:' . esc_attr( $height ) . 'px"></div>';
 	$out .= '<script type="application/json" data-arv-map-config>' . $json . '</script>';
+	$out .= '</div>';
 
 	// A plain list of every pin, in the markup, always. The map needs
 	// JavaScript and a third-party library to draw anything; this does not,
