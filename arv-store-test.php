@@ -40,6 +40,7 @@ function is_wp_error( $t ) { return false; }
 function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
 function add_query_arg( $a ) { return $GLOBALS['CURRENT_PATH'] ?? '/'; }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
+function register_rest_route( $ns, $route, $args = array() ) {}
 
 class ARV_Post {
 	public $ID;
@@ -226,6 +227,57 @@ t( 'a pruning import trashes what it did not mention', $r3['pruned'] === $before
 t( 'leaving only what it did',                          1 === count( arv_race_store_get() ) );
 // Trashed, not deleted: a bad import must be recoverable from the admin.
 t( 'and the trashed races are recoverable, not gone',   null !== arv_race_store_find( 'https://ultrasignup.com/register.aspx?did=131056' ) || true );
+
+echo "\nREST import guardrail:\n";
+$GLOBALS['posts'] = array(); $GLOBALS['meta'] = array(); $GLOBALS['terms'] = array(); $GLOBALS['next_id'] = 1;
+arv_race_store_import( $ROWS );
+$fullCount = count( arv_race_store_get() );
+
+// A short import with prune=false only touches what it mentions, so there
+// is nothing destructive to guard against: it must go through untouched.
+$short = explode( "\n", trim( $ROWS ) )[0];
+$g1    = arv_race_store_import_guarded( $short, false );
+t( 'no prune, no guardrail: a short import still runs', 'ok' === $g1['status'] );
+t( 'and only touches what it mentioned',                $fullCount === count( arv_race_store_get() ) );
+
+// The dangerous case: prune=true with a scrape that came back nearly empty.
+// This must never reach arv_race_store_import() at all, or the assertion
+// below is testing a store that has already been wiped.
+$g2 = arv_race_store_import_guarded( $short, true );
+t( 'prune + a >20% drop is refused',                    'refused' === $g2['status'] );
+t( 'the refusal names the row counts',                  1 === $g2['incoming'] && $fullCount === $g2['current'] );
+t( 'and nothing was actually pruned',                   $fullCount === count( arv_race_store_get() ) );
+
+// force=true is the intentional override, e.g. a season really did end.
+$g3 = arv_race_store_import_guarded( $short, true, false, true );
+t( 'force=true bypasses the guardrail',                 'ok' === $g3['status'] );
+t( 'and the prune actually happens this time',          1 === count( arv_race_store_get() ) );
+
+// Restore fixture state: later tests in this file assume a full store.
+$GLOBALS['posts'] = array(); $GLOBALS['meta'] = array(); $GLOBALS['terms'] = array(); $GLOBALS['next_id'] = 1;
+arv_race_store_import( $ROWS );
+
+// dry_run reports without writing. Checked with prune off: the guardrail
+// only exists to stop a destructive prune, so it runs before dry_run and
+// takes priority when both are on, tested separately below, which is
+// exactly the useful behaviour: dry_run should surface a refusal a real
+// run would hit, not quietly hide it behind "would succeed".
+$g4 = arv_race_store_import_guarded( $short, false, true );
+t( 'dry_run reports instead of writing',                'dry_run' === $g4['status'] );
+t( 'and the store is untouched',                        $fullCount === count( arv_race_store_get() ) );
+t( 'dry_run reports the valid row count',               1 === $g4['valid'] );
+
+// dry_run + prune together must surface the SAME refusal a real run would
+// hit, not silently report "would succeed" for something that would not.
+$g4b = arv_race_store_import_guarded( $short, true, true );
+t( 'dry_run does not hide a guardrail refusal behind it', 'refused' === $g4b['status'] );
+
+// A totally malformed row (skipped by the parser) must count as zero valid
+// rows, not silently pass the guardrail by being counted as "one row".
+$junk = "not a valid race row at all";
+$g5   = arv_race_store_import_guarded( $junk, true );
+t( 'an unparseable row is 0 valid, not 1',              0 === $g5['incoming'] );
+t( 'and prune is refused rather than wiping the store', 'refused' === $g5['status'] );
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
