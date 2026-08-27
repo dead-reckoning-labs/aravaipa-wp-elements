@@ -14,6 +14,21 @@
 ( function () {
 	'use strict';
 
+	/**
+	 * Padding for every fitBounds on this map, sized to its own furniture.
+	 *
+	 * Leaflet's default is none, which puts the outermost pins exactly on the
+	 * container's edges. That is already tight, and this map has a collapse
+	 * toggle floating across the top right and the search and Near me across
+	 * the bottom left, so "on the edge" also means "underneath a control".
+	 * Bottom is the larger number because the search row is the taller of the
+	 * two.
+	 */
+	var FIT = {
+		paddingTopLeft: [ 20, 56 ],
+		paddingBottomRight: [ 20, 76 ],
+	};
+
 	function escapeHtml( value ) {
 		return String( value )
 			.replace( /&/g, '&amp;' )
@@ -447,7 +462,11 @@
 				ranked.slice( 0, 3 ).forEach( function ( r ) {
 					box.extend( [ pins[ r.i ].lat, pins[ r.i ].lng ] );
 				} );
-				map.fitBounds( box, { padding: [ 40, 40 ], maxZoom: 10 } );
+				map.fitBounds( box, {
+					paddingTopLeft: FIT.paddingTopLeft,
+					paddingBottomRight: FIT.paddingBottomRight,
+					maxZoom: 10,
+				} );
 
 				window.L.circleMarker( [ lat, lng ], {
 					radius: 7,
@@ -465,7 +484,7 @@
 				// rather than throwing an error at someone who may have
 				// simply said no.
 				link.classList.remove( 'is-busy' );
-				map.fitBounds( group.getBounds(), { padding: [ 30, 30 ] } );
+				map.fitBounds( group.getBounds(), FIT );
 			},
 			{ enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
 		);
@@ -577,18 +596,60 @@
 		var group;
 		if ( window.L.markerClusterGroup ) {
 			group = window.L.markerClusterGroup( {
-				// Below this the pins no longer overlap, so clustering past it
-				// hides races the map has room to show.
-				disableClusteringAtZoom: 9,
-				// Races sharing one venue (the whole Javelina weekend is at
-				// McDowell Mountain) can never separate by zooming, so the
-				// last few fan out on click instead.
-				spiderfyOnMaxZoom: true,
 				showCoverageOnHover: false,
 				maxClusterRadius: 45,
 				iconCreateFunction: clusterIcon,
+				// zoomToBoundsOnClick off because this takes that case over
+				// below. It is the one that was wrong: it picks a zoom from
+				// the cluster's bounds with no padding at all, then centres on
+				// the middle of them, so the outermost races land exactly on
+				// the edges of the map and some end up under the controls
+				// floating over it. Clicking Colorado zoomed in and cut
+				// several races off, which is the bug this fixes.
+				zoomToBoundsOnClick: false,
+				spiderfyOnMaxZoom: true,
+				// Restored to what shipped. Removing it was an attempt to fix
+				// a separate, real problem: seven pairs of races in the
+				// current calendar share a venue to four decimal places
+				// (Javelina Jundred and Jackass Night Trail, Pass Mountain and
+				// Punisher, Mayhem and Adrenaline, and four more), and above
+				// this zoom each pair draws as two pins stacked exactly, so
+				// one of each is invisible and unclickable.
+				//
+				// Clustering all the way down showed them honestly as a "2",
+				// but made that bubble a dead control: markercluster only
+				// spiderfies at its maximum zoom, and calling spiderfy()
+				// directly at a lower zoom did nothing that could be verified
+				// in a browser. A visible bubble that does nothing when
+				// clicked is worse than the stacking it replaced, so this
+				// stays as it was and the overlap is written up as its own
+				// problem rather than half-solved here.
+				disableClusteringAtZoom: 9,
 			} );
 			group.addLayers( markers );
+
+			// disableClusteringAtZoom is deliberately not set. It used to be 9,
+			// on the reasoning that pins stop overlapping past that, which is
+			// true of pins that are merely near each other and false of pins
+			// in the same place. Seven pairs of races in the current calendar
+			// share a venue exactly, to four decimal places: Javelina Jundred
+			// and Jackass Night Trail, Pass Mountain and Punisher, Mayhem and
+			// Adrenaline, and four more. Above zoom 9 those drew as two pins
+			// stacked precisely on top of each other, so one of each pair was
+			// invisible and unclickable at any zoom. Clustering all the way
+			// down means they stay a "2" bubble that fans out instead.
+			group.on( 'clusterclick', function ( e ) {
+				var bounds = e.layer.getBounds();
+
+				// Zooming would not actually get closer, so leave the click to
+				// the library, which spiderfies in exactly this case once you
+				// are at its maximum zoom.
+				if ( map.getBoundsZoom( bounds ) <= map.getZoom() ) {
+					return;
+				}
+
+				map.fitBounds( bounds, FIT );
+			} );
 		} else {
 			group = window.L.featureGroup( markers );
 		}
@@ -597,7 +658,7 @@
 		// Fit to the pins rather than hardcoding a view: the same element is
 		// used for the whole country and for a single region's page, and a
 		// fixed centre would be wrong for one of them.
-		map.fitBounds( group.getBounds(), { padding: [ 30, 30 ] } );
+		map.fitBounds( group.getBounds(), FIT );
 
 		// One pin gives fitBounds a zero-size box, which zooms to maximum
 		// and lands on a rooftop. A region page with a single race hits this.
