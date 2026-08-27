@@ -190,6 +190,13 @@ function arv_race_map_render( $data ) {
 
 		$region = arv_race_store_region_for( $race );
 		$logo   = isset( $logo_map[ $region ] ) ? $logo_map[ $region ] : '';
+		// Bad Beard's mark is white artwork on transparency, so on the
+		// popup's white card it renders as nothing at all: the logo loads,
+		// the <img> is the right size, and every pixel of it is white. It
+		// is the only one of the six like this (the others average a
+		// luminance of 74-149 against Bad Beard's 255), so rather than
+		// re-cutting the asset this flags it for a dark backing chip in CSS.
+		$logo_dark = ( 'bad-beard' === $region );
 
 		$pins[] = array(
 			'name'      => $race['name'],
@@ -205,6 +212,7 @@ function arv_race_map_render( $data ) {
 			'ctaUrl'    => $action['url'],
 			'phase'     => $action['phase'],
 			'logo'      => $logo,
+			'logoDark'  => $logo_dark,
 		);
 	}
 

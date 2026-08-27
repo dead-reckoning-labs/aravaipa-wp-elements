@@ -629,6 +629,22 @@ t('config decodes to real pin data',   is_array($rockPin));
 t('date has the year appended',        $rockPin && false !== strpos($rockPin['date'], '2026'));
 t('region resolves to a division',     $rockPin && '' !== $rockPin['logo']);
 t('logo points at the right asset',    $rockPin && false !== strpos($rockPin['logo'], 'colorado.png'));
+
+// Bad Beard's mark is white artwork on transparency, so on the popup's
+// white card it rendered as nothing: the image loaded, the <img> was the
+// right size, every pixel was white. Measured against the live assets, it
+// is the only one of the six like that (luminance 255 vs 74-149), so it is
+// flagged per-logo for a dark backing chip rather than backing all of them.
+$bbRow = "Rabid Raccoon 25k | 2027-01-09 | January 9 | 25K | Raccoon Mountain | Chattanooga, TN | https://u.com/r | https://www.aravaiparunning.com/bad-beard/ |  |  |  |  | 1 | 0 | 35.04 | -85.38";
+$mb = arv_race_map_render(array('rows'=>$bbRow));
+$bbPin = null;
+if ( preg_match('/data-arv-map-config>(.*?)<\/script>/s', $mb, $bm) ) {
+	$bcfg  = json_decode( str_replace('<', '<', $bm[1]), true );
+	$bbPin = $bcfg ? $bcfg['pins'][0] : null;
+}
+t('a bad-beard race is flagged logoDark',  $bbPin && true === $bbPin['logoDark']);
+t('and still carries its logo',            $bbPin && false !== strpos($bbPin['logo'], 'bad-beard.png'));
+t('a normal-contrast logo is not flagged', $rockPin && empty($rockPin['logoDark']));
 // The popup itself (pills, logo img, clickable name) is built client-side
 // in aravaipa-race-map.js from this config, not by PHP, so this only
 // asserts the raw data the JS pill-splitter actually receives: pipe-joined
