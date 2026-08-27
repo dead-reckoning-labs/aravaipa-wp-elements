@@ -200,6 +200,7 @@ function phase_of($rows, $opts = array()){
   if (strpos($r,'arv-races__cta--live')!==false) return 'live';
   if (strpos($r,'arv-races__cta--results')!==false) return 'results';
   if (strpos($r,'arv-races__cta--closed')!==false) return 'closed';
+  if (strpos($r,'arv-races__cta--waitlist')!==false) return 'waitlist';
   return 'none';
 }
 $GLOBALS['NOW']='2026-08-25'; t('four days out: entries open',  phase_of($rh, array('live_lead'=>'0'))==='upcoming');
@@ -298,6 +299,33 @@ $GLOBALS['NOW']='2026-08-28'; t('no close date: open right up to race day', phas
 $GLOBALS['NOW']='2026-08-29'; t('no close date: still flips on race day',   phase_of($nodate, array('live_lead'=>'0'))==='live');
 $GLOBALS['NOW']='2026-08-25';
 
+echo "sold out / waitlist:\n";
+// Mogollon Monster and Javelina Jundred are the two races Jamil named as
+// sold out with a waitlist open, 2026-08-27. Neither has a published close
+// date in this fixture, which is deliberate: a sold-out race often does not,
+// and the waitlist still has to win regardless.
+$mog = "Mogollon Monster Trail Runs | 2026-09-13 | September 12-13 | 100 Mile | 42K | Mogollon Rim | Pine, AZ | https://ultrasignup.com/register.aspx?dtid=63380 | https://a.com/mm/ |  |  |  |  | 1 | 0 |  | ";
+$GLOBALS['NOW']='2026-08-25';
+t('a known sold-out race shows Join Waitlist, not Register', phase_of($mog, array('live_lead'=>'0'))==='waitlist');
+t('and points at the real waitlist link, not the sold-out registration', strpos(arv_upcoming_races_render(array('rows'=>$mog,'live_lead'=>'0')),'event_waitlist.aspx?did=130408')!==false);
+
+// Sold out beats a published close date too: the race can and did sell out
+// before its own registration deadline arrived.
+$javWithClose = "Javelina Jundred Presented by: HOKA | 2026-10-31 | October 31 | 100 Mile | McDowell Mountain Regional Park | Fountain Hills, AZ | https://ultrasignup.com/register.aspx?dtid=64465 | https://a.com/jav/ |  |  |  | 2026-10-05 | 1 | 0 |  | ";
+$GLOBALS['NOW']='2026-09-01';
+t('sold out wins even before the close date', strpos(arv_upcoming_races_render(array('rows'=>$javWithClose,'live_lead'=>'0')),'>Join Waitlist<')!==false);
+$GLOBALS['NOW']='2026-08-25';
+
+// A race not on the list is unaffected: still plain Register.
+t('a race not on the waitlist list is unaffected', 'upcoming' === phase_of($rh, array('live_lead'=>'0')));
+
+// Schema must not claim entries are simply available, and must not claim
+// nothing about the offer at all either: SoldOut, pointing at the waitlist.
+$jw = json_decode(preg_replace('#.*<script type="application/ld\+json">(.*?)</script>.*#s','$1',
+  arv_upcoming_races_render(array('rows'=>$mog,'live_lead'=>'0'))), true)['@graph'][0];
+t('schema marks the offer SoldOut', ($jw['offers']['availability'] ?? '') === 'https://schema.org/SoldOut');
+t('and the offer url is the waitlist, not the dead registration link', ($jw['offers']['url'] ?? '') === 'https://ultrasignup.com/event_waitlist.aspx?did=130408');
+
 echo "live results lead window:\n";
 // Rock Hawk runs Sat 2026-08-29 and entries closed Mon 2026-08-24. The live
 // board already carries its start list, so there is something worth reaching
@@ -379,6 +407,15 @@ t('and shows the published span', strpos($rb,'>3-4<')!==false);
 // everything else, so the unconfirmed row in this fixture must not have one.
 t('the unconfirmed race in this pair has no Register', substr_count($r,'arv-calendar__action--upcoming')===0 || substr_count($r,'arv-calendar__action--upcoming')===1);
 t('and this element never renders a card-style cta', strpos($r,'arv-races__cta')===false);
+
+echo "waitlist resolution:\n";
+t('Mogollon Monster resolves to its real waitlist', 'https://ultrasignup.com/event_waitlist.aspx?did=130408' === arv_race_waitlist_for(array('name'=>'Mogollon Monster Trail Runs')));
+t('Javelina Jundred resolves to its real waitlist', 'https://ultrasignup.com/event_waitlist.aspx?did=133229' === arv_race_waitlist_for(array('name'=>'Javelina Jundred Presented by: HOKA')));
+// Jackass Night Trail shares Javelina's exact dtid=64465 registration link,
+// one listing sells entry to both, so it shares its waitlist too.
+t('Jackass Night Trail shares Javelina\'s waitlist', 'https://ultrasignup.com/event_waitlist.aspx?did=133229' === arv_race_waitlist_for(array('name'=>'Jackass Night Trail Presented by: HOKA')));
+t('a race not on the list has no waitlist', '' === arv_race_waitlist_for(array('name'=>'Rock Hawk')));
+t('a race with no name at all is safe', '' === arv_race_waitlist_for(array()));
 
 echo "series resolution:\n";
 $mk = function ( $page, $name = 'Test Race' ) { return array( 'page' => $page, 'name' => $name ); };

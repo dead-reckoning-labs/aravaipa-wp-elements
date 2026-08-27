@@ -410,6 +410,21 @@ function arv_upcoming_races_action( $race, $today, $lead = 5 ) {
 	}
 
 	if ( $today < $race['iso'] ) {
+		// Sold out wins over both Register and Entries Closed: a race can sell
+		// out well before its own registration close date, and offering
+		// Register up to that date would send people to a dead end same as an
+		// expired link would. Checked before the closes-date logic below, not
+		// after it, since a sold-out race often has no close date at all left
+		// to check.
+		$waitlist_url = arv_race_waitlist_for( $race );
+		if ( '' !== $waitlist_url ) {
+			return array(
+				'phase' => 'waitlist',
+				'label' => __( 'Join Waitlist', 'aravaipa-elements' ),
+				'url'   => $waitlist_url,
+			);
+		}
+
 		// UltraSignup publishes a registration close date on some races and
 		// not others: 9 of the 69 in the current calendar, checked against
 		// the live pages. When it is there, entries really do stop that day
@@ -892,19 +907,26 @@ function arv_upcoming_races_event_schema( $race, $phase = 'upcoming' ) {
 	// An offer only belongs on a race you can still enter. Carrying one for a
 	// race that has already run would advertise a closed registration in
 	// search results, which is worse than saying nothing about entries.
-	if ( '' !== $race['register'] && in_array( $phase, array( 'upcoming', 'closed' ), true ) ) {
+	//
+	// Waitlist counts too, and points at the waitlist itself rather than the
+	// original registration link: the entries that link sold are gone, the
+	// waitlist is the real, current, actionable offer.
+	$waitlist_url = arv_race_waitlist_for( $race );
+	$offer_url    = ( 'waitlist' === $phase && '' !== $waitlist_url ) ? $waitlist_url : $race['register'];
+
+	if ( '' !== $offer_url && in_array( $phase, array( 'upcoming', 'closed', 'waitlist' ), true ) ) {
 		$event['offers'] = array(
 			'@type'        => 'Offer',
-			'url'          => $race['register'],
+			'url'          => $offer_url,
 			// No price: entry fees vary by distance and by how early you
 			// enter, and a single wrong number in schema is worse than none.
 			// availability carries the thing that actually matters, and has
 			// to follow the phase: claiming InStock for a race whose entries
-			// closed last week is a factual error in the markup, not a
-			// cosmetic one.
-			'availability' => ( 'closed' === $phase )
-				? 'https://schema.org/SoldOut'
-				: 'https://schema.org/InStock',
+			// closed last week, or sold out and moved to a waitlist, is a
+			// factual error in the markup, not a cosmetic one.
+			'availability' => ( 'upcoming' === $phase )
+				? 'https://schema.org/InStock'
+				: 'https://schema.org/SoldOut',
 			'category'     => 'primary',
 		);
 	}
