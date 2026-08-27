@@ -33,9 +33,16 @@ cs_register_element(
 		'title'   => __( 'Aravaipa Featured Race', 'aravaipa-elements' ),
 		'values'  => cs_compose_values(
 			array(
-				'race_page'  => cs_value( '', 'markup' ),
+				// Defaulted rather than left blank, same reason the calendar's
+				// copy and the map's full-width setting are defaults and not
+				// something typed into a Cornerstone field: this site's
+				// builder is not being used to configure element content, so
+				// a blank default here is a permanently-blank block, not a
+				// prompt for an editor to fill in. Update this default (and
+				// ship a new version) to feature a different race.
+				'race_page'  => cs_value( 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/', 'markup' ),
 				'eyebrow'    => cs_value( 'Featured', 'markup' ),
-				'detail'     => cs_value( '', 'markup' ),
+				'detail'     => cs_value( 'Run it anywhere, any day in October.', 'markup' ),
 				'cta_label'  => cs_value( '', 'markup' ),
 				'image'      => cs_value( '', 'markup' ),
 				'overlay'    => cs_value( '0.55', 'style' ),
