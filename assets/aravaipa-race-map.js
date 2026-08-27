@@ -46,13 +46,20 @@
 		}
 
 		if ( pin.distances ) {
-			// The distances field is pipe-separated ("50K | 25K | 10K | 5K"),
-			// not comma-separated: see arv_upcoming_races_parse_row(), which
-			// rejoins the row's variable-length distance cells with " | ".
-			// Splitting on a comma here found nothing to split on and every
-			// multi-distance race rendered as one pill with the raw pipes
-			// still in it.
-			var pills = pin.distances.split( /\s*\|\s*/ ).filter( Boolean );
+			// Split on BOTH delimiters, because the source data uses both.
+			// A race written across several row cells comes back pipe-joined
+			// by arv_upcoming_races_parse_row ("50K | 25K | 10K | 5K"); a
+			// race written as one cell keeps whatever the editor typed,
+			// which is usually commas ("50 Mile, 50K, 30K"). In the current
+			// 84-race file that is 29 pipe-joined against 43 comma-joined,
+			// so handling only one of them leaves the majority rendering as
+			// a single pill with the raw delimiter still showing. Splitting
+			// on a comma alone was the original bug; splitting on a pipe
+			// alone, the first fix for it, just moved the breakage onto the
+			// larger half. No distance value contains a comma of its own
+			// (verified: nothing matches digit-comma-digit), so there is
+			// nothing here for a thousands separator to break.
+			var pills = pin.distances.split( /\s*[|,]\s*/ ).filter( Boolean );
 			html += '<p class="arv-map__popup-distances">';
 			for ( var i = 0; i < pills.length; i++ ) {
 				html += '<span class="arv-map__popup-pill">' + escapeHtml( pills[ i ] ) + '</span>';

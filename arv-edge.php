@@ -554,6 +554,29 @@ t('logo points at the right asset',    $rockPin && false !== strpos($rockPin['lo
 // since a PHP harness can't execute the JS that builds the popup.
 t('distances field is intact for the JS splitter', $rockPin && '50K | 25K' === $rockPin['distances']);
 
+// The source data uses BOTH delimiters and always has: a race spread over
+// several row cells comes back pipe-joined, a race written as one cell keeps
+// the editor's commas. In the live 84-race file that is 29 pipe against 43
+// comma, so the popup's splitter has to handle both. Splitting on a comma
+// alone was the original bug; splitting on a pipe alone (the first fix)
+// moved the same breakage onto the larger half of the file.
+$commaRow = "Moon | 2026-10-10 | October 10 | 50 Mile, 50K, 30K | Black Star Canyon | Silverado, CA | https://u.com/m | https://a.com/m |  |  |  |  | 1 | 0 | 33.76 | -117.67";
+$mc = arv_race_map_render(array('rows'=>$commaRow));
+$mcPin = null;
+if ( preg_match('/data-arv-map-config>(.*?)<\/script>/s', $mc, $cm2) ) {
+	$cfg2  = json_decode( str_replace('<', '<', $cm2[1]), true );
+	$mcPin = $cfg2 ? $cfg2['pins'][0] : null;
+}
+t('a comma-written race keeps its commas in the payload', $mcPin && '50 Mile, 50K, 30K' === $mcPin['distances']);
+// Both shapes have to survive the same regex. Asserted here in PHP against
+// the exact pattern the JS uses, since this harness cannot run the JS that
+// builds the popup.
+$split = function ( $d ) { return array_values(array_filter(preg_split('/\s*[|,]\s*/', $d))); };
+t('the shared splitter splits a comma race into 3',  3 === count($split('50 Mile, 50K, 30K')));
+t('and a pipe race into 4',                          4 === count($split('50K | 25K | 10K | 5K')));
+t('a single distance stays one pill',                1 === count($split('31K')));
+t('and a range keeps its own wording intact',        array('10K to 50K') === $split('10K to 50K'));
+
 // A race with no coordinates is simply not a pin. It used to be named under
 // the map as "N races have no map location yet", which was the right call
 // while the store was silently dropping EVERY coordinate, but now that the
