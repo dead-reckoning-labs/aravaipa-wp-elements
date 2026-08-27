@@ -250,3 +250,67 @@ function arv_split_distances( $distances ) {
 
 	return array_values( array_filter( array_map( 'trim', $parts ), 'strlen' ) );
 }
+
+/**
+ * The series a race belongs to, or null.
+ *
+ * Read off the race's own page URL, which already encodes it:
+ * /insomniac/thrasher-night-trail/ is an Insomniac race. Nothing new to
+ * type per race, and it stays correct on its own as long as the site keeps
+ * its URLs.
+ *
+ * Deliberately NOT arv_race_store_region_for(). That function answers a
+ * different question and collapses series into geography on purpose:
+ * Insomniac and DRT both come back as "arizona" there, because a runner
+ * filtering by state wants every Arizona race regardless of which series it
+ * belongs to. Series is the other axis, and a race has both.
+ *
+ * Only a known series counts. The first path segment is not a series just
+ * because it exists: /races/dam-good-run, /virtual/javelina-jallucinations
+ * and /colorado/aspen-backcountry are structure, not branding, and treating
+ * them as series would put a "Races" chip on one race and a "Virtual" chip
+ * on another.
+ *
+ * @param array $race Race array.
+ * @return array|null {slug, label, url} or null when the race is standalone.
+ */
+function arv_race_series_for( $race ) {
+	$series = array(
+		'insomniac'                => 'Insomniac Night Series',
+		// Same series, second spelling. Adrenaline Night Runs is published
+		// under the long form while its nine siblings use the short one, so
+		// without this alias one race would sit in a series of its own.
+		'insomniac-night-trail-series' => 'Insomniac Night Series',
+		'bear-chase-series'        => 'Bear Chase Series',
+		'drt-series'               => 'DRT Series',
+		'great-lakes-endurance'    => 'Great Lakes Endurance',
+		'white-mountain-endurance' => 'White Mountain Endurance',
+	);
+
+	$canonical = array(
+		'insomniac-night-trail-series' => 'insomniac',
+	);
+
+	if ( empty( $race['page'] ) ) {
+		return null;
+	}
+
+	$path  = (string) wp_parse_url( $race['page'], PHP_URL_PATH );
+	$parts = array_values( array_filter( explode( '/', $path ), 'strlen' ) );
+
+	// Two segments minimum: /insomniac/ on its own is the series page itself,
+	// not a race within it.
+	if ( count( $parts ) < 2 || ! isset( $series[ $parts[0] ] ) ) {
+		return null;
+	}
+
+	$slug = isset( $canonical[ $parts[0] ] ) ? $canonical[ $parts[0] ] : $parts[0];
+
+	return array(
+		'slug'  => $slug,
+		'label' => $series[ $parts[0] ],
+		// The series' own page, built from the segment as published rather
+		// than the canonical slug, so the alias still links somewhere real.
+		'url'   => 'https://www.aravaiparunning.com/' . $parts[0] . '/',
+	);
+}
