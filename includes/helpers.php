@@ -354,6 +354,11 @@ function arv_race_series_for( $race ) {
  * same as DRT and Bad Beard's series membership: a fact about the real
  * world this file has no other way to reach.
  *
+ * Jackass Night Trail shares Javelina Jundred's exact registration link
+ * (both are `dtid=64465`, one UltraSignup listing sells entry to both), so
+ * it is sold out and on the same waitlist for the same reason, confirmed
+ * by Jamil rather than re-derived.
+ *
  * @param array $race Race array.
  * @return string Waitlist URL, or '' when the race is not known to be sold out.
  */
@@ -361,6 +366,7 @@ function arv_race_waitlist_for( $race ) {
 	$waitlist = array(
 		'Mogollon Monster Trail Runs'         => 'https://ultrasignup.com/event_waitlist.aspx?did=130408',
 		'Javelina Jundred Presented by: HOKA' => 'https://ultrasignup.com/event_waitlist.aspx?did=133229',
+		'Jackass Night Trail Presented by: HOKA' => 'https://ultrasignup.com/event_waitlist.aspx?did=133229',
 	);
 
 	if ( ! isset( $race['name'] ) || ! isset( $waitlist[ $race['name'] ] ) ) {

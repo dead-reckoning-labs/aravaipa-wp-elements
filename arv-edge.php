@@ -411,6 +411,9 @@ t('and this element never renders a card-style cta', strpos($r,'arv-races__cta')
 echo "waitlist resolution:\n";
 t('Mogollon Monster resolves to its real waitlist', 'https://ultrasignup.com/event_waitlist.aspx?did=130408' === arv_race_waitlist_for(array('name'=>'Mogollon Monster Trail Runs')));
 t('Javelina Jundred resolves to its real waitlist', 'https://ultrasignup.com/event_waitlist.aspx?did=133229' === arv_race_waitlist_for(array('name'=>'Javelina Jundred Presented by: HOKA')));
+// Jackass Night Trail shares Javelina's exact dtid=64465 registration link,
+// one listing sells entry to both, so it shares its waitlist too.
+t('Jackass Night Trail shares Javelina\'s waitlist', 'https://ultrasignup.com/event_waitlist.aspx?did=133229' === arv_race_waitlist_for(array('name'=>'Jackass Night Trail Presented by: HOKA')));
 t('a race not on the list has no waitlist', '' === arv_race_waitlist_for(array('name'=>'Rock Hawk')));
 t('a race with no name at all is safe', '' === arv_race_waitlist_for(array()));
 
