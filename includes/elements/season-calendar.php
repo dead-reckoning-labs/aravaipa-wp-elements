@@ -392,8 +392,18 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 
 	$out .= '<span class="arv-calendar__body">';
 	$out .= '<span class="arv-calendar__name">' . esc_html( $race['name'] ) . '</span>';
-	if ( '' !== $race['distances'] ) {
-		$out .= '<span class="arv-calendar__distances">' . esc_html( $race['distances'] ) . '</span>';
+	// Pills, matching the map popup, rather than the raw delimiter-joined
+	// string. "50KM | 23K | 4 Mile | 1 Mile" read as a machine-separated
+	// list; the same distances as chips scan as four things a runner can
+	// pick between. Shares arv_split_distances() with the map so the two
+	// can never disagree about what counts as a separator.
+	$distances = arv_split_distances( $race['distances'] );
+	if ( ! empty( $distances ) ) {
+		$out .= '<span class="arv-calendar__distances">';
+		foreach ( $distances as $distance ) {
+			$out .= '<span class="arv-calendar__pill">' . esc_html( $distance ) . '</span>';
+		}
+		$out .= '</span>';
 	}
 	$where = array_filter( array( $race['venue'], $race['location'] ) );
 	if ( ! empty( $where ) ) {

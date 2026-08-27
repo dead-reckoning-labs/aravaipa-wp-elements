@@ -216,3 +216,37 @@ function arv_state_name( $code ) {
 
 	return isset( $names[ $key ] ) ? $names[ $key ] : $key;
 }
+
+/**
+ * Split a distances string into its individual distances.
+ *
+ * The source data uses two delimiters and always has. A race written across
+ * several row cells comes back pipe-joined from
+ * arv_upcoming_races_parse_row() ("50K | 25K | 10K | 5K"); a race written as
+ * one cell keeps whatever the editor typed, which is usually commas
+ * ("50 Mile, 50K, 30K"). In the current 84-race file that is 29 pipe-joined
+ * against 43 comma-joined, so anything that handles only one of them breaks
+ * the majority of races. The map popup shipped that bug twice, once in each
+ * direction, before this became one shared function.
+ *
+ * No distance value contains a comma of its own (checked across the whole
+ * file for digit-comma-digit), so there is no thousands separator here for
+ * this to break. A value with neither delimiter, "10K to 50K", comes back as
+ * a single item with its wording intact.
+ *
+ * The JS side (assets/aravaipa-race-map.js) has to match this, since it
+ * builds the map popups in the browser rather than in PHP. Keep the two in
+ * step.
+ *
+ * @param string $distances Raw distances string.
+ * @return array<int, string> Individual distances, empties removed.
+ */
+function arv_split_distances( $distances ) {
+	$parts = preg_split( '/\s*[|,]\s*/', (string) $distances );
+
+	if ( false === $parts ) {
+		return array();
+	}
+
+	return array_values( array_filter( array_map( 'trim', $parts ), 'strlen' ) );
+}

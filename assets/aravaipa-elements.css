@@ -1941,6 +1941,64 @@
 	font-size: 0.9rem;
 }
 
+/* Distance chips in the calendar list, matching the map popup's. */
+.arv-calendar__distances {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	margin: 0.15rem 0;
+}
+
+.arv-calendar__pill {
+	display: inline-block;
+	padding: 0.05rem 0.35rem;
+	background: rgba(0, 0, 0, 0.06);
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.3px;
+	line-height: 1.5;
+	white-space: nowrap;
+	opacity: 1;
+}
+
+/* Hide map / Show map toggle. Right-aligned above the map so it reads as
+   belonging to the panel it folds, rather than to the heading above it. */
+.arv-map__toggle {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	margin: 0 0 0.5rem auto;
+	padding: 0.25rem 0.5rem;
+	border: 1px solid rgba(128, 128, 128, 0.45);
+	background: transparent;
+	font-family: inherit;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	color: var(--arv-ink, #272727);
+	cursor: pointer;
+}
+
+.arv-map__toggle:hover {
+	border-color: var(--arv-accent, #ff2a13);
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-map__toggle-caret {
+	width: 0;
+	height: 0;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-top: 5px solid currentColor;
+	transition: transform 0.15s ease;
+}
+
+/* Points down when open (click to fold), up when closed (click to reveal). */
+.arv-map__toggle[aria-expanded="false"] .arv-map__toggle-caret {
+	transform: rotate(180deg);
+}
+
 /* "Near me" control. Sits in Leaflet's own .leaflet-bar so it inherits the
    zoom buttons' border, shadow and stacking, then widens to fit a label:
    a lone circle glyph reads as decoration, the words say what it does. */
@@ -1948,12 +2006,16 @@
 	background: #fff;
 }
 
-.arv-map__nearme a {
+/* Every property here is scoped past Leaflet, not just the width. Leaflet's
+   ".leaflet-bar a" sets display:block, and a bare ".arv-map__nearme a" ties
+   with it on specificity and loses on source order, so display:flex never
+   applied and the gap it depends on did nothing: the glyph and the label
+   rendered flush against each other. */
+.arv-map__canvas .leaflet-bar.arv-map__nearme a {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	gap: 0.3rem;
-	width: auto;
-	padding: 0 0.5rem;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
 	font-size: 0.7rem;
 	font-weight: 700;
@@ -1963,15 +2025,22 @@
 	white-space: nowrap;
 }
 
-/* Leaflet sets a fixed 26px square on .leaflet-bar a; the label needs the
-   width back, and the flex row above needs the height to stay the same. */
-.arv-map__nearme a,
-.arv-map__nearme a:hover {
+/* Leaflet sets a fixed square on its bar buttons, and it does it twice:
+   ".leaflet-bar a" at 26px and ".leaflet-touch .leaflet-bar a" at 30px. The
+   first ties with a bare ".arv-map__nearme a" on specificity and wins on
+   source order (Leaflet's stylesheet is enqueued from the render function,
+   so it prints after this file), and the second outranks it outright. Either
+   way the button stayed 26px wide and the label spilled out of the white
+   box. Scoping under .arv-map__canvas puts this at three classes plus a
+   type, which clears both. Same specificity trap as the popup name link. */
+.arv-map__canvas .leaflet-bar.arv-map__nearme a,
+.arv-map__canvas .leaflet-bar.arv-map__nearme a:hover {
 	width: auto;
 	min-width: 26px;
+	padding: 0 0.5rem;
 }
 
-.arv-map__nearme a.is-busy {
+.arv-map__canvas .leaflet-bar.arv-map__nearme a.is-busy {
 	opacity: 0.55;
 	pointer-events: none;
 }
@@ -1983,8 +2052,7 @@
 		display: none;
 	}
 
-	.arv-map__nearme a {
-		justify-content: center;
+	.arv-map__canvas .leaflet-bar.arv-map__nearme a {
 		padding: 0;
 	}
 }
