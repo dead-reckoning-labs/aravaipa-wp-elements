@@ -1941,6 +1941,25 @@
 	font-size: 0.9rem;
 }
 
+/* Series affiliation on a calendar row. Set apart from the distance pills
+   sitting next to it: those are what you can enter, this is what the race
+   belongs to, and they should not read as the same kind of thing. Outlined
+   in the accent rather than filled grey, and it does not wrap. */
+.arv-calendar__series {
+	display: inline-block;
+	align-self: flex-start;
+	margin: 0.1rem 0;
+	padding: 0.05rem 0.35rem;
+	border: 1px solid var(--arv-accent, #ff2a13);
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	line-height: 1.6;
+	white-space: nowrap;
+	color: var(--arv-accent, #ff2a13);
+}
+
 /* Distance chips in the calendar list, matching the map popup's. */
 .arv-calendar__distances {
 	display: flex;

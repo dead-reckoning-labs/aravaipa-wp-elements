@@ -32,12 +32,16 @@
 		} );
 	}
 
-	function matches( row, query, state, month, openOnly ) {
+	function matches( row, query, state, month, series, openOnly ) {
 		if ( openOnly && row.getAttribute( 'data-open' ) !== '1' ) {
 			return false;
 		}
 
 		if ( state && row.getAttribute( 'data-state' ) !== state ) {
+			return false;
+		}
+
+		if ( series && row.getAttribute( 'data-series' ) !== series ) {
 			return false;
 		}
 
@@ -79,6 +83,7 @@
 		var search = bar.querySelector( '[data-arv-search]' );
 		var stateSel = bar.querySelector( '[data-arv-state]' );
 		var monthSel = bar.querySelector( '[data-arv-month]' );
+		var seriesSel = bar.querySelector( '[data-arv-series]' );
 		var openBox = bar.querySelector( '[data-arv-open]' );
 		var count = bar.querySelector( '[data-arv-count]' );
 		var total = rows.length;
@@ -94,11 +99,12 @@
 			var query = search ? search.value.trim().toLowerCase() : '';
 			var state = stateSel ? stateSel.value : '';
 			var month = monthSel ? monthSel.value : '';
+			var series = seriesSel ? seriesSel.value : '';
 			var openOnly = openBox ? openBox.checked : false;
 			var shown = 0;
 
 			Array.prototype.forEach.call( rows, function ( row ) {
-				var ok = matches( row, query, state, month, openOnly );
+				var ok = matches( row, query, state, month, series, openOnly );
 				row.hidden = ! ok;
 				if ( ok ) {
 					shown++;
@@ -108,7 +114,7 @@
 			syncMonthHeadings( calendar );
 
 			if ( hiatus ) {
-				hiatus.hidden = !! ( query || state || month || openOnly );
+				hiatus.hidden = !! ( query || state || month || series || openOnly );
 			}
 
 			if ( count ) {
@@ -134,6 +140,9 @@
 		}
 		if ( monthSel ) {
 			monthSel.addEventListener( 'change', apply );
+		}
+		if ( seriesSel ) {
+			seriesSel.addEventListener( 'change', apply );
 		}
 		if ( openBox ) {
 			openBox.addEventListener( 'change', apply );

@@ -355,7 +355,15 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 		$where .= ' ' . arv_state_name( $state );
 	}
 
+	// Searching "insomniac" should find all ten Insomniac races, none of
+	// which carry the word in their own name.
+	$series = arv_race_series_for( $race );
+	if ( $series ) {
+		$where .= ' ' . $series['label'];
+	}
+
 	$out = '<div class="arv-calendar__row"'
+		. ' data-series="' . esc_attr( $series ? $series['slug'] : '' ) . '"'
 		. ' data-name="' . esc_attr( strtolower( $race['name'] ) ) . '"'
 		. ' data-where="' . esc_attr( strtolower( $where ) ) . '"'
 		. ' data-distances="' . esc_attr( strtolower( $race['distances'] ) ) . '"'
@@ -404,6 +412,15 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 			$out .= '<span class="arv-calendar__pill">' . esc_html( $distance ) . '</span>';
 		}
 		$out .= '</span>';
+	}
+	// A label, not a link. This whole block sits inside
+	// <a class="arv-calendar__main">, and an anchor inside an anchor is
+	// invalid HTML that browsers silently tear apart. The Series filter
+	// above the list is the interactive route to a whole series, and it is
+	// the better one anyway: it shows the season in place rather than
+	// navigating away from the calendar someone is already reading.
+	if ( $series ) {
+		$out .= '<span class="arv-calendar__series">' . esc_html( $series['label'] ) . '</span>';
 	}
 	$where = array_filter( array( $race['venue'], $race['location'] ) );
 	if ( ! empty( $where ) ) {
@@ -534,12 +551,18 @@ function arv_season_calendar_hiatus( $raw ) {
 function arv_season_calendar_filters( $races ) {
 	$states = array();
 	$months = array();
+	$series = array();
 
 	foreach ( $races as $race ) {
 		if ( preg_match( '/,\s*([A-Za-z]{2})\s*$/', $race['location'], $m ) ) {
 			$states[ strtoupper( $m[1] ) ] = true;
 		}
 		$months[ substr( $race['iso'], 5, 2 ) ] = true;
+
+		$s = arv_race_series_for( $race );
+		if ( $s ) {
+			$series[ $s['slug'] ] = $s['label'];
+		}
 	}
 
 	// Sorted by the name the reader actually sees, not by the code behind it.
@@ -552,6 +575,7 @@ function arv_season_calendar_filters( $races ) {
 		}
 	);
 	ksort( $months );
+	asort( $series );
 
 	$out  = '<div class="arv-calendar__filters" data-arv-filters>';
 
@@ -569,6 +593,20 @@ function arv_season_calendar_filters( $races ) {
 			// Value stays the code, since that is what data-state carries and
 			// what the JS compares; only the label spells it out.
 			$out .= '<option value="' . esc_attr( $code ) . '">' . esc_html( arv_state_name( $code ) ) . '</option>';
+		}
+		$out .= '</select></label>';
+	}
+
+	// Only worth a control when there is a choice to make: a page showing one
+	// series would otherwise offer a dropdown whose every option is the same
+	// answer, and a single-series division page is a real case.
+	if ( count( $series ) > 1 ) {
+		$out .= '<label class="arv-calendar__field">';
+		$out .= '<span class="arv-calendar__field-label">' . esc_html( __( 'Series', 'aravaipa-elements' ) ) . '</span>';
+		$out .= '<select class="arv-calendar__select" data-arv-series>';
+		$out .= '<option value="">' . esc_html( __( 'All series', 'aravaipa-elements' ) ) . '</option>';
+		foreach ( $series as $slug => $label ) {
+			$out .= '<option value="' . esc_attr( $slug ) . '">' . esc_html( $label ) . '</option>';
 		}
 		$out .= '</select></label>';
 	}

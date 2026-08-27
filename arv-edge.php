@@ -380,6 +380,47 @@ t('and shows the published span', strpos($rb,'>3-4<')!==false);
 t('the unconfirmed race in this pair has no Register', substr_count($r,'arv-calendar__action--upcoming')===0 || substr_count($r,'arv-calendar__action--upcoming')===1);
 t('and this element never renders a card-style cta', strpos($r,'arv-races__cta')===false);
 
+echo "series resolution:\n";
+$mk = function ( $page ) { return array( 'page' => $page ); };
+t('an insomniac race resolves',        'insomniac' === arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac/thrasher/'))['slug']);
+// Adrenaline Night Runs is published under the long path while its nine
+// siblings use the short one. Without the alias it would sit alone in a
+// series of one, and the dropdown would list Insomniac twice.
+t('the long insomniac path aliases to the same series', 'insomniac' === arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac-night-trail-series/adrenaline/'))['slug']);
+t('and both carry the same label',     arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac/x/'))['label'] === arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac-night-trail-series/y/'))['label']);
+t('the alias still links to its own published path', false !== strpos(arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac-night-trail-series/y/'))['url'], 'insomniac-night-trail-series'));
+t('a partner brand resolves',          'great-lakes-endurance' === arv_race_series_for($mk('https://www.aravaiparunning.com/great-lakes-endurance/tahqua/'))['slug']);
+// Structure is not branding. Treating any first segment as a series would
+// put a "Races" chip on one race and a "Virtual" chip on another.
+t('/races/ is not a series',           null === arv_race_series_for($mk('https://www.aravaiparunning.com/races/dam-good-run/')));
+t('/virtual/ is not a series',         null === arv_race_series_for($mk('https://www.aravaiparunning.com/virtual/jallucinations/')));
+t('/colorado/ is not a series',        null === arv_race_series_for($mk('https://www.aravaiparunning.com/colorado/aspen/')));
+// One segment is the series' own landing page, not a race inside it.
+t('a series page itself is not a race in it', null === arv_race_series_for($mk('https://www.aravaiparunning.com/insomniac/')));
+t('a standalone race has no series',   null === arv_race_series_for($mk('https://www.aravaiparunning.com/javelina/')));
+t('an empty page is safe',             null === arv_race_series_for(array('page'=>'')));
+
+echo "series chip and filter:\n";
+$serCal = '';
+foreach (array(
+  array('Jangover','insomniac/jangover'), array('Thrasher','insomniac/thrasher'),
+  array('Adrenaline','insomniac-night-trail-series/adrenaline'), array('Tahqua','great-lakes-endurance/tahqua'),
+  array('Grand Island','great-lakes-endurance/grand-island'), array('Solo','javelina'),
+) as $i => $x) {
+  $serCal .= sprintf("%s | 2026-%02d-10 | Month 10 | 50K | V | Pine, AZ | https://u.com/%d | https://www.aravaiparunning.com/%s/ |  |  |  |  | 1 | 0\n", $x[0], 9 + ($i % 4), $i, $x[1]);
+}
+$sr = arv_season_calendar_render(array('rows'=>trim($serCal)));
+t('a series race gets a chip',            strpos($sr,'arv-calendar__series')!==false);
+t('the chip names the series',            strpos($sr,'>Insomniac Night Series<')!==false);
+t('the row carries data-series',          strpos($sr,'data-series="insomniac"')!==false);
+t('a standalone race has an empty one',   strpos($sr,'data-series=""')!==false);
+t('the chip is not a nested anchor',      strpos($sr,'<a class="arv-calendar__series"')===false);
+t('a Series dropdown is offered',         strpos($sr,'data-arv-series')!==false);
+// Two spellings, one series: the dropdown must not list Insomniac twice.
+t('Insomniac appears once in the dropdown', substr_count($sr,'<option value="insomniac">')===1);
+t('and the other series is listed too',   strpos($sr,'<option value="great-lakes-endurance">')!==false);
+t('series is searchable by name',         strpos($sr,'insomniac night series')!==false);
+
 echo "shared distance splitter:\n";
 // One function now backs both the calendar pills and the map popup pills,
 // because the popup shipped the split bug twice, once in each direction,
