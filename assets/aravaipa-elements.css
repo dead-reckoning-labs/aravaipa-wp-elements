@@ -488,50 +488,21 @@
 
 .arv-region-map__pin {
 	position: absolute;
-	/* Zero size on purpose: this is a positioning point, not a box. The dot
-	   and name used to be flex children centred by this element's own box,
-	   which broke the moment a long name (White Mountain Endurance) landed
-	   near the map's right edge: centring a wide label under a point 92% of
-	   the way across the stage pushes half of it straight out past the
-	   stage, and past the whole page after it, since nothing here was ever
-	   clipped. Both are now absolutely positioned against this single point
-	   instead, free to anchor to whichever edge has room. */
-	display: block;
-	width: 0;
-	height: 0;
-	text-decoration: none;
-	color: inherit;
-	z-index: 1;
-}
+	/* Headquarters, distinguished by size and ring weight rather than by hue.
 
-.arv-region-map__pin:focus-visible {
-	z-index: 3;
-	outline: none;
-}
-
-.arv-region-map__dot {
-	position: absolute;
-	top: 0;
-	left: 0;
-	transform: translate(-50%, -50%);
-	width: 0.7rem;
-	height: 0.7rem;
-	border-radius: 50%;
-	background: var(--arv-teal);
-	box-shadow: 0 0 0 3px rgba(91, 181, 162, 0.25);
-	transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* The one pin that is headquarters rather than a region, in the site's
-   accent rather than the teal the others share. Ringed wider so it still
-   reads as the anchor of the map at a glance on a phone. */
+   It used to be the accent red. Red means one thing everywhere else on this
+   site, "there is something to buy", and it was already doing that job on
+   this same panel: the View races button in the hover card is red. A map
+   marker is not an offer, so it was the second meaning of red on one small
+   surface. Same reasoning as the race map's pins, which are teal for the
+   same reason. Bigger and more heavily ringed still reads as "this one is
+   different" without spending a colour on it. */
 .arv-region-map__pin--primary .arv-region-map__dot {
 	width: 1rem;
 	height: 1rem;
-	background: var(--arv-accent);
-	box-shadow: 0 0 0 4px rgba(255, 42, 19, 0.25);
+	background: var(--arv-teal);
+	box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.35);
 }
-
 .arv-region-map__pin:focus-visible .arv-region-map__dot {
 	transform: translate(-50%, -50%) scale(1.3);
 	box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.4);
@@ -561,8 +532,11 @@
 	border: 1px solid var(--arv-map-rule);
 }
 
+/* The label follows the dot: white like every other region's. A red name
+   under a teal dot was the last trace of the accent-coloured HQ treatment
+   and read as an error rather than an emphasis. */
 .arv-region-map__pin--primary .arv-region-map__name {
-	color: var(--arv-accent);
+	color: inherit;
 }
 
 /* Lifts the label above the dot. Paired with a neighbour that keeps the
@@ -592,12 +566,15 @@
 	width: max-content;
 	max-width: 15rem;
 	padding: 0.7rem 0.85rem;
-	/* Near-black with a teal edge rather than the accent red it used to be.
-	   A solid red card is the loudest thing on the panel, which is wrong
-	   for what is only a one-line description, and it fought the red HQ pin
-	   for attention. Red now means one thing on this map: headquarters. */
+	/* Near-black, and no accent rule along the top.
+	
+	   The card used to be solid accent red, which was the loudest thing on
+	   the panel for what is only a one-line description. Replacing that with
+	   a dark card was right; keeping a 2px teal line across its top was the
+	   fix overshooting. That line encodes nothing, it is the same decorative
+	   stripe every dark template card has, and the shadow and the near-black
+	   fill already separate the card from the map perfectly well without it. */
 	background: #121817;
-	border-top: 2px solid var(--arv-teal);
 	color: var(--arv-map-text);
 	font-size: 0.76rem;
 	font-weight: 500;
@@ -656,10 +633,11 @@
 	transition: transform 0.15s ease;
 }
 
-.arv-region-map__pin--primary .arv-region-map__cta {
-	background: var(--arv-accent);
-	color: #fff;
-}
+/* No separate treatment for headquarters here either. Every card's button
+   does the same thing, "go to this region's races", and styling one of them
+   red and the other eight teal made the same action look like two different
+   ones depending on which pin you hovered. Headquarters is already
+   distinguished by its dot. */
 
 /* Without this the card is scenery: it opens on hover but the pointer cannot
    reach it, so the button inside would swallow nothing and the click would
