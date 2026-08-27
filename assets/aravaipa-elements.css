@@ -1892,9 +1892,12 @@
 	background: transparent;
 	color: inherit;
 	font-family: inherit;
-	font-size: 0.92rem;
-	/* iOS zooms the whole page in when a focused input is under 16px. The
-	   label above carries the small type instead. */
+	/* 16px, not 0.92rem. Same fix as the map's search box: the comment below
+	   describes the right idea but the value above it did not actually
+	   deliver it, at 14.72px, which is what let iOS zoom the page on focus
+	   in spite of the comment. The label above carries the small type
+	   instead, so the input itself can afford to be a full size larger. */
+	font-size: 16px;
 	min-height: 44px;
 }
 
@@ -2115,9 +2118,16 @@
 	background: #fff;
 	color: #272727;
 	font-family: inherit;
-	font-size: 0.92rem;
+	/* 16px, not the 0.92rem (14.72px) every other input on this page uses.
+	   The comment already here claimed this was handled and it was not: iOS
+	   Safari zooms the entire page in on focus for any input under 16px,
+	   whatever a comment two lines below says about it. That is what "the
+	   screen zooms when I go to type" was: not the map zooming, the whole
+	   viewport, triggered by focusing this exact input. Every browser's
+	   default form-control size is already 16px; this only exists to
+	   override the smaller size the rest of the map's type uses. */
+	font-size: 16px;
 	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
-	/* iOS zooms the page when a focused input is under 16px. */
 	min-height: 44px;
 }
 

@@ -333,9 +333,16 @@
 				return;
 			}
 			var index = shown[ i ].index;
+			var pin   = pins[ index ];
 			close();
-			input.value = pins[ index ].name;
-			map.setView( [ pins[ index ].lat, pins[ index ].lng ], 11 );
+			input.value = pin.name;
+
+			// 9, not the street-level 11 this used before. 9 also matches
+			// disableClusteringAtZoom, so the marker is already showing as
+			// itself rather than a cluster bubble by the time revealMarker
+			// runs, and Near me's own fitBounds calls settle in the same
+			// range for the same "found it, see what's around it" reason.
+			map.setView( [ pin.lat, pin.lng ], 9, { animate: false } );
 			revealMarker( group, markers[ index ] );
 		}
 
