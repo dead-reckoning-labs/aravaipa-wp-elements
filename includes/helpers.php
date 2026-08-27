@@ -339,3 +339,33 @@ function arv_race_series_for( $race ) {
 		'url'   => 'https://www.aravaiparunning.com/' . $parts[0] . '/',
 	);
 }
+
+/**
+ * Waitlist link for a race that has sold out, keyed by name.
+ *
+ * Not derivable from anything already in a row. UltraSignup does carry this
+ * as real structured data (JSON-LD `"availability":"SoldOut"` plus a
+ * separate `hlWaitlist` link, both confirmed live on Javelina Jundred and
+ * Mogollon Monster's own registration pages), but nothing in this codebase
+ * fetches a live UltraSignup page at render time, and the registration
+ * status label rendered elsewhere on that same page does not mention it at
+ * all: Javelina's said "Registration closes: Mon, Oct 5" with no hint the
+ * event was sold out underneath. Told directly by Jamil instead, 2026-08-27,
+ * same as DRT and Bad Beard's series membership: a fact about the real
+ * world this file has no other way to reach.
+ *
+ * @param array $race Race array.
+ * @return string Waitlist URL, or '' when the race is not known to be sold out.
+ */
+function arv_race_waitlist_for( $race ) {
+	$waitlist = array(
+		'Mogollon Monster Trail Runs'         => 'https://ultrasignup.com/event_waitlist.aspx?did=130408',
+		'Javelina Jundred Presented by: HOKA' => 'https://ultrasignup.com/event_waitlist.aspx?did=133229',
+	);
+
+	if ( ! isset( $race['name'] ) || ! isset( $waitlist[ $race['name'] ] ) ) {
+		return '';
+	}
+
+	return $waitlist[ $race['name'] ];
+}

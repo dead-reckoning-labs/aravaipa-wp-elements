@@ -1264,6 +1264,17 @@
 	cursor: default;
 }
 
+/* Sold out, but there is still somewhere to click: amber rather than the
+   red "buy" accent, since the offer is a waitlist, not open entries, and
+   rather than the closed style's grey, since it is not a dead end either. */
+.arv-races__cta--waitlist,
+.arv-races__cta--waitlist:link,
+.arv-races__cta--waitlist:visited {
+	background: #b45f00;
+	border-color: #b45f00;
+	color: #fff;
+}
+
 .arv-races__cta:focus-visible,
 .arv-races__details:focus-visible,
 .arv-races__link:focus-visible {
@@ -1310,6 +1321,13 @@
 	a.arv-races__cta--results:focus {
 		background: #22505b;
 		border-color: #22505b;
+		color: #fff;
+	}
+
+	a.arv-races__cta--waitlist:hover,
+	a.arv-races__cta--waitlist:focus {
+		background: #8c4900;
+		border-color: #8c4900;
 		color: #fff;
 	}
 	.arv-races__link:hover { color: var(--arv-accent); }
@@ -1733,6 +1751,17 @@
 	color: #fff;
 }
 
+/* Same amber as the homepage cards: sold out, but a waitlist is still a
+   real place to click, so it stays filled rather than falling back to the
+   default outlined style live/results use. */
+.arv-calendar__action--waitlist,
+.arv-calendar__action--waitlist:link,
+.arv-calendar__action--waitlist:visited {
+	background: #b45f00;
+	border-color: #b45f00;
+	color: #fff;
+}
+
 @media (hover: hover) and (pointer: fine) {
 	.arv-calendar__action:hover {
 		background: var(--arv-teal-deep);
@@ -1745,6 +1774,11 @@
 	a.arv-calendar__action--upcoming:hover {
 		background: #c61300;
 		border-color: #c61300;
+		color: #fff;
+	}
+	a.arv-calendar__action--waitlist:hover {
+		background: #8c4900;
+		border-color: #8c4900;
 		color: #fff;
 	}
 	.arv-calendar--dark .arv-calendar__action:hover {
@@ -2216,6 +2250,12 @@
 	color: #fff;
 }
 
+.arv-map__popup-cta--waitlist {
+	background: #b45f00;
+	border-color: #b45f00;
+	color: #fff;
+}
+
 .arv-map__popup-info {
 	border-color: rgba(128, 128, 128, 0.45);
 	color: #272727;
@@ -2238,6 +2278,11 @@
 .arv-map__popup a.arv-map__popup-cta--results,
 .arv-map__popup a.arv-map__popup-cta--live:hover,
 .arv-map__popup a.arv-map__popup-cta--results:hover {
+	color: #fff;
+}
+
+.arv-map__popup a.arv-map__popup-cta--waitlist,
+.arv-map__popup a.arv-map__popup-cta--waitlist:hover {
 	color: #fff;
 }
 
