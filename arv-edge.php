@@ -236,6 +236,35 @@ $GLOBALS['NOW']='2026-08-29';
 $r = arv_upcoming_races_render(array('rows'=>$rh,'cta_label'=>'Enter now'));
 t('but ignored once the race is running', strpos($r,'Enter now')===false && strpos($r,'>Live Results<')!==false);
 
+echo "featured races (pinning):\n";
+$GLOBALS['NOW']='2026-08-25';
+$soon  = "Soon Race | 2026-08-26 | Aug 26 | 50K | V | P, AZ | https://u.com/1 | https://a.com/soon/ |  |  |  |  | 1 | 0";
+$later = "Later Race | 2026-09-20 | Sep 20 | 50K | V | P, AZ | https://u.com/2 | https://a.com/later/ |  |  |  |  | 1 | 0";
+$virt  = "Javelina Jallucinations | 2026-10-01 | October 1-31 | Month Long Virtual Race | Virtual | Worldwide | https://obsession.run/x | https://a.com/jall/ |  | 2026-10-31 |  |  | 1 | 0";
+$three = implode("\n", array($soon, $later, $virt));
+$r = arv_upcoming_races_render(array('rows'=>$three));
+t('with no featured setting, date order wins', strpos($r,'Soon Race')<strpos($r,'Later Race') && strpos($r,'Later Race')<strpos($r,'Javelina Jallucinations'));
+
+$rf = arv_upcoming_races_render(array('rows'=>$three,'featured'=>'Javelina Jallucinations'));
+t('pinned race jumps ahead of a chronologically sooner one', strpos($rf,'Javelina Jallucinations')<strpos($rf,'Soon Race'));
+t('the rest keep their normal date order behind it', strpos($rf,'Soon Race')<strpos($rf,'Later Race'));
+
+// Pinning must take a slot, not add one: the whole point is "still 6",
+// never "6 plus whatever I pinned".
+$rl = arv_upcoming_races_render(array('rows'=>$three,'featured'=>'Javelina Jallucinations','limit'=>'2'));
+t('pinning still respects the row limit', substr_count($rl,'arv-races__card')===2);
+t('and the pinned race is one of the two kept', strpos($rl,'Javelina Jallucinations')!==false);
+t('bumping the sooner race out, not the pinned one', strpos($rl,'Later Race')===false);
+
+// Two pins: ordered by how they were named, not by which happened to sort
+// first in the already-date-sorted array.
+$rf2 = arv_upcoming_races_render(array('rows'=>$three,'featured'=>'Javelina Jallucinations, Later Race'));
+t('multiple pins keep the order they were named in', strpos($rf2,'Javelina Jallucinations')<strpos($rf2,'Later Race') && strpos($rf2,'Later Race')<strpos($rf2,'Soon Race'));
+
+t('a name that matches nothing is safe', strpos(arv_upcoming_races_render(array('rows'=>$three,'featured'=>'Nonexistent Race')),'Soon Race')!==false);
+t('case does not matter',                strpos(arv_upcoming_races_render(array('rows'=>$three,'featured'=>'JAVELINA JALLUCINATIONS')),'Javelina Jallucinations')!==false);
+$GLOBALS['NOW']='2026-08-25';
+
 echo "race details button:\n";
 $GLOBALS['NOW']='2026-08-25';
 $r = arv_upcoming_races_render(array('rows'=>$rh));

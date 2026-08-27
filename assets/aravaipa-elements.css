@@ -2750,3 +2750,227 @@
 @media (max-width: 619px) {
 	.arv-map { padding: 2.5rem 0; }
 }
+
+/* =================================================== Featured race == */
+/* One named race, promoted to a full block wherever an editor drops it,
+   independent of where it sorts in Aravaipa Upcoming Races by date. Visual
+   language borrowed from the hero (image + scrim + big date/name lockup)
+   since the job is the same: stop a scrolling visitor on one race. Phase
+   colours borrowed from the calendar and the cards, since it is driven by
+   the same arv_upcoming_races_action() they are and has to agree with them
+   about what a given phase means. */
+
+.arv-featured {
+	--arv-teal: #5bb5a2;
+	--arv-teal-deep: #2a5e6b;
+	--arv-accent: #ff2a13;
+	box-sizing: border-box;
+}
+
+.arv-featured *  {
+	box-sizing: inherit;
+}
+
+.arv-featured--dark {
+	color: #fff;
+}
+
+.arv-featured--light {
+	color: #272727;
+}
+
+.arv-featured__panel {
+	position: relative;
+	padding: 4rem 1.5rem;
+	background-color: #1d2624;
+	background-size: cover;
+	background-position: center;
+	overflow: hidden;
+}
+
+.arv-featured--light .arv-featured__panel {
+	background-color: var(--arv-races-card, #f7f7f7);
+}
+
+.arv-featured--image .arv-featured__panel {
+	background-image: var(--arv-featured-image);
+}
+
+/* A pseudo element rather than a background blend, same reasoning as the
+   hero's: the overlay opacity control then works identically whether or
+   not an image is actually set, rather than needing its own code path for
+   the no-image case. */
+.arv-featured--image .arv-featured__panel::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: #000;
+	opacity: var(--arv-overlay, 0.55);
+}
+
+/* Full bleed. Same technique as the full-width map, and for the same
+   reason: 50% minus 50vw is exactly how far this element's container sits
+   from the window edge, whatever chain of Cornerstone section/row/column
+   produced that container, which a fixed negative margin could not know.
+   --arv-sbw corrects for the scrollbar width difference between platforms;
+   see the map's own rule for the full reasoning. Declared again here
+   rather than shared, since the two elements do not otherwise depend on
+   each other and a future change to one should not have to remember the
+   other exists. */
+.arv-featured--full .arv-featured__panel {
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+}
+
+.arv-featured__inner {
+	position: relative;
+	max-width: 60rem;
+	margin: 0 auto;
+}
+
+.arv-featured__eyebrow {
+	margin: 0 0 0.5rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--arv-teal);
+}
+
+.arv-featured--light .arv-featured__eyebrow {
+	color: var(--arv-teal-deep);
+}
+
+.arv-featured__date {
+	display: block;
+	margin: 0 0 0.4rem;
+	font-size: 0.95rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	opacity: 0.85;
+}
+
+.arv-featured__name {
+	margin: 0 0 0.6rem;
+	font-size: clamp(1.9rem, 5vw, 3.2rem);
+	line-height: 1.08;
+	font-weight: 800;
+}
+
+.arv-featured__detail {
+	margin: 0 0 1.5rem;
+	max-width: 34rem;
+	font-size: 1.05rem;
+	line-height: 1.5;
+	opacity: 0.85;
+}
+
+.arv-featured__distances {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0 0 1.75rem;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-featured__pill {
+	padding: 0.3rem 0.7rem;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-radius: 2px;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+.arv-featured--light .arv-featured__pill {
+	border-color: rgba(0, 0, 0, 0.2);
+	background: #fff;
+}
+
+.arv-featured__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 1rem;
+}
+
+.arv-featured__cta {
+	display: inline-block;
+	padding: 0.85rem 1.6rem;
+	border: 2px solid var(--arv-accent);
+	background: var(--arv-accent);
+	color: #fff;
+	font-size: 0.85rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+/* Same amber for a sold-out race with a waitlist, same teal for something
+   informational rather than an offer, as everywhere else this phase set
+   appears (the calendar, the map, the cards). One vocabulary of colour for
+   "what can I do about this race" across the whole site, not a fourth
+   version invented for this element. */
+.arv-featured__cta--waitlist {
+	background: #daa520;
+	border-color: #daa520;
+	color: #272727;
+}
+
+.arv-featured__cta--live,
+.arv-featured__cta--results {
+	background: var(--arv-teal-deep);
+	border-color: var(--arv-teal-deep);
+}
+
+.arv-featured__cta--closed {
+	background: transparent;
+	border-color: rgba(255, 255, 255, 0.4);
+	color: inherit;
+	cursor: default;
+}
+
+.arv-featured--light .arv-featured__cta--closed {
+	border-color: rgba(0, 0, 0, 0.3);
+}
+
+.arv-featured__info {
+	color: inherit;
+	font-size: 0.85rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	text-decoration: none;
+	border-bottom: 1px solid currentColor;
+	padding-bottom: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	a.arv-featured__cta:hover {
+		background: #c61300;
+		border-color: #c61300;
+	}
+
+	a.arv-featured__cta--waitlist:hover {
+		background: #c9971d;
+		border-color: #c9971d;
+		color: #272727;
+	}
+
+	a.arv-featured__cta--live:hover,
+	a.arv-featured__cta--results:hover {
+		background: #22505b;
+		border-color: #22505b;
+	}
+}
+
+@media (max-width: 619px) {
+	.arv-featured__panel {
+		padding: 2.5rem 1.25rem;
+	}
+}

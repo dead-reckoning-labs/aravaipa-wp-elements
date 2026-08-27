@@ -41,6 +41,7 @@ cs_register_element(
 				'theme'     => cs_value( 'light', 'style' ),
 				'columns'   => cs_value( '3', 'markup' ),
 				'limit'     => cs_value( '6', 'markup' ),
+				'featured'  => cs_value( '', 'markup' ),
 				'cta_label' => cs_value( 'Register', 'markup' ),
 				'live_lead' => cs_value( '5', 'markup' ),
 				'all_label' => cs_value( 'See all races', 'markup' ),
@@ -225,6 +226,12 @@ function arv_upcoming_races_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Maximum races to show', 'aravaipa-elements' ),
 					'description' => __( 'Rows past this are skipped. Paste the whole season and let this pick the front of it. 0 shows every row.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'featured',
+					'type'        => 'text',
+					'label'       => __( 'Featured races (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Comma-separated race names to pin to the front regardless of date, ahead of races that are chronologically sooner. For something like a month-long virtual race whose date sorts it off the list even while it is open right now. Still subject to the row limit above, so pinning does not add a slot, it takes one.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'   => 'cta_label',
@@ -673,6 +680,36 @@ function arv_upcoming_races_render( $data ) {
 			return strcmp( $a['iso'], $b['iso'] );
 		}
 	);
+
+	// Pinning happens after the date sort and before the limit, so a named
+	// race jumps the queue rather than widening it: it takes a slot instead
+	// of adding one, which is what keeps "6 races" meaning 6 on a homepage
+	// that was never asked to show more. A virtual race open for a month
+	// sorts by its start date same as everything else, which buries it
+	// behind every physical race happening sooner even though it is the one
+	// somebody could act on today.
+	$featured = isset( $data['featured'] ) ? arv_parse_list( $data['featured'] ) : array();
+	if ( ! empty( $featured ) ) {
+		$featured_lc = array_map( 'strtolower', $featured );
+		$pinned      = array();
+		$rest        = array();
+
+		foreach ( $races as $race ) {
+			$slot = array_search( strtolower( $race['name'] ), $featured_lc, true );
+			if ( false !== $slot ) {
+				// Keyed by its position in the featured list, not appended,
+				// so pinning two races puts them in the order they were
+				// named rather than the order they happened to appear in
+				// the already-date-sorted array.
+				$pinned[ $slot ] = $race;
+			} else {
+				$rest[] = $race;
+			}
+		}
+
+		ksort( $pinned );
+		$races = array_merge( array_values( $pinned ), $rest );
+	}
 
 	$limit = isset( $data['limit'] ) ? (int) $data['limit'] : 6;
 	if ( $limit > 0 ) {
