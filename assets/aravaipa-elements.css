@@ -1836,6 +1836,49 @@
 	}
 }
 
+/* The row itself has to stop wrapping for any of the above to take effect.
+   .arv-calendar__row sets flex-wrap: wrap higher up, from when the button
+   was deliberately given its own full-width line, and flex-wrap decides
+   where to break from each item's content size before any shrinking
+   happens. So the block above could hand the actions `flex-basis: auto` and
+   `margin-left: auto` all it liked and they still landed on a second line,
+   just right-aligned there instead of left.
+
+   That second line is what made every row read as top-justified: with the
+   button below the text rather than beside it, the text sits at the top of
+   a much taller row and the button's centre ended up 65 to 99px below the
+   row's. Measured at three phone widths; with the row held on one line it
+   is within 1px at all of them.
+
+   Not applied below 380px. There genuinely is not room for two columns on a
+   360px screen: holding the row together there squeezes the text column
+   until names wrap more, and the list came out ~10% taller (14302px to
+   15738px) with rows up to 335px. Above 380 it is shorter on both counts,
+   12645px to 10912px at 430. So the small phones keep the stacked layout,
+   which is the honest answer for the space they have. */
+@media (max-width: 619px) and (min-width: 380px) {
+	.arv-calendar__row {
+		flex-wrap: nowrap;
+	}
+
+	/* The series chip is white-space: nowrap, so on the narrower text column
+	   a one-line label runs straight out of it and lands on top of the
+	   button. "WHITE MOUNTAIN ENDURANCE" did exactly that. Holding the row on
+	   one line is what exposed this; the chip was always overflowing, it just
+	   had a full-width line to overflow into before. Clipped rather than
+	   allowed to wrap, so the chip stays one line tall and the row height
+	   stays predictable. */
+	.arv-calendar__body {
+		overflow: hidden;
+	}
+
+	.arv-calendar__series {
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+}
+
 /* ------------------------------------------------ Calendar filters -- */
 /* Hidden until the script that drives it has run. A search box that does
    nothing because its JavaScript failed to load is worse than no search box:
