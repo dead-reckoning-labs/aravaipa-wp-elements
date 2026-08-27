@@ -165,38 +165,54 @@
 	 * distances are computed here, and the map just moves. There is no
 	 * request carrying the visitor's position.
 	 */
-	function addNearMe( map, pins, markers, group ) {
+	function addNearMe( canvas, map, pins, markers, group ) {
 		if ( ! navigator.geolocation ) {
 			return;
 		}
 
-		// Top right, deliberately, rather than under the zoom buttons on the
-		// left where it started. The search sits bottom left and its results
-		// open upward, so the entire left edge is the column that list grows
-		// into; anything parked there gets covered the moment someone types.
-		// Moving this is a cleaner fix than shortening the results list,
-		// because it holds at any map height rather than depending on how
-		// much room happens to be left. Bottom right is not free either,
-		// that is where Leaflet puts the tile attribution.
+		function build( wrap ) {
+			var link = window.L.DomUtil.create( 'a', '', wrap );
+			link.href = '#';
+			link.title = 'Find races near me';
+			link.setAttribute( 'role', 'button' );
+			link.innerHTML = '<span aria-hidden="true">&#9678;</span><span class="arv-map__nearme-label">Near me</span>';
+
+			// Without this Leaflet treats the click as a map drag/zoom
+			// gesture and the anchor also tries to navigate to "#".
+			window.L.DomEvent.disableClickPropagation( wrap );
+			window.L.DomEvent.on( link, 'click', function ( e ) {
+				window.L.DomEvent.preventDefault( e );
+				locate( link, map, pins, markers, group );
+			} );
+
+			return wrap;
+		}
+
+		// Sits next to the search box rather than in a corner of its own.
+		// Search and Near me answer the same question, "which race", by name
+		// or by where you are standing, and splitting them across opposite
+		// corners made the visitor hunt for the second one after finding the
+		// first. Beside the input they read as one control.
+		//
+		// It also settles a collision this had either way: the search results
+		// open upward out of the bottom left, so anything parked up the left
+		// edge gets covered while someone types, and the top right is where
+		// the collapse toggle now floats. Grouped with the search, there is
+		// no corner left to fight over.
+		var find = canvas.parentNode.querySelector( '[data-arv-map-search]' );
+		if ( find ) {
+			var inline = document.createElement( 'div' );
+			inline.className = 'leaflet-bar arv-map__nearme arv-map__nearme--inline';
+			find.appendChild( build( inline ) );
+			return;
+		}
+
+		// No search box (a map with few enough races not to need one), so it
+		// falls back to being a control in its own right.
 		var Control = window.L.Control.extend( {
 			options: { position: 'topright' },
 			onAdd: function () {
-				var wrap = window.L.DomUtil.create( 'div', 'leaflet-bar arv-map__nearme' );
-				var link = window.L.DomUtil.create( 'a', '', wrap );
-				link.href = '#';
-				link.title = 'Find races near me';
-				link.setAttribute( 'role', 'button' );
-				link.innerHTML = '<span aria-hidden="true">&#9678;</span><span class="arv-map__nearme-label">Near me</span>';
-
-				// Without this Leaflet treats the click as a map drag/zoom
-				// gesture and the anchor also tries to navigate to "#".
-				window.L.DomEvent.disableClickPropagation( wrap );
-				window.L.DomEvent.on( link, 'click', function ( e ) {
-					window.L.DomEvent.preventDefault( e );
-					locate( link, map, pins, markers, group );
-				} );
-
-				return wrap;
+				return build( window.L.DomUtil.create( 'div', 'leaflet-bar arv-map__nearme' ) );
 			},
 		} );
 
@@ -574,7 +590,7 @@
 			map.setZoom( 9 );
 		}
 
-		addNearMe( map, config.pins, markers, group );
+		addNearMe( canvas, map, config.pins, markers, group );
 		addSearch( canvas, map, config.pins, markers, group );
 		addCollapse( canvas, map );
 

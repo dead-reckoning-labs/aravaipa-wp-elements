@@ -326,6 +326,15 @@ function arv_race_map_render( $data ) {
 	// get it for free. Nothing is hidden from a crawler either way, since the
 	// map's own content is a canvas and the <noscript> list below carries the
 	// races in markup regardless of this state.
+	//
+	// The toggle and the panel share a wrapper, and that wrapper is what the
+	// toggle is positioned against when it floats over the map. Positioning
+	// it against .arv-map__inner instead was a real bug: inner starts at the
+	// eyebrow, so on a map that has a heading the button landed level with
+	// the heading rather than over the map. It only looked right in the
+	// configuration it was checked in, which had no heading at all.
+	$out .= '<div class="arv-map__stage">';
+
 	if ( $collapsible ) {
 		$out .= '<button type="button" class="arv-map__toggle" data-arv-map-toggle aria-expanded="true">';
 		$out .= '<span class="arv-map__toggle-label">' . esc_html( __( 'Hide map', 'aravaipa-elements' ) ) . '</span>';
@@ -362,6 +371,11 @@ function arv_race_map_render( $data ) {
 
 	$out .= '<div class="arv-map__canvas" data-arv-map style="height:' . esc_attr( $height ) . 'px"></div>';
 	$out .= '<script type="application/json" data-arv-map-config>' . $json . '</script>';
+	$out .= '</div>';
+
+	// Closes .arv-map__stage. The toggle above is positioned against this,
+	// not against .arv-map__inner, so it lands over the map rather than over
+	// the heading.
 	$out .= '</div>';
 
 	// A plain list of every pin, in the markup, always. The map needs

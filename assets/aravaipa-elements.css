@@ -1960,8 +1960,18 @@
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 0 1.25rem;
-	/* Anchors the collapse toggle, which is absolutely positioned over the
-	   map's top right corner while the map is open. */
+}
+
+/* Anchors the collapse toggle, which floats over the map's top right
+   corner while the map is open.
+
+   The toggle is positioned against this rather than against
+   .arv-map__inner, and that distinction was a real bug: inner starts at the
+   eyebrow, so on a map with a heading the button landed level with the
+   heading instead of over the map. This wrapper starts at the map itself,
+   so "10px from the top" means 10px into the map at any heading length,
+   including none. */
+.arv-map__stage {
 	position: relative;
 }
 
@@ -2077,14 +2087,33 @@
    result is never drawn behind a pin or an open popup. */
 .arv-map__search {
 	position: relative;
-	width: 19rem;
+	/* A row, because Near me now sits in here beside the input rather than in
+	   a corner of its own: the two answer the same question and belong
+	   together. The input takes the slack, the button keeps its own width. */
+	display: flex;
+	align-items: stretch;
+	gap: 6px;
+	width: 24rem;
 	max-width: calc(100vw - 4rem);
 	margin: 0;
 	z-index: 900;
 }
 
 .arv-map__search-input {
-	width: 100%;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* Near me, inline beside the search rather than as its own Leaflet control.
+   The .leaflet-bar class comes along for the border and shadow, but the
+   corner positioning it normally implies does not apply here. */
+.arv-map__nearme--inline {
+	flex: 0 0 auto;
+	position: static;
+	margin: 0;
+}
+
+.arv-map__search-input {
 	padding: 0.55rem 0.7rem;
 	border: 1px solid rgba(0, 0, 0, 0.2);
 	border-radius: 0;
@@ -2117,7 +2146,10 @@
 	/* Opens upward, so it never runs off the bottom of the canvas. */
 	bottom: 100%;
 	left: 0;
-	right: 0;
+	/* Sized to the input rather than stretched across Near me beside it, so
+	   the list lines up with the thing that produced it. */
+	width: 19rem;
+	max-width: 100%;
 	margin: 0 0 4px;
 	padding: 0;
 	list-style: none;
