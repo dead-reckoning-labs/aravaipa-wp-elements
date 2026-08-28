@@ -38,6 +38,10 @@ function apply_filters( $t, $v ) { return $v; }
 function current_time( $f ) { return $GLOBALS['NOW'] ?? '2026-08-26'; }
 function is_wp_error( $t ) { return false; }
 function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
+function is_singular( $t = '' ) { return $GLOBALS['IS_SINGULAR'] ?? false; }
+function is_page( $p = '' ) { return $GLOBALS['IS_PAGE'] ?? false; }
+function is_front_page() { return $GLOBALS['IS_FRONT'] ?? false; }
+function esc_attr__( $s, $d = '' ) { return $s; }
 function add_query_arg( $a ) { return $GLOBALS['CURRENT_PATH'] ?? '/'; }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function register_rest_route( $ns, $route, $args = array() ) {}
@@ -99,6 +103,7 @@ function cs_compose_controls( $c, ...$p ) { return $c; }
 function cs_partial_controls( $n ) { return array(); }
 
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/race-schema.php';
 require_once __DIR__ . '/includes/elements/upcoming-races.php';
 require_once __DIR__ . '/includes/elements/season-calendar.php';
 require_once __DIR__ . '/includes/elements/race-status.php';
@@ -488,6 +493,132 @@ t( 'and the good one survived', 'https://x.test/w' === arv_race_waitlist_for( ar
 // A nameless race must never match a stored entry by accident.
 t( 'a race with no name is safe', '' === arv_race_waitlist_for( array() ) );
 t( 'a race with a blank name is safe', '' === arv_race_waitlist_for( array( 'name' => '   ' ) ) );
+
+$GLOBALS['QUIET_FAILS'] = 0;
+function t_quiet( $ok ) { if ( ! $ok ) { $GLOBALS['QUIET_FAILS']++; } }
+
+echo "\nSEO: single race page schema:\n";
+require_once __DIR__ . '/includes/seo.php';
+
+$GLOBALS['IS_SINGULAR'] = true;
+$GLOBALS['IS_FRONT']    = false;
+$GLOBALS['IS_PAGE']     = false;
+$GLOBALS['NOW']         = '2026-08-26';
+$GLOBALS['CURRENT_PATH'] = '/bear-chase-series/rock-hawk/';
+
+ob_start();
+arv_seo_race_schema();
+$out = ob_get_clean();
+
+t( 'a race page emits JSON-LD',        false !== strpos( $out, 'application/ld+json' ) );
+t( 'typed as SportsEvent',             false !== strpos( $out, '"@type":"SportsEvent"' ) );
+t( 'names the race',                   false !== strpos( $out, 'Rock Hawk' ) );
+t( 'carries a start date',             false !== strpos( $out, '"startDate"' ) );
+t( 'carries a location',               false !== strpos( $out, '"location"' ) );
+t( 'and the schema.org context',       false !== strpos( $out, 'https://schema.org' ) );
+
+// A page that is not a race must print nothing at all, not an empty graph.
+$GLOBALS['CURRENT_PATH'] = '/about/';
+ob_start();
+arv_seo_race_schema();
+$none = ob_get_clean();
+t( 'a non-race page emits nothing',    '' === $none );
+
+// The front page already carries Organization + its own events.
+$GLOBALS['CURRENT_PATH'] = '/bear-chase-series/rock-hawk/';
+$GLOBALS['IS_FRONT'] = true;
+ob_start();
+arv_seo_race_schema();
+$front = ob_get_clean();
+t( 'never doubles up on the front page', '' === $front );
+$GLOBALS['IS_FRONT'] = false;
+
+// An inverted end date is a validation error, not a cosmetic one. Two rows
+// shipped that way, so the builder refuses rather than trusting the data.
+$inv = arv_upcoming_races_event_schema( array(
+	'name' => 'Backwards', 'iso' => '2027-03-10', 'end' => '2027-03-08',
+	'display' => 'March 10', 'distances' => '50K', 'venue' => 'Somewhere',
+	'location' => 'Phoenix, AZ', 'register' => '', 'page' => '', 'image' => '',
+	'live' => '', 'closes' => '', 'confirmed' => true, 'guessed' => false,
+	'lat' => '', 'lng' => '',
+), 'upcoming' );
+t( 'an inverted end date is dropped',  ! isset( $inv['endDate'] ) );
+
+$ok = arv_upcoming_races_event_schema( array(
+	'name' => 'Forwards', 'iso' => '2027-03-10', 'end' => '2027-03-12',
+	'display' => 'March 10', 'distances' => '50K', 'venue' => 'Somewhere',
+	'location' => 'Phoenix, AZ', 'register' => '', 'page' => '', 'image' => '',
+	'live' => '', 'closes' => '', 'confirmed' => true, 'guessed' => false,
+	'lat' => '', 'lng' => '',
+), 'upcoming' );
+t( 'a real end date is kept',          '2027-03-12' === $ok['endDate'] );
+
+echo "\nSEO: races index ItemList:\n";
+$GLOBALS['IS_SINGULAR'] = false;
+$GLOBALS['IS_PAGE']     = true;
+$GLOBALS['CURRENT_PATH'] = '/races/';
+ob_start();
+arv_seo_races_index_schema();
+$list = ob_get_clean();
+
+t( 'the index emits JSON-LD',          false !== strpos( $list, 'application/ld+json' ) );
+t( 'typed as ItemList',                false !== strpos( $list, '"@type":"ItemList"' ) );
+t( 'holding ListItems',                false !== strpos( $list, '"@type":"ListItem"' ) );
+t( 'positions start at 1',             false !== strpos( $list, '"position":1' ) );
+t( 'declares how many',                false !== strpos( $list, '"numberOfItems"' ) );
+
+// Summary-page shape: enumerate and point, do not restate the whole event.
+// Inlining every SportsEvent here was an 80KB script tag in the head to say
+// what each race's own page already says.
+t( 'items do not inline the event',    false === strpos( $list, '"@type":"SportsEvent"' ) );
+
+$decoded  = json_decode( substr( $list, strpos( $list, '{' ), strrpos( $list, '}' ) - strpos( $list, '{' ) + 1 ), true );
+$listnode = $decoded['@graph'][0];
+t( 'numberOfItems matches the items',  count( $listnode['itemListElement'] ) === $listnode['numberOfItems'] );
+t( 'the payload stays small',          strlen( $list ) < 20000 );
+
+// Past races are left out: a listing page is a claim about what is on offer,
+// and an entry has to point somewhere to be worth listing.
+$bad = 0;
+$byurl = array();
+foreach ( arv_race_store_get() as $r ) {
+	$byurl[ $r['page'] ] = $r;
+}
+foreach ( $listnode['itemListElement'] as $li ) {
+	t_quiet( isset( $li['url'] ) && '' !== $li['url'] );
+	$r = isset( $byurl[ $li['url'] ] ) ? $byurl[ $li['url'] ] : null;
+	if ( null === $r ) {
+		continue;
+	}
+	$last = ( '' !== $r['end'] ) ? $r['end'] : $r['iso'];
+	if ( $last < $GLOBALS['NOW'] ) {
+		$bad++;
+	}
+}
+t( 'no race that already finished',    0 === $bad );
+t( 'every item points somewhere',      0 === $GLOBALS['QUIET_FAILS'] );
+
+// Any other page is not the index.
+$GLOBALS['CURRENT_PATH'] = '/about/';
+ob_start();
+arv_seo_races_index_schema();
+t( 'only on the configured path',      '' === ob_get_clean() );
+
+// Yoast and friends own the whole output when present. Defined last, since
+// a constant cannot be undefined once set.
+echo "\nSEO: stands down for a real SEO plugin:\n";
+define( 'WPSEO_VERSION', '1.0' );
+$GLOBALS['IS_SINGULAR'] = true;
+$GLOBALS['CURRENT_PATH'] = '/bear-chase-series/rock-hawk/';
+ob_start();
+arv_seo_race_schema();
+t( 'race page defers to Yoast',        '' === ob_get_clean() );
+$GLOBALS['IS_SINGULAR'] = false;
+$GLOBALS['IS_PAGE'] = true;
+$GLOBALS['CURRENT_PATH'] = '/races/';
+ob_start();
+arv_seo_races_index_schema();
+t( 'index defers to Yoast',            '' === ob_get_clean() );
 
 $GLOBALS['ARV_OPTIONS'] = array();
 

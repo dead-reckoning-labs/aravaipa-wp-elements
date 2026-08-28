@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.21.38
+ * Version:           0.21.39
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.21.38' );
+define( 'ARV_ELEMENTS_VERSION', '0.21.39' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -29,6 +29,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/seo.php';
 // The single source of truth for races. Loaded on the front end too: the
 // elements read from it on every page render, not just in the admin.
 require_once ARV_ELEMENTS_PATH . 'includes/race-store.php';
+
+// Phase logic and the SportsEvent builder. Beside the store rather than
+// inside an element, because includes/seo.php needs both on race pages that
+// contain no element at all. See the file's own header.
+require_once ARV_ELEMENTS_PATH . 'includes/race-schema.php';
 require_once ARV_ELEMENTS_PATH . 'includes/race-admin.php';
 
 // Admin only: every hook in updater.php answers questions WordPress only

@@ -171,6 +171,25 @@ function arv_race_store_has_races() {
  *                           the rule they care about (soonest first on the
  *                           homepage, days-until-next on the calendar).
  */
+/**
+ * The per-request memo behind arv_race_store_get().
+ *
+ * A holder function rather than a static inside the getter, purely so
+ * arv_race_store_flush_cache() can empty it: a static local belongs to the
+ * function that declares it and nothing else can reach it.
+ *
+ * Not a transient and not persistent, this only has to survive one page
+ * build. The homepage alone asks for the same list from four places
+ * (upcoming races, the race map, the featured race, the region map) and each
+ * was a fresh get_posts plus sixteen get_post_meta calls per race.
+ *
+ * @return array Reference to the cache, keyed by the getter's arguments.
+ */
+function &arv_race_store_cache() {
+	static $cache = array();
+	return $cache;
+}
+
 function arv_race_store_get( $args = array() ) {
 	$args = array_merge(
 		array(
@@ -179,6 +198,13 @@ function arv_race_store_get( $args = array() ) {
 		),
 		$args
 	);
+
+	$cache =& arv_race_store_cache();
+	$key   = md5( (string) wp_json_encode( $args ) );
+
+	if ( isset( $cache[ $key ] ) ) {
+		return $cache[ $key ];
+	}
 
 	$query = array(
 		'post_type'      => ARV_RACE_POST_TYPE,
@@ -212,8 +238,29 @@ function arv_race_store_get( $args = array() ) {
 		}
 	}
 
+	$cache[ $key ] = $races;
+
 	return $races;
 }
+
+/**
+ * Drop the per-request memo above.
+ *
+ * The importer writes every race and then, in the same request, reads them
+ * back to report what changed. Without this it would report against the list
+ * as it stood before the write.
+ *
+ * Hooked to the post lifecycle rather than called from the importer, so an
+ * edit made from the Races admin screen, or a race trashed by hand, clears
+ * it too.
+ */
+function arv_race_store_flush_cache() {
+	$cache =& arv_race_store_cache();
+	$cache = array();
+}
+add_action( 'save_post_' . ARV_RACE_POST_TYPE, 'arv_race_store_flush_cache' );
+add_action( 'deleted_post', 'arv_race_store_flush_cache' );
+add_action( 'trashed_post', 'arv_race_store_flush_cache' );
 
 /**
  * Turn one stored post into the race array the elements use.
@@ -264,6 +311,13 @@ function arv_race_store_to_race( $post ) {
  * @return array {imported, updated, created, skipped, pruned}
  */
 function arv_race_store_import( $raw, $prune = false ) {
+	// Explicit, not left to the save_post hook. wp_insert_post fires that
+	// hook in WordPress, but this function both writes and then reads back
+	// to report what changed, so correctness here should not depend on a
+	// hook having run: flushed on the way in, and again on the way out
+	// below, so nothing downstream in this request sees the pre-import list.
+	arv_race_store_flush_cache();
+
 	$rows   = arv_parse_rows( $raw, 2 );
 	$result = array(
 		'imported' => 0,
@@ -328,6 +382,10 @@ function arv_race_store_import( $raw, $prune = false ) {
 		$result['imported']++;
 	}
 
+	// Everything above wrote; anything reading the store from here on, the
+	// prune query included, has to see the new state.
+	arv_race_store_flush_cache();
+
 	if ( $prune ) {
 		$all = get_posts(
 			array(
@@ -343,6 +401,7 @@ function arv_race_store_import( $raw, $prune = false ) {
 			// Trashed rather than deleted. A bad import that drops half the
 			// calendar should be recoverable from the admin, not gone.
 			wp_trash_post( $orphan );
+			arv_race_store_flush_cache();
 			$result['pruned']++;
 		}
 	}
