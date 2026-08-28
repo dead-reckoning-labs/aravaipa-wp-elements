@@ -24,6 +24,19 @@ OUT="build"
 STAGE="$OUT/$NAME"
 
 VERSION=$(grep -m1 "Version:" "$NAME.php" | sed -E 's/.*Version: *//' | tr -d ' \r')
+CONST_VERSION=$(grep -m1 "ARV_ELEMENTS_VERSION" "$NAME.php" | sed -E "s/.*'([0-9][^']*)'.*/\1/")
+
+# The plugin header is what WordPress shows on the Plugins screen and what
+# the updater compares against a Release tag; the constant is what cache
+# busts every enqueued asset. Shipping with those out of step means a
+# release whose CSS and JS are served under the previous version's query
+# string, so browsers keep the old files and the update looks like it did
+# nothing. They were out of step once, silently, which is why this is here.
+if [ "$VERSION" != "$CONST_VERSION" ]; then
+	echo "version mismatch: header says $VERSION, ARV_ELEMENTS_VERSION says $CONST_VERSION" >&2
+	exit 1
+fi
+
 if [ -z "$VERSION" ]; then
 	echo "could not read Version from $NAME.php header" >&2
 	exit 1
@@ -39,7 +52,7 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/race-admin.php "$STAGE/includes/"
+cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"

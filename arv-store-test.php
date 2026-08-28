@@ -31,6 +31,9 @@ function current_user_can( $c, $id = 0 ) { return true; }
 function __( $s, $d = '' ) { return $s; }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function _n( $a, $b, $n, $d = '' ) { return 1 === (int) $n ? $a : $b; }
+// WordPress groups thousands here. Modelled rather than stubbed to a bare
+// cast, because "1,470 finishers" is the string the page actually renders.
+function number_format_i18n( $n, $d = 0 ) { return number_format( (float) $n, (int) $d ); }
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_json_encode( $d, $f = 0 ) { return json_encode( $d, $f ); }
@@ -124,9 +127,21 @@ require_once __DIR__ . '/includes/elements/featured-race.php';
 require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
+require_once __DIR__ . '/includes/stats-store.php';
 require_once __DIR__ . '/includes/elements/results.php';
 
 $pass = 0; $fail = 0;
+/**
+ * Enough of WP_REST_Request for the import routes.
+ *
+ * They only ever read the decoded JSON body, so that is all this carries.
+ */
+class ARV_Req {
+	private $body;
+	public function __construct( $body ) { $this->body = $body; }
+	public function get_json_params() { return $this->body; }
+}
+
 function t( $name, $cond ) {
 	global $pass, $fail;
 	if ( $cond ) { $pass++; echo "  ok   $name\n"; } else { $fail++; echo "  FAIL $name\n"; }
@@ -1034,6 +1049,162 @@ $GLOBALS['CURRENT_PATH'] = '/races/';
 ob_start();
 arv_seo_races_index_schema();
 t( 'index defers to Yoast',            '' === ob_get_clean() );
+
+echo "\nresults stats: finishers and winners:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+
+arv_stats_store_set( array(
+	array(
+		'slug'      => 'vertigo_night_runs-2026',
+		'starters'  => 448,
+		'finishers' => 349,
+		'winner'    => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58', 'race' => '52K' ),
+	),
+	array(
+		'slug'      => 'vertigo_night_runs-2025',
+		'starters'  => 400,
+		'finishers' => 312,
+	),
+	// A race that has not been run yet. Stored, not dropped: zero finishers
+	// is the correct answer for it, and dropping it would make "not yet" and
+	// "no data" the same thing.
+	array( 'slug' => 'rock_hawk-2026', 'starters' => 290, 'finishers' => 0 ),
+	// Half a winner is no winner.
+	array( 'slug' => 'nameless-2024', 'finishers' => 10, 'winner' => array( 'time' => '1:00:00' ) ),
+	array( 'slug' => 'timeless-2024', 'finishers' => 10, 'winner' => array( 'name' => 'A Runner' ) ),
+	// Junk that should never reach the store.
+	array( 'finishers' => 5 ),
+	'not an array',
+) );
+
+$stats = arv_stats_store_get();
+t( 'only real events are stored',       5 === count( $stats ) );
+t( 'a slugless event is dropped',       ! isset( $stats[''] ) );
+t( 'a winner needs a name and a time',  ! isset( $stats['nameless-2024']['winner'] ) );
+t( 'both halves, or neither',           ! isset( $stats['timeless-2024']['winner'] ) );
+
+t( 'stats are found by live url',       349 === arv_stats_store_find( 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' )['finishers'] );
+t( 'a deep-linked url still matches',   null !== arv_stats_store_find( 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026?raceId=7' ) );
+t( 'an unknown event finds nothing',    null === arv_stats_store_find( 'https://live.aravaiparunning.com/#/nope-2026' ) );
+t( 'and a blank url is safe',           null === arv_stats_store_find( '' ) );
+
+// A negative count is not a smaller count, it is broken input.
+arv_stats_store_set( array( array( 'slug' => 'x-2026', 'finishers' => -5 ) ) );
+t( 'a negative count floors at zero',   0 === arv_stats_store_get()['x-2026']['finishers'] );
+
+echo "\nresults stats: on the row:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_stats_store_set( array(
+	array(
+		'slug'      => 'vertigo_night_runs-2026',
+		'finishers' => 1470,
+		'winner'    => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58', 'race' => '52K' ),
+	),
+	array( 'slug' => 'vertigo_night_runs-2025', 'finishers' => 312 ),
+	array( 'slug' => 'rock_hawk-2026', 'finishers' => 0 ),
+) );
+
+$latest = array( 'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' );
+$line   = arv_results_stat_line( $latest, true );
+t( 'the count is on the row',           false !== strpos( $line, '1,470 finishers' ) );
+t( 'and so is the winner',              false !== strpos( $line, 'Won by Alex Bustamante, 5:49:58' ) );
+
+// The winner belongs to the top of a group only. Seventy-four groups with a
+// name on every collapsed edition as well is a wall.
+$older = arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2025' ), false );
+t( 'an older edition still counts',     false !== strpos( $older, '312 finishers' ) );
+t( 'but names no winner',               false === strpos( $older, 'Won by' ) );
+t( 'and stays inside the date line',    false === strpos( $older, '<p' ) );
+
+// Silence, not "0 finishers", under a race that has not happened.
+t( 'a future race says nothing',        '' === arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026' ), true ) );
+t( 'nor does an unknown race',          '' === arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/nope-2026' ), true ) );
+t( 'nor one with no live link',         '' === arv_results_stat_line( array( 'live' => '' ), true ) );
+t( 'nor one with no link key at all',   '' === arv_results_stat_line( array(), true ) );
+
+// One finisher is a finisher, not a finishers.
+arv_stats_store_set( array( array( 'slug' => 'solo-2026', 'finishers' => 1 ) ) );
+t( 'one finisher reads singular',       false !== strpos( arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/solo-2026' ), true ), '1 finisher<' ) );
+
+// A winner's name is untrusted text like any other.
+arv_stats_store_set( array( array(
+	'slug'      => 'xss-2026',
+	'finishers' => 5,
+	'winner'    => array( 'name' => '<script>x</script>', 'time' => '1:00:00' ),
+) ) );
+t( 'a winner name is escaped',          false === strpos( arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/xss-2026' ), true ), '<script>' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nresults: years on the expander:\n";
+t( 'years are listed newest first',     '2025, 2024, 2023' === arv_results_years( array(
+	array( 'iso' => '2025-08-09' ),
+	array( 'iso' => '2024-08-10' ),
+	array( 'iso' => '2023-08-12' ),
+) ) );
+
+// Some races run twice in one calendar year. The year is still one year.
+t( 'a repeated year is said once',      '2024' === arv_results_years( array(
+	array( 'iso' => '2024-03-01' ),
+	array( 'iso' => '2024-11-01' ),
+) ) );
+t( 'and nothing from nothing',          '' === arv_results_years( array() ) );
+
+echo "\nresults: the archive with stats in it:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_stats_store_set( array(
+	array(
+		'slug'      => 'vertigo_night_runs-2026',
+		'finishers' => 349,
+		'winner'    => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58', 'race' => '52K' ),
+	),
+	array( 'slug' => 'vertigo_night_runs-2025', 'finishers' => 312 ),
+) );
+
+$rows = array(
+	array(
+		'name' => 'Vertigo Night Runs', 'iso' => '2026-08-08', 'display' => 'August 8',
+		'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026',
+		'ultrasignup' => '', 'ultrarunning' => '',
+	),
+	array(
+		'name' => 'Vertigo Night Runs', 'iso' => '2025-08-09', 'display' => 'August 9',
+		'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2025',
+		'ultrasignup' => '', 'ultrarunning' => '',
+	),
+);
+
+$html = arv_results_by_race( $rows, false );
+t( 'the latest edition carries both',   false !== strpos( $html, '349 finishers' ) && false !== strpos( $html, 'Won by Alex Bustamante' ) );
+t( 'the older edition carries a count', false !== strpos( $html, '312 finishers' ) );
+t( 'the expander names its years',      false !== strpos( $html, '2025</span>' ) );
+t( 'and still counts them',             false !== strpos( $html, '1 earlier edition' ) );
+
+// Nothing stored at all is the state this page shipped in, and it has to
+// keep rendering exactly as it did.
+$GLOBALS['ARV_OPTIONS'] = array();
+$bare = arv_results_by_race( $rows, false );
+t( 'no stats means no stat line',       false === strpos( $bare, 'finishers' ) );
+t( 'but the races still render',        false !== strpos( $bare, 'Vertigo Night Runs' ) );
+t( 'and so do their links',             false !== strpos( $bare, 'vertigo_night_runs-2026' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nstats import route:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_stats_store_set( array_map(
+	function ( $i ) { return array( 'slug' => "e-$i", 'finishers' => 10 ); },
+	range( 1, 10 )
+) );
+
+// A walk that failed partway reports a fraction of the archive. This store
+// only grows, so that is a broken run rather than a shrinking archive.
+$half = arv_stats_rest_set( new ARV_Req( array( 'events' => array( array( 'slug' => 'e-1', 'finishers' => 1 ) ) ) ) );
+t( 'a big drop is refused',             'refused' === $half['status'] );
+t( 'and nothing is written',            10 === count( arv_stats_store_get() ) );
+t( 'unless it is forced',               'ok' === arv_stats_rest_set( new ARV_Req( array(
+	'events' => array( array( 'slug' => 'e-1', 'finishers' => 1 ) ),
+	'force'  => true,
+) ) )['status'] );
+$GLOBALS['ARV_OPTIONS'] = array();
 
 $GLOBALS['ARV_OPTIONS'] = array();
 

@@ -51,22 +51,42 @@ function arv_live_store_get() {
  * @return array|null
  */
 function arv_live_store_find( $live_url ) {
+	$slug = arv_live_store_slug( $live_url );
+
+	if ( '' === $slug ) {
+		return null;
+	}
+
+	$board = arv_live_store_get();
+
+	return isset( $board[ $slug ] ) ? $board[ $slug ] : null;
+}
+
+/**
+ * The board's slug for a race, read out of its live URL.
+ *
+ * Its own function because two stores key on it now: this one and the stats
+ * store, which joins to the same archive rows through the same URLs. Two
+ * copies of this regex would be two things to keep in step the first time a
+ * row is written with a trailing slash or an extra query parameter.
+ *
+ * @param string $live_url
+ * @return string Empty when the URL carries no slug.
+ */
+function arv_live_store_slug( $live_url ) {
 	$live_url = trim( (string) $live_url );
 
 	if ( '' === $live_url ) {
-		return null;
+		return '';
 	}
 
 	// Everything after "#/", minus any query string the row happens to
 	// carry: some rows deep-link a distance with ?raceId=.
 	if ( ! preg_match( '#\#/([^?\s]+)#', $live_url, $m ) ) {
-		return null;
+		return '';
 	}
 
-	$slug  = $m[1];
-	$board = arv_live_store_get();
-
-	return isset( $board[ $slug ] ) ? $board[ $slug ] : null;
+	return $m[1];
 }
 
 /**

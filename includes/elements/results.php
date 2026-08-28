@@ -960,6 +960,7 @@ function arv_results_by_race( $rows, $show_search ) {
 		}
 
 		$out .= '</p>';
+		$out .= arv_results_stat_line( $latest, true );
 		$out .= '</div>';
 		$out .= arv_results_links( $latest );
 		$out .= '</div>';
@@ -982,11 +983,19 @@ function arv_results_by_race( $rows, $show_search ) {
 						count( $older )
 					)
 				)
+				// The years themselves, next to the count. "3 earlier
+				// editions" tells you there is more without telling you
+				// whether it is the years you want, so anyone after a
+				// particular one has to open every group to find out. The
+				// years answer that before the click, and they are already
+				// in hand.
+				. '<span class="arv-results__older-years">' . esc_html( arv_results_years( $older ) ) . '</span>'
 				. '</summary>';
 
 			foreach ( $older as $edition ) {
 				$out .= '<div class="arv-results__edition">';
-				$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) ) . '</p>';
+				$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) )
+					. arv_results_stat_line( $edition, false ) . '</p>';
 				$out .= arv_results_links( $edition );
 				$out .= '</div>';
 			}
@@ -1000,6 +1009,98 @@ function arv_results_by_race( $rows, $show_search ) {
 	$out .= '</div>';
 
 	return $out;
+}
+
+/**
+ * What happened at one edition: how many finished, and who won.
+ *
+ * The archive's whole problem was that no part of a row varied. Name, date,
+ * three buttons, eighty times, so the eye had nothing to catch on and the
+ * page scanned as wallpaper. A finisher count is the fix and it is also the
+ * one fact the events calendar structurally cannot carry, since an event
+ * that has not happened has no finishers. It is what makes this a different
+ * page rather than the calendar again in past tense.
+ *
+ * The winner is only shown on the edition at the top of a group. Across
+ * seventy-four groups a name on every collapsed edition as well is a wall,
+ * and the latest running is the one anyone is here for; the older ones need
+ * to stay scannable more than they need to be interesting.
+ *
+ * Silent when there is nothing to say. A race that has not been run yet
+ * reads zero finishers, correctly, and "0 finishers" under next weekend's
+ * race would be a worse answer than none.
+ *
+ * @param array $row
+ * @param bool  $with_winner Whether this row is the one that names a winner.
+ * @return string
+ */
+function arv_results_stat_line( $row, $with_winner ) {
+	$stats = arv_stats_store_find( isset( $row['live'] ) ? $row['live'] : '' );
+
+	if ( null === $stats || empty( $stats['finishers'] ) ) {
+		return '';
+	}
+
+	$finishers = (int) $stats['finishers'];
+
+	$count = sprintf(
+		// translators: %s is a formatted count of finishers.
+		_n( '%s finisher', '%s finishers', $finishers, 'aravaipa-elements' ),
+		number_format_i18n( $finishers )
+	);
+
+	if ( ! $with_winner ) {
+		// Folded into the date line rather than given one of its own: an
+		// expander holding six editions is already tall, and doubling its
+		// height to carry six short numbers is how a disclosure stops
+		// being worth closing.
+		return ' <span class="arv-results__stat">' . esc_html( $count ) . '</span>';
+	}
+
+	$out = '<p class="arv-results__stats"><span class="arv-results__stat">'
+		. esc_html( $count ) . '</span>';
+
+	$winner = isset( $stats['winner'] ) && is_array( $stats['winner'] ) ? $stats['winner'] : null;
+
+	if ( null !== $winner && ! empty( $winner['name'] ) && ! empty( $winner['time'] ) ) {
+		$out .= '<span class="arv-results__winner">'
+			. esc_html(
+				sprintf(
+					// translators: 1: winner name, 2: winning time.
+					__( 'Won by %1$s, %2$s', 'aravaipa-elements' ),
+					$winner['name'],
+					$winner['time']
+				)
+			)
+			. '</span>';
+	}
+
+	return $out . '</p>';
+}
+
+/**
+ * "2025, 2024, 2023" for a run of editions.
+ *
+ * Read off the stored date rather than the display string, which is a range
+ * ("August 14-16") on a multi-day race and has no year in it at all.
+ *
+ * @param array $editions
+ * @return string
+ */
+function arv_results_years( $editions ) {
+	$years = array();
+
+	foreach ( $editions as $edition ) {
+		$year = substr( (string) $edition['iso'], 0, 4 );
+
+		// A race that ran twice in one calendar year, which the archive does
+		// contain, should say that year once.
+		if ( '' !== $year && ! in_array( $year, $years, true ) ) {
+			$years[] = $year;
+		}
+	}
+
+	return implode( ', ', $years );
 }
 
 /**

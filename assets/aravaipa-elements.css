@@ -4039,6 +4039,60 @@
 	color: var(--arv-results-muted);
 }
 
+/* The one line on a row that varies.
+
+   Every other part of a race group is the same shape on all seventy-four of
+   them: a name, a date, three buttons. Numbers are the only thing that
+   differs from row to row, which is what gives the eye somewhere to land
+   while scanning, so this line is the reason the archive reads as a list of
+   results rather than as a list of links. Muted and small all the same: it
+   is a fact about the race, not a claim on attention, and the race name has
+   to stay the loudest thing in the group. */
+.arv-results__stats {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.3rem 0.5rem;
+	margin: 0.2rem 0 0;
+	font-size: 0.8rem;
+	color: var(--arv-results-muted);
+}
+
+.arv-results__stat {
+	font-variant-numeric: tabular-nums;
+}
+
+/* Separated by a rule rather than a bullet, because the winner is a
+   different kind of fact from the count and a middot would read as more of
+   the same list. Drawn on the winner so it never lands at the start of a
+   wrapped line. */
+.arv-results__winner {
+	padding-left: 0.5rem;
+	border-left: 1px solid var(--arv-results-rule);
+}
+
+/* Inside the expander the count rides on the date line, so it needs its own
+   separation there; the wrapper above does not apply. */
+.arv-results__edition-date .arv-results__stat {
+	margin-left: 0.15rem;
+	font-weight: 400;
+	color: var(--arv-results-muted);
+}
+
+.arv-results__edition-date .arv-results__stat::before {
+	content: "\00b7";
+	margin-right: 0.35rem;
+}
+
+/* The years sit quieter than the count they follow: "3 earlier editions" is
+   the control, the years are the detail that saves a click. */
+.arv-results__older-years {
+	margin-left: 0.35rem;
+	font-weight: 400;
+	color: var(--arv-results-muted);
+	font-variant-numeric: tabular-nums;
+}
+
 /* Three fixed columns, even though there is no table here. The row is
    right-aligned against the race name, so sizing the buttons to whichever
    links a race happens to have let the block shrink from the left: a race
