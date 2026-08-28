@@ -121,6 +121,21 @@ grep -q '\.arv-calendar__row\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-calendar__row[hidden] override is missing, calendar filters will silently do nothing" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
+# A theme's own "a:hover { color: ... }" is one element plus one
+# pseudo-class, which outranks a bare class on specificity, so a button
+# whose colour is only ever set via ".arv-featured__cta { color: #fff }"
+# loses its own text colour to the theme's link colour on hover. Shipped
+# this way in v0.21.36: the featured race's red button turned red-on-red
+# and its teal card button turned red-on-teal for as long as the cursor
+# sat on either, which is the one moment someone is deciding whether to
+# click. Cheap to check that the :link/:visited reinforcement fixing it
+# is still there for both.
+grep -q '\.arv-featured__cta:link' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-featured__cta:link is missing, the button will lose its colour to the theme's a:hover on hover" >&2; missing=1; }
+grep -q '\.arv-featured__card-cta:link' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-featured__card-cta:link is missing, the button will lose its colour to the theme's a:hover on hover" >&2; missing=1; }
+[ "$missing" -eq 0 ] || exit 1
+
 ( cd "$OUT" && zip -qr "$NAME.zip" "$NAME" )
 
 echo "built $OUT/$NAME.zip (v$VERSION, $(find "$STAGE" -type f | wc -l | tr -d ' ') files, $(du -h "$OUT/$NAME.zip" | cut -f1))"

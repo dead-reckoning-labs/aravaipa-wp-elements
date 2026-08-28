@@ -3140,7 +3140,19 @@
 	gap: 1rem;
 }
 
-.arv-featured__cta {
+/* :link and :visited are listed alongside the bare class for the same
+   reason the races-list buttons in #68 needed them: a theme's own
+   "a:hover { color: ... }" is one element plus one pseudo-class, which
+   beats a single class on specificity alone. Without the extra two
+   selectors here, hovering the button (or COROS registering the state
+   because a page-wide anchor style always applies while a bare click sets
+   :active/:visited) swapped this white text for the theme's link colour,
+   red on this site, against a background this element was also turning
+   red. Both went invisible for exactly as long as the cursor sat on the
+   button, which is the one moment someone is deciding whether to click. */
+.arv-featured__cta,
+.arv-featured__cta:link,
+.arv-featured__cta:visited {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.45rem;
@@ -3161,19 +3173,27 @@
    appears (the calendar, the map, the cards). One vocabulary of colour for
    "what can I do about this race" across the whole site, not a fourth
    version invented for this element. */
-.arv-featured__cta--waitlist {
+.arv-featured__cta--waitlist,
+.arv-featured__cta--waitlist:link,
+.arv-featured__cta--waitlist:visited {
 	background: #daa520;
 	border-color: #daa520;
 	color: #272727;
 }
 
 .arv-featured__cta--live,
-.arv-featured__cta--results {
+.arv-featured__cta--live:link,
+.arv-featured__cta--live:visited,
+.arv-featured__cta--results,
+.arv-featured__cta--results:link,
+.arv-featured__cta--results:visited {
 	background: var(--arv-teal-deep);
 	border-color: var(--arv-teal-deep);
 }
 
-.arv-featured__cta--closed {
+.arv-featured__cta--closed,
+.arv-featured__cta--closed:link,
+.arv-featured__cta--closed:visited {
 	background: transparent;
 	border-color: rgba(255, 255, 255, 0.4);
 	color: inherit;
@@ -3353,7 +3373,12 @@
    screen, and this is the same action reached from a different place, not a
    competing one. Full width of the card so it reads as the card's own
    footer rather than a button that happens to be sitting in it. */
-.arv-featured__card-cta {
+/* Same :link/:visited reinforcement as the primary CTA above, and for the
+   same reason: this one was going red-on-teal instead of red-on-red, but
+   it was the theme's link-hover colour winning either way. */
+.arv-featured__card-cta,
+.arv-featured__card-cta:link,
+.arv-featured__card-cta:visited {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -3376,7 +3401,12 @@
 	flex: 0 0 auto;
 }
 
-.arv-featured__info {
+/* Same reinforcement a third time. "Race Info" sits directly on the photo,
+   so a hover swap to the theme's red was the most visible of the three:
+   white-on-photo turning to a red substring mid-sentence. */
+.arv-featured__info,
+.arv-featured__info:link,
+.arv-featured__info:visited {
 	color: inherit;
 	font-size: 0.85rem;
 	font-weight: 700;
