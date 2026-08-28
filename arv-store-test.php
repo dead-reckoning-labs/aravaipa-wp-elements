@@ -264,6 +264,20 @@ t( 'each sync gets its own row',     2 === substr_count( $card, 'arv-featured__s
 t( 'Strava named',                   false !== strpos( $card, 'Syncs with Strava' ) );
 t( 'Coros named',                    false !== strpos( $card, 'Syncs with Coros' ) );
 
+// Real brand marks, in each brand's own colour, not a generic bullet.
+t( 'Strava gets its own mark',       false !== strpos( $card, '#FC4C02' ) );
+t( 'Coros gets its own mark',        false !== strpos( $card, '#F2323C' ) );
+t( 'both marks are rendered',        2 === substr_count( $card, 'arv-featured__sync-mark' ) );
+
+// A platform with no mark on file must still list, just without a logo,
+// rather than falling back to some other brand's colours.
+$unknown = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+	'syncs'     => 'Strava, Whoop',
+) );
+t( 'an unknown platform still lists',    false !== strpos( $unknown, 'Syncs with Whoop' ) );
+t( 'but borrows no other brand mark',    1 === substr_count( $unknown, 'arv-featured__sync-mark' ) );
+
 // The card has to disappear entirely for a plain in-person race, or every
 // other race featured here would get an empty bordered box.
 $bare = arv_featured_race_render( array(

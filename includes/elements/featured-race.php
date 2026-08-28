@@ -75,8 +75,15 @@ cs_register_element(
 				'host_label' => cs_value( 'Hosted on Obsession.run', 'markup' ),
 				'host_url'   => cs_value( 'https://obsession.run/challenges/jallucinations', 'markup' ),
 				'host_logo'  => cs_value( 'https://www.aravaiparunning.com/avr/wp-content/uploads/obsession-app-icon.png', 'markup' ),
-				'price'      => cs_value( '$52.89', 'markup' ),
-				'price_note' => cs_value( 'Goes up to $59 on September 1', 'markup' ),
+				// The entry price, not the checkout total. obsession.run breaks
+				// it out the same way ("$49.00 entry + $3.89 fee"), and a bare
+				// "$52.89" reads as a strangely precise number with no
+				// explanation, where "$49 + fees" reads as a price. Both
+				// halves of the before/after say "+ fees" so the comparison is
+				// like for like: quoting one with fees and one without would
+				// overstate the increase.
+				'price'      => cs_value( '$49 + fees', 'markup' ),
+				'price_note' => cs_value( 'Goes up to $59 + fees on September 1', 'markup' ),
 				'syncs'      => cs_value( 'Strava, Coros', 'markup' ),
 
 				// A separate fact from the price rise, confirmed directly by
@@ -371,10 +378,11 @@ function arv_featured_race_card( $data ) {
 		$out .= '<ul class="arv-featured__syncs">';
 		foreach ( $syncs as $sync ) {
 			$out .= '<li class="arv-featured__sync">'
-				. '<svg class="arv-featured__tick" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">'
-				. '<path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
-				. '</svg>'
+				. arv_featured_race_sync_mark( $sync )
 				. '<span>' . esc_html( sprintf( __( 'Syncs with %s', 'aravaipa-elements' ), $sync ) ) . '</span>'
+				. '<svg class="arv-featured__tick" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">'
+				. '<path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+				. '</svg>'
 				. '</li>';
 		}
 		$out .= '</ul>';
@@ -383,4 +391,43 @@ function arv_featured_race_card( $data ) {
 	$out .= '</aside>';
 
 	return $out;
+}
+
+/**
+ * The brand mark for a platform we sync with.
+ *
+ * Inline SVG rather than an uploaded image, for the same reason the map's
+ * pins are: these are two small vector marks, and inlining them costs no
+ * requests, scales cleanly and lets them inherit sizing from CSS. Both are
+ * the marks Obsession itself already uses for these integrations, so the
+ * two products show the same logo for the same connection rather than
+ * drifting apart.
+ *
+ * Anything not recognised falls back to no mark at all rather than a
+ * generic placeholder: the tick beside it already says the integration
+ * exists, and an invented logo for a brand would be worse than none.
+ *
+ * @param string $name Platform name as written in the syncs list.
+ * @return string
+ */
+function arv_featured_race_sync_mark( $name ) {
+	$key = strtolower( trim( $name ) );
+
+	if ( 'strava' === $key ) {
+		// Strava's own mark, in their orange. Taken from the asset Obsession
+		// ships rather than redrawn.
+		return '<svg class="arv-featured__sync-mark" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">'
+			. '<path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z"/>'
+			. '<path fill="#FC4C02" opacity="0.6" d="M7.778 13.828h3.065L5.63 0 0 13.828h3.065L5.63 9.076l2.148 4.752z"/>'
+			. '</svg>';
+	}
+
+	if ( 'coros' === $key ) {
+		return '<svg class="arv-featured__sync-mark" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true" focusable="false">'
+			. '<path d="M12 2l8 4.5v11L12 22l-8-4.5v-11z" stroke="#F2323C" stroke-width="2" stroke-linejoin="round"/>'
+			. '<path d="M12 7l4 2.25V17L12 19.25 8 17V9.25z" fill="#F2323C"/>'
+			. '</svg>';
+	}
+
+	return '';
 }

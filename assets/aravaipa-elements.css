@@ -3059,6 +3059,11 @@
 	padding: 1.5rem;
 	background: rgba(10, 14, 18, 0.72);
 	border: 1px solid rgba(255, 255, 255, 0.16);
+	/* Rounded, unlike everything else on this site, and deliberately so. The
+	   square corners elsewhere are the brand; this one is standing in for an
+	   app, sitting under an app icon, so the rounded rectangle is doing work
+	   rather than decorating. */
+	border-radius: 14px;
 	/* Frosted where the browser supports it, plain translucency where it does
 	   not, so the card never becomes an unreadable smear over a busy photo. */
 	-webkit-backdrop-filter: blur(10px);
@@ -3089,9 +3094,9 @@
 
 .arv-featured__price {
 	margin: 1.1rem 0 0;
-	font-size: 2rem;
+	font-size: 1.85rem;
 	font-weight: 800;
-	line-height: 1;
+	line-height: 1.15;
 }
 
 /* Amber, the same colour a sold-out race's waitlist button uses. Both are
@@ -3121,8 +3126,26 @@
 	font-size: 0.88rem;
 }
 
+/* Each platform's own mark, on a light chip. Both are brand colours
+   (Strava's orange, Coros's red) picked to read on white, and both would
+   sit muddy directly on this card's near-black. The chip is what every
+   app store does with an icon for the same reason. */
+.arv-featured__sync-mark {
+	flex: 0 0 auto;
+	box-sizing: content-box;
+	padding: 4px;
+	background: #fff;
+	border-radius: 6px;
+}
+
+/* Pushed to the far edge so the row reads left to right as "logo, what it
+   does, yes this works" rather than burying the tick in the middle. */
+.arv-featured__sync .arv-featured__tick {
+	margin-left: auto;
+}
+
 .arv-featured__sync + .arv-featured__sync {
-	margin-top: 0.5rem;
+	margin-top: 0.65rem;
 }
 
 .arv-featured__tick {
