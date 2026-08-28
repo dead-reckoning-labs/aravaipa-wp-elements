@@ -440,3 +440,257 @@ function arv_live_shortcode( $atts ) {
 	return arv_live_page_render( $atts );
 }
 add_shortcode( 'arv_live', 'arv_live_shortcode' );
+
+/**
+ * Which race a WP page is showing live results for.
+ *
+ * Kept on the page as its own piece of meta rather than found by scanning
+ * the page's content for the shortcode. A race page finds itself by matching
+ * the current URL against the race store, which works because the race
+ * store already knows its own URL; a live page has no equivalent store to
+ * match against; it is an ordinary WP Page with a shortcode placed inside
+ * whatever else an editor put on it, and parsing that back out on every
+ * request to recover one attribute is more moving parts than writing the one
+ * attribute down once, when the page is created.
+ *
+ * @return string
+ */
+function arv_live_meta_key() {
+	return '_arv_live_slug';
+}
+
+/**
+ * Register the meta so it is settable through the REST API, which is how
+ * the eventual bulk page-creation script sets it: create the page, pass
+ * meta._arv_live_slug in the same request.
+ */
+function arv_live_register_meta() {
+	register_post_meta(
+		'page',
+		arv_live_meta_key(),
+		array(
+			'type'         => 'string',
+			'single'       => true,
+			'show_in_rest' => true,
+		)
+	);
+}
+add_action( 'init', 'arv_live_register_meta' );
+
+/**
+ * Everything the SEO layer needs about the live page being requested, or
+ * null when the current request is not one.
+ *
+ * Built once and passed to the title, description, Open Graph and schema
+ * builders below, so all four agree with each other by construction: they
+ * are reading the same edition and the same stats rather than each
+ * resolving ?year= or the board slug on its own and risking a mismatch
+ * between what the title says and what the description says.
+ *
+ * @return array|null slug, editions, edition, name, show, meta, stats, url.
+ */
+function arv_live_seo_context() {
+	if ( ! is_singular() ) {
+		return null;
+	}
+
+	$id = get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$slug = get_post_meta( $id, arv_live_meta_key(), true );
+	$slug = trim( (string) $slug );
+
+	if ( '' === $slug ) {
+		return null;
+	}
+
+	$editions  = arv_live_editions( $slug );
+	$requested = isset( $_GET['year'] ) ? wp_unslash( $_GET['year'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$edition   = arv_live_pick_edition( $editions, $requested );
+	$name      = $edition ? $edition['name'] : '';
+	$show      = $edition ? arv_live_store_slug( $edition['live'] ) : $slug;
+
+	if ( '' === $show ) {
+		$show = $slug;
+	}
+
+	return array(
+		'slug'     => $slug,
+		'editions' => $editions,
+		'edition'  => $edition,
+		'name'     => $name,
+		'show'     => $show,
+		'meta'     => '' !== $name ? arv_live_race_meta( $name ) : null,
+		'stats'    => arv_stats_store_find( ARV_LIVE_BASE . $show ),
+		'url'      => get_permalink( $id ),
+	);
+}
+
+/**
+ * The <title> for a live page.
+ *
+ * The site name is not part of this: WordPress appends it itself from the
+ * "site" part of document_title_parts, the same way it does for every other
+ * page, so adding it here would print it twice.
+ *
+ * @param array $ctx
+ * @return string
+ */
+function arv_live_seo_title( $ctx ) {
+	if ( empty( $ctx['name'] ) ) {
+		return '';
+	}
+
+	$bits = array( $ctx['name'] );
+
+	if ( $ctx['edition'] ) {
+		$bits[] = substr( $ctx['edition']['iso'], 0, 4 );
+	}
+
+	$bits[] = ( ! empty( $ctx['stats']['finishers'] ) )
+		? __( 'Results', 'aravaipa-elements' )
+		: __( 'Live Results', 'aravaipa-elements' );
+
+	return implode( ' ', $bits );
+}
+
+/**
+ * The meta description, and the same text Open Graph and Twitter cards use.
+ *
+ * Genuinely different content per page rather than a template filled in with
+ * a name, which is the distinction that makes this worth having at all: a
+ * finisher count and a winner's name are facts about this specific running
+ * of this specific race, not filler restating the title in sentence form.
+ *
+ * Two shapes, because there are two real states. A race with results says
+ * how many finished and who won; a race that has not run yet says when and
+ * where, which is the useful question someone searching before race day is
+ * actually asking.
+ *
+ * @param array $ctx
+ * @return string
+ */
+function arv_live_seo_description( $ctx ) {
+	if ( empty( $ctx['name'] ) ) {
+		return '';
+	}
+
+	$year  = $ctx['edition'] ? substr( $ctx['edition']['iso'], 0, 4 ) : '';
+	$stats = $ctx['stats'];
+
+	if ( $stats && ! empty( $stats['finishers'] ) ) {
+		$bits = array(
+			sprintf(
+				/* translators: 1: formatted finisher count, 2: race name, 3: year. */
+				__( '%1$s finishers at %2$s%3$s.', 'aravaipa-elements' ),
+				number_format_i18n( (int) $stats['finishers'] ),
+				$ctx['name'],
+				'' !== $year ? ' ' . $year : ''
+			),
+		);
+
+		if ( ! empty( $stats['headline'] ) && ! empty( $stats['winners'][0] ) ) {
+			$names = array();
+
+			foreach ( arv_stats_divisions() as $division ) {
+				if ( isset( $stats['winners'][0][ $division ] ) ) {
+					$names[] = $stats['winners'][0][ $division ]['name'];
+				}
+			}
+
+			if ( ! empty( $names ) ) {
+				$bits[] = sprintf(
+					/* translators: %s is a comma-separated list of winner names. */
+					__( 'Winners: %s.', 'aravaipa-elements' ),
+					implode( ', ', $names )
+				);
+			}
+		}
+
+		return implode( ' ', $bits );
+	}
+
+	$when = $ctx['edition'] ? arv_results_edition_label( $ctx['edition'] ) : '';
+
+	$bits = array(
+		trim(
+			sprintf(
+				/* translators: 1: race name, 2: date, blank when unknown. */
+				__( 'Live results for %1$s%2$s.', 'aravaipa-elements' ),
+				$ctx['name'],
+				'' !== $when ? ', ' . $when : ''
+			)
+		),
+	);
+
+	$where = $ctx['meta'] && ! empty( $ctx['meta']['location'] ) ? $ctx['meta']['location'] : '';
+
+	if ( '' !== $where ) {
+		$bits[] = sprintf(
+			/* translators: %s is a city and state. */
+			__( 'Held in %s.', 'aravaipa-elements' ),
+			$where
+		);
+	}
+
+	return implode( ' ', $bits );
+}
+
+/**
+ * A SportsEvent for the edition being shown, or an empty array when there is
+ * not enough to say anything valid.
+ *
+ * Built through arv_upcoming_races_event_schema(), the same builder the
+ * calendar and the race pages use, rather than a second hand-rolled Event
+ * shape: one function knows what a valid SportsEvent looks like for this
+ * site, and a live page's edition is a race like any other race, just one
+ * that has usually already happened.
+ *
+ * @param array $ctx
+ * @return array
+ */
+function arv_live_seo_event( $ctx ) {
+	if ( empty( $ctx['name'] ) || empty( $ctx['edition'] ) ) {
+		return array();
+	}
+
+	$meta = $ctx['meta'];
+
+	$race = array(
+		'name'      => $ctx['name'],
+		'iso'       => $ctx['edition']['iso'],
+		'end'       => '',
+		'distances' => '',
+		'venue'     => $meta ? $meta['venue'] : '',
+		'location'  => $meta ? $meta['location'] : '',
+		'image'     => $meta ? $meta['image'] : '',
+		'page'      => isset( $ctx['url'] ) ? $ctx['url'] : '',
+		'register'  => '',
+	);
+
+	$finished = ! empty( $ctx['stats']['finishers'] );
+
+	// 'upcoming' and 'closed' both leave a race with no register link
+	// carrying no offer, which this always is here; the phase only changes
+	// whether the schema is honest about the race being over.
+	$event = arv_upcoming_races_event_schema( $race, $finished ? 'closed' : 'upcoming' );
+
+	if ( $finished ) {
+		$event['eventStatus'] = 'https://schema.org/EventCompleted';
+	}
+
+	$description = arv_live_seo_description( $ctx );
+
+	if ( '' !== $description ) {
+		// Overrides the distances-based description the shared builder would
+		// otherwise write, which would be empty here anyway since this race
+		// array carries no distances: a live page's description is about
+		// what happened, not what is on offer.
+		$event['description'] = $description;
+	}
+
+	return $event;
+}
