@@ -247,6 +247,40 @@ t( 'styled with the waitlist phase class',         false !== strpos( $mog, 'arv-
 $GLOBALS['ARV_OPTIONS'] = array();
 $GLOBALS['NOW'] = '2026-08-26';
 
+echo "\nfeatured race card:\n";
+$card = arv_featured_race_render( array(
+	'race_page'  => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'host_label' => 'Hosted on Obsession.run',
+	'host_url'   => 'https://obsession.run/challenges/jallucinations',
+	'price'      => '$52.89',
+	'price_note' => 'Goes up to $59 on September 1',
+	'syncs'      => 'Strava, Coros',
+) );
+t( 'the host is named',              false !== strpos( $card, 'Hosted on Obsession.run' ) );
+t( 'and links out to the platform',  false !== strpos( $card, 'obsession.run/challenges' ) );
+t( 'the price shows',                false !== strpos( $card, '$52.89' ) );
+t( 'and the increase is called out', false !== strpos( $card, 'September 1' ) );
+t( 'each sync gets its own row',     2 === substr_count( $card, 'arv-featured__sync"' ) );
+t( 'Strava named',                   false !== strpos( $card, 'Syncs with Strava' ) );
+t( 'Coros named',                    false !== strpos( $card, 'Syncs with Coros' ) );
+
+// The card has to disappear entirely for a plain in-person race, or every
+// other race featured here would get an empty bordered box.
+$bare = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+) );
+t( 'no card at all when nothing is set', false === strpos( $bare, 'arv-featured__card' ) );
+t( 'but the race itself still renders',  false !== strpos( $bare, 'Rock Hawk' ) );
+
+// A price with no deadline must not print an empty note.
+$nonote = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+	'price'     => '$85',
+) );
+t( 'a price alone renders',            false !== strpos( $nonote, '$85' ) );
+t( 'with no empty deadline element',   false === strpos( $nonote, 'arv-featured__price-note' ) );
+
+
 
 echo "\nshared registration links:\n";
 // Two pairs of unrelated races on the live site share a registration URL:
