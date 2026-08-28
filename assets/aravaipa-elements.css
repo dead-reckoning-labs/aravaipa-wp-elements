@@ -4675,12 +4675,40 @@
    that matters is on the report underneath: that is the part that is real
    HTML, and the reason this page exists rather than a link to the board.
    --------------------------------------------------------------------- */
+/* Full bleed, out of whatever the theme wrapped this in.
+
+   The board is a dark panel that fills its frame, and sitting it inside the
+   theme's white content card left a band of white down both sides of a black
+   table: on a phone that inset was most of the reason the results were
+   cramped, and the card was framing a thing that is already a frame.
+
+   Same breakout the race map uses, and for the same reason it is written
+   this way: the element is dropped into a Cornerstone section, row and
+   column, each with its own max-width and padding, so undoing this plugin's
+   own padding only reaches the edge of the innermost one. Measuring from the
+   viewport instead is the only thing that reaches the window. --arv-sbw is
+   the scrollbar width, measured in JS, because 100vw counts the scrollbar on
+   Windows and Linux but not on macOS's overlay scrollbars. */
 .arv-live {
-	max-width: 1200px;
-	margin: 0 auto;
-	padding: 2rem 1.25rem;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	padding: 1.5rem 0;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
 	color: var(--arv-ink, #272727);
+}
+
+/* Everything that is words stays in the content column, so the heading lines
+   up with every other heading on the site rather than starting at the window
+   edge. Only the frame itself actually goes edge to edge. */
+.arv-live__head,
+.arv-live__years,
+.arv-live__open,
+.arv-live__report {
+	max-width: 1200px;
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 1.25rem;
+	padding-right: 1.25rem;
 }
 
 .arv-live__head {
@@ -4737,8 +4765,12 @@
 	color: #fff;
 }
 
+/* No side borders: a 1px line against the window edge reads as a rendering
+   artefact rather than as a frame. Top and bottom still separate it from the
+   text above and below. */
 .arv-live__frame {
-	border: 1px solid var(--arv-results-rule, #e2e2e2);
+	border-top: 1px solid var(--arv-results-rule, #e2e2e2);
+	border-bottom: 1px solid var(--arv-results-rule, #e2e2e2);
 	background: #101314;
 }
 
@@ -4830,7 +4862,15 @@
 
 @media (max-width: 619px) {
 	.arv-live {
-		padding: 1.25rem 1rem;
+		padding: 1rem 0;
+	}
+
+	.arv-live__head,
+	.arv-live__years,
+	.arv-live__open,
+	.arv-live__report {
+		padding-left: 1rem;
+		padding-right: 1rem;
 	}
 
 	/* A three-column winners table does not fit a phone and the content is

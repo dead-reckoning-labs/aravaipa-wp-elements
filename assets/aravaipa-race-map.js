@@ -725,13 +725,19 @@
 	}
 
 	function init() {
+		// Measured before the early return, not after it. --arv-sbw is used
+		// by every full-bleed element in this plugin, not only the map, and
+		// the live-results page has no map on it at all: behind the return
+		// the variable was simply never set there, the calc fell back to 0px
+		// and the breakout overhung by the scrollbar's width on any platform
+		// that reserves space for one.
+		measureScrollbar();
+		window.addEventListener( 'resize', measureScrollbar );
+
 		var canvases = document.querySelectorAll( '[data-arv-map]' );
 		if ( ! canvases.length ) {
 			return;
 		}
-
-		measureScrollbar();
-		window.addEventListener( 'resize', measureScrollbar );
 
 		Array.prototype.forEach.call( canvases, setUp );
 	}
