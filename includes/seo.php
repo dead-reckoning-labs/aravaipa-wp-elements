@@ -331,3 +331,103 @@ function arv_seo_races_index_schema() {
 	echo arv_seo_schema_script( array( $list ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 add_action( 'wp_head', 'arv_seo_races_index_schema', 3 );
+
+/**
+ * Title, description, Open Graph, Twitter card and schema for a live-results
+ * page.
+ *
+ * Without this, every one of these pages carries the same generic title
+ * WordPress gives any Page, and a link into a group chat or Instagram DM
+ * produces no preview at all: exactly the two problems that made the timing
+ * board itself invisible to search, reproduced on the page meant to fix
+ * that. All five pieces are built from one context so they cannot disagree
+ * with each other about which edition is being shown.
+ *
+ * Same "hand this back to a real SEO plugin" posture as the rest of the
+ * file: arv_live_seo_context() is resolved once per request regardless, but
+ * every function here still checks arv_seo_handled_elsewhere() before
+ * printing, because Yoast's own title and description are what should win
+ * once it is active, not a second, competing pair from this plugin.
+ */
+function arv_live_seo_title_parts( $parts ) {
+	if ( arv_seo_handled_elsewhere() || ! function_exists( 'arv_live_seo_context' ) ) {
+		return $parts;
+	}
+
+	$ctx = arv_live_seo_context();
+
+	if ( null === $ctx ) {
+		return $parts;
+	}
+
+	$title = arv_live_seo_title( $ctx );
+
+	if ( '' !== $title ) {
+		$parts['title'] = $title;
+	}
+
+	return $parts;
+}
+add_filter( 'document_title_parts', 'arv_live_seo_title_parts' );
+
+/**
+ * @return void
+ */
+function arv_live_seo_head() {
+	if ( arv_seo_handled_elsewhere() || ! function_exists( 'arv_live_seo_context' ) ) {
+		return;
+	}
+
+	$ctx = arv_live_seo_context();
+
+	if ( null === $ctx ) {
+		return;
+	}
+
+	$description = arv_live_seo_description( $ctx );
+
+	if ( '' === $description ) {
+		return;
+	}
+
+	echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
+
+	$title = arv_live_seo_title( $ctx );
+	$url   = isset( $ctx['url'] ) ? $ctx['url'] : '';
+
+	// og:title carries the site name itself: unlike the <title> tag,
+	// WordPress does not append one, and a card reading only "Black Bear
+	// Trail Race 2025 Results" with no publisher is a worse preview than one
+	// that says who published it.
+	if ( '' !== $title ) {
+		echo '<meta property="og:title" content="' . esc_attr( $title . ' | Aravaipa Running' ) . '" />' . "\n";
+		echo '<meta name="twitter:title" content="' . esc_attr( $title . ' | Aravaipa Running' ) . '" />' . "\n";
+	}
+
+	echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	echo '<meta name="twitter:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	echo '<meta property="og:type" content="website" />' . "\n";
+
+	if ( '' !== $url ) {
+		echo '<meta property="og:url" content="' . esc_url( $url ) . '" />' . "\n";
+	}
+
+	$image = ( $ctx['meta'] && ! empty( $ctx['meta']['image'] ) ) ? $ctx['meta']['image'] : '';
+
+	// A card with a title and no image still renders, just as a text link;
+	// a card pointing at an image URL that turns out to 404 sometimes
+	// renders as nothing at all, which is worse. Nothing invented here.
+	if ( '' !== $image ) {
+		echo '<meta property="og:image" content="' . esc_url( $image ) . '" />' . "\n";
+		echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+	} else {
+		echo '<meta name="twitter:card" content="summary" />' . "\n";
+	}
+
+	$event = arv_live_seo_event( $ctx );
+
+	if ( ! empty( $event ) ) {
+		echo arv_seo_schema_script( array( $event ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+}
+add_action( 'wp_head', 'arv_live_seo_head', 4 );

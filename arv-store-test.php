@@ -38,7 +38,7 @@ function add_shortcode( $tag, $fn ) { $GLOBALS['SHORTCODES'][ $tag ] = $fn; }
 function shortcode_atts( $pairs, $atts, $tag = '' ) { return array_merge( $pairs, (array) $atts ); }
 function esc_html__( $s, $d = '' ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_unslash( $v ) { return $v; }
-function get_queried_object_id() { return 0; }
+function get_queried_object_id() { return $GLOBALS['QUERIED_ID'] ?? 0; }
 function get_permalink( $id = 0 ) { return 'https://www.aravaiparunning.com/live/test/'; }
 
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
@@ -1050,6 +1050,106 @@ $GLOBALS['CURRENT_PATH'] = '/about/';
 ob_start();
 arv_seo_races_index_schema();
 t( 'only on the configured path',      '' === ob_get_clean() );
+
+echo "\nlive page SEO: title, description, Open Graph, schema:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+
+$ran = array(
+	'name'    => 'Black Bear Trail Race',
+	'edition' => array( 'iso' => '2025-08-30', 'display' => 'August 30' ),
+	'meta'    => array( 'venue' => 'Waterville Valley Town Square', 'location' => 'Waterville Valley, NH', 'image' => 'https://example.com/bb.jpg' ),
+	'stats'   => array(
+		'finishers' => 225,
+		'headline'  => true,
+		'winners'   => array( array(
+			'distance' => '50K',
+			'men'      => array( 'name' => 'Jarrod Beauregard', 'time' => '5:54:47' ),
+			'women'    => array( 'name' => 'Marissa Valz', 'time' => '8:10:20' ),
+		) ),
+	),
+	'url' => 'https://www.aravaiparunning.com/live/black-bear-trail-race/?year=2025',
+);
+
+$title = arv_live_seo_title( $ran );
+t( 'the title names the race',          false !== strpos( $title, 'Black Bear Trail Race' ) );
+t( 'and the year',                      false !== strpos( $title, '2025' ) );
+t( 'and says Results, past tense',      false !== strpos( $title, 'Results' ) && false === strpos( $title, 'Live Results' ) );
+
+$desc = arv_live_seo_description( $ran );
+t( 'the description counts finishers',  false !== strpos( $desc, '225 finishers' ) );
+t( 'and names the winners',             false !== strpos( $desc, 'Jarrod Beauregard' ) && false !== strpos( $desc, 'Marissa Valz' ) );
+
+// Not run yet: the useful question is when and where, not how many finished.
+$upcoming = array(
+	'name'    => 'Black Bear Trail Race',
+	'edition' => array( 'iso' => '2026-08-29', 'display' => 'August 29' ),
+	'meta'    => array( 'venue' => '', 'location' => 'Waterville Valley, NH', 'image' => '' ),
+	'stats'   => array( 'finishers' => 0 ),
+	'url'     => 'https://www.aravaiparunning.com/live/black-bear-trail-race/',
+);
+$utitle = arv_live_seo_title( $upcoming );
+t( 'an unrun race says Live Results',   false !== strpos( $utitle, 'Live Results' ) );
+$udesc = arv_live_seo_description( $upcoming );
+t( 'and its description has no count',  false === strpos( $udesc, 'finisher' ) );
+t( 'but says where it is held',         false !== strpos( $udesc, 'Waterville Valley, NH' ) );
+
+// Nothing to say about a page this is not.
+t( 'no name means no title',            '' === arv_live_seo_title( array() ) );
+t( 'no name means no description',      '' === arv_live_seo_description( array() ) );
+
+echo "\nlive page SEO: the schema.org event:\n";
+$event = arv_live_seo_event( $ran );
+t( 'typed as SportsEvent',              'SportsEvent' === $event['@type'] );
+t( 'carries the edition date',          '2025-08-30' === $event['startDate'] );
+t( 'a run race is marked completed',    'https://schema.org/EventCompleted' === $event['eventStatus'] );
+t( 'carries a place',                   isset( $event['location'] ) && 'Waterville Valley Town Square' === $event['location']['name'] );
+t( 'and the results description',       false !== strpos( $event['description'], 'Jarrod Beauregard' ) );
+t( 'no offer on a race already run',    ! isset( $event['offers'] ) );
+
+$uevent = arv_live_seo_event( $upcoming );
+t( 'an unrun race is not completed',    'https://schema.org/EventCompleted' !== ( $uevent['eventStatus'] ?? '' ) );
+
+// No edition at all (a slug the results store has never seen) has no date to
+// anchor a SportsEvent on, so there is nothing valid to emit.
+t( 'no edition means no event',         array() === arv_live_seo_event( array( 'name' => 'Brand New', 'edition' => null ) ) );
+
+echo "\nlive page SEO: wired into wp_head:\n";
+$GLOBALS['meta'] = array( 77 => array( '_arv_live_slug' => 'black_bear-2025' ) );
+$GLOBALS['QUERIED_ID'] = 77;
+$GLOBALS['IS_SINGULAR'] = true;
+
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+arv_stats_store_set( array( array(
+	'slug' => 'black_bear-2025', 'finishers' => 225, 'headline' => true,
+	'winners' => array( array( 'distance' => '50K',
+		'men' => array( 'name' => 'Jarrod Beauregard', 'time' => '5:54:47' ) ) ),
+) ) );
+
+ob_start();
+arv_live_seo_head();
+$head = ob_get_clean();
+t( 'wp_head prints a description',      false !== strpos( $head, 'name="description"' ) );
+t( 'and og:title',                      false !== strpos( $head, 'property="og:title"' ) );
+t( 'suffixed with the site name',       false !== strpos( $head, 'Aravaipa Running' ) );
+t( 'and og:url',                        false !== strpos( $head, 'property="og:url"' ) );
+t( 'and a twitter card',                false !== strpos( $head, 'name="twitter:card"' ) );
+t( 'and the SportsEvent JSON-LD',       false !== strpos( $head, 'application/ld+json' ) );
+
+$titled = arv_live_seo_title_parts( array( 'title' => 'Some Page' ) );
+t( 'the document title is overridden', 'Some Page' !== $titled['title'] );
+t( 'but both are still settable',       false !== strpos( $titled['title'], 'Black Bear Trail Race' ) );
+
+// A page with no live-slug meta is not a live page at all.
+$GLOBALS['meta'] = array();
+ob_start();
+arv_live_seo_head();
+t( 'a normal page prints nothing',      '' === ob_get_clean() );
+$GLOBALS['QUERIED_ID'] = 0;
+$GLOBALS['IS_SINGULAR'] = false;
+$GLOBALS['ARV_OPTIONS'] = array();
 
 // Yoast and friends own the whole output when present. Defined last, since
 // a constant cannot be undefined once set.
