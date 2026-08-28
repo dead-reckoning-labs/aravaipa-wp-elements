@@ -289,6 +289,54 @@ async function fetchRegClose(registerUrl, raceIso) {
   }
 }
 
+/**
+ * Read the date a non-UltraSignup registrar states for itself.
+ *
+ * The dates on aravaiparunning.com carry no year, so a race listed after
+ * today's month-day is inferred to be next year's running and marked
+ * guessed. That guess then blocks the Register button, which is right for
+ * an UltraSignup "did" that still points at a finished event, and wrong for
+ * a registrar that has already published the new running: Mountain to
+ * Fountain sat on the calendar as "TBD" with no way to enter it while Race
+ * Roster had 2027 open the whole time.
+ *
+ * Race Roster publishes schema.org startDate. RunSignUp puts the date in
+ * the page title. Both are the registrar's own statement about its own
+ * event, so where one exists it outranks anything inferred from an undated
+ * listing.
+ *
+ * Deliberately not used for UltraSignup. There the page reached through a
+ * stale did is a real page for a real event that has already happened, so
+ * its date would confirm the wrong year with total confidence. That case is
+ * what matchGroupEvent() is for.
+ *
+ * @param {string} registerUrl
+ * @return {Promise<string>} Y-m-d, or '' when the page states nothing.
+ */
+async function fetchRegistrarDate(registerUrl) {
+  try {
+    const res = await fetch(registerUrl, { signal: AbortSignal.timeout(20000) });
+    if (!res.ok) return '';
+    const html = await res.text();
+
+    const ld = html.match(/"startDate"\s*:\s*"(\d{4}-\d{2}-\d{2})/);
+    if (ld) return ld[1];
+
+    const title = html.replace(/\n/g, ' ').match(/<title>([\s\S]*?)<\/title>/i);
+    if (title) {
+      const d = title[1].replace(/\s+/g, ' ')
+        .match(/([A-Za-z]{3,9})\s+(\d{1,2})(?:\s*[-\u2013]\s*\d{1,2})?,\s*(\d{4})/);
+      if (d) {
+        const mo = MONTHS[d[1].toLowerCase()];
+        if (mo) return `${d[3]}-${String(mo).padStart(2,'0')}-${String(parseInt(d[2],10)).padStart(2,'0')}`;
+      }
+    }
+    return '';
+  } catch {
+    return '';
+  }
+}
+
 // "September 12-13" and "October 30 - November 1" both describe a race that
 // is still running on its later day. Without an end date the module drops a
 // multi-day race the morning of day two, while runners are still out there.
@@ -426,6 +474,26 @@ for (const r of raw) {
     // is the old problem exactly — a "did" nobody has rolled over — so it
     // stays unconfirmed even though a link still exists.
     confirmed = !isUltraSignup && !guessed;
+
+    // A guess is only a guess until the registrar says otherwise. Ask it.
+    // Its own page outranks a year inferred from an undated listing, and
+    // when the two agree the race stops being "TBD" with no way to enter it.
+    // Only ever promotes a date that is still ahead of us: a registrar
+    // stating a date in the past is describing last year's running, which is
+    // the same trap the UltraSignup branch above exists to avoid.
+    if (!isUltraSignup && guessed) {
+      const stated = await fetchRegistrarDate(register);
+      await new Promise(r2 => setTimeout(r2, 200));
+      if (stated && stated >= TODAY) {
+        if (args.audit && stated !== iso) {
+          console.error(`  REGDATE ${name.padEnd(38)} ${iso} -> ${stated}`);
+        }
+        iso = stated;
+        end = isoEndFor(display, iso);
+        guessed = false;
+        confirmed = true;
+      }
+    }
   }
 
   const coords = findCoords(name, groupEvents);
