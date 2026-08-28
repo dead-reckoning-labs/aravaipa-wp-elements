@@ -55,6 +55,29 @@ cs_register_element(
 				'overlay'    => cs_value( '0.5', 'style' ),
 				'full_width' => cs_value( 'true', 'markup' ),
 				'theme'      => cs_value( 'dark', 'style' ),
+
+				// The side card. Everything below is a claim made on a live
+				// commercial page, so each one is checked against a source
+				// rather than written from memory:
+				//
+				//   price / price_note  read off the challenge's own page on
+				//                       obsession.run, which states $49.00
+				//                       entry plus a $3.89 fee and an
+				//                       increase to $59.00 on September 1.
+				//   syncs               Strava and Coros are both shipped
+				//                       integrations in the Obsession
+				//                       codebase (src/app/settings has a real
+				//                       coros-section.tsx with tokens,
+				//                       backfill and sync state, and Strava
+				//                       has its own importer). Garmin is
+				//                       deliberately absent: it is still in
+				//                       coming-soon-section.tsx.
+				'host_label' => cs_value( 'Hosted on Obsession.run', 'markup' ),
+				'host_url'   => cs_value( 'https://obsession.run/challenges/jallucinations', 'markup' ),
+				'host_logo'  => cs_value( 'https://www.aravaiparunning.com/avr/wp-content/uploads/obsession-app-icon.png', 'markup' ),
+				'price'      => cs_value( '$52.89', 'markup' ),
+				'price_note' => cs_value( 'Goes up to $59 on September 1', 'markup' ),
+				'syncs'      => cs_value( 'Strava, Coros', 'markup' ),
 			),
 			'omega'
 		),
@@ -198,6 +221,7 @@ function arv_featured_race_render( $data ) {
 	$out  = '<div class="' . arv_wrapper_class( $data, $base ) . '">';
 	$out .= '<div class="arv-featured__panel" style="' . $style . '">';
 	$out .= '<div class="arv-featured__inner">';
+	$out .= '<div class="arv-featured__main">';
 
 	$eyebrow = isset( $data['eyebrow'] ) ? trim( (string) $data['eyebrow'] ) : '';
 	if ( '' !== $eyebrow ) {
@@ -254,7 +278,81 @@ function arv_featured_race_render( $data ) {
 	}
 	$out .= '</div>';
 
+	// Closes .arv-featured__main.
+	$out .= '</div>';
+
+	$out .= arv_featured_race_card( $data );
+
 	$out .= '</div></div></div>';
+
+	return $out;
+}
+
+/**
+ * The side card: who hosts the race, what it costs, and what it syncs with.
+ *
+ * Split out because it is the part that answers "why would I sign up", where
+ * everything above it answers "what is this". Renders nothing at all when
+ * none of its fields are set, so the element stays useful for a plain
+ * in-person race that has no platform, no published price and nothing to
+ * sync with.
+ *
+ * @param array $data Element values.
+ * @return string
+ */
+function arv_featured_race_card( $data ) {
+	$host_label = isset( $data['host_label'] ) ? trim( (string) $data['host_label'] ) : '';
+	$host_url   = isset( $data['host_url'] ) ? trim( (string) $data['host_url'] ) : '';
+	$host_logo  = isset( $data['host_logo'] ) ? trim( (string) $data['host_logo'] ) : '';
+	$price      = isset( $data['price'] ) ? trim( (string) $data['price'] ) : '';
+	$price_note = isset( $data['price_note'] ) ? trim( (string) $data['price_note'] ) : '';
+	$syncs      = isset( $data['syncs'] ) ? arv_parse_list( $data['syncs'] ) : array();
+
+	if ( '' === $host_label && '' === $price && empty( $syncs ) ) {
+		return '';
+	}
+
+	$out = '<aside class="arv-featured__card">';
+
+	if ( '' !== $host_label ) {
+		$inner = '';
+		if ( '' !== $host_logo ) {
+			$inner .= '<img class="arv-featured__host-logo" src="' . esc_url( $host_logo ) . '" alt="" loading="lazy" decoding="async" />';
+		}
+		$inner .= '<span class="arv-featured__host-label">' . esc_html( $host_label ) . '</span>';
+
+		// A link only when there is somewhere to go, the same rule every
+		// other element here follows rather than emitting a dead anchor.
+		$out .= '' !== $host_url
+			? '<a class="arv-featured__host" href="' . esc_url( $host_url ) . '" target="_blank" rel="noopener">' . $inner . '</a>'
+			: '<div class="arv-featured__host">' . $inner . '</div>';
+	}
+
+	if ( '' !== $price ) {
+		$out .= '<p class="arv-featured__price">' . esc_html( $price );
+		if ( '' !== $price_note ) {
+			// Marked up as its own element rather than folded into the price
+			// string so it can be styled as the warning it is, and so a race
+			// with a price but no deadline simply omits it.
+			$out .= '<span class="arv-featured__price-note">' . esc_html( $price_note ) . '</span>';
+		}
+		$out .= '</p>';
+	}
+
+	if ( ! empty( $syncs ) ) {
+		$out .= '<ul class="arv-featured__syncs">';
+		foreach ( $syncs as $sync ) {
+			$out .= '<li class="arv-featured__sync">'
+				. '<svg class="arv-featured__tick" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">'
+				. '<path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+				. '</svg>'
+				. '<span>' . esc_html( sprintf( __( 'Syncs with %s', 'aravaipa-elements' ), $sync ) ) . '</span>'
+				. '</li>';
+		}
+		$out .= '</ul>';
+	}
+
+	$out .= '</aside>';
 
 	return $out;
 }

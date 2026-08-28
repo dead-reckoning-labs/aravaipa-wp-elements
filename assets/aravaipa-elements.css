@@ -2765,6 +2765,14 @@
 	--arv-teal-deep: #2a5e6b;
 	--arv-accent: #ff2a13;
 	box-sizing: border-box;
+	/* Set explicitly, not left to inherit. This lands in whatever Cornerstone
+	   column an editor drops it into, and that column is centred on the live
+	   homepage, which centred every line of this block. That is not just a
+	   look: the scrim behind the copy is deliberately weighted to the left, so
+	   centred text drifted off the dark side of the gradient and sat on top of
+	   the bright part of the photo. The calendar and the region map both carry
+	   this same declaration for the same reason. */
+	text-align: left;
 }
 
 .arv-featured *  {
@@ -2838,8 +2846,19 @@
 
 .arv-featured__inner {
 	position: relative;
-	max-width: 60rem;
+	max-width: 68rem;
 	margin: 0 auto;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 2.5rem 3rem;
+}
+
+/* Takes the slack so the card keeps its own width, and can shrink past its
+   content's natural width rather than forcing the card to wrap early. */
+.arv-featured__main {
+	flex: 1 1 22rem;
+	min-width: 0;
 }
 
 /* The race's own logo, at a size where it reads as a mark rather than as a
@@ -3011,6 +3030,86 @@
 	}
 }
 
+/* The side card: who runs it, what it costs, what it talks to. Deliberately
+   a panel rather than more lines of copy, because it answers a different
+   question from the rest of the block ("why sign up" against "what is
+   this") and reads faster as a block you can scan than as a paragraph. */
+.arv-featured__card {
+	flex: 0 1 20rem;
+	padding: 1.5rem;
+	background: rgba(10, 14, 18, 0.72);
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	/* Frosted where the browser supports it, plain translucency where it does
+	   not, so the card never becomes an unreadable smear over a busy photo. */
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+}
+
+.arv-featured__host {
+	display: flex;
+	align-items: center;
+	gap: 0.7rem;
+	color: inherit;
+	text-decoration: none;
+}
+
+.arv-featured__host-logo {
+	flex: 0 0 auto;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 9px;
+	object-fit: cover;
+}
+
+.arv-featured__host-label {
+	font-size: 0.9rem;
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.arv-featured__price {
+	margin: 1.1rem 0 0;
+	font-size: 2rem;
+	font-weight: 800;
+	line-height: 1;
+}
+
+/* Amber, the same colour a sold-out race's waitlist button uses. Both are
+   "this is still open to you, but not on the terms you might assume", which
+   is worth one consistent colour rather than two. */
+.arv-featured__price-note {
+	display: block;
+	margin-top: 0.4rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #daa520;
+}
+
+.arv-featured__syncs {
+	margin: 1.1rem 0 0;
+	padding: 1.1rem 0 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.16);
+	list-style: none;
+}
+
+.arv-featured__sync {
+	display: flex;
+	align-items: center;
+	gap: 0.55rem;
+	font-size: 0.88rem;
+}
+
+.arv-featured__sync + .arv-featured__sync {
+	margin-top: 0.5rem;
+}
+
+.arv-featured__tick {
+	flex: 0 0 auto;
+	color: var(--arv-teal);
+}
+
 .arv-featured__info {
 	color: inherit;
 	font-size: 0.85rem;
@@ -3044,5 +3143,16 @@
 @media (max-width: 619px) {
 	.arv-featured__panel {
 		padding: 2.5rem 1.25rem;
+	}
+
+	/* Full width once stacked: a 20rem card floating in a narrower column
+	   reads as a stray box rather than as part of the block. */
+	.arv-featured__card {
+		flex-basis: 100%;
+		padding: 1.25rem;
+	}
+
+	.arv-featured__price {
+		font-size: 1.75rem;
 	}
 }
