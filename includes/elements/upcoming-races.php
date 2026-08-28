@@ -285,32 +285,6 @@ function arv_upcoming_races_builder() {
 }
 
 /**
- * Normalize an ISO-ish date cell into Y-m-d, or '' if it is not a real date.
- *
- * Deliberately strict. A row whose date does not parse is dropped rather than
- * shown with a wrong date or emitted into schema as a malformed startDate,
- * which Google reports as an error against the whole page rather than
- * ignoring the one bad entry.
- *
- * @param string $cell
- * @return string
- */
-function arv_upcoming_races_date( $cell ) {
-	$cell = trim( $cell );
-
-	if ( '' === $cell || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $cell ) ) {
-		return '';
-	}
-
-	list( $y, $m, $d ) = array_map( 'intval', explode( '-', $cell ) );
-
-	// checkdate rejects 2026-02-30 and friends, which the regex above happily
-	// accepts. An impossible date reaching schema is the same class of error
-	// as an unparseable one.
-	return checkdate( $m, $d, $y ) ? $cell : '';
-}
-
-/**
  * UltraSignup's results page for a race, worked out from its register URL.
  *
  * Both carry the same "did". Deriving the results link means a row does not

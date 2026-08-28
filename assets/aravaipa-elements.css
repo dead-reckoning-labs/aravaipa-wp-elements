@@ -3575,3 +3575,452 @@
 		padding-right: 1.1rem;
 	}
 }
+
+/* ======================================================== Results == */
+/* Every race that has run, and where to read what happened. A table, not
+   cards: four columns of the same kind of thing, read across. Same plain
+   register as the calendar, hairline rules and type, because this is an
+   index rather than a dashboard. */
+
+.arv-results {
+	text-align: left;
+	--arv-teal: #5bb5a2;
+	--arv-teal-deep: #2a5e6b;
+	--arv-results-rule: #ebebeb;
+	--arv-results-muted: #7a7a7a;
+	padding: 2rem 0;
+	background: #ffffff;
+	color: #272727;
+}
+
+.arv-results *,
+.arv-results *::before,
+.arv-results *::after {
+	box-sizing: border-box;
+}
+
+.arv-results__inner {
+	max-width: 68rem;
+	margin: 0 auto;
+	padding: 0 1.5rem;
+}
+
+.arv-results__eyebrow {
+	margin: 0 0 0.35rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: var(--arv-accent);
+}
+
+.arv-results__heading {
+	margin: 0 0 0.5rem;
+	font-size: 2rem;
+	font-weight: 700;
+	line-height: 1.15;
+}
+
+.arv-results__intro {
+	margin: 0 0 1.5rem;
+	font-size: 0.95rem;
+	line-height: 1.6;
+	color: var(--arv-results-muted);
+}
+
+.arv-results__empty {
+	margin: 1.5rem 0 0;
+	font-size: 0.95rem;
+	color: var(--arv-results-muted);
+}
+
+/* Only ever scrolls if something forces it wider than the page; the layout
+   below is built not to. Here so a long race name on a narrow screen
+   degrades to a scroll rather than pushing the whole page sideways. */
+.arv-results__scroll {
+	margin-top: 1.5rem;
+	overflow-x: auto;
+}
+
+.arv-results__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+}
+
+.arv-results__table thead th {
+	padding: 0 0 0.6rem;
+	border-bottom: 2px solid #272727;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+	text-align: left;
+	white-space: nowrap;
+}
+
+/* The three link columns are the same width as each other and only as wide
+   as they need to be, so the race name takes whatever is left rather than
+   the four columns splitting the table evenly and leaving the names to
+   wrap while the links sit in acres of space. */
+.arv-results__table thead th:not(:first-child) {
+	width: 9.5rem;
+}
+
+.arv-results__month th {
+	padding: 1.5rem 0 0.5rem;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	text-align: left;
+	color: var(--arv-results-muted);
+}
+
+.arv-results__row > * {
+	padding: 0.7rem 0.75rem 0.7rem 0;
+	border-bottom: 1px solid var(--arv-results-rule);
+	vertical-align: middle;
+}
+
+.arv-results__race {
+	text-align: left;
+	font-weight: 400;
+}
+
+.arv-results__name {
+	display: block;
+	font-size: 1rem;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.arv-results__date {
+	display: block;
+	margin-top: 0.1rem;
+	font-size: 0.82rem;
+	color: var(--arv-results-muted);
+}
+
+/* A race that has run but that the scraper has not picked up yet, carrying
+   only its live link. Amber, the same colour this site uses everywhere else
+   for "true right now, and not for long". */
+.arv-results__flag {
+	display: inline-block;
+	margin-top: 0.35rem;
+	padding: 0.15rem 0.45rem;
+	background: #daa520;
+	color: #272727;
+	font-size: 0.66rem;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.arv-results__link,
+.arv-results__link:link,
+.arv-results__link:visited {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 38px;
+	padding: 0.45rem 0.6rem;
+	background: var(--arv-teal);
+	color: #0d1211;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-align: center;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition: background 0.15s ease;
+}
+
+/* Aravaipa's own timing is the primary of the three, and the only one that
+   is ours. The two off-site archives are hollow, so the row reads as one
+   action and two references rather than three equal buttons. */
+.arv-results__link--us,
+.arv-results__link--us:link,
+.arv-results__link--us:visited,
+.arv-results__link--ur,
+.arv-results__link--ur:link,
+.arv-results__link--ur:visited {
+	background: transparent;
+	border: 1px solid var(--arv-results-rule);
+	color: #272727;
+}
+
+.arv-results__cell--empty {
+	text-align: center;
+}
+
+.arv-results__dash {
+	color: #c7c7c7;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	a.arv-results__link:hover {
+		background: #6fc7b4;
+	}
+
+	a.arv-results__link--us:hover,
+	a.arv-results__link--ur:hover {
+		background: #f4f4f4;
+		border-color: #c7c7c7;
+	}
+}
+
+/* Stacked below this. A four-column table on a phone either scrolls
+   sideways, which hides the links that are the entire point, or squeezes
+   every label onto two lines. Each race becomes a block instead: name and
+   date, then the links it actually has, side by side. */
+@media (max-width: 619px) {
+	.arv-results__inner {
+		padding: 0 1.25rem;
+	}
+
+	.arv-results__scroll {
+		overflow-x: visible;
+	}
+
+	.arv-results__table,
+	.arv-results__table tbody,
+	.arv-results__table tr,
+	.arv-results__table td,
+	.arv-results__table th {
+		display: block;
+		width: auto;
+	}
+
+	/* The header row is meaningless once the columns are gone: every link
+	   already carries its own name. Hidden rather than removed so the table
+	   is still a table to a screen reader. */
+	.arv-results__table thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+	}
+
+	/* Every selector below is scoped through .arv-results__table on purpose.
+	   The rule above that flattens the table sets "display: block" via
+	   ".arv-results__table tr" and ".arv-results__table td", which is a
+	   class plus a type and therefore outranks a bare ".arv-results__row".
+	   Written unscoped, the row never became flex and the empty cell never
+	   went away: both silently kept the display the flattening rule gave
+	   them. Same trap as the races-list buttons in #68.
+	
+	   Flex rather than grid, so an empty column can be removed entirely and
+	   the links that remain share the width between them instead of leaving
+	   a hole where the third would have been. */
+	.arv-results__table tr.arv-results__row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+		padding: 0.9rem 0;
+		border-bottom: 1px solid var(--arv-results-rule);
+	}
+
+	.arv-results__table .arv-results__row > * {
+		padding: 0;
+		border-bottom: 0;
+	}
+
+	.arv-results__table th.arv-results__race {
+		flex: 1 0 100%;
+		margin-bottom: 0.15rem;
+	}
+
+	.arv-results__table td.arv-results__cell {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	/* Absent, not a dash in a column that no longer exists. */
+	.arv-results__table td.arv-results__cell--empty {
+		display: none;
+	}
+
+	.arv-results__link,
+	.arv-results__link:link,
+	.arv-results__link:visited {
+		min-height: 42px;
+		font-size: 0.7rem;
+	}
+}
+
+/* --- Results, grouped by race ------------------------------------------ */
+/* The other half of the element: every edition of a race under its own
+   name, for someone who knows the race and wants its history. The latest
+   edition is always open, because that is the one most people came for and
+   a click for it would be a click for nothing. */
+
+.arv-results__search {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin-top: 1.5rem;
+}
+
+/* Visible, not a placeholder standing in for one. A placeholder disappears
+   the moment anyone types, which is exactly when a screen reader user needs
+   to know what the box is. */
+.arv-results__search-label {
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+}
+
+.arv-results__search-input {
+	flex: 1 1 16rem;
+	min-width: 0;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid #d4d4d4;
+	border-radius: 0;
+	/* 16px. Anything smaller and iOS Safari zooms the whole page in on
+	   focus, which is the same trap the calendar's search hit. */
+	font-size: 1rem;
+	font-family: inherit;
+	background: #fff;
+	color: inherit;
+}
+
+.arv-results__search-input:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 1px;
+}
+
+.arv-results__count {
+	margin: 0;
+	font-size: 0.82rem;
+	color: var(--arv-results-muted);
+}
+
+.arv-results__races {
+	margin-top: 1.25rem;
+	border-top: 1px solid var(--arv-results-rule);
+}
+
+.arv-results__race-group {
+	padding: 1rem 0;
+	border-bottom: 1px solid var(--arv-results-rule);
+}
+
+/* [hidden] needs saying explicitly: the rule above sets display on the same
+   element, and an author rule beats the browser's own [hidden] default at
+   equal specificity whatever the source order. The calendar shipped this
+   exact bug once, where every filter set hidden correctly and nothing
+   visibly happened. */
+.arv-results__race-group[hidden] {
+	display: none;
+}
+
+.arv-results__latest {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.arv-results__race-head {
+	min-width: 0;
+}
+
+.arv-results__race-name {
+	margin: 0;
+	font-size: 1.05rem;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.arv-results__race-meta {
+	margin: 0.15rem 0 0;
+	font-size: 0.85rem;
+	color: var(--arv-results-muted);
+}
+
+.arv-results__links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+}
+
+/* Auto width here, unlike the table layout, where the three columns had to
+   line up down the page. Here they sit beside a race name that varies in
+   length, so a fixed width would leave a ragged gap. */
+.arv-results__links .arv-results__link {
+	width: auto;
+	min-width: 7.5rem;
+}
+
+.arv-results__older {
+	margin-top: 0.75rem;
+}
+
+.arv-results__older-toggle {
+	display: inline-block;
+	padding: 0.2rem 0;
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--arv-teal-deep);
+	cursor: pointer;
+}
+
+.arv-results__older-toggle::marker {
+	color: var(--arv-results-muted);
+}
+
+.arv-results__older[open] .arv-results__older-toggle {
+	margin-bottom: 0.5rem;
+}
+
+.arv-results__edition {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.6rem;
+	padding: 0.55rem 0 0.55rem 1.1rem;
+	border-left: 2px solid var(--arv-results-rule);
+}
+
+.arv-results__edition-date {
+	margin: 0;
+	font-size: 0.85rem;
+	font-weight: 700;
+}
+
+@media (max-width: 619px) {
+	.arv-results__search {
+		gap: 0.4rem;
+	}
+
+	.arv-results__search-input {
+		flex-basis: 100%;
+	}
+
+	/* Name above, links below, both full width: side by side there is not
+	   enough room for three link buttons and a race name that can run to
+	   forty characters. */
+	.arv-results__latest,
+	.arv-results__edition {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.arv-results__links {
+		width: 100%;
+	}
+
+	.arv-results__links .arv-results__link {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+}
