@@ -25,7 +25,6 @@ function register_post_type( $t, $a = array() ) {}
 function register_taxonomy( $t, $o, $a = array() ) {}
 function register_post_meta( $p, $k, $a = array() ) {}
 function add_action( $t, $f, $p = 10, $n = 1 ) {}
-function add_filter( $t, $f, $p = 10, $n = 1 ) {}
 function add_submenu_page() {}
 function add_meta_box() {}
 function current_user_can( $c, $id = 0 ) { return true; }
@@ -35,7 +34,14 @@ function _n( $a, $b, $n, $d = '' ) { return 1 === (int) $n ? $a : $b; }
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_json_encode( $d, $f = 0 ) { return json_encode( $d, $f ); }
-function apply_filters( $t, $v ) { return $v; }
+function add_filter( $tag, $fn, $priority = 10, $args = 1 ) { $GLOBALS['FILTERS'][ $tag ][] = $fn; }
+function apply_filters( $tag, $v ) {
+	$rest = array_slice( func_get_args(), 2 );
+	foreach ( ( $GLOBALS['FILTERS'][ $tag ] ?? array() ) as $fn ) {
+		$v = call_user_func_array( $fn, array_merge( array( $v ), $rest ) );
+	}
+	return $v;
+}
 function current_time( $f ) {
 	$day = $GLOBALS['NOW'] ?? '2026-08-26';
 	// WordPress returns an int for 'timestamp' and a formatted string
@@ -864,6 +870,46 @@ t( 'two loose matches link to neither', '' === arv_results_distance_url( $two, '
 t( 'a state is pulled from a location', 'CO' === arv_results_state_code( 'Castle Rock, CO' ) );
 t( 'and nothing from a bare region',    '' === arv_results_state_code( 'Arizona' ) );
 t( 'or from nothing at all',            '' === arv_results_state_code( '' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nrace cutoff overrides:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$board = array(
+	'slug'   => 'x-2026',
+	'start'  => '2026-08-29T10:00:00.000Z',   // 10:00 UTC
+	'cutoff' => '2026-08-30T01:00:00.000Z',   // the board says 15 hours
+	'offset' => -4,
+	'races'  => array(),
+);
+
+// With nothing stored, the board is the answer.
+t( 'the board is used by default',      strtotime( '2026-08-30T01:00:00.000Z' ) === arv_race_cutoff_for( 'Black Bear Trail Race', $board ) );
+
+// An override is a duration from the gun, so 12 hours off a 10:00 start.
+arv_race_cutoff_store_set( array( 'Black Bear Trail Race' => 12 ) );
+t( 'an override beats the board',       strtotime( '2026-08-29T22:00:00Z' ) === arv_race_cutoff_for( 'Black Bear Trail Race', $board ) );
+t( 'and only for the race named',       strtotime( '2026-08-30T01:00:00.000Z' ) === arv_race_cutoff_for( 'Rock Hawk', $board ) );
+
+// Measured from the gun, not the calendar: move the start and the cutoff
+// moves with it, which is the point of storing hours rather than a time.
+$later = array_merge( $board, array( 'start' => '2026-08-29T12:00:00.000Z' ) );
+t( 'it tracks a moved start time',      strtotime( '2026-08-30T00:00:00Z' ) === arv_race_cutoff_for( 'Black Bear Trail Race', $later ) );
+
+// A race with no board entry at all has nothing to measure from, so there
+// is no cutoff rather than a wrong one.
+t( 'no board means no cutoff',          0 === arv_race_cutoff_for( 'Black Bear Trail Race', null ) );
+
+// Nonsense is dropped on write rather than stored and applied later.
+arv_race_cutoff_store_set( array( 'Zero' => 0, 'Negative' => -3, 'Blank' => 5, '' => 9 ) );
+$kept = arv_race_cutoff_store_get();
+t( 'a zero cutoff is not stored',       ! isset( $kept['Zero'] ) );
+t( 'nor a negative one',                ! isset( $kept['Negative'] ) );
+t( 'nor one with no race name',         ! isset( $kept[''] ) );
+t( 'and the good one survives',         5.0 === (float) $kept['Blank'] );
+
+// A filter can override in code, for anything the store cannot express.
+add_filter( 'arv_race_cutoff_hours', function ( $h, $name ) { return 'Filtered' === $name ? 2 : $h; }, 10, 2 );
+t( 'a filter can set the hours',        strtotime( '2026-08-29T12:00:00Z' ) === arv_race_cutoff_for( 'Filtered', $board ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nSEO: single race page schema:\n";
