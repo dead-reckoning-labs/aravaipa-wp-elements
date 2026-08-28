@@ -280,6 +280,33 @@ $nonote = arv_featured_race_render( array(
 t( 'a price alone renders',            false !== strpos( $nonote, '$85' ) );
 t( 'with no empty deadline element',   false === strpos( $nonote, 'arv-featured__price-note' ) );
 
+echo "\nfeatured race deadline note:\n";
+$GLOBALS['NOW'] = '2026-08-26';
+$deadline = arv_featured_race_render( array(
+	'race_page'     => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'deadline_note' => 'Order by September 1 to guarantee your goody pack before the challenge begins.',
+) );
+t( 'shows while entries are open',   false !== strpos( $deadline, 'guarantee your goody pack' ) );
+t( 'left blank by default',          false === strpos( arv_featured_race_render( array( 'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/' ) ), 'arv-featured__deadline' ) );
+
+// A goody-pack deadline stops making sense the moment there is nothing left
+// to guarantee: once the race is over, or once it never had a deadline in
+// the first place because entries are already closed.
+$GLOBALS['NOW'] = '2026-11-01';
+$after = arv_featured_race_render( array(
+	'race_page'     => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'deadline_note' => 'Order by September 1 to guarantee your goody pack before the challenge begins.',
+) );
+t( 'hidden once the race has run', false === strpos( $after, 'arv-featured__deadline' ) );
+
+$GLOBALS['NOW'] = '2026-09-05';
+$mog = arv_featured_race_render( array(
+	'race_page'     => 'https://www.aravaiparunning.com/mogollon-monster/',
+	'deadline_note' => 'Order by September 1 to guarantee your goody pack before the challenge begins.',
+) );
+t( 'hidden on a sold-out race',     false === strpos( $mog, 'arv-featured__deadline' ) );
+t( 'which still shows the waitlist', false !== strpos( $mog, 'Join Waitlist' ) );
+$GLOBALS['NOW'] = '2026-08-26';
 
 
 echo "\nshared registration links:\n";
