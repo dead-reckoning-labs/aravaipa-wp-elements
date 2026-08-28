@@ -965,6 +965,12 @@ function arv_results_by_race( $rows, $show_search ) {
 		$out .= arv_results_links( $latest );
 		$out .= '</div>';
 
+		$stats = arv_stats_store_find( $latest['live'] );
+
+		if ( null !== $stats ) {
+			$out .= arv_results_winners_table( $stats );
+		}
+
 		if ( ! empty( $older ) ) {
 			$out .= '<details class="arv-results__older">';
 			$out .= '<summary class="arv-results__older-toggle">'
@@ -1015,23 +1021,17 @@ function arv_results_by_race( $rows, $show_search ) {
  * What happened at one edition: how many finished, and who won.
  *
  * The archive's whole problem was that no part of a row varied. Name, date,
- * three buttons, eighty times, so the eye had nothing to catch on and the
- * page scanned as wallpaper. A finisher count is the fix and it is also the
- * one fact the events calendar structurally cannot carry, since an event
- * that has not happened has no finishers. It is what makes this a different
- * page rather than the calendar again in past tense.
- *
- * The winner is only shown on the edition at the top of a group. Across
- * seventy-four groups a name on every collapsed edition as well is a wall,
- * and the latest running is the one anyone is here for; the older ones need
- * to stay scannable more than they need to be interesting.
+ * three buttons, seventy-four times, so the eye had nothing to catch on and
+ * the page scanned as wallpaper. A finisher count is the fix and it is also
+ * the one fact the events calendar structurally cannot carry, since an event
+ * that has not happened has no finishers.
  *
  * Silent when there is nothing to say. A race that has not been run yet
  * reads zero finishers, correctly, and "0 finishers" under next weekend's
  * race would be a worse answer than none.
  *
  * @param array $row
- * @param bool  $with_winner Whether this row is the one that names a winner.
+ * @param bool  $with_winner Whether this row is the one that names winners.
  * @return string
  */
 function arv_results_stat_line( $row, $with_winner ) {
@@ -1057,25 +1057,161 @@ function arv_results_stat_line( $row, $with_winner ) {
 		return ' <span class="arv-results__stat">' . esc_html( $count ) . '</span>';
 	}
 
-	$out = '<p class="arv-results__stats"><span class="arv-results__stat">'
-		. esc_html( $count ) . '</span>';
+	return '<p class="arv-results__stats"><span class="arv-results__stat">'
+		. esc_html( $count ) . '</span></p>'
+		. arv_results_headline_winners( $stats );
+}
 
-	$winner = isset( $stats['winner'] ) && is_array( $stats['winner'] ) ? $stats['winner'] : null;
+/**
+ * The marquee result: who won the event's premier distance.
+ *
+ * One distance, every division that ran it. Not one winner: at Bear Chase
+ * 2024 the women's 100K champion finished in 11:35:21 and the men's in
+ * 12:10:00, so naming a single winner was not a summary of that race, it was
+ * a wrong answer. The full table below carries the rest.
+ *
+ * Adaptive rather than fixed at two, for the same reason the table's columns
+ * are: most events ran men and women, Javelina and Black Canyon also scored
+ * nonbinary, and hardcoding the common case would erase the flagship's own
+ * results.
+ *
+ * @param array $stats
+ * @return string
+ */
+function arv_results_headline_winners( $stats ) {
+	// No premier distance means no headline. A lap event runs every category
+	// over one loop, so its longest distance is whichever the GPS rounded up.
+	// The table still lists them all.
+	if ( empty( $stats['winners'] ) || empty( $stats['headline'] ) ) {
+		return '';
+	}
 
-	if ( null !== $winner && ! empty( $winner['name'] ) && ! empty( $winner['time'] ) ) {
+	$top = $stats['winners'][0];
+	$out = '<p class="arv-results__winners">';
+
+	if ( '' !== $top['distance'] ) {
+		$out .= '<span class="arv-results__winners-distance">'
+			. esc_html( arv_results_distance_label( $top['distance'] ) ) . '</span>';
+	}
+
+	foreach ( arv_stats_divisions() as $division ) {
+		if ( ! isset( $top[ $division ] ) ) {
+			continue;
+		}
+
 		$out .= '<span class="arv-results__winner">'
-			. esc_html(
-				sprintf(
-					// translators: 1: winner name, 2: winning time.
-					__( 'Won by %1$s, %2$s', 'aravaipa-elements' ),
-					$winner['name'],
-					$winner['time']
-				)
-			)
+			// The division is named for a screen reader and not drawn, because
+			// sighted readers get it from the names and a row reading
+			// "Men Alex Bustamante Women Sydney Park" is three words of
+			// scaffolding for four words of result.
+			. '<span class="arv-results__sr">'
+			. esc_html( arv_results_division_label( $division ) ) . ': </span>'
+			. '<span class="arv-results__winner-name">' . esc_html( $top[ $division ]['name'] ) . '</span> '
+			. '<span class="arv-results__winner-time">' . esc_html( $top[ $division ]['time'] ) . '</span>'
 			. '</span>';
 	}
 
 	return $out . '</p>';
+}
+
+/**
+ * Every distance's winners, behind a disclosure.
+ *
+ * A real table, because that is what this is: a distance and a winner per
+ * division, read across. Up to nine rows and three columns at Royal Gorge
+ * Groove, which is exactly the amount of information that has to be closed
+ * by default; seventy-four of those open at once is not an archive, it is a
+ * results booklet.
+ *
+ * Not rendered when the headline already said everything. An event with one
+ * scored distance would otherwise get a control that opens to repeat the
+ * line directly above it.
+ *
+ * @param array $stats
+ * @return string
+ */
+function arv_results_winners_table( $stats ) {
+	$winners = isset( $stats['winners'] ) ? $stats['winners'] : array();
+
+	if ( count( $winners ) < 2 && ! empty( $stats['headline'] ) ) {
+		return '';
+	}
+
+	if ( empty( $winners ) ) {
+		return '';
+	}
+
+	$divisions = arv_stats_divisions_present( $winners );
+
+	$out = '<details class="arv-results__winners-all">';
+	$out .= '<summary class="arv-results__older-toggle">'
+		. '<svg class="arv-results__chevron" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
+		. '<path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+		. '</svg>'
+		. esc_html( __( 'Winners', 'aravaipa-elements' ) )
+		. '<span class="arv-results__older-years">'
+		. esc_html(
+			sprintf(
+				// translators: %d is a count of distances.
+				_n( '%d distance', '%d distances', count( $winners ), 'aravaipa-elements' ),
+				count( $winners )
+			)
+		)
+		. '</span></summary>';
+
+	// Wrapped so the overflow lives on a div rather than on the table. Set
+	// on the table itself it needs display:block, which throws away the table
+	// layout that makes the columns line up in the first place.
+	$out .= '<div class="arv-results__winners-scroll">';
+	$out .= '<table class="arv-results__winners-table"><thead><tr>'
+		. '<th scope="col">' . esc_html( __( 'Distance', 'aravaipa-elements' ) ) . '</th>';
+
+	foreach ( $divisions as $division ) {
+		$out .= '<th scope="col">' . esc_html( arv_results_division_label( $division ) ) . '</th>';
+	}
+
+	$out .= '</tr></thead><tbody>';
+
+	foreach ( $winners as $row ) {
+		$out .= '<tr><th scope="row">'
+			. esc_html( arv_results_distance_label( $row['distance'] ) ) . '</th>';
+
+		foreach ( $divisions as $division ) {
+			if ( ! isset( $row[ $division ] ) ) {
+				// A division the board could not resolve a winner for, which
+				// happens: one 6K women's winner on the archive has a finish
+				// stamp equal to her start. An empty cell is the honest
+				// answer; a dash would read as "nobody entered".
+				$out .= '<td></td>';
+				continue;
+			}
+
+			$out .= '<td><span class="arv-results__winner-name">'
+				. esc_html( $row[ $division ]['name'] ) . '</span> '
+				. '<span class="arv-results__winner-time">'
+				. esc_html( $row[ $division ]['time'] ) . '</span></td>';
+		}
+
+		$out .= '</tr>';
+	}
+
+	return $out . '</tbody></table></div></details>';
+}
+
+/**
+ * The name of one scoring division.
+ *
+ * @param string $division
+ * @return string
+ */
+function arv_results_division_label( $division ) {
+	$labels = array(
+		'men'       => __( 'Men', 'aravaipa-elements' ),
+		'women'     => __( 'Women', 'aravaipa-elements' ),
+		'nonbinary' => __( 'Nonbinary', 'aravaipa-elements' ),
+	);
+
+	return isset( $labels[ $division ] ) ? $labels[ $division ] : $division;
 }
 
 /**

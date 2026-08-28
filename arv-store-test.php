@@ -1057,21 +1057,41 @@ arv_stats_store_set( array(
 	array(
 		'slug'      => 'vertigo_night_runs-2026',
 		'starters'  => 448,
-		'finishers' => 349,
-		'winner'    => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58', 'race' => '52K' ),
+		'finishers' => 376,
+		'headline'  => true,
+		'winners'   => array(
+			array(
+				'distance' => '52K',
+				'men'      => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58' ),
+				'women'    => array( 'name' => 'Sydney Park', 'time' => '6:02:07' ),
+			),
+			array(
+				'distance'  => '20K',
+				'men'       => array( 'name' => 'Devin Sharps', 'time' => '1:33:38' ),
+				'women'     => array( 'name' => 'Tasia Punak', 'time' => '2:11:57' ),
+				'nonbinary' => array( 'name' => 'Liliana Gutierrez', 'time' => '3:45:10' ),
+			),
+		),
 	),
 	array(
 		'slug'      => 'vertigo_night_runs-2025',
 		'starters'  => 400,
 		'finishers' => 312,
+		'headline'  => true,
 	),
 	// A race that has not been run yet. Stored, not dropped: zero finishers
 	// is the correct answer for it, and dropping it would make "not yet" and
 	// "no data" the same thing.
 	array( 'slug' => 'rock_hawk-2026', 'starters' => 290, 'finishers' => 0 ),
 	// Half a winner is no winner.
-	array( 'slug' => 'nameless-2024', 'finishers' => 10, 'winner' => array( 'time' => '1:00:00' ) ),
-	array( 'slug' => 'timeless-2024', 'finishers' => 10, 'winner' => array( 'name' => 'A Runner' ) ),
+	array(
+		'slug' => 'nameless-2024', 'finishers' => 10, 'headline' => true,
+		'winners' => array( array( 'distance' => '50K', 'men' => array( 'time' => '1:00:00' ) ) ),
+	),
+	array(
+		'slug' => 'timeless-2024', 'finishers' => 10, 'headline' => true,
+		'winners' => array( array( 'distance' => '50K', 'men' => array( 'name' => 'A Runner' ) ) ),
+	),
 	// Junk that should never reach the store.
 	array( 'finishers' => 5 ),
 	'not an array',
@@ -1080,10 +1100,14 @@ arv_stats_store_set( array(
 $stats = arv_stats_store_get();
 t( 'only real events are stored',       5 === count( $stats ) );
 t( 'a slugless event is dropped',       ! isset( $stats[''] ) );
-t( 'a winner needs a name and a time',  ! isset( $stats['nameless-2024']['winner'] ) );
-t( 'both halves, or neither',           ! isset( $stats['timeless-2024']['winner'] ) );
 
-t( 'stats are found by live url',       349 === arv_stats_store_find( 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' )['finishers'] );
+// A distance whose every division failed its checks is not a row, it is an
+// empty line in a table, so the whole winners key goes rather than holding
+// a row with nothing but a distance in it.
+t( 'a nameless winner drops the row',   ! isset( $stats['nameless-2024']['winners'] ) );
+t( 'so does a timeless one',            ! isset( $stats['timeless-2024']['winners'] ) );
+
+t( 'stats are found by live url',       376 === arv_stats_store_find( 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' )['finishers'] );
 t( 'a deep-linked url still matches',   null !== arv_stats_store_find( 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026?raceId=7' ) );
 t( 'an unknown event finds nothing',    null === arv_stats_store_find( 'https://live.aravaiparunning.com/#/nope-2026' ) );
 t( 'and a blank url is safe',           null === arv_stats_store_find( '' ) );
@@ -1092,28 +1116,70 @@ t( 'and a blank url is safe',           null === arv_stats_store_find( '' ) );
 arv_stats_store_set( array( array( 'slug' => 'x-2026', 'finishers' => -5 ) ) );
 t( 'a negative count floors at zero',   0 === arv_stats_store_get()['x-2026']['finishers'] );
 
+echo "\nresults stats: which divisions ran:\n";
+$two = array( array( 'distance' => '50K', 'men' => array(), 'women' => array() ) );
+t( 'men and women, in that order',      array( 'men', 'women' ) === arv_stats_divisions_present( $two ) );
+
+// Nonbinary is a division Aravaipa scores, not a stray value: Javelina 2025
+// placed four nonbinary finishers in the Jackass 31K. A men-and-women table
+// would erase real results from the flagship race.
+$three = array(
+	array( 'distance' => '100 Miler', 'men' => array(), 'women' => array() ),
+	array( 'distance' => '31K', 'men' => array(), 'nonbinary' => array() ),
+);
+t( 'a scored division adds a column',   array( 'men', 'women', 'nonbinary' ) === arv_stats_divisions_present( $three ) );
+
+// And the 178 events with no nonbinary entrant do not each carry an empty
+// column to accommodate the nine that do.
+t( 'an unscored one adds nothing',      ! in_array( 'nonbinary', arv_stats_divisions_present( $two ), true ) );
+t( 'nothing at all is empty',           array() === arv_stats_divisions_present( array() ) );
+
 echo "\nresults stats: on the row:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
 arv_stats_store_set( array(
 	array(
 		'slug'      => 'vertigo_night_runs-2026',
 		'finishers' => 1470,
-		'winner'    => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58', 'race' => '52K' ),
+		'headline'  => true,
+		'winners'   => array(
+			array(
+				'distance' => '52KM',
+				'men'      => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58' ),
+				'women'    => array( 'name' => 'Sydney Park', 'time' => '6:02:07' ),
+			),
+			array(
+				'distance' => '20K',
+				'men'      => array( 'name' => 'Devin Sharps', 'time' => '1:33:38' ),
+			),
+		),
 	),
-	array( 'slug' => 'vertigo_night_runs-2025', 'finishers' => 312 ),
+	array( 'slug' => 'vertigo_night_runs-2025', 'finishers' => 312, 'headline' => true ),
 	array( 'slug' => 'rock_hawk-2026', 'finishers' => 0 ),
 ) );
 
 $latest = array( 'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' );
 $line   = arv_results_stat_line( $latest, true );
 t( 'the count is on the row',           false !== strpos( $line, '1,470 finishers' ) );
-t( 'and so is the winner',              false !== strpos( $line, 'Won by Alex Bustamante, 5:49:58' ) );
 
-// The winner belongs to the top of a group only. Seventy-four groups with a
-// name on every collapsed edition as well is a wall.
+// Both divisions, not one winner. At Bear Chase 2024 the women's 100K
+// champion beat the men's, so naming a single winner was a wrong answer.
+t( 'the headline names the men',        false !== strpos( $line, 'Alex Bustamante' ) );
+t( 'and the women',                     false !== strpos( $line, 'Sydney Park' ) );
+t( 'with their times',                  false !== strpos( $line, '5:49:58' ) && false !== strpos( $line, '6:02:07' ) );
+t( 'and the distance they ran',         false !== strpos( $line, '>52K<' ) );
+t( 'normalised, like everywhere else',  false === strpos( $line, '52KM' ) );
+
+// The division is named for a screen reader and not drawn: sighted readers
+// get it from the names, and "Men Alex Bustamante" is scaffolding.
+t( 'divisions are named for a11y',      false !== strpos( $line, 'Men: ' ) && false !== strpos( $line, 'Women: ' ) );
+
+// Only the premier distance. The rest are in the table.
+t( 'the headline is one distance',      false === strpos( $line, 'Devin Sharps' ) );
+
+// The winner belongs to the top of a group only.
 $older = arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2025' ), false );
 t( 'an older edition still counts',     false !== strpos( $older, '312 finishers' ) );
-t( 'but names no winner',               false === strpos( $older, 'Won by' ) );
+t( 'but names no winner',               false === strpos( $older, 'Alex Bustamante' ) );
 t( 'and stays inside the date line',    false === strpos( $older, '<p' ) );
 
 // Silence, not "0 finishers", under a race that has not happened.
@@ -1130,10 +1196,59 @@ t( 'one finisher reads singular',       false !== strpos( arv_results_stat_line(
 arv_stats_store_set( array( array(
 	'slug'      => 'xss-2026',
 	'finishers' => 5,
-	'winner'    => array( 'name' => '<script>x</script>', 'time' => '1:00:00' ),
+	'headline'  => true,
+	'winners'   => array( array(
+		'distance' => '50K',
+		'men'      => array( 'name' => '<script>x</script>', 'time' => '1:00:00' ),
+	) ),
 ) ) );
 t( 'a winner name is escaped',          false === strpos( arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/xss-2026' ), true ), '<script>' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nresults stats: the winners table:\n";
+$full = array(
+	'finishers' => 100,
+	'headline'  => true,
+	'winners'   => array(
+		array(
+			'distance' => '52K',
+			'men'      => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58' ),
+			'women'    => array( 'name' => 'Sydney Park', 'time' => '6:02:07' ),
+		),
+		array(
+			'distance'  => '20K',
+			'men'       => array( 'name' => 'Devin Sharps', 'time' => '1:33:38' ),
+			'nonbinary' => array( 'name' => 'Liliana Gutierrez', 'time' => '3:45:10' ),
+		),
+	),
+);
+$table = arv_results_winners_table( $full );
+t( 'every distance is a row',           false !== strpos( $table, '>52K<' ) && false !== strpos( $table, '>20K<' ) );
+t( 'and every winner a cell',           false !== strpos( $table, 'Devin Sharps' ) && false !== strpos( $table, 'Liliana Gutierrez' ) );
+t( 'columns are the scored divisions',  false !== strpos( $table, '>Men<' ) && false !== strpos( $table, '>Women<' ) && false !== strpos( $table, '>Nonbinary<' ) );
+t( 'it counts what it holds',           false !== strpos( $table, '2 distances' ) );
+
+// A division the board could not resolve is an empty cell, not a dash: one
+// 6K women's winner on the archive has a finish stamp equal to her start.
+t( 'a missing winner is a blank cell',  false !== strpos( $table, '<td></td>' ) );
+
+// Nothing to open. An event with one scored distance would otherwise get a
+// control that repeats the line directly above it.
+$one = array( 'headline' => true, 'winners' => array( array(
+	'distance' => '50K', 'men' => array( 'name' => 'A', 'time' => '1:00:00' ),
+) ) );
+t( 'one distance needs no table',       '' === arv_results_winners_table( $one ) );
+
+// Unless there was no headline to repeat. A lap event runs every category
+// over one loop, so it has no premier distance, but "who won the six hour
+// solo" is still a real answer.
+$lap = array_merge( $one, array( 'headline' => false ) );
+t( 'but a lap event still gets one',    false !== strpos( arv_results_winners_table( $lap ), 'A' ) );
+t( 'and no winners means no table',     '' === arv_results_winners_table( array( 'headline' => false ) ) );
+
+// A lap event has no marquee result to name.
+t( 'no headline, no headline line',     '' === arv_results_headline_winners( array( 'headline' => false, 'winners' => $full['winners'] ) ) );
+t( 'and none without winners either',   '' === arv_results_headline_winners( array( 'headline' => true ) ) );
 
 echo "\nresults: years on the expander:\n";
 t( 'years are listed newest first',     '2025, 2024, 2023' === arv_results_years( array(
@@ -1155,9 +1270,21 @@ arv_stats_store_set( array(
 	array(
 		'slug'      => 'vertigo_night_runs-2026',
 		'finishers' => 349,
-		'winner'    => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58', 'race' => '52K' ),
+		'headline'  => true,
+		'winners'   => array(
+			array(
+				'distance' => '52K',
+				'men'      => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58' ),
+				'women'    => array( 'name' => 'Sydney Park', 'time' => '6:02:07' ),
+			),
+			array(
+				'distance' => '20K',
+				'men'      => array( 'name' => 'Devin Sharps', 'time' => '1:33:38' ),
+				'women'    => array( 'name' => 'Tasia Punak', 'time' => '2:11:57' ),
+			),
+		),
 	),
-	array( 'slug' => 'vertigo_night_runs-2025', 'finishers' => 312 ),
+	array( 'slug' => 'vertigo_night_runs-2025', 'finishers' => 312, 'headline' => true ),
 ) );
 
 $rows = array(
@@ -1174,7 +1301,9 @@ $rows = array(
 );
 
 $html = arv_results_by_race( $rows, false );
-t( 'the latest edition carries both',   false !== strpos( $html, '349 finishers' ) && false !== strpos( $html, 'Won by Alex Bustamante' ) );
+t( 'the latest edition counts',         false !== strpos( $html, '349 finishers' ) );
+t( 'and names its marquee winners',     false !== strpos( $html, 'Alex Bustamante' ) && false !== strpos( $html, 'Sydney Park' ) );
+t( 'the table holds the other one',     false !== strpos( $html, 'Devin Sharps' ) );
 t( 'the older edition carries a count', false !== strpos( $html, '312 finishers' ) );
 t( 'the expander names its years',      false !== strpos( $html, '2025</span>' ) );
 t( 'and still counts them',             false !== strpos( $html, '1 earlier edition' ) );
@@ -1184,6 +1313,7 @@ t( 'and still counts them',             false !== strpos( $html, '1 earlier edit
 $GLOBALS['ARV_OPTIONS'] = array();
 $bare = arv_results_by_race( $rows, false );
 t( 'no stats means no stat line',       false === strpos( $bare, 'finishers' ) );
+t( 'and no winners table',              false === strpos( $bare, 'arv-results__winners' ) );
 t( 'but the races still render',        false !== strpos( $bare, 'Vertigo Night Runs' ) );
 t( 'and so do their links',             false !== strpos( $bare, 'vertigo_night_runs-2026' ) );
 $GLOBALS['ARV_OPTIONS'] = array();

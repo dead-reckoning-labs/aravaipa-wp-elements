@@ -58,8 +58,42 @@ const WORKERS = Number( opt( '--workers', '8' ) );
  */
 const isTimedRace = ( race ) => race.isTimed === true;
 
-const MIN_WIN_SECONDS = 600;
+/**
+ * The fastest a human can cover ground, in metres per second, rounded up
+ * past anything real.
+ *
+ * A flat floor cannot work now that every distance is reported rather than
+ * only the longest. Ten minutes was a safe minimum for a 50K and would
+ * throw away the winner of a one mile fun run, who is expected to take
+ * five. Scaling the floor by the distance instead keeps one rule for both:
+ * seven metres per second is quicker than the mile world record, so
+ * anything under it is the board's arithmetic rather than a runner.
+ */
+const IMPOSSIBLE_PACE_MS = 7;
+
+/**
+ * And an absolute floor underneath that, for the case the pace rule cannot
+ * catch: a start and finish stamp that are the same instant subtract to
+ * zero whatever the distance. One of these is live on the archive right
+ * now, a 6K winner reading 0:00:00.
+ */
+const MIN_WIN_SECONDS = 60;
 const MAX_WIN_SECONDS = 120 * 3600;
+
+/**
+ * The board's gender codes, in the order a results table reads them.
+ *
+ * X is a division Aravaipa actually scores, not a stray value: Javelina
+ * 2025's Jackass 31K placed four nonbinary finishers first through fourth,
+ * and Black Canyon has scored it twice. Nine events on the archive have a
+ * nonbinary category winner, so dropping the code would quietly erase real
+ * results from the flagship race.
+ */
+const DIVISIONS = [
+	[ 'men', 'M' ],
+	[ 'women', 'F' ],
+	[ 'nonbinary', 'X' ],
+];
 
 /**
  * How much longer the longest distance has to be than the next one down
@@ -88,7 +122,7 @@ async function getJson( url ) {
 }
 
 /**
- * The first finisher of one race, or null when the board cannot say.
+ * The first finisher of one division of one race, or null.
  *
  * Null rather than a best guess at every step. A place with no finish stamp,
  * a stamp pair that subtracts to something no race lasts, a participant with
@@ -96,17 +130,17 @@ async function getJson( url ) {
  * result, and an archive row is better carrying no winner than a wrong one.
  *
  * @param {object} race
- * @param {Array}  field Participants in that race.
+ * @param {Array}  field Finishers in that race, already filtered to one division.
  */
 function winnerOf( race, field ) {
-	const finished = field.filter( ( p ) => p.ft && p.overallPlace );
+	const placed = field.filter( ( p ) => p.genderPlace );
 
-	if ( ! finished.length ) {
+	if ( ! placed.length ) {
 		return null;
 	}
 
-	const first = finished.reduce( ( a, b ) =>
-		a.overallPlace <= b.overallPlace ? a : b
+	const first = placed.reduce( ( a, b ) =>
+		a.genderPlace <= b.genderPlace ? a : b
 	);
 
 	// A participant's own start stamp where there is one, the gun where there
@@ -122,8 +156,12 @@ function winnerOf( race, field ) {
 	}
 
 	const seconds = ( new Date( first.ft ) - new Date( start ) ) / 1000;
+	const floor = Math.max(
+		MIN_WIN_SECONDS,
+		( race.distance || 0 ) / IMPOSSIBLE_PACE_MS
+	);
 
-	if ( ! ( seconds >= MIN_WIN_SECONDS && seconds <= MAX_WIN_SECONDS ) ) {
+	if ( ! ( seconds >= floor && seconds <= MAX_WIN_SECONDS ) ) {
 		return null;
 	}
 
@@ -137,7 +175,33 @@ function winnerOf( race, field ) {
 		return null;
 	}
 
-	return { name, time: hms( seconds ), race: race.name || '' };
+	return { name, time: hms( seconds ) };
+}
+
+/**
+ * Every division's winner for one distance, or null if none resolved.
+ *
+ * @param {object} race
+ * @param {Array}  field Everyone in that race.
+ */
+function winnersOf( race, field ) {
+	const finished = field.filter( ( p ) => p.ft );
+	const row = { distance: race.name || '' };
+	let any = false;
+
+	for ( const [ key, code ] of DIVISIONS ) {
+		const winner = winnerOf(
+			race,
+			finished.filter( ( p ) => p.gender === code )
+		);
+
+		if ( winner ) {
+			row[ key ] = winner;
+			any = true;
+		}
+	}
+
+	return any ? row : null;
 }
 
 /**
@@ -158,43 +222,45 @@ function summarise( event ) {
 	const finishers = participants.filter( ( p ) => p.ft ).length;
 
 	// Longest first, which is both how a race lists its own distances and
-	// which one the board itself defaults to showing.
-	const ordered = [ ...races ].sort(
-		( a, b ) => ( b.distance || 0 ) - ( a.distance || 0 )
-	);
-
-	// The winner of the longest distance stands in for the winner of the
-	// event, because that is the race the event is named after. Races with no
-	// distance recorded are skipped rather than sorted to the bottom: a
-	// junior loop with a null distance was otherwise winning some events
-	// outright, purely by being the only number the sort could see.
+	// which one the board itself defaults to showing. Races with no distance
+	// recorded are dropped rather than sorted to the bottom: a junior loop
+	// with a null distance was otherwise leading some events outright, purely
+	// by being the only number the sort could see.
 	//
-	// That only works when the distances actually differ. A lap event runs
-	// every category over the same loop, so all of them come back within a
-	// few metres of each other and "longest" is measuring GPS noise: it
-	// picked the junior loop as Adrenaline Night Rides' premier race by
-	// twelve metres. Where nothing stands clearly above the rest there is no
-	// premier distance to report a winner for, so it reports none.
-	const candidates = ordered.filter( ( r ) => r.distance && ! isTimedRace( r ) );
+	// Fixed-time races are dropped too. Everyone runs the same twelve or
+	// twenty-four hours and the winner is whoever covered most ground, so
+	// subtracting stamps gives the last lap: these read as winning times of
+	// about three minutes before this existed.
+	const scored = [ ...races ]
+		.filter( ( r ) => r.distance && ! isTimedRace( r ) )
+		.sort( ( a, b ) => b.distance - a.distance );
 
-	const premier =
-		candidates.length === 1 ||
-		( candidates.length > 1 &&
-			candidates[ 0 ].distance >=
-				candidates[ 1 ].distance * DISTINCT_LONGEST_RATIO )
-			? candidates[ 0 ]
-			: null;
+	const winners = scored
+		.map( ( race ) => winnersOf( race, byRace.get( race.id ) || [] ) )
+		.filter( Boolean );
 
-	const winner = premier
-		? winnerOf( premier, byRace.get( premier.id ) || [] )
-		: null;
+	// Whether the longest distance is the event's premier race, or just the
+	// first of several that are all the same length. A lap event runs every
+	// category over one loop, so its distances come back within metres of
+	// each other and "longest" measures GPS noise: it made the junior loop
+	// Adrenaline Night Rides' headline race by twelve metres.
+	//
+	// This only gates the headline. The table below it still lists every
+	// distance, because "who won the six hour solo" is a real answer even
+	// where "who won the event" is not.
+	const headline =
+		scored.length === 1 ||
+		( scored.length > 1 &&
+			scored[ 0 ].distance >=
+				scored[ 1 ].distance * DISTINCT_LONGEST_RATIO );
 
 	return {
 		slug: event.slug,
 		name: event.name,
 		starters: participants.length,
 		finishers,
-		...( winner ? { winner } : {} ),
+		headline,
+		...( winners.length ? { winners } : {} ),
 	};
 }
 
@@ -270,7 +336,8 @@ const events = await walk();
 process.stderr.write(
 	`${ events.length } events in ${ ( ( Date.now() - started ) / 1000 ).toFixed( 1 ) }s, ` +
 		`${ events.filter( ( e ) => e.finishers > 0 ).length } with finishers, ` +
-		`${ events.filter( ( e ) => e.winner ).length } with a winner\n`
+		`${ events.filter( ( e ) => e.winners ).length } with winners, ` +
+		`${ events.reduce( ( n, e ) => n + ( e.winners || [] ).length, 0 ) } distances scored\n`
 );
 
 const out = opt( '--out', '' );

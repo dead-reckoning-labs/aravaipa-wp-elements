@@ -61,6 +61,46 @@ function arv_stats_store_find( $live_url ) {
 }
 
 /**
+ * The divisions a race can be scored in, in the order a table reads them.
+ *
+ * Nonbinary is a division Aravaipa actually scores, not a stray value on a
+ * few entries: Javelina 2025's Jackass 31K placed four nonbinary finishers
+ * first through fourth, and Black Canyon has scored it twice. Nine events on
+ * the archive have a nonbinary category winner, so a men-and-women table
+ * would quietly erase real results from the flagship race.
+ *
+ * @return array<int, string>
+ */
+function arv_stats_divisions() {
+	return array( 'men', 'women', 'nonbinary' );
+}
+
+/**
+ * Only the divisions one event actually scored.
+ *
+ * The table's columns come from here rather than from the full list, so the
+ * hundred and seventy-eight events with no nonbinary entrant do not each
+ * carry an empty column to accommodate the nine that do.
+ *
+ * @param array $winners
+ * @return array<int, string>
+ */
+function arv_stats_divisions_present( $winners ) {
+	$present = array();
+
+	foreach ( arv_stats_divisions() as $division ) {
+		foreach ( (array) $winners as $row ) {
+			if ( isset( $row[ $division ] ) ) {
+				$present[] = $division;
+				break;
+			}
+		}
+	}
+
+	return $present;
+}
+
+/**
  * Replace the stored stats wholesale.
  *
  * A full replace, like the other derived stores: the fetcher walks the whole
@@ -89,20 +129,50 @@ function arv_stats_store_set( $events ) {
 			'starters'  => isset( $event['starters'] ) ? max( 0, (int) $event['starters'] ) : 0,
 		);
 
-		$winner = isset( $event['winner'] ) && is_array( $event['winner'] ) ? $event['winner'] : array();
-		$name   = isset( $winner['name'] ) ? trim( (string) $winner['name'] ) : '';
-		$time   = isset( $winner['time'] ) ? trim( (string) $winner['time'] ) : '';
-		$race   = isset( $winner['race'] ) ? trim( (string) $winner['race'] ) : '';
+		// Whether the longest distance is the event's premier race rather than
+		// one of several the same length. Only the headline depends on it; the
+		// table lists every distance either way.
+		$entry['headline'] = ! empty( $event['headline'] );
 
-		// Both halves or neither. "Won by Alex Bustamante" with no time reads
-		// as a result we could not finish reporting, and a bare time with no
-		// name is not a sentence at all.
-		if ( '' !== $name && '' !== $time ) {
-			$entry['winner'] = array(
-				'name' => $name,
-				'time' => $time,
-				'race' => $race,
+		$winners = array();
+
+		foreach ( (array) ( isset( $event['winners'] ) ? $event['winners'] : array() ) as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$clean_row = array(
+				'distance' => isset( $row['distance'] ) ? trim( (string) $row['distance'] ) : '',
 			);
+
+			foreach ( arv_stats_divisions() as $division ) {
+				if ( ! isset( $row[ $division ] ) || ! is_array( $row[ $division ] ) ) {
+					continue;
+				}
+
+				$name = isset( $row[ $division ]['name'] ) ? trim( (string) $row[ $division ]['name'] ) : '';
+				$time = isset( $row[ $division ]['time'] ) ? trim( (string) $row[ $division ]['time'] ) : '';
+
+				// Both halves or neither. A name with no time reads as a
+				// result we could not finish reporting, and a bare time with
+				// no name is not a sentence at all.
+				if ( '' !== $name && '' !== $time ) {
+					$clean_row[ $division ] = array(
+						'name' => $name,
+						'time' => $time,
+					);
+				}
+			}
+
+			// A distance whose every division failed its checks is not a row,
+			// it is an empty line in a table.
+			if ( count( $clean_row ) > 1 ) {
+				$winners[] = $clean_row;
+			}
+		}
+
+		if ( ! empty( $winners ) ) {
+			$entry['winners'] = $winners;
 		}
 
 		$clean[ $entry['slug'] ] = $entry;

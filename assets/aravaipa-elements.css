@@ -4062,15 +4062,6 @@
 	font-variant-numeric: tabular-nums;
 }
 
-/* Separated by a rule rather than a bullet, because the winner is a
-   different kind of fact from the count and a middot would read as more of
-   the same list. Drawn on the winner so it never lands at the start of a
-   wrapped line. */
-.arv-results__winner {
-	padding-left: 0.5rem;
-	border-left: 1px solid var(--arv-results-rule);
-}
-
 /* Inside the expander the count rides on the date line, so it needs its own
    separation there; the wrapper above does not apply. */
 .arv-results__edition-date .arv-results__stat {
@@ -4082,6 +4073,121 @@
 .arv-results__edition-date .arv-results__stat::before {
 	content: "\00b7";
 	margin-right: 0.35rem;
+}
+
+/* The marquee result, one line under the count.
+
+   Flex rather than inline text so a third division wraps as a unit instead
+   of splitting a name from its time mid-line. Most events ran men and women
+   and fit on one line; Javelina also scores nonbinary and wraps, which is
+   the correct behaviour rather than a case to design away. */
+.arv-results__winners {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.15rem 0.75rem;
+	margin: 0.15rem 0 0;
+	font-size: 0.8rem;
+	color: var(--arv-results-muted);
+}
+
+/* The distance the headline is about. Set apart from the names, since
+   without it "Alex Bustamante 5:49:58" is a time for an unstated race. */
+.arv-results__winners-distance {
+	font-weight: 700;
+	font-size: 0.72rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--arv-ink, #272727);
+}
+
+.arv-results__winner {
+	white-space: nowrap;
+}
+
+.arv-results__winner-name {
+	color: var(--arv-ink, #272727);
+}
+
+.arv-results__winner-time {
+	font-variant-numeric: tabular-nums;
+}
+
+/* Every distance, closed by default. Royal Gorge Groove scores nine of
+   them across three divisions, which is the amount of information that has
+   to be behind a disclosure: seventy-four of these open at once stops being
+   an archive and becomes a results booklet. */
+.arv-results__winners-all {
+	margin-top: 0.5rem;
+}
+
+.arv-results__winners-all[open] {
+	margin-bottom: 0.25rem;
+	padding: 0.15rem 0.75rem 0.6rem;
+	background: #fafafa;
+}
+
+.arv-results__winners-all[open] > .arv-results__older-toggle {
+	margin-bottom: 0.4rem;
+}
+
+.arv-results__winners-all[open] > .arv-results__older-toggle .arv-results__chevron {
+	transform: rotate(180deg);
+}
+
+.arv-results__winners-scroll {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+.arv-results__winners-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8rem;
+}
+
+/* A winner is a name and a time and never breaks between them. Without this
+   the table has permission to shrink instead of scroll, and on a phone it
+   took it: "Alex Bustamante 5:49:58" came out as three stacked lines and the
+   scroll container it sits in never had anything to scroll. */
+.arv-results__winners-table th,
+.arv-results__winners-table td {
+	white-space: nowrap;
+}
+
+.arv-results__winners-table th,
+.arv-results__winners-table td {
+	padding: 0.3rem 0.75rem 0.3rem 0;
+	text-align: left;
+	vertical-align: baseline;
+}
+
+/* The column heads carry the division, which is the one place it is spelled
+   out: on the headline line above, the names do that job and a drawn "Men"
+   would be scaffolding around the result. */
+.arv-results__winners-table thead th {
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--arv-results-muted);
+	border-bottom: 1px solid var(--arv-results-rule);
+}
+
+/* The distance is the row's header, not a cell: it names the row the way
+   the division names the column. */
+.arv-results__winners-table tbody th {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.arv-results__winners-table tbody tr + tr th,
+.arv-results__winners-table tbody tr + tr td {
+	border-top: 1px solid var(--arv-results-rule);
+}
+
+.arv-results__winners-table .arv-results__winner-time {
+	color: var(--arv-results-muted);
 }
 
 /* The years sit quieter than the count they follow: "3 earlier editions" is
@@ -4193,6 +4299,31 @@
 
 	.arv-results__search-field {
 		flex-basis: 100%;
+	}
+
+	/* Three columns of names do not fit a phone, and a winners table is the
+	   one place on this page where the content genuinely is tabular, so it
+	   scrolls rather than being flattened into stacked blocks.
+
+	   The scrolling happens on the wrapper, not on the table. Setting
+	   overflow on the <table> itself makes it a block box, which takes away
+	   the table layout that is the entire reason the columns line up. */
+	.arv-results__winners-all[open] {
+		padding-right: 0;
+	}
+
+	.arv-results__winners-scroll {
+		padding-right: 0.75rem;
+	}
+
+	.arv-results__winners-table {
+		width: auto;
+		min-width: 100%;
+	}
+
+	/* The headline's divisions stack rather than wrap mid-name. */
+	.arv-results__winners {
+		gap: 0.1rem 0.6rem;
 	}
 
 	/* Name above, links below, both full width: side by side there is not
