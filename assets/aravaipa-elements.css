@@ -3877,10 +3877,64 @@
 	text-transform: uppercase;
 }
 
-.arv-results__search-input {
+/* Holds the input and its clear button in one box, so the button can sit
+   inside the field rather than beside it. */
+.arv-results__search-field {
+	position: relative;
+	display: flex;
+	align-items: center;
 	flex: 1 1 16rem;
 	min-width: 0;
-	padding: 0.6rem 0.75rem;
+}
+
+.arv-results__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}
+
+/* The native one only appears once there is text, is a small unlabelled
+   target, and does not exist at all in Firefox. Ours replaces it, so this
+   makes sure there are never two. */
+.arv-results__search-input::-webkit-search-cancel-button,
+.arv-results__search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.arv-results__search-clear {
+	position: absolute;
+	right: 0.35rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	background: none;
+	border: 0;
+	color: var(--arv-results-muted);
+	cursor: pointer;
+}
+
+.arv-results__search-clear[hidden] {
+	display: none;
+}
+
+.arv-results__search-clear:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: -2px;
+}
+
+.arv-results__search-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.6rem 2.2rem 0.6rem 0.75rem;
 	border: 1px solid #d4d4d4;
 	border-radius: 0;
 	/* 16px. Anything smaller and iOS Safari zooms the whole page in on
@@ -4007,6 +4061,18 @@
 	outline-offset: 2px;
 }
 
+/* An open race reads as one unit rather than as its latest edition
+   followed by some loose rows. Deliberately not zebra striping the whole
+   list: at seventy-four races that is a lot of banding to say something the
+   hairline rules already say, and it fights the plain index register this
+   shares with the calendar. The tint marks the one thing that is actually a
+   group. */
+.arv-results__older[open] {
+	margin-top: 0.5rem;
+	padding: 0.15rem 0.75rem 0.35rem;
+	background: #fafafa;
+}
+
 .arv-results__older[open] .arv-results__older-toggle {
 	margin-bottom: 0.5rem;
 }
@@ -4032,7 +4098,7 @@
 		gap: 0.4rem;
 	}
 
-	.arv-results__search-input {
+	.arv-results__search-field {
 		flex-basis: 100%;
 	}
 

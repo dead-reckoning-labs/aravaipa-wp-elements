@@ -670,6 +670,24 @@ t( 'and has no race grouping in it',      false === strpos( $dated, 'arv-results
 // Search can be turned off.
 $nosearch = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'search' => 'false', 'upcoming' => 'false' ) );
 t( 'the search box can be turned off',    false === strpos( $nosearch, 'data-arv-results-search' ) );
+t( 'and its clear button goes with it',   false === strpos( $nosearch, 'data-arv-results-clear' ) );
+
+// The clear button is ours, not the one type="search" draws: WebKit's only
+// appears once there is text and Firefox has none at all.
+$withsearch = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'there is a real clear button',        false !== strpos( $withsearch, 'data-arv-results-clear' ) );
+t( 'hidden until something is typed',     false !== strpos( $withsearch, 'type="button" hidden' ) );
+t( 'and it is named for a screen reader', false !== strpos( $withsearch, 'Clear search' ) );
+
+// Every link row holds three slots whether or not the race has three
+// listings, so the columns line up down the page.
+t( 'a missing listing still holds its column', substr_count( $withsearch, 'arv-results__slot' ) > 0 );
+$slots = substr_count( $withsearch, 'arv-results__slot' ) + substr_count( $withsearch, 'arv-results__link ' );
+t( 'three slots per edition, always',     0 === $slots % 3 );
+
+// The expander needs a chevron of its own: any display other than
+// list-item removes the browser's disclosure triangle.
+t( 'the expander has a chevron',          false !== strpos( $withsearch, 'arv-results__chevron' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nSEO: single race page schema:\n";

@@ -344,8 +344,20 @@ function arv_results_by_race( $rows, $show_search ) {
 		$out .= '<div class="arv-results__search">'
 			. '<label class="arv-results__search-label" for="arv-results-q">'
 			. esc_html( __( 'Search races', 'aravaipa-elements' ) ) . '</label>'
+			. '<span class="arv-results__search-field">'
 			. '<input class="arv-results__search-input" id="arv-results-q" type="search" autocomplete="off"'
 			. ' placeholder="' . esc_attr( __( 'Race name', 'aravaipa-elements' ) ) . '" data-arv-results-search />'
+			// Our own clear button rather than the one type="search" gives
+			// you: WebKit's only appears once there is text and is a small
+			// unlabelled target, and Firefox draws none at all. This one is
+			// a real button with a real name, and the native one is hidden
+			// so there are never two.
+			. '<button class="arv-results__search-clear" type="button" hidden data-arv-results-clear>'
+			. '<span class="arv-results__sr">' . esc_html( __( 'Clear search', 'aravaipa-elements' ) ) . '</span>'
+			. '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">'
+			. '<path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+			. '</svg></button>'
+			. '</span>'
 			. '<p class="arv-results__count" data-arv-results-count aria-live="polite"></p>'
 			. '</div>';
 	}
