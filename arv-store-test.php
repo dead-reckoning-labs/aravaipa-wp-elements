@@ -264,9 +264,13 @@ t( 'each sync gets its own row',     2 === substr_count( $card, 'arv-featured__s
 t( 'Strava named',                   false !== strpos( $card, 'Syncs with Strava' ) );
 t( 'Coros named',                    false !== strpos( $card, 'Syncs with Coros' ) );
 
-// Real brand marks, in each brand's own colour, not a generic bullet.
+// Each brand's own published artwork and its own colour, not a redrawn
+// approximation. The hex values are the ones Strava and COROS ship in their
+// own assets, so a wrong-but-plausible red would fail here rather than go
+// live on a public page under somebody else's brand.
 t( 'Strava gets its own mark',       false !== strpos( $card, '#FC4C02' ) );
-t( 'Coros gets its own mark',        false !== strpos( $card, '#F2323C' ) );
+t( 'Coros gets its own mark',        false !== strpos( $card, '#F8273B' ) );
+t( 'and not the invented hexagon',   false === strpos( $card, '#F2323C' ) );
 t( 'both marks are rendered',        2 === substr_count( $card, 'arv-featured__sync-mark' ) );
 
 // A platform with no mark on file must still list, just without a logo,
@@ -293,6 +297,63 @@ $nonote = arv_featured_race_render( array(
 ) );
 t( 'a price alone renders',            false !== strpos( $nonote, '$85' ) );
 t( 'with no empty deadline element',   false === strpos( $nonote, 'arv-featured__price-note' ) );
+
+// "+ fees" is de-emphasised in both places it appears, so the big number
+// stays the big number. Wrapped after escaping, never before.
+echo "\nfeatured race fees, perks and card button:\n";
+$fees = arv_featured_race_render( array(
+	'race_page'  => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'price'      => '$49 + fees',
+	'price_note' => 'Goes up to $59 + fees on September 1',
+) );
+t( 'the price still reads in full',   false !== strpos( $fees, '$49' ) );
+t( 'fees is wrapped in the headline', false !== strpos( $fees, '<span class="arv-featured__fees">+ fees</span>' ) );
+t( 'and wrapped in the note too',     2 === substr_count( $fees, 'arv-featured__fees' ) );
+
+// A price with no fees clause must not grow an empty span.
+$nofees = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+	'price'     => '$85',
+) );
+t( 'a price with no fees is untouched', false === strpos( $nofees, 'arv-featured__fees' ) );
+
+// Escaping has to happen before the wrap, or a price could inject markup.
+$evil = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+	'price'     => '<b>$49</b> + fees',
+) );
+t( 'a price cannot inject markup',    false === strpos( $evil, '<b>' ) );
+t( 'but is still wrapped',            false !== strpos( $evil, 'arv-featured__fees' ) );
+
+$perks = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'perks'     => '100-mile goal, 33 daily games, 26 milestone badges',
+	'card_cta'  => 'Register on Obsession.run',
+) );
+t( 'each perk gets its own chip',     3 === substr_count( $perks, 'arv-featured__perk"' ) );
+t( 'a perk reads as written',         false !== strpos( $perks, '33 daily games' ) );
+t( 'the card gets its own button',    false !== strpos( $perks, 'arv-featured__card-cta' ) );
+
+// Perks alone are reason enough for the card to exist, even with no price
+// and no platform: they are the part that answers "why sign up".
+$perksonly = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
+	'perks'     => 'Finisher medal',
+) );
+t( 'perks alone still draw the card', false !== strpos( $perksonly, 'arv-featured__card' ) );
+
+// The second button must not outlive the phase that makes it true. Once a
+// race is sold out, "Register on Obsession.run" is the one wrong thing on
+// the page, so it goes rather than following the main button's relabelling.
+arv_race_waitlist_store_set( array( 'Mogollon Monster Trail Runs' => 'https://ultrasignup.com/event_waitlist.aspx?did=130408' ) );
+$soldout = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/mogollon-monster/',
+	'card_cta'  => 'Register on Obsession.run',
+	'perks'     => 'Finisher medal',
+) );
+t( 'no register button once sold out', false === strpos( $soldout, 'arv-featured__card-cta' ) );
+t( 'and it never says Register',       false === strpos( $soldout, 'Register on Obsession.run' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nfeatured race deadline note:\n";
 $GLOBALS['NOW'] = '2026-08-26';

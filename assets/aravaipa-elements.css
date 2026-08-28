@@ -3099,6 +3099,27 @@
 	line-height: 1.15;
 }
 
+/* "$49" is the number someone compares against other races and remembers;
+   "+ fees" is the honesty clause that stops it being a lie. Set at the same
+   size they compete, and the one confident number this card is built around
+   turns into a longer, mushier string. Sized in em rather than rem so it
+   tracks whatever the price around it is set at, including the smaller
+   mobile size further down. */
+.arv-featured__fees {
+	font-size: 0.5em;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	opacity: 0.75;
+}
+
+/* The increase note is already small and uppercase, so it wants a nudge
+   rather than the big step down the headline price takes. Same treatment
+   though, so the before and after still read like for like. */
+.arv-featured__price-note .arv-featured__fees {
+	font-size: 0.88em;
+	opacity: 0.85;
+}
+
 /* Amber, the same colour a sold-out race's waitlist button uses. Both are
    "this is still open to you, but not on the terms you might assume", which
    is worth one consistent colour rather than two. */
@@ -3110,6 +3131,32 @@
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 	color: #daa520;
+}
+
+/* What you actually get, between the price and the syncs, because it
+   answers the question the price raises. Chips rather than rows: these are
+   four short nouns, and stacking them as full-width list items would make
+   the card twice as tall to say the same thing. */
+.arv-featured__perks {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 1.1rem 0 0;
+	padding: 1.1rem 0 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.16);
+	list-style: none;
+}
+
+.arv-featured__perk {
+	padding: 0.3rem 0.6rem;
+	font-size: 0.76rem;
+	font-weight: 700;
+	line-height: 1.3;
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	/* Softened to match the card, but not the full pill an app would use:
+	   the square corner is still the brand everywhere else on this page. */
+	border-radius: 6px;
 }
 
 .arv-featured__syncs {
@@ -3153,6 +3200,34 @@
 	color: var(--arv-teal);
 }
 
+/* A second way into the same registration, at the foot of the card. Teal
+   rather than the main button's red on purpose: one primary action per
+   screen, and this is the same action reached from a different place, not a
+   competing one. Full width of the card so it reads as the card's own
+   footer rather than a button that happens to be sitting in it. */
+.arv-featured__card-cta {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
+	margin-top: 1.1rem;
+	padding: 0.8rem 1rem;
+	background: var(--arv-teal);
+	color: #fff;
+	font-size: 0.8rem;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	line-height: 1.2;
+	text-align: center;
+	text-transform: uppercase;
+	text-decoration: none;
+	border-radius: 8px;
+}
+
+.arv-featured__card-cta-arrow {
+	flex: 0 0 auto;
+}
+
 .arv-featured__info {
 	color: inherit;
 	font-size: 0.85rem;
@@ -3180,6 +3255,10 @@
 	a.arv-featured__cta--results:hover {
 		background: #22505b;
 		border-color: #22505b;
+	}
+
+	a.arv-featured__card-cta:hover {
+		background: #22505b;
 	}
 }
 
