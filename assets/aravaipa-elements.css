@@ -1148,7 +1148,10 @@
 	display: flex;
 	flex-direction: column;
 	flex: 1;
-	padding: 1.1rem 1.2rem 1.2rem;
+	/* No bottom padding: the actions row underneath carries it now, so a
+	   card with no buttons at all still ends flush rather than with a
+	   double gap. */
+	padding: 1.1rem 1.2rem 0.6rem;
 }
 
 .arv-races__date {
@@ -1189,14 +1192,17 @@
 }
 
 /* Pushed to the bottom of the card so the buttons line up across a row even
-   when one race has four distances and its neighbour has one. */
+   when one race has four distances and its neighbour has one. A sibling of
+   the body rather than a child of it, so it can span the full card when the
+   card goes two-column on a phone; that means it carries the body's own
+   horizontal padding itself instead of inheriting it. */
 .arv-races__actions {
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
 	gap: 0.6rem;
 	margin-top: auto;
-	padding-top: 0.6rem;
+	padding: 0 1.2rem 1.2rem;
 }
 
 .arv-races__cta,
@@ -1380,23 +1386,45 @@
 		gap: 0.75rem;
 	}
 
+	/* Two columns for the logo and the text, and a third row underneath for
+	   the buttons that spans both. Grid rather than the row-flex this used
+	   to be, because the buttons need to escape the text column: nested in
+	   it they started a logo-width in from the card edge and had to squeeze
+	   two labels into what was left, which is what pushed "Join Waitlist"
+	   and "Live Results" onto two lines. */
 	.arv-races__card {
-		flex-direction: row;
-		align-items: stretch;
+		display: grid;
+		grid-template-columns: 80px minmax(0, 1fr);
+		grid-template-areas:
+			"media body"
+			"actions actions";
+		align-items: start;
 	}
 
+	.arv-races__media { grid-area: media; }
+	.arv-races__body { grid-area: body; }
+	.arv-races__actions { grid-area: actions; }
+
 	/* Square, and fixed width so every row's text starts on the same line
-	   down the list however tall the card ends up. */
+	   down the list however tall the card ends up. 80 rather than 96: the
+	   16px goes to the buttons below, which is where this width was actually
+	   costing something. */
 	.arv-races__media {
-		flex: 0 0 96px;
 		aspect-ratio: 1 / 1;
 		align-self: flex-start;
 		margin-top: 0.75rem;
 		margin-left: 0.75rem;
+		padding: 0;
+		/* No tile behind the badge at this size. The tile colour is one step
+		   from the card colour, so stacked it does not read as a frame, it
+		   reads as a grey hole punched in the card, and the emptier the
+		   artwork the bigger the hole. The fixed square still does the
+		   alignment work; it just does it invisibly. */
+		background: transparent;
 	}
 
 	.arv-races__body {
-		padding: 0.75rem 0.9rem 0.85rem;
+		padding: 0.75rem 0.9rem 0.4rem;
 		min-width: 0;
 	}
 
@@ -1404,17 +1432,38 @@
 	.arv-races__distances { font-size: 0.86rem; }
 	.arv-races__where { margin-bottom: 0.7rem; font-size: 0.8rem; }
 
+	/* Two equal columns rather than two content-sized buttons. Sized to
+	   their labels the pair ends at a different point on every card, so a
+	   scrolling list has a ragged right edge that moves as the phase changes
+	   down it (Register, Live Results and Join Waitlist are all different
+	   widths). Equal columns across the full card width fit the longest
+	   label at a readable size and line every card up with the one above. */
 	.arv-races__actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
 		gap: 0.5rem;
-		padding-top: 0.2rem;
-		justify-content: flex-start;
+		padding: 0.15rem 0.9rem 0.85rem;
 	}
 
 	/* 31px measured on a real iPhone viewport, against Apple's 44px minimum
 	   for a touch target. Registration is the one thing on this page anyone
-	   is trying to tap. */
+	   is trying to tap.
+	
+	   The :link and :visited copies are load bearing, not noise. The base
+	   rule is written as ".arv-races__cta, .arv-races__cta:link,
+	   .arv-races__cta:visited" so that a theme's own anchor styles cannot
+	   recolour these buttons, and that makes it two classes' worth of
+	   specificity. A media query adds none, so a plain ".arv-races__cta"
+	   here loses to it on every anchor: until this was matched, everything
+	   below that the base rule also sets (padding, font-size,
+	   letter-spacing) was silently ignored on every real button, and only
+	   min-height, which the base rule does not set, ever took effect. */
 	.arv-races__cta,
-	.arv-races__details {
+	.arv-races__cta:link,
+	.arv-races__cta:visited,
+	.arv-races__details,
+	.arv-races__details:link,
+	.arv-races__details:visited {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -1422,6 +1471,36 @@
 		padding: 0.5rem 0.7rem;
 		font-size: 0.72rem;
 		letter-spacing: 0.8px;
+		/* Grid items default to min-width:auto, so a nowrap label wider than
+		   its 1fr track cannot shrink into it and spills out of the card
+		   instead. This is what lets the track govern the button rather than
+		   the longest label governing the track. */
+		min-width: 0;
+		/* Both, not just the secondary. Only .arv-races__details carried
+		   nowrap, so "Race Details" stayed on one line while "Live Results"
+		   and "Join Waitlist" broke over two beside it, making the primary
+		   button the taller of a pair that is supposed to match. */
+		white-space: nowrap;
+	}
+}
+
+/* The longest label in the set, "Join Waitlist", still runs about 8px past
+   an equal half of a 320px screen. Rather than shrink every button on every
+   phone to suit the narrowest one and the rarest phase, the type steps down
+   only here. Below this there is no width left to win back and the pair
+   would have to stack. */
+@media (max-width: 359px) {
+	/* Same specificity dance as the block above. */
+	.arv-races__cta,
+	.arv-races__cta:link,
+	.arv-races__cta:visited,
+	.arv-races__details,
+	.arv-races__details:link,
+	.arv-races__details:visited {
+		padding-left: 0.4rem;
+		padding-right: 0.4rem;
+		font-size: 0.68rem;
+		letter-spacing: 0.3px;
 	}
 }
 

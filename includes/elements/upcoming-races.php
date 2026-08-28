@@ -789,6 +789,17 @@ function arv_upcoming_races_render( $data ) {
 			? $cta_label
 			: $action['label'];
 
+		// Closes the body before the actions open, so the buttons are a
+		// sibling of the text block rather than sitting inside it. Stacked on
+		// a phone the card becomes two columns, a small logo beside the text,
+		// and buttons nested in the text column inherit that indent: they
+		// start well right of the card's edge and lose about a third of the
+		// width to a column that has nothing in it below the logo. As a
+		// sibling the row can span the whole card at that width. In the
+		// desktop column layout this changes nothing, since the card is a
+		// column either way.
+		$cards .= '</div>';
+
 		$cards .= '<div class="arv-races__actions">';
 		if ( '' === $action['url'] && '' !== $action['label'] ) {
 			// Nowhere to send anyone, but the slot still has something worth
@@ -810,7 +821,7 @@ function arv_upcoming_races_render( $data ) {
 		}
 		$cards .= '</div>';
 
-		$cards .= '</div></div>';
+		$cards .= '</div>';
 
 		$events[] = arv_upcoming_races_event_schema( $race, $action['phase'] );
 	}
