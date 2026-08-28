@@ -3494,32 +3494,49 @@
 		margin-bottom: 1.25rem;
 	}
 
-	/* Stacked and full width. Side by side, a solid red block and an
-	   underlined text link are two different kinds of thing crushed onto one
-	   row: unequal height, unequal weight, and a tap target on the right
-	   that is only as big as its own text. Full width gives both a real
-	   target and puts the primary action first without the secondary one
-	   fighting it for the same row. */
+	/* Two equal columns, not two stacked full-width slabs.
+	
+	   They were stacked because side by side a solid red block and an
+	   underlined text link are two different kinds of thing crushed onto
+	   one row: unequal height, unequal weight, and a tap target on the
+	   right only as wide as its own text. Making the secondary an outlined
+	   button of the same size fixes all three, and once both are real
+	   buttons there is no reason to give each the full width of a phone.
+	   Two edge-to-edge slabs, plus the card's own button below them, was
+	   three of the loudest thing on the screen inside one block. */
 	.arv-featured__actions {
 		display: grid;
-		gap: 0.65rem;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.5rem;
 	}
 
-	.arv-featured__cta {
+	.arv-featured__cta,
+	.arv-featured__cta:link,
+	.arv-featured__cta:visited,
+	.arv-featured__info,
+	.arv-featured__info:link,
+	.arv-featured__info:visited {
+		display: flex;
+		align-items: center;
 		justify-content: center;
-		padding: 0.95rem 1.25rem;
+		min-height: 44px;
+		padding: 0.6rem 0.5rem;
+		font-size: 0.72rem;
+		letter-spacing: 0.04em;
+		text-align: center;
+		/* Grid items default to min-width:auto, so a label wider than its
+		   1fr track would push the pair out of the panel instead of
+		   shrinking into it. */
+		min-width: 0;
 	}
 
 	/* Promoted from underlined link to outlined button, so the pair reads as
 	   primary and secondary rather than as a button next to some text. */
-	.arv-featured__info {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.85rem 1.25rem;
+	.arv-featured__info,
+	.arv-featured__info:link,
+	.arv-featured__info:visited {
 		border: 2px solid rgba(255, 255, 255, 0.45);
-		border-bottom-width: 2px;
-		text-align: center;
+		padding-bottom: 0.6rem;
 	}
 
 	/* The border above is a white wash, which is invisible on the light
@@ -3539,5 +3556,25 @@
 
 	.arv-featured__price {
 		font-size: 1.75rem;
+	}
+
+	/* The card's own button is the third call to action in this block. It
+	   earns its place at the foot of a card someone has just read, but not
+	   at the size of the two above it. */
+	.arv-featured__card-cta,
+	.arv-featured__card-cta:link,
+	.arv-featured__card-cta:visited {
+		min-height: 44px;
+		margin-top: 0.9rem;
+		padding: 0.6rem 0.75rem;
+		font-size: 0.72rem;
+	}
+
+	/* The panel's own gutters. 1.25rem on each side of a 390px screen left
+	   the content 340px wide, which is why the buttons and the card read as
+	   edge-to-edge slabs rather than as elements sitting on a page. */
+	.arv-featured__panel {
+		padding-left: 1.1rem;
+		padding-right: 1.1rem;
 	}
 }
