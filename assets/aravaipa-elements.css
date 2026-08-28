@@ -3769,6 +3769,12 @@
 		color: #f2f2f2;
 	}
 
+	a.arv-results__week-pill--link:hover {
+		background: var(--arv-teal);
+		border-color: var(--arv-teal);
+		color: #0d1211;
+	}
+
 	a.arv-results__link:hover {
 		background: #6fc7b4;
 	}
@@ -4258,6 +4264,36 @@
 	font-weight: 700;
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
+	color: inherit;
+}
+
+/* Only the chips that actually go somewhere look like they do. A distance
+   the timing board has no id for stays a plain chip rather than a link
+   that lands on the wrong results. */
+.arv-results__week-pill--link,
+.arv-results__week-pill--link:link,
+.arv-results__week-pill--link:visited {
+	color: inherit;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.arv-results__week-pill--link:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 2px;
+}
+
+/* The state, not the town: enough to tell two races apart at a glance
+   without turning the bar into an address book. */
+.arv-results__week-place {
+	padding: 0.05rem 0.35rem;
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	font-size: 0.66rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	color: rgba(242, 242, 242, 0.7);
+	white-space: nowrap;
 }
 
 .arv-results__week-date {
@@ -4279,9 +4315,28 @@
 }
 
 .arv-results__countdown[hidden],
+.arv-results__elapsed[hidden],
 .arv-results__live[hidden],
 .arv-results__done[hidden] {
 	display: none;
+}
+
+/* "Starts in" / "Elapsed" sit quieter than the clock beside them: the
+   number is the thing being read, the word only says which number it is. */
+.arv-results__clock-label {
+	font-weight: 400;
+	color: rgba(242, 242, 242, 0.55);
+}
+
+.arv-results__elapsed {
+	color: #6ee7a8;
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: "tnum";
+	letter-spacing: 0.02em;
+}
+
+.arv-results__elapsed .arv-results__clock-label {
+	color: rgba(110, 231, 168, 0.7);
 }
 
 .arv-results__countdown {
@@ -4293,13 +4348,19 @@
 	letter-spacing: 0.02em;
 }
 
+/* Beside the race name rather than in the status cell, so it can sit next
+   to the elapsed clock instead of replacing it. */
 .arv-results__live {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.45rem;
-	letter-spacing: 0.06em;
+	gap: 0.4rem;
+	margin-left: 0.15rem;
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	color: #6ee7a8;
+	white-space: nowrap;
 }
 
 .arv-results__done {

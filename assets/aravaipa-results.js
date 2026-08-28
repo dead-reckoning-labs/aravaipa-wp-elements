@@ -21,77 +21,12 @@
 			wire( inputs[ i ] );
 		}
 
-		var counters = document.querySelectorAll( '[data-arv-results-countdown]' );
+		var clocks = document.querySelectorAll( '[data-arv-results-clock]' );
 
-		for ( var k = 0; k < counters.length; k++ ) {
-			countdown( counters[ k ] );
+		for ( var k = 0; k < clocks.length; k++ ) {
+			clock( clocks[ k ] );
 		}
 	}
-
-	/**
-	 * Tick down to the first race of the week, then hand over to the live
-	 * marker sitting hidden beside it.
-	 *
-	 * Both states are already in the page, rendered by PHP, so this only
-	 * ever swaps which one is hidden. Nothing here decides whether a race
-	 * is live: it only notices that the moment PHP named has arrived, which
-	 * means a page left open overnight becomes correct on its own.
-	 */
-	function countdown( el ) {
-		var target = Date.parse( el.getAttribute( 'data-arv-results-countdown' ) );
-		if ( isNaN( target ) ) {
-			return;
-		}
-
-		var value = el.querySelector( '[data-arv-results-countdown-value]' );
-		// Scoped to this race's own status cell, so one race going live does
-		// not light up the marker belonging to the race below it.
-		var scope = el.parentNode;
-		var live = scope ? scope.querySelector( '[data-arv-results-live]' ) : null;
-		var timer = null;
-
-		function pad( n ) {
-			return n < 10 ? '0' + n : String( n );
-		}
-
-		function tick() {
-			var left = target - Date.now();
-
-			if ( left <= 0 ) {
-				el.hidden = true;
-				if ( live ) {
-					live.hidden = false;
-				}
-				if ( timer ) {
-					window.clearInterval( timer );
-				}
-				return;
-			}
-
-			if ( ! value ) {
-				return;
-			}
-
-			var s = Math.floor( left / 1000 );
-			var d = Math.floor( s / 86400 );
-			var h = Math.floor( ( s % 86400 ) / 3600 );
-			var m = Math.floor( ( s % 3600 ) / 60 );
-			var sec = s % 60;
-
-			// Replaces the coarse phrase PHP rendered, which exists so the
-			// line is never blank before this runs. Days only appear while
-			// there are any, so the common case on race eve is a plain
-			// clock rather than "0d" padding.
-			value.textContent = ( d > 0 ? d + 'd ' : '' ) + pad( h ) + ':' + pad( m ) + ':' + pad( sec );
-		}
-
-		tick();
-		// Every second, because it is a countdown and a countdown that does
-		// not move is a date. Cheap: one text node per race, and the whole
-		// thing stops the moment it reaches zero.
-		timer = window.setInterval( tick, 1000 );
-	}
-
 	function wire( input ) {
 		// Scoped to this element's own wrapper, so two Results blocks on one
 		// page filter themselves rather than each other.
@@ -194,6 +129,89 @@
 		if ( '' !== input.value ) {
 			apply();
 		}
+	}
+
+	/**
+	 * One race's own clock: counting down, then counting up, then done.
+	 *
+	 * Every state is already in the page, rendered by PHP for whenever the
+	 * page was built. This only ever changes which one is showing and keeps
+	 * the numbers moving, so a page left open across a start or a cutoff
+	 * becomes correct without a reload, and a reader with no JavaScript
+	 * still sees the right state for when they loaded it.
+	 */
+	function clock( root ) {
+		var start = Date.parse( root.getAttribute( 'data-arv-start' ) );
+		var cutoff = Date.parse( root.getAttribute( 'data-arv-cutoff' ) );
+
+		if ( isNaN( start ) ) {
+			return;
+		}
+
+		var soon = root.querySelector( '[data-arv-results-countdown]' );
+		var soonValue = root.querySelector( '[data-arv-results-countdown-value]' );
+		var elapsed = root.querySelector( '[data-arv-results-elapsed]' );
+		var elapsedValue = root.querySelector( '[data-arv-results-elapsed-value]' );
+		var done = root.querySelector( '.arv-results__done' );
+
+		// The pulsing marker lives beside the race name, not in here.
+		var row = root.closest( '.arv-results__week-race' );
+		var live = row ? row.querySelector( '[data-arv-results-live]' ) : null;
+
+		function pad( n ) {
+			return n < 10 ? '0' + n : String( n );
+		}
+
+		function span( ms ) {
+			var s = Math.floor( ms / 1000 );
+			var d = Math.floor( s / 86400 );
+			var h = Math.floor( ( s % 86400 ) / 3600 );
+			var m = Math.floor( ( s % 3600 ) / 60 );
+			return ( d > 0 ? d + 'd ' : '' ) + pad( h ) + ':' + pad( m ) + ':' + pad( s % 60 );
+		}
+
+		function show( which ) {
+			if ( soon ) {
+				soon.hidden = 'soon' !== which;
+			}
+			if ( elapsed ) {
+				elapsed.hidden = 'live' !== which;
+			}
+			if ( done ) {
+				done.hidden = 'done' !== which;
+			}
+			if ( live ) {
+				live.hidden = 'live' !== which;
+			}
+		}
+
+		function tick() {
+			var now = Date.now();
+
+			if ( ! isNaN( cutoff ) && now >= cutoff ) {
+				show( 'done' );
+				window.clearInterval( timer );
+				return;
+			}
+
+			if ( now >= start ) {
+				show( 'live' );
+				if ( elapsedValue ) {
+					elapsedValue.textContent = span( now - start );
+				}
+				return;
+			}
+
+			show( 'soon' );
+			if ( soonValue ) {
+				soonValue.textContent = span( start - now );
+			}
+		}
+
+		tick();
+		// Every second: both a countdown and an elapsed clock are the kind
+		// of thing that looks broken if it does not move.
+		var timer = window.setInterval( tick, 1000 );
 	}
 
 	if ( 'loading' === document.readyState ) {
