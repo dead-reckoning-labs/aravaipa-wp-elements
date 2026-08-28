@@ -39,7 +39,7 @@ function shortcode_atts( $pairs, $atts, $tag = '' ) { return array_merge( $pairs
 function esc_html__( $s, $d = '' ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_unslash( $v ) { return $v; }
 function get_queried_object_id() { return $GLOBALS['QUERIED_ID'] ?? 0; }
-function get_permalink( $id = 0 ) { return 'https://www.aravaiparunning.com/live/test/'; }
+function get_permalink( $id = 0 ) { return $GLOBALS['PERMALINK'][ $id ] ?? 'https://www.aravaiparunning.com/live/test/'; }
 
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
@@ -115,6 +115,28 @@ function esc_url_raw($u){ return $u; }
 function get_posts( $args ) {
 	$out = array();
 	$statuses = (array) ( $args['post_status'] ?? 'publish' );
+	// The simple meta_key/meta_value pair, which is what the live page's
+	// year switcher uses to find a real per-year page. Looked up straight
+	// out of the meta table rather than the post list, since a live page is
+	// an ordinary WP page and never enters $GLOBALS['posts'].
+	// A meta_key lookup on pages. Narrowed by meta_value when there is one
+	// (the year switcher finding one page), otherwise every page carrying
+	// the key (the index finding all of them).
+	//
+	// Gated on post_type=page on purpose: the race store also passes
+	// meta_key, but only as an orderby, and treating that as a filter
+	// silently emptied every race query in the suite.
+	if ( isset( $args['meta_key'] ) && 'page' === ( $args['post_type'] ?? '' ) ) {
+		$hits = array();
+		foreach ( ( $GLOBALS['meta'] ?? array() ) as $id => $m ) {
+			$have = $m[ $args['meta_key'] ] ?? null;
+			if ( null === $have || '' === $have ) { continue; }
+			if ( isset( $args['meta_value'] ) && $have !== $args['meta_value'] ) { continue; }
+			$hits[] = $id;
+		}
+		return $hits;
+	}
+
 	foreach ( $GLOBALS['posts'] as $id => $p ) {
 		if ( ! in_array( $p['status'], $statuses, true ) ) { continue; }
 		if ( isset( $args['meta_query'] ) ) {
@@ -1150,13 +1172,86 @@ t( 'with a live marker to reveal',      false !== strpos( $html, 'data-arv-resul
 t( 'and a row for it to be found in',   false !== strpos( $html, 'data-arv-results-row' ) );
 
 // Both years, and this year is not a link to itself.
-t( 'the switcher offers last year',     false !== strpos( $html, 'year=2025' ) );
+t( 'the switcher offers last year',     false !== strpos( $html, 'edition=2025' ) );
+
+// Never "year". That is WordPress's own query var for date archives, and
+// setting it on a page rewrites the main query: ?year=2025 here 301'd to the
+// race's own page and ?year=2024 was a flat 404, live, on production.
+t( 'and never uses WordPress\'s own',    false === strpos( $html, '?year=' ) );
 t( 'and marks this one current',        false !== strpos( $html, 'is-current' ) );
+
+// A real page for that year wins over the parameter: a path is what gets
+// indexed and shared, and it avoids query vars altogether.
+$GLOBALS['meta'] = array( 991 => array( '_arv_live_slug' => 'black_bear-2025' ) );
+$GLOBALS['PERMALINK'] = array( 991 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race-2025/' );
+$paged = arv_live_page_render( array( 'slug' => 'black_bear-2026' ) );
+t( 'a real page beats the parameter',   false !== strpos( $paged, 'black-bear-trail-race-2025/' ) );
+t( 'and the parameter is not used',     false === strpos( $paged, 'edition=2025' ) );
+$GLOBALS['meta'] = array();
+$GLOBALS['PERMALINK'] = array();
 
 // Asking for last year swaps the frame and the whole bar with it.
 $last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '2025' ) );
 t( 'last year reframes the board',      false !== strpos( $last, 'black_bear-2025' ) );
-t( 'and links back to this year',       false !== strpos( $last, 'year=2026' ) );
+t( 'and links back to this year',       false !== strpos( $last, 'edition=2026' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nlive index: ordering and rows:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$GLOBALS['meta'] = array(
+	11 => array( '_arv_live_slug' => 'black_bear-2026' ),
+	12 => array( '_arv_live_slug' => 'rock_hawk-2026' ),
+	13 => array( '_arv_live_slug' => 'black_bear-2025' ),
+);
+$GLOBALS['PERMALINK'] = array(
+	11 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race/',
+	12 => 'https://www.aravaiparunning.com/live-results/rock-hawk/',
+	13 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race-2025/',
+);
+
+arv_race_store_import(
+	"Black Bear Trail Race | 2026-08-29 | August 29 | 50K | 23K |  |  | Waterville Valley Town Square | Waterville Valley, NH | https://ultrasignup.com/x | https://www.aravaiparunning.com/wme/bb/ | https://example.com/bb.png |  | https://live.aravaiparunning.com/#/black_bear-2026 | 2026-08-24 | 1 | 0 | 43.95 | -71.50\n" .
+	"Rock Hawk | 2026-08-29 | August 29 | 50K | 25K |  |  | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/y | https://www.aravaiparunning.com/bcs/rh/ | https://example.com/rh.png |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0 | 39.36 | -104.87\n"
+);
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+arv_stats_store_set( array( array( 'slug' => 'black_bear-2025', 'finishers' => 225 ) ) );
+arv_live_store_set( array(
+	array( 'slug' => 'black_bear-2026', 'start' => '2026-08-29T10:00:00.000Z', 'cutoff' => '2026-08-29T22:00:00.000Z', 'offset' => -4, 'races' => array() ),
+	array( 'slug' => 'rock_hawk-2026',  'start' => '2026-08-29T12:00:00.000Z', 'cutoff' => '2026-08-29T21:00:00.000Z', 'offset' => -6, 'races' => array() ),
+) );
+
+// Black Bear is running, Rock Hawk has not started, 2025 is history.
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T11:00:00Z' );
+$idx = arv_live_index_render( array( 'heading' => 'Live Results' ) );
+
+t( 'the index lists every live page',   false !== strpos( $idx, 'Black Bear Trail Race' ) && false !== strpos( $idx, 'Rock Hawk' ) );
+t( 'and links each to its own page',    false !== strpos( $idx, '/live-results/rock-hawk/' ) );
+
+// A race in progress belongs above one that has not started, and both above
+// last year. Sorting by date alone puts last weekend above this afternoon.
+$bb   = strpos( $idx, 'black-bear-trail-race/' );
+$rh   = strpos( $idx, 'rock-hawk/' );
+$last = strpos( $idx, 'black-bear-trail-race-2025/' );
+t( 'the live race is first',            $bb < $rh );
+t( 'and finished races are last',       $rh < $last );
+
+t( 'a running race is marked live',     false !== strpos( $idx, 'arv-live-index__race--live' ) );
+t( 'and carries a ticking clock',       false !== strpos( $idx, 'data-arv-results-clock' ) );
+t( 'with a row for its live marker',    false !== strpos( $idx, 'data-arv-results-row' ) );
+
+// A finished race says what happened rather than counting to something that
+// already went, and drops the clock entirely.
+t( 'a finished race counts finishers',  false !== strpos( $idx, '225 finishers' ) );
+t( 'and shows no countdown',            2 === substr_count( $idx, 'data-arv-results-clock' ) );
+
+// Nothing to list is nothing at all, not an empty shell.
+$GLOBALS['meta'] = array();
+t( 'no live pages renders nothing',     '' === arv_live_index_render() );
+$GLOBALS['PERMALINK'] = array();
+unset( $GLOBALS['NOW_TS'] );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nlive page SEO: title, description, Open Graph, schema:\n";
@@ -1643,7 +1738,7 @@ t( 'the board is framed',               false !== strpos( $html, '<iframe' ) && 
 // technology, so a real anchor to the board has to exist alongside it.
 t( 'and also plainly linked',           false !== strpos( $html, 'Open full live results' ) );
 t( 'the frame cannot navigate the top', false !== strpos( $html, 'sandbox="allow-scripts allow-same-origin allow-popups"' ) );
-t( 'the years are real links',          false !== strpos( $html, 'year=2025' ) );
+t( 'the years are real links',          false !== strpos( $html, 'edition=2025' ) );
 
 // This edition has not been run, so there is nothing to report and
 // "0 finishers" would be worse than silence.
