@@ -472,6 +472,20 @@ function arv_live_register_meta() {
 			'type'         => 'string',
 			'single'       => true,
 			'show_in_rest' => true,
+			// A leading underscore makes WordPress treat a meta key as
+			// protected, and register_post_meta's own default REST
+			// permission check refuses to write a protected key without an
+			// explicit auth_callback, no matter what show_in_rest says. That
+			// silently made the bulk page-creation path this key exists for
+			// impossible: the exact request the docblock above describes,
+			// meta._arv_live_slug in a page-creation call, comes back 403.
+			// edit_posts, not edit_post_meta with no callback, because this
+			// is written once at creation by the same editor-scoped account
+			// that creates the page, not something that needs a finer check
+			// per post.
+			'auth_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
 		)
 	);
 }
