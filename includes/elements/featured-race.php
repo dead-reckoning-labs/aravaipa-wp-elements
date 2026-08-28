@@ -86,6 +86,23 @@ cs_register_element(
 				'price_note' => cs_value( 'Goes up to $59 + fees on September 1', 'markup' ),
 				'syncs'      => cs_value( 'Strava, Coros', 'markup' ),
 
+				// What you actually get, lifted verbatim from the "The Experience"
+				// block on the challenge's own page on obsession.run rather than
+				// written as marketing copy here. Price and platform answer "what
+				// does this cost and where does it live"; these answer "what is
+				// there to do", which is the part that actually sells a virtual
+				// race, since there is no start line photo to do it for us.
+				'perks'      => cs_value( '100-mile goal, 33 daily games, 26 milestone badges, Rattlebucks raffle', 'markup' ),
+
+				// A second way into the same registration, at the bottom of the
+				// card. Not a duplicate of the main button for its own sake: the
+				// card is a self-contained pitch that a reader can drop into at any
+				// point, and sending them back up the page to find the button is a
+				// step that loses people. Named for its destination rather than
+				// repeating a bare "Register", so the two buttons read as one
+				// choice described twice rather than two different offers.
+				'card_cta'   => cs_value( 'Register on Obsession.run', 'markup' ),
+
 				// A separate fact from the price rise, confirmed directly by
 				// Jamil rather than found on the public challenge page: this
 				// is the first year of goody-pack fulfilment for this race,
@@ -142,6 +159,18 @@ function arv_featured_race_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Deadline note (optional)', 'aravaipa-elements' ),
 					'description' => __( 'A short urgency line above the button, e.g. "Order by September 1 to guarantee your goody pack before the challenge begins." Leave blank to show none.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'perks',
+					'type'        => 'text',
+					'label'       => __( 'Perks (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Comma separated, shown as a short list on the card, e.g. "100-mile goal, 33 daily games". What a registrant gets. Leave blank to show none.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'card_cta',
+					'type'        => 'text',
+					'label'       => __( 'Card button label (optional)', 'aravaipa-elements' ),
+					'description' => __( 'A second button at the bottom of the card, pointing at the same place as the main one. Only shown while entries are open. Leave blank for no second button.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'image',
@@ -316,7 +345,7 @@ function arv_featured_race_render( $data ) {
 	// Closes .arv-featured__main.
 	$out .= '</div>';
 
-	$out .= arv_featured_race_card( $data );
+	$out .= arv_featured_race_card( $data, $action );
 
 	$out .= '</div></div></div>';
 
@@ -332,18 +361,22 @@ function arv_featured_race_render( $data ) {
  * in-person race that has no platform, no published price and nothing to
  * sync with.
  *
- * @param array $data Element values.
+ * @param array $data   Element values.
+ * @param array $action Phase, label and URL, so the card's own button points
+ *                      at the same place as the main one.
  * @return string
  */
-function arv_featured_race_card( $data ) {
+function arv_featured_race_card( $data, $action ) {
 	$host_label = isset( $data['host_label'] ) ? trim( (string) $data['host_label'] ) : '';
 	$host_url   = isset( $data['host_url'] ) ? trim( (string) $data['host_url'] ) : '';
 	$host_logo  = isset( $data['host_logo'] ) ? trim( (string) $data['host_logo'] ) : '';
 	$price      = isset( $data['price'] ) ? trim( (string) $data['price'] ) : '';
 	$price_note = isset( $data['price_note'] ) ? trim( (string) $data['price_note'] ) : '';
 	$syncs      = isset( $data['syncs'] ) ? arv_parse_list( $data['syncs'] ) : array();
+	$perks      = isset( $data['perks'] ) ? arv_parse_list( $data['perks'] ) : array();
+	$card_cta   = isset( $data['card_cta'] ) ? trim( (string) $data['card_cta'] ) : '';
 
-	if ( '' === $host_label && '' === $price && empty( $syncs ) ) {
+	if ( '' === $host_label && '' === $price && empty( $syncs ) && empty( $perks ) ) {
 		return '';
 	}
 
@@ -364,14 +397,23 @@ function arv_featured_race_card( $data ) {
 	}
 
 	if ( '' !== $price ) {
-		$out .= '<p class="arv-featured__price">' . esc_html( $price );
+		$out .= '<p class="arv-featured__price">' . arv_featured_race_fees( $price );
 		if ( '' !== $price_note ) {
 			// Marked up as its own element rather than folded into the price
 			// string so it can be styled as the warning it is, and so a race
 			// with a price but no deadline simply omits it.
-			$out .= '<span class="arv-featured__price-note">' . esc_html( $price_note ) . '</span>';
+			$out .= '<span class="arv-featured__price-note">' . arv_featured_race_fees( $price_note ) . '</span>';
 		}
 		$out .= '</p>';
+	}
+
+	// Above the syncs: what you get comes before what it talks to.
+	if ( ! empty( $perks ) ) {
+		$out .= '<ul class="arv-featured__perks">';
+		foreach ( $perks as $perk ) {
+			$out .= '<li class="arv-featured__perk">' . esc_html( $perk ) . '</li>';
+		}
+		$out .= '</ul>';
 	}
 
 	if ( ! empty( $syncs ) ) {
@@ -388,9 +430,56 @@ function arv_featured_race_card( $data ) {
 		$out .= '</ul>';
 	}
 
+	// Only while entries are open, and only when there is somewhere to send
+	// anyone. Once the race is running or done, the main button already says
+	// so correctly and a second "Register on Obsession.run" beneath it would
+	// be the one wrong thing on the page.
+	if ( '' !== $card_cta && 'upcoming' === $action['phase'] && '' !== $action['url'] ) {
+		$out .= '<a class="arv-featured__card-cta" href="' . esc_url( $action['url'] ) . '" target="_blank" rel="noopener">'
+			. esc_html( $card_cta )
+			. '<svg class="arv-featured__card-cta-arrow" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">'
+			. '<path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+			. '</svg></a>';
+	}
+
 	$out .= '</aside>';
 
 	return $out;
+}
+
+/**
+ * De-emphasise the "+ fees" half of a price.
+ *
+ * "$49 + fees" is one fact wearing two hats: "$49" is the number someone
+ * compares against other races and remembers, "+ fees" is the honesty
+ * clause that stops it being a lie. Set at the same size they compete, and
+ * the big confident number the block is built around turns into a longer,
+ * mushier string. Shrinking the clause keeps it fully present and readable
+ * while letting the price read as a price.
+ *
+ * Applied to the increase note as well, not just the headline, so the
+ * before and after get the same treatment and the comparison still reads
+ * like for like.
+ *
+ * Escapes first and wraps second, never the other way around: the wrap
+ * injects real markup, so doing it before escaping would print the span as
+ * text, and escaping after would be escaping our own tags.
+ *
+ * @param string $text Price or price note.
+ * @return string Escaped HTML.
+ */
+function arv_featured_race_fees( $text ) {
+	$escaped = esc_html( $text );
+
+	$wrapped = preg_replace(
+		'/\+\s*fees?\b/i',
+		'<span class="arv-featured__fees">$0</span>',
+		$escaped
+	);
+
+	// preg_replace returns null on failure. Falling back to the escaped
+	// string keeps the price rendering unstyled rather than blanking it.
+	return ( null === $wrapped ) ? $escaped : $wrapped;
 }
 
 /**
@@ -398,10 +487,13 @@ function arv_featured_race_card( $data ) {
  *
  * Inline SVG rather than an uploaded image, for the same reason the map's
  * pins are: these are two small vector marks, and inlining them costs no
- * requests, scales cleanly and lets them inherit sizing from CSS. Both are
- * the marks Obsession itself already uses for these integrations, so the
- * two products show the same logo for the same connection rather than
- * drifting apart.
+ * requests, scales cleanly and lets them inherit sizing from CSS.
+ *
+ * Both are the brands' own published artwork, not Obsession's copies of
+ * them. Obsession's Strava mark is off-geometry and its COROS mark is an
+ * invented hexagon (its own comment calls it "red hexagonal mark"), so
+ * matching Obsession here would have meant shipping a drawn-from-memory
+ * logo for somebody else's brand on a public page.
  *
  * Anything not recognised falls back to no mark at all rather than a
  * generic placeholder: the tick beside it already says the integration
@@ -414,18 +506,21 @@ function arv_featured_race_sync_mark( $name ) {
 	$key = strtolower( trim( $name ) );
 
 	if ( 'strava' === $key ) {
-		// Strava's own mark, in their orange. Taken from the asset Obsession
-		// ships rather than redrawn.
+		// Strava's actual mark, in Strava orange (#FC4C02): the full-height
+		// chevron pair at their published proportions. Not the smaller
+		// two-tone variant Obsession happens to ship, which is off-geometry.
 		return '<svg class="arv-featured__sync-mark" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">'
-			. '<path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z"/>'
-			. '<path fill="#FC4C02" opacity="0.6" d="M7.778 13.828h3.065L5.63 0 0 13.828h3.065L5.63 9.076l2.148 4.752z"/>'
+			. '<path fill="#FC4C02" d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>'
 			. '</svg>';
 	}
 
 	if ( 'coros' === $key ) {
-		return '<svg class="arv-featured__sync-mark" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true" focusable="false">'
-			. '<path d="M12 2l8 4.5v11L12 22l-8-4.5v-11z" stroke="#F2323C" stroke-width="2" stroke-linejoin="round"/>'
-			. '<path d="M12 7l4 2.25V17L12 19.25 8 17V9.25z" fill="#F2323C"/>'
+		// COROS's actual mark, taken from the SVG they serve on coros.com
+		// (/public/images/COROS.svg), including their red (#F8273B). Kept at
+		// the source's own 1024 viewBox so the path is byte-for-byte theirs
+		// and nobody has to trust a hand-rescale of it.
+		return '<svg class="arv-featured__sync-mark" viewBox="0 0 1024 1024" width="16" height="16" aria-hidden="true" focusable="false">'
+			. '<path fill="#F8273B" d="M611.28637781 226.3848448l313.2594324 182.00737337L925.07539342 786.3244288 612.34554539 967.44210091l-52.8312832-28.51279417 245.1761334-182.36749028L804.22436181 437.85826304 562.20454798 254.81290525l49.08182983-28.42806045zM171.15984213 335.14018133l34.86779961 304.15059058 275.38359524 158.95988452 279.04831715-118.71151332v56.85612089l-313.7678336 181.11767325L120.10795918 728.9599067V366.78811193l51.03069867-31.62674745zM569.19505465 56.55789909l312.72984804 181.11767211 1.80058566 60.13954162-280.04393414-121.80428345-274.9175626 159.76485205-37.02850219 301.75687111-49.06064668-28.42806044 0.50840121-363.12504548L569.19505465 56.55789909z"/>'
 			. '</svg>';
 	}
 
