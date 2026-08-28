@@ -32,15 +32,47 @@
 
 		var list = root.querySelector( '[data-arv-results-list]' );
 		var count = root.querySelector( '[data-arv-results-count]' );
+		var clear = root.querySelector( '[data-arv-results-clear]' );
 		if ( ! list ) {
 			return;
 		}
 
 		var groups = list.querySelectorAll( '[data-arv-results-race]' );
 
+		// Search narrow enough that every match can be opened without
+		// burying the page. Someone who typed a race name wants that race's
+		// history, and leaving it behind a second click is asking them to
+		// say what they want twice. Above this many matches the query is
+		// still a browse, and opening them all would be pages of it.
+		var AUTO_OPEN_MAX = 5;
+
+		// Only ever re-closes what this opened. Anything the reader opened
+		// by hand is theirs and survives a search and a clear.
+		var autoOpened = [];
+
+		function setOpen( el, open ) {
+			var details = el.querySelector( 'details' );
+			if ( ! details ) {
+				return;
+			}
+			if ( open ) {
+				if ( ! details.open ) {
+					details.open = true;
+					autoOpened.push( details );
+				}
+				return;
+			}
+			var at = autoOpened.indexOf( details );
+			if ( at !== -1 ) {
+				details.open = false;
+				autoOpened.splice( at, 1 );
+			}
+		}
+
 		function apply() {
 			var q = input.value.trim().toLowerCase();
 			var shown = 0;
+			var hits = [];
 
 			for ( var i = 0; i < groups.length; i++ ) {
 				var name = groups[ i ].getAttribute( 'data-arv-results-race' ) || '';
@@ -48,7 +80,18 @@
 				groups[ i ].hidden = ! hit;
 				if ( hit ) {
 					shown++;
+					hits.push( groups[ i ] );
 				}
+			}
+
+			var expand = '' !== q && shown > 0 && shown <= AUTO_OPEN_MAX;
+
+			for ( var k = 0; k < groups.length; k++ ) {
+				setOpen( groups[ k ], expand && ! groups[ k ].hidden );
+			}
+
+			if ( clear ) {
+				clear.hidden = '' === input.value;
 			}
 
 			if ( ! count ) {
@@ -61,8 +104,17 @@
 			} else if ( 0 === shown ) {
 				count.textContent = 'No races match that.';
 			} else {
-				count.textContent = shown + ( 1 === shown ? ' race' : ' races' );
+				count.textContent = shown + ( 1 === shown ? ' race' : ' races' )
+					+ ( expand ? ', every edition shown' : '' );
 			}
+		}
+
+		if ( clear ) {
+			clear.addEventListener( 'click', function () {
+				input.value = '';
+				apply();
+				input.focus();
+			} );
 		}
 
 		input.addEventListener( 'input', apply );

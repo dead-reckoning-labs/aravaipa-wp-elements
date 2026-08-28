@@ -344,8 +344,20 @@ function arv_results_by_race( $rows, $show_search ) {
 		$out .= '<div class="arv-results__search">'
 			. '<label class="arv-results__search-label" for="arv-results-q">'
 			. esc_html( __( 'Search races', 'aravaipa-elements' ) ) . '</label>'
+			. '<span class="arv-results__search-field">'
 			. '<input class="arv-results__search-input" id="arv-results-q" type="search" autocomplete="off"'
 			. ' placeholder="' . esc_attr( __( 'Race name', 'aravaipa-elements' ) ) . '" data-arv-results-search />'
+			// Our own clear button rather than the one type="search" gives
+			// you: WebKit's only appears once there is text and is a small
+			// unlabelled target, and Firefox draws none at all. This one is
+			// a real button with a real name, and the native one is hidden
+			// so there are never two.
+			. '<button class="arv-results__search-clear" type="button" hidden data-arv-results-clear>'
+			. '<span class="arv-results__sr">' . esc_html( __( 'Clear search', 'aravaipa-elements' ) ) . '</span>'
+			. '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">'
+			. '<path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+			. '</svg></button>'
+			. '</span>'
 			. '<p class="arv-results__count" data-arv-results-count aria-live="polite"></p>'
 			. '</div>';
 	}
@@ -378,6 +390,14 @@ function arv_results_by_race( $rows, $show_search ) {
 		if ( ! empty( $older ) ) {
 			$out .= '<details class="arv-results__older">';
 			$out .= '<summary class="arv-results__older-toggle">'
+				// An explicit chevron, because setting any display other
+				// than list-item on a <summary> removes the browser's own
+				// disclosure triangle, and this had ended up with no visible
+				// affordance at all: bold teal text that gave no sign it
+				// could be opened. Rotates via CSS on [open].
+				. '<svg class="arv-results__chevron" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
+				. '<path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+				. '</svg>'
 				. esc_html(
 					sprintf(
 						// translators: %d is a count of previous runnings.
@@ -439,9 +459,14 @@ function arv_results_links( $row ) {
 		list( $url, $label, $kind ) = $link;
 		$url = trim( (string) $url );
 
-		// Nothing at all where there is no listing. This layout has no
-		// columns to keep aligned, so an empty slot would be furniture.
 		if ( '' === $url ) {
+			// An empty slot, not nothing. There are three fixed columns here
+			// even though the layout has no table: dropping a missing link
+			// let the row shrink from the left, so a race with two listings
+			// started its buttons 119px right of a race with three and the
+			// whole page had a ragged edge running down it. The slot holds
+			// the column and shows nothing.
+			$out .= '<span class="arv-results__slot" aria-hidden="true"></span>';
 			continue;
 		}
 
