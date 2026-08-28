@@ -31,6 +31,7 @@ function add_meta_box() {}
 function current_user_can( $c, $id = 0 ) { return true; }
 function __( $s, $d = '' ) { return $s; }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+function _n( $a, $b, $n, $d = '' ) { return 1 === (int) $n ? $a : $b; }
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_json_encode( $d, $f = 0 ) { return json_encode( $d, $f ); }
@@ -533,7 +534,7 @@ arv_results_store_set( array(
 $after = arv_results_store_get();
 t( 'a later write replaces, not merges', 1 === count( $after ) && 'Only One' === $after[0]['name'] );
 
-echo "\nresults element:\n";
+echo "\nresults element, date layout:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
 $GLOBALS['NOW'] = '2026-08-28';
 arv_results_store_set( array(
@@ -546,7 +547,7 @@ arv_results_store_set( array(
 	       'ultrarunning' => 'https://ultrarunning.com/y/results' ),
 ) );
 
-$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'heading' => 'Results', 'upcoming' => 'false' ) );
+$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'heading' => 'Results', 'layout' => 'date', 'upcoming' => 'false' ) );
 t( 'renders a table',                 false !== strpos( $html, 'arv-results__table' ) );
 t( 'names a race',                    false !== strpos( $html, 'Jackrabbit Jubilee' ) );
 t( 'groups by month',                 false !== strpos( $html, 'August 2026' ) );
@@ -556,11 +557,11 @@ t( 'links to live results',           false !== strpos( $html, 'live.aravaiparun
 t( 'a missing listing is not a link', 1 === substr_count( $html, 'arv-results__cell--empty' ) );
 
 // Year filter, for anyone who still wants the old per-year page.
-$y = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'year' => '2025', 'upcoming' => 'false' ) );
+$y = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'year' => '2025', 'layout' => 'date', 'upcoming' => 'false' ) );
 t( 'a year with nothing says so',     false !== strpos( $y, 'arv-results__empty' ) );
 t( 'and draws no empty table',        false === strpos( $y, 'arv-results__table' ) );
 
-$limit = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'limit' => '1', 'upcoming' => 'false' ) );
+$limit = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'limit' => '1', 'layout' => 'date', 'upcoming' => 'false' ) );
 t( 'limit is honoured',               1 === substr_count( $limit, 'arv-results__row' ) );
 
 echo "\nresults: a race that has just run:\n";
@@ -615,6 +616,60 @@ t( 'the scraped one is not duplicated', 1 === substr_count( $half, 'Rock Hawk' )
 $GLOBALS['NOW'] = '2026-08-01';
 $future = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'a race not yet run is not listed', false === strpos( $future, 'Black Bear' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+
+echo "\nresults grouped by race:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$GLOBALS['NOW'] = '2026-08-28';
+arv_results_store_set( array(
+	// Same race, named three different ways across its editions. This is
+	// real: the site is not consistent about suffixes year to year.
+	array( 'name' => 'Black Canyon Ultras', 'iso' => '2026-02-14', 'display' => 'February 14',
+	       'live' => 'https://live.aravaiparunning.com/#/bc-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=1', 'ultrarunning' => '' ),
+	array( 'name' => 'Black Canyon', 'iso' => '2025-02-15', 'display' => 'February 15',
+	       'live' => 'https://live.aravaiparunning.com/#/bc-2025', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Black Canyon Trail Runs', 'iso' => '2024-02-10', 'display' => 'February 10',
+	       'live' => 'https://live.aravaiparunning.com/#/bc-2024', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	// A different race that must not be swept in with it.
+	array( 'name' => 'Crown King Scramble', 'iso' => '2026-03-28', 'display' => 'March 28',
+	       'live' => 'https://live.aravaiparunning.com/#/ck-2026', 'ultrasignup' => '', 'ultrarunning' => '' ),
+) );
+
+$byrace = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'one group per race, not per edition', 2 === substr_count( $byrace, 'arv-results__race-group' ) );
+t( 'the newest name is the one shown',    false !== strpos( $byrace, 'Black Canyon Ultras' ) );
+t( 'older editions are collapsed',        false !== strpos( $byrace, '<details' ) );
+t( 'and counted',                         false !== strpos( $byrace, '2 earlier editions' ) );
+t( 'every edition is still in the html',  false !== strpos( $byrace, 'bc-2024' ) );
+t( 'a one-edition race gets no toggle',   1 === substr_count( $byrace, '<details' ) );
+t( 'the other race stayed separate',      false !== strpos( $byrace, 'Crown King Scramble' ) );
+t( 'and the search box is there',         false !== strpos( $byrace, 'data-arv-results-search' ) );
+
+// Singular, not "1 earlier editions".
+arv_results_store_set( array(
+	array( 'name' => 'Zion Ultras', 'iso' => '2026-04-10', 'live' => 'https://live.aravaiparunning.com/#/z-2026' ),
+	array( 'name' => 'Zion Ultras', 'iso' => '2025-04-11', 'live' => 'https://live.aravaiparunning.com/#/z-2025' ),
+) );
+$one = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'one earlier edition reads singular',  false !== strpos( $one, '1 earlier edition<' ) );
+
+// The name key has to survive stripping. "Race the Cog" loses both "race"
+// and "the" and would otherwise group on nothing.
+t( 'a name that strips to nothing holds', arv_results_race_key( 'Race the Cog' ) !== arv_results_race_key( 'Race the Dog' ) );
+t( 'suffix drift groups together',        arv_results_race_key( 'Rock Hawk' ) === arv_results_race_key( 'Rock Hawk Trail Races' ) );
+t( 'case drift groups together',          arv_results_race_key( 'Mountain To Fountain' ) === arv_results_race_key( 'Mountain to Fountain' ) );
+t( 'different races stay apart',          arv_results_race_key( 'San Tan Scramble' ) !== arv_results_race_key( 'Crown King Scramble' ) );
+
+// The date layout is still available and unchanged by any of this.
+$dated = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'date', 'upcoming' => 'false' ) );
+t( 'the date layout still renders',       false !== strpos( $dated, 'arv-results__table' ) );
+t( 'and has no race grouping in it',      false === strpos( $dated, 'arv-results__race-group' ) );
+
+// Search can be turned off.
+$nosearch = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'search' => 'false', 'upcoming' => 'false' ) );
+t( 'the search box can be turned off',    false === strpos( $nosearch, 'data-arv-results-search' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nSEO: single race page schema:\n";

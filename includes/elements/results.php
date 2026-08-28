@@ -38,6 +38,13 @@ cs_register_element(
 				'year'     => cs_value( '', 'markup' ),
 				'limit'    => cs_value( '0', 'markup' ),
 				'upcoming' => cs_value( 'true', 'markup' ),
+				// "race" gathers every edition of a race under its own name,
+				// which is what someone looking for a result actually wants:
+				// they know the race, not the date. "date" is the plain
+				// reverse-chronological list, which answers the other
+				// question, what happened recently.
+				'layout'   => cs_value( 'race', 'markup' ),
+				'search'   => cs_value( 'true', 'markup' ),
 			),
 			'omega'
 		),
@@ -81,6 +88,29 @@ function arv_results_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Limit', 'aravaipa-elements' ),
 					'description' => __( '0 for no limit.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'     => 'layout',
+					'type'    => 'select',
+					'label'   => __( 'Layout', 'aravaipa-elements' ),
+					'options' => array(
+						'choices' => array(
+							array(
+								'value' => 'race',
+								'label' => __( 'By race, every edition together', 'aravaipa-elements' ),
+							),
+							array(
+								'value' => 'date',
+								'label' => __( 'By date, newest first', 'aravaipa-elements' ),
+							),
+						),
+					),
+				),
+				array(
+					'key'         => 'search',
+					'type'        => 'text',
+					'label'       => __( 'Search box', 'aravaipa-elements' ),
+					'description' => __( 'true or false. Filters as you type. Only shown in the by-race layout.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'upcoming',
@@ -236,8 +266,190 @@ function arv_results_render( $data ) {
 		return $out;
 	}
 
-	$out .= arv_results_table( $rows );
+	$layout = isset( $data['layout'] ) && 'date' === $data['layout'] ? 'date' : 'race';
+
+	if ( 'date' === $layout ) {
+		$out .= arv_results_table( $rows );
+		$out .= '</div></div>';
+		return $out;
+	}
+
+	$show_search = isset( $data['search'] ) ? $data['search'] : true;
+	$show_search = ! ( 'false' === $show_search || false === $show_search || '0' === $show_search );
+
+	$out .= arv_results_by_race( $rows, $show_search );
 	$out .= '</div></div>';
+
+	return $out;
+}
+
+/**
+ * Collapse a race's name to something stable across its editions.
+ *
+ * The site is not consistent about suffixes from one year to the next:
+ * "Rock Hawk" and "Rock Hawk Trail Races", "Black Canyon" and "Black Canyon
+ * Ultras", "Mountain To Fountain" and "Mountain to Fountain" are each one
+ * race written two ways. Grouping on the raw name splits fourteen of the
+ * seventy-five races in the archive into halves.
+ *
+ * Checked against the real data before trusting it: no two genuinely
+ * different races collapse together, verified by looking for a group that
+ * ends up with the same year in it twice, which is what an over-merge would
+ * look like since a race runs once a year.
+ *
+ * Falls back to the lightly-cleaned name when stripping leaves too little to
+ * be a name. "Race the Cog" is the one that needs it: strip "race" and "the"
+ * and only "cog" survives.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_results_race_key( $name ) {
+	$light = strtolower( trim( preg_replace( '/[^a-z0-9]+/i', ' ', $name ) ) );
+	$light = trim( preg_replace( '/\s+/', ' ', $light ) );
+
+	$stripped = preg_replace( '/\b(trail|trails|run|runs|race|races|ultra|ultras|endurance|the|presented by.*)\b/i', ' ', $light );
+	$stripped = trim( preg_replace( '/\s+/', ' ', (string) $stripped ) );
+
+	return ( strlen( $stripped ) < 4 ) ? $light : $stripped;
+}
+
+/**
+ * Every edition of every race, the most recent race first.
+ *
+ * Each race shows its latest edition open, because that is the one most
+ * people are after and making them click for it would be a click for
+ * nothing. Older editions sit behind a native <details>, so expanding needs
+ * no JavaScript, works from the keyboard, and is still in the HTML for a
+ * search engine whether it is open or not.
+ *
+ * @param array $rows
+ * @param bool  $show_search
+ * @return string
+ */
+function arv_results_by_race( $rows, $show_search ) {
+	$races = array();
+
+	foreach ( $rows as $row ) {
+		$key = arv_results_race_key( $row['name'] );
+		if ( ! isset( $races[ $key ] ) ) {
+			$races[ $key ] = array();
+		}
+		$races[ $key ][] = $row;
+	}
+
+	$out = '';
+
+	if ( $show_search ) {
+		$out .= '<div class="arv-results__search">'
+			. '<label class="arv-results__search-label" for="arv-results-q">'
+			. esc_html( __( 'Search races', 'aravaipa-elements' ) ) . '</label>'
+			. '<input class="arv-results__search-input" id="arv-results-q" type="search" autocomplete="off"'
+			. ' placeholder="' . esc_attr( __( 'Race name', 'aravaipa-elements' ) ) . '" data-arv-results-search />'
+			. '<p class="arv-results__count" data-arv-results-count aria-live="polite"></p>'
+			. '</div>';
+	}
+
+	$out .= '<div class="arv-results__races" data-arv-results-list>';
+
+	foreach ( $races as $editions ) {
+		// Newest edition first, and its name is the one to show: a race that
+		// was renamed is called whatever it is called now.
+		$latest = $editions[0];
+		$older  = array_slice( $editions, 1 );
+
+		$out .= '<div class="arv-results__race-group" data-arv-results-race="'
+			. esc_attr( strtolower( $latest['name'] ) ) . '">';
+
+		$out .= '<div class="arv-results__latest">';
+		$out .= '<div class="arv-results__race-head">';
+		$out .= '<h3 class="arv-results__race-name">' . esc_html( $latest['name'] ) . '</h3>';
+		$out .= '<p class="arv-results__race-meta">' . esc_html( arv_results_edition_label( $latest ) );
+
+		if ( ! empty( $latest['current'] ) ) {
+			$out .= ' <span class="arv-results__flag">' . esc_html( __( 'Happening now', 'aravaipa-elements' ) ) . '</span>';
+		}
+
+		$out .= '</p>';
+		$out .= '</div>';
+		$out .= arv_results_links( $latest );
+		$out .= '</div>';
+
+		if ( ! empty( $older ) ) {
+			$out .= '<details class="arv-results__older">';
+			$out .= '<summary class="arv-results__older-toggle">'
+				. esc_html(
+					sprintf(
+						// translators: %d is a count of previous runnings.
+						_n( '%d earlier edition', '%d earlier editions', count( $older ), 'aravaipa-elements' ),
+						count( $older )
+					)
+				)
+				. '</summary>';
+
+			foreach ( $older as $edition ) {
+				$out .= '<div class="arv-results__edition">';
+				$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) ) . '</p>';
+				$out .= arv_results_links( $edition );
+				$out .= '</div>';
+			}
+
+			$out .= '</details>';
+		}
+
+		$out .= '</div>';
+	}
+
+	$out .= '</div>';
+
+	return $out;
+}
+
+/**
+ * "February 14, 2026" for one edition.
+ *
+ * The year is always spelled out here, unlike the date layout where the
+ * month heading above the row already carries it. In this layout the whole
+ * point of a row is which year it is.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_results_edition_label( $row ) {
+	$stamp = strtotime( $row['iso'] . ' 00:00:00 UTC' );
+	$day   = '' !== $row['display'] ? $row['display'] : gmdate( 'F j', $stamp );
+
+	return $day . ', ' . gmdate( 'Y', $stamp );
+}
+
+/**
+ * The row of links for one edition.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_results_links( $row ) {
+	$out = '<div class="arv-results__links">';
+
+	foreach ( array(
+		array( $row['live'], __( 'Live Results', 'aravaipa-elements' ), 'live' ),
+		array( $row['ultrasignup'], __( 'UltraSignup', 'aravaipa-elements' ), 'us' ),
+		array( $row['ultrarunning'], __( 'UltraRunning', 'aravaipa-elements' ), 'ur' ),
+	) as $link ) {
+		list( $url, $label, $kind ) = $link;
+		$url = trim( (string) $url );
+
+		// Nothing at all where there is no listing. This layout has no
+		// columns to keep aligned, so an empty slot would be furniture.
+		if ( '' === $url ) {
+			continue;
+		}
+
+		$out .= '<a class="arv-results__link arv-results__link--' . esc_attr( $kind ) . '" href="'
+			. esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
+	}
+
+	$out .= '</div>';
 
 	return $out;
 }

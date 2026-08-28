@@ -127,6 +127,16 @@ function arv_elements_assets() {
 	// Opens a region's card on the first tap instead of navigating straight
 	// off the homepage. Only does anything where hover does not exist; on a
 	// desktop it returns immediately and the CSS keeps handling the card.
+	// Search for the Results element. Hides and shows rows that are already
+	// in the page; no-ops where the element is not present.
+	wp_enqueue_script(
+		'aravaipa-results',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-results.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
 	wp_enqueue_script(
 		'aravaipa-region-map',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-region-map.js',
