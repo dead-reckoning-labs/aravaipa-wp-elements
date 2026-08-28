@@ -378,6 +378,14 @@ function arv_results_by_race( $rows, $show_search ) {
 		if ( ! empty( $older ) ) {
 			$out .= '<details class="arv-results__older">';
 			$out .= '<summary class="arv-results__older-toggle">'
+				// An explicit chevron, because setting any display other
+				// than list-item on a <summary> removes the browser's own
+				// disclosure triangle, and this had ended up with no visible
+				// affordance at all: bold teal text that gave no sign it
+				// could be opened. Rotates via CSS on [open].
+				. '<svg class="arv-results__chevron" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
+				. '<path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+				. '</svg>'
 				. esc_html(
 					sprintf(
 						// translators: %d is a count of previous runnings.
@@ -439,9 +447,14 @@ function arv_results_links( $row ) {
 		list( $url, $label, $kind ) = $link;
 		$url = trim( (string) $url );
 
-		// Nothing at all where there is no listing. This layout has no
-		// columns to keep aligned, so an empty slot would be furniture.
 		if ( '' === $url ) {
+			// An empty slot, not nothing. There are three fixed columns here
+			// even though the layout has no table: dropping a missing link
+			// let the row shrink from the left, so a race with two listings
+			// started its buttons 119px right of a race with three and the
+			// whole page had a ragged edge running down it. The slot holds
+			// the column and shows nothing.
+			$out .= '<span class="arv-results__slot" aria-hidden="true"></span>';
 			continue;
 		}
 
