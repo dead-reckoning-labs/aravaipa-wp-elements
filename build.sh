@@ -41,7 +41,7 @@ mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 cp "$NAME.php" "$STAGE/"
 cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -99,6 +99,16 @@ while read -r logo; do
 # an example in the resolver's own doc block is not mistaken for a real
 # reference to a file called name.png.
 done < <(grep -hv '^[[:space:]]*[*/]' includes/elements/*.php | grep -oE 'ARV_LOGO:[A-Za-z0-9._-]+' | sed 's/ARV_LOGO://' | sort -u)
+[ "$missing" -eq 0 ] || exit 1
+
+# Every script the plugin enqueues has to be in the payload. This list is
+# written out by hand above, so adding an enqueue without adding it to that
+# cp is a one-line mistake that produces a 404 for the file and a feature
+# that silently does nothing on the live site, with the plugin otherwise
+# looking fine. Derived from the enqueues themselves so the two cannot drift.
+while read -r js; do
+	[ -f "$STAGE/assets/$js" ] || { echo "assets/$js is enqueued by $NAME.php but not packaged" >&2; missing=1; }
+done < <(grep -oE "ARV_ELEMENTS_URL \. 'assets/[a-z-]+\.js'" "$NAME.php" | sed -E "s#.*assets/##; s#'##")
 [ "$missing" -eq 0 ] || exit 1
 
 # .arv-calendar__row sets its own unconditional `display: flex`, which has

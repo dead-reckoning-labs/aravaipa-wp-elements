@@ -208,6 +208,15 @@ function arv_region_map_render( $data ) {
 		// whose card never opens would be the one pin on the map with no
 		// visible way to reach the page it links to.
 		$pins .= '<span class="arv-region-map__detail">';
+		// The region's name, inside the card, for phone width only. The
+		// always-visible label beside the dot is hidden below 767px because
+		// four of the regions sit close enough together that the labels
+		// collide, which left the opened card describing a place it never
+		// named: "Southwest roots. Home of Cocodona 250..." with no way to
+		// tell which of the dots you had actually hit. Hidden on desktop,
+		// where the label beside the dot already says it and this would be
+		// the name twice.
+		$pins .= '<span class="arv-region-map__detail-name">' . esc_html( $name ) . '</span>';
 		if ( '' !== trim( $logo ) ) {
 			// alt is empty on purpose: the region's name is already in
 			// the label beside this card and in the list below, so a
