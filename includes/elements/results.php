@@ -372,14 +372,37 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			$state = 'soon';
 		}
 
+		$board = function_exists( 'arv_live_store_find' ) ? arv_live_store_find( $race['live'] ) : null;
+
+		// The board knows the real clock: when each distance actually goes
+		// off and when the event closes. Where it has an answer it wins,
+		// because the store only has the date and everything derived from
+		// that alone is a day out from a six in the morning start.
+		if ( null !== $board && '' !== $board['start'] ) {
+			$now = arv_results_now();
+			$start_ts  = strtotime( $board['start'] );
+			$cutoff_ts = ( '' !== $board['cutoff'] ) ? strtotime( $board['cutoff'] ) : 0;
+
+			if ( $cutoff_ts && $now >= $cutoff_ts ) {
+				$state = 'done';
+			} elseif ( $now >= $start_ts ) {
+				$state = 'live';
+			} else {
+				$state = 'soon';
+			}
+		}
+
 		$races[] = array(
 			'name'      => $race['name'],
 			'iso'       => $race['iso'],
 			'display'   => $race['display'],
 			'image'     => $race['image'],
 			'page'      => $race['page'],
+			'location'  => $race['location'],
 			'distances' => $race['distances'],
 			'url'       => $action['url'],
+			'live'      => $race['live'],
+			'board'     => $board,
 			'social'    => arv_results_race_social( $race ),
 			'state'     => $state,
 		);
@@ -442,13 +465,29 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			: esc_html( $race['name'] );
 		$out .= '</span>';
 		$out .= '<time class="arv-results__week-date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
+
+		// State only, not the town. On a bar whose job is "what is on right
+		// now", "NH" and "CO" is the part that tells two races apart at a
+		// glance; the full address is on the race's own page, one click
+		// away through the name.
+		$state_code = arv_results_state_code( $race['location'] );
+		if ( '' !== $state_code ) {
+			$out .= '<span class="arv-results__week-place">' . esc_html( $state_code ) . '</span>';
+		}
+
+		$out .= arv_results_week_live_badge( $race );
 		$out .= '</span>';
 
 		$distances = arv_split_distances( $race['distances'] );
 		if ( ! empty( $distances ) ) {
 			$out .= '<span class="arv-results__week-distances">';
 			foreach ( $distances as $distance ) {
-				$out .= '<span class="arv-results__week-pill">' . esc_html( $distance ) . '</span>';
+				$label = arv_results_distance_label( $distance );
+				$deep  = arv_results_distance_url( $race, $distance );
+
+				$out .= ( '' !== $deep )
+					? '<a class="arv-results__week-pill arv-results__week-pill--link" href="' . esc_url( $deep ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>'
+					: '<span class="arv-results__week-pill">' . esc_html( $label ) . '</span>';
 			}
 			$out .= '</span>';
 		}
@@ -479,6 +518,141 @@ function arv_results_race_week( $today, $grace = 3 ) {
 	$out .= '</section>';
 
 	return $out;
+}
+
+/**
+ * Now, as a unix timestamp, in a way the test harness can move.
+ *
+ * @return int
+ */
+function arv_results_now() {
+	$now = function_exists( 'current_time' ) ? current_time( 'timestamp' ) : time(); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp
+
+	if ( is_numeric( $now ) ) {
+		return (int) $now;
+	}
+
+	$today = function_exists( 'arv_upcoming_races_today' ) ? arv_upcoming_races_today() : gmdate( 'Y-m-d' );
+
+	return (int) strtotime( $today . ' 00:00:00' );
+}
+
+/**
+ * "50KM" and "50 K" and "50k" are all 50K.
+ *
+ * The rows are typed by hand from whatever each race's own page calls its
+ * distances, so the same distance is written three ways across the
+ * calendar. Normalised only for display: the stored value is left alone,
+ * since it is also what matches a distance to the timing board's name.
+ *
+ * @param string $distance
+ * @return string
+ */
+function arv_results_distance_label( $distance ) {
+	$label = trim( (string) $distance );
+
+	// 50KM -> 50K, and 50 K -> 50K. Kilometres only: "4 Mile" and
+	// "1 Mile Fun Run" are already how anyone would say them.
+	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s*(?:km|kms|kilometers?|kilometres?)$/i', '$1K', $label );
+	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s+k$/i', '$1K', $label );
+
+	return $label;
+}
+
+/**
+ * The timing board's own link for one distance of one race.
+ *
+ * The board gives every distance an id, and its front end filters on
+ * ?raceId=. So a "23K" chip can go straight to the 23K results rather than
+ * dropping someone on the event page to find it themselves.
+ *
+ * Matching is by name, normalised, because the two sources write distances
+ * differently: the row says "50KM" where the board says "50K", and the row
+ * says "1 Mile" where the board says "1 Mile Fun Run". Exact match first,
+ * then one side starting with the other, and nothing at all rather than a
+ * guess: a chip pointing at the wrong distance's results is worse than a
+ * chip that is not a link.
+ *
+ * @param array  $race
+ * @param string $distance
+ * @return string Empty when there is no confident match.
+ */
+function arv_results_distance_url( $race, $distance ) {
+	if ( empty( $race['board'] ) || empty( $race['board']['races'] ) || '' === trim( (string) $race['live'] ) ) {
+		return '';
+	}
+
+	$want = arv_results_distance_key( $distance );
+
+	if ( '' === $want ) {
+		return '';
+	}
+
+	$exact = '';
+	$loose = '';
+
+	foreach ( $race['board']['races'] as $entry ) {
+		$have = arv_results_distance_key( $entry['name'] );
+
+		if ( '' === $have ) {
+			continue;
+		}
+
+		if ( $have === $want ) {
+			$exact = $entry['id'];
+			break;
+		}
+
+		// "1 mile" against the board's "1 mile fun run". Only in that
+		// direction and only once: two loose hits mean the name is
+		// ambiguous and neither should be trusted.
+		if ( 0 === strpos( $have, $want ) || 0 === strpos( $want, $have ) ) {
+			$loose = ( '' === $loose ) ? $entry['id'] : 'ambiguous';
+		}
+	}
+
+	$id = ( '' !== $exact ) ? $exact : $loose;
+
+	if ( '' === $id || 'ambiguous' === $id ) {
+		return '';
+	}
+
+	// The row's live URL already carries the event; this adds the filter.
+	$base = preg_replace( '/\?.*$/', '', trim( (string) $race['live'] ) );
+
+	return $base . '?raceId=' . (int) $id;
+}
+
+/**
+ * A distance reduced to something two sources can be compared on.
+ *
+ * @param string $distance
+ * @return string
+ */
+function arv_results_distance_key( $distance ) {
+	$key = strtolower( arv_results_distance_label( $distance ) );
+	$key = preg_replace( '/[^a-z0-9]+/', ' ', $key );
+
+	return trim( (string) $key );
+}
+
+/**
+ * The two-letter state out of a "Town, ST" location.
+ *
+ * @param string $location
+ * @return string
+ */
+function arv_results_state_code( $location ) {
+	$location = trim( (string) $location );
+
+	if ( '' === $location ) {
+		return '';
+	}
+
+	$parts = array_map( 'trim', explode( ',', $location ) );
+	$last  = end( $parts );
+
+	return preg_match( '/^[A-Z]{2}$/', (string) $last ) ? (string) $last : '';
 }
 
 /**
@@ -555,19 +729,33 @@ function arv_results_race_social( $race ) {
  * @return string
  */
 function arv_results_week_status( $race ) {
-	$out = '<span class="arv-results__week-status">';
+	$board  = $race['board'];
+	$has    = ( null !== $board && '' !== $board['start'] );
 
-	$out .= '<span class="arv-results__countdown" data-arv-results-countdown="'
-		. esc_attr( arv_results_start_iso( $race['iso'] ) ) . '"'
+	// The board's clock where it has one, midnight on race day where it
+	// does not. The second is the honest fallback rather than a guess at a
+	// start time: it is what the store actually knows.
+	$start  = $has ? gmdate( 'c', strtotime( $board['start'] ) ) : arv_results_start_iso( $race['iso'] );
+	$cutoff = ( $has && '' !== $board['cutoff'] ) ? gmdate( 'c', strtotime( $board['cutoff'] ) ) : '';
+
+	$out = '<span class="arv-results__week-status" data-arv-results-clock'
+		. ' data-arv-start="' . esc_attr( $start ) . '"'
+		. ( '' !== $cutoff ? ' data-arv-cutoff="' . esc_attr( $cutoff ) . '"' : '' )
+		. '>';
+
+	$out .= '<span class="arv-results__countdown" data-arv-results-countdown'
 		. ( 'soon' === $race['state'] ? '' : ' hidden' ) . '>'
+		. '<span class="arv-results__clock-label">' . esc_html( __( 'Starts in', 'aravaipa-elements' ) ) . '</span> '
 		. '<span class="arv-results__countdown-value" data-arv-results-countdown-value>'
-		. esc_html( arv_results_countdown_text( $race['iso'] ) )
+		. esc_html( arv_results_countdown_text( $race['iso'], $has ? $board['start'] : '' ) )
 		. '</span></span>';
 
-	$out .= '<span class="arv-results__live" data-arv-results-live'
+	$out .= '<span class="arv-results__elapsed" data-arv-results-elapsed'
 		. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
-		. '<span class="arv-results__pulse" aria-hidden="true"></span>'
-		. esc_html( __( 'Live now', 'aravaipa-elements' ) )
+		. '<span class="arv-results__clock-label">' . esc_html( __( 'Elapsed', 'aravaipa-elements' ) ) . '</span> '
+		. '<span class="arv-results__elapsed-value" data-arv-results-elapsed-value>'
+		. esc_html( arv_results_elapsed_text( $has ? $board['start'] : '' ) )
+		. '</span>'
 		. '</span>';
 
 	$out .= '<span class="arv-results__done"'
@@ -581,6 +769,54 @@ function arv_results_week_status( $race ) {
 }
 
 /**
+ * The pulsing marker, on its own rather than inside the clock cell.
+ *
+ * It sits beside the race name because that is what it is about: this
+ * race, right now. Keeping it out of the status cell also means the
+ * elapsed clock can run next to it rather than instead of it, which is
+ * what someone watching a race in progress actually wants to see.
+ *
+ * @param array $race
+ * @return string
+ */
+function arv_results_week_live_badge( $race ) {
+	return '<span class="arv-results__live" data-arv-results-live'
+		. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
+		. '<span class="arv-results__pulse" aria-hidden="true"></span>'
+		. esc_html( __( 'Live now', 'aravaipa-elements' ) )
+		. '</span>';
+}
+
+/**
+ * How long a race has been running, coarsely, worked out on the server.
+ *
+ * Same reason the countdown has a server-rendered value: WP Rocket holds
+ * scripts until the visitor interacts, so an empty span is what a real
+ * visitor reads first. Hours and minutes rather than seconds, because that
+ * is as precise as a number can usefully be before the script takes over
+ * and starts ticking.
+ *
+ * @param string $start ISO 8601, or empty when the board has no time.
+ * @return string
+ */
+function arv_results_elapsed_text( $start ) {
+	if ( '' === $start ) {
+		return '';
+	}
+
+	$since = arv_results_now() - (int) strtotime( $start );
+
+	if ( $since <= 0 ) {
+		return '';
+	}
+
+	$hours   = (int) floor( $since / 3600 );
+	$minutes = (int) floor( ( $since % 3600 ) / 60 );
+
+	return sprintf( '%d:%02d', $hours, $minutes );
+}
+
+/**
  * How long until race day, in words, worked out on the server.
  *
  * Deliberately coarse: this is counting to the start of race day rather
@@ -591,7 +827,7 @@ function arv_results_week_status( $race ) {
  * @param string $iso Y-m-d.
  * @return string
  */
-function arv_results_countdown_text( $iso ) {
+function arv_results_countdown_text( $iso, $start = '' ) {
 	// current_time( 'timestamp' ) is an int in WordPress, but this is the
 	// one place in the element that does arithmetic on it rather than
 	// comparing date strings, so it is worth not assuming. Anything that is
@@ -604,7 +840,7 @@ function arv_results_countdown_text( $iso ) {
 		$now   = strtotime( $today . ' 00:00:00' );
 	}
 
-	$target = strtotime( $iso . ' 00:00:00' );
+	$target = ( '' !== $start ) ? strtotime( $start ) : strtotime( $iso . ' 00:00:00' );
 	$left   = (int) $target - (int) $now;
 
 	if ( $left <= 0 ) {
@@ -613,15 +849,17 @@ function arv_results_countdown_text( $iso ) {
 
 	$days = (int) floor( $left / DAY_IN_SECONDS );
 
+	// No "in": the label beside this already says "Starts in", and the
+	// script replaces this with a clock the moment it runs.
 	if ( $days >= 1 ) {
 		/* translators: %d is a number of days. */
-		return sprintf( _n( 'in %d day', 'in %d days', $days, 'aravaipa-elements' ), $days );
+		return sprintf( _n( '%d day', '%d days', $days, 'aravaipa-elements' ), $days );
 	}
 
 	$hours = max( 1, (int) round( $left / 3600 ) );
 
 	/* translators: %d is a number of hours. */
-	return sprintf( _n( 'in %d hour', 'in %d hours', $hours, 'aravaipa-elements' ), $hours );
+	return sprintf( _n( '%d hour', '%d hours', $hours, 'aravaipa-elements' ), $hours );
 }
 
 /**

@@ -117,6 +117,7 @@ require_once __DIR__ . '/includes/elements/race-status.php';
 require_once __DIR__ . '/includes/elements/featured-race.php';
 require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
+require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/elements/results.php';
 
 $pass = 0; $fail = 0;
@@ -725,10 +726,11 @@ t( 'and the year, not just the day',   false !== strpos( $week, 'August 29, 2026
 // Three states per race, one visible. All rendered so the transitions need
 // no request, and so a reader behind WP Rocket's delayed JS still sees the
 // right one.
-t( 'each race has its own countdown',  2 === substr_count( $week, 'data-arv-results-countdown=' ) );
+t( 'each race has its own clock',      2 === substr_count( $week, 'data-arv-results-clock' ) );
+t( 'each carrying a real start time',  2 === substr_count( $week, 'data-arv-start=' ) );
 t( 'a live marker each',               2 === substr_count( $week, 'data-arv-results-live' ) );
 t( 'and a completed marker each',      2 === substr_count( $week, 'arv-results__done' ) );
-t( 'the countdown is the visible one', (bool) preg_match( '/arv-results__countdown" data-arv-results-countdown="[^"]*">/', $week ) );
+t( 'the countdown is the visible one', (bool) preg_match( '/arv-results__countdown" data-arv-results-countdown>/', $week ) );
 t( 'live is hidden before the start',  2 === substr_count( $week, 'data-arv-results-live hidden' ) );
 t( 'completed is hidden too',          2 === substr_count( $week, 'arv-results__done" hidden' ) );
 
@@ -736,7 +738,9 @@ t( 'completed is hidden too',          2 === substr_count( $week, 'arv-results__
 // holds scripts until the visitor interacts, so an empty span is what a
 // real visitor sees first, which is what shipped and read "First race in"
 // followed by nothing.
-t( 'the countdown has a server value', (bool) preg_match( '/countdown-value"[^>]*>in \d+ (hour|day)/', $week ) );
+// No "in" here: the "Starts in" label beside it already says that.
+t( 'the countdown has a server value', (bool) preg_match( '/countdown-value"[^>]*>\\d+ (hour|day)/', $week ) );
+t( 'and a label saying what it is',    false !== strpos( $week, 'Starts in' ) );
 t( 'and no "first race in" label',     false === strpos( $week, 'First race in' ) );
 
 // Name and logo both go to the race's own page. The logo link is hidden
@@ -755,6 +759,16 @@ t( 'the icon link is named',           false !== strpos( $week, 'on Instagram' )
 // borrowing somebody else's: the California page links a partner club.
 $az = arv_results_race_social( array( 'name' => 'Javelina Jundred', 'page' => 'https://www.aravaiparunning.com/javelina/', 'location' => 'Fountain Hills, AZ' ) );
 t( 'a region with no account falls back', false !== strpos( $az['url'], 'instagram.com/aravaiparunning/' ) );
+
+// The state, so two races on the same day are told apart at a glance.
+t( 'each race shows its state',        false !== strpos( $week, '>NH<' ) && false !== strpos( $week, '>CO<' ) );
+
+// 50KM and 50K are the same distance written two ways.
+t( '50KM is shown as 50K',             false === strpos( $week, '50KM' ) );
+t( 'and 50K survives',                 false !== strpos( $week, '>50K<' ) );
+t( 'a mile distance is left alone',    false !== strpos( $week, '4 Mile' ) );
+t( 'the normaliser is not greedy',     '4 Mile' === arv_results_distance_label( '4 Mile' ) );
+t( 'and handles a space',              '50K' === arv_results_distance_label( '50 K' ) );
 
 // Race day.
 $GLOBALS['NOW'] = '2026-08-29';
@@ -793,6 +807,63 @@ t( 'no eyebrow by default',             false === strpos( $bare, 'arv-results__e
 t( 'no heading by default',             false === strpos( $bare, 'arv-results__heading' ) );
 $titled = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'heading' => 'Results' ) );
 t( 'but both are still settable',       false !== strpos( $titled, 'arv-results__heading' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nresults race week, live timing board:\n";
+// The board is the only place real start times exist. Without it everything
+// here can only count to midnight, which is six hours out from a six in the
+// morning start.
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_live_store_set( array(
+	array(
+		'slug'   => 'rock_hawk-2026',
+		'start'  => '2026-08-29T12:00:00.000Z',
+		'cutoff' => '2026-08-29T22:00:00.000Z',
+		'offset' => -6,
+		'races'  => array(
+			array( 'id' => 302207, 'name' => '50K', 'start' => '2026-08-29T12:00:00.000Z' ),
+			array( 'id' => 302205, 'name' => '25K', 'start' => '2026-08-29T13:00:00.000Z' ),
+		),
+	),
+) );
+
+t( 'a race is found by its live url',  null !== arv_live_store_find( 'https://live.aravaiparunning.com/#/rock_hawk-2026' ) );
+t( 'a deep-linked url still matches',  null !== arv_live_store_find( 'https://live.aravaiparunning.com/#/rock_hawk-2026?raceId=1' ) );
+t( 'an unknown event finds nothing',   null === arv_live_store_find( 'https://live.aravaiparunning.com/#/nope-2026' ) );
+t( 'and a blank url is safe',          null === arv_live_store_find( '' ) );
+
+$race = array(
+	'live'  => 'https://live.aravaiparunning.com/#/rock_hawk-2026',
+	'board' => arv_live_store_find( 'https://live.aravaiparunning.com/#/rock_hawk-2026' ),
+);
+t( 'a distance links to its own id',   'https://live.aravaiparunning.com/#/rock_hawk-2026?raceId=302205' === arv_results_distance_url( $race, '25K' ) );
+t( '50KM matches the board\'s 50K',    'https://live.aravaiparunning.com/#/rock_hawk-2026?raceId=302207' === arv_results_distance_url( $race, '50KM' ) );
+
+// A distance the board has no id for is left as plain text. A chip pointing
+// at the wrong distance's results is worse than a chip that is not a link.
+t( 'an unknown distance is not a link', '' === arv_results_distance_url( $race, '10K' ) );
+
+// Prefix matching, for "1 Mile" against a board that calls it "1 Mile Fun
+// Run", but only where it is unambiguous.
+$fun = array(
+	'live'  => 'https://live.aravaiparunning.com/#/x-2026',
+	'board' => array( 'races' => array( array( 'id' => 9, 'name' => '1 Mile Fun Run', 'start' => '' ) ) ),
+);
+t( 'a longer board name still matches', false !== strpos( arv_results_distance_url( $fun, '1 Mile' ), 'raceId=9' ) );
+
+$two = array(
+	'live'  => 'https://live.aravaiparunning.com/#/x-2026',
+	'board' => array( 'races' => array(
+		array( 'id' => 1, 'name' => '5K Run', 'start' => '' ),
+		array( 'id' => 2, 'name' => '5K Walk', 'start' => '' ),
+	) ),
+);
+t( 'two loose matches link to neither', '' === arv_results_distance_url( $two, '5K' ) );
+
+// A state code only where there is one to read.
+t( 'a state is pulled from a location', 'CO' === arv_results_state_code( 'Castle Rock, CO' ) );
+t( 'and nothing from a bare region',    '' === arv_results_state_code( 'Arizona' ) );
+t( 'or from nothing at all',            '' === arv_results_state_code( '' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nSEO: single race page schema:\n";
