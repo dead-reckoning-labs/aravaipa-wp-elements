@@ -44,7 +44,10 @@
 		}
 
 		var value = el.querySelector( '[data-arv-results-countdown-value]' );
-		var live = el.parentNode ? el.parentNode.querySelector( '[data-arv-results-live]' ) : null;
+		// Scoped to this race's own status cell, so one race going live does
+		// not light up the marker belonging to the race below it.
+		var scope = el.parentNode;
+		var live = scope ? scope.querySelector( '[data-arv-results-live]' ) : null;
 		var timer = null;
 
 		function tick() {
@@ -70,12 +73,13 @@
 			var h = Math.floor( ( s % 86400 ) / 3600 );
 			var m = Math.floor( ( s % 3600 ) / 60 );
 
-			// Days and hours until the last day, then hours and minutes.
-			// Seconds are noise at this range and would redraw the line
-			// sixty times a minute to say nothing.
+			// Refines what PHP already wrote rather than replacing it with a
+			// different shape. Days and hours until the last day, then hours
+			// and minutes. Seconds are noise at this range and would redraw
+			// the line sixty times a minute to say nothing.
 			value.textContent = d > 0
-				? d + ( 1 === d ? ' day ' : ' days ' ) + h + ( 1 === h ? ' hour' : ' hours' )
-				: h + ( 1 === h ? ' hour ' : ' hours ' ) + m + ( 1 === m ? ' minute' : ' minutes' );
+				? 'in ' + d + ( 1 === d ? ' day ' : ' days ' ) + h + ( 1 === h ? ' hour' : ' hours' )
+				: 'in ' + h + ( 1 === h ? ' hour ' : ' hours ' ) + m + ( 1 === m ? ' minute' : ' minutes' );
 		}
 
 		tick();

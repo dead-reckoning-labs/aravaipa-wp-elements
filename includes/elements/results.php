@@ -341,26 +341,45 @@ function arv_results_race_key( $name ) {
  * @param string $today Y-m-d in site time.
  * @return string
  */
-function arv_results_race_week( $today ) {
+function arv_results_race_week( $today, $grace = 3 ) {
 	if ( ! function_exists( 'arv_race_store_get' ) ) {
 		return '';
 	}
 
-	$races = array();
+	$races  = array();
+	$cutoff = gmdate( 'Y-m-d', strtotime( $today . ' -' . (int) $grace . ' days' ) );
 
 	foreach ( arv_race_store_get() as $race ) {
 		$action = arv_upcoming_races_action( $race, $today );
+		$last   = ( '' !== $race['end'] ) ? $race['end'] : $race['iso'];
 
-		if ( 'live' !== $action['phase'] || '' === $action['url'] ) {
+		// Race week itself, plus a few days the other side of it. Without
+		// the tail a race drops out of this block the moment it finishes,
+		// which is the exact hour people come looking for it: it would go
+		// from "live" straight to gone, and the finished state would never
+		// be seen by anyone.
+		$recent = ( 'results' === $action['phase'] && $last >= $cutoff );
+
+		if ( ! ( 'live' === $action['phase'] || $recent ) || '' === $action['url'] ) {
 			continue;
 		}
 
+		if ( $today > $last ) {
+			$state = 'done';
+		} elseif ( $today >= $race['iso'] ) {
+			$state = 'live';
+		} else {
+			$state = 'soon';
+		}
+
 		$races[] = array(
-			'name'    => $race['name'],
-			'iso'     => $race['iso'],
-			'display' => $race['display'],
-			'url'     => $action['url'],
-			'started' => ( $today >= $race['iso'] ),
+			'name'      => $race['name'],
+			'iso'       => $race['iso'],
+			'display'   => $race['display'],
+			'image'     => $race['image'],
+			'distances' => $race['distances'],
+			'url'       => $action['url'],
+			'state'     => $state,
 		);
 	}
 
@@ -378,45 +397,44 @@ function arv_results_race_week( $today ) {
 		}
 	);
 
-	$first = $races[0];
-	$live  = false;
-
-	foreach ( $races as $race ) {
-		if ( $race['started'] ) {
-			$live = true;
-			break;
-		}
-	}
-
 	$out  = '<section class="arv-results__week" aria-label="' . esc_attr( __( 'Racing this week', 'aravaipa-elements' ) ) . '">';
-	$out .= '<div class="arv-results__week-head">';
 	$out .= '<p class="arv-results__week-eyebrow">' . esc_html( __( 'Race week', 'aravaipa-elements' ) ) . '</p>';
-
-	// Both states, one hidden. The live one is what a countdown reaching
-	// zero reveals, so the page does not have to be reloaded to become
-	// correct on race morning.
-	$out .= '<p class="arv-results__live" data-arv-results-live' . ( $live ? '' : ' hidden' ) . '>'
-		. '<span class="arv-results__pulse" aria-hidden="true"></span>'
-		. esc_html( __( 'Live now', 'aravaipa-elements' ) )
-		. '</p>';
-
-	$out .= '<p class="arv-results__countdown" data-arv-results-countdown="' . esc_attr( arv_results_start_iso( $first['iso'] ) ) . '"'
-		. ( $live ? ' hidden' : '' ) . '>'
-		. '<span class="arv-results__countdown-label">' . esc_html( __( 'First race in', 'aravaipa-elements' ) ) . '</span> '
-		. '<span class="arv-results__countdown-value" data-arv-results-countdown-value></span>'
-		. '</p>';
-
-	$out .= '</div>';
-
 	$out .= '<ul class="arv-results__week-list">';
 
 	foreach ( $races as $race ) {
 		$stamp   = strtotime( $race['iso'] . ' 00:00:00 UTC' );
 		$display = '' !== $race['display'] ? $race['display'] : gmdate( 'F j', $stamp );
+		// The year, always. This block spans race week, but a finished race
+		// sits here for days afterwards and a bare "August 29" beside a
+		// "Completed" tag is the one place on this page where which year is
+		// a real question.
+		$display .= ', ' . gmdate( 'Y', $stamp );
 
-		$out .= '<li class="arv-results__week-race">';
+		$out .= '<li class="arv-results__week-race arv-results__week-race--' . esc_attr( $race['state'] ) . '">';
+
+		if ( '' !== trim( (string) $race['image'] ) ) {
+			// alt is empty on purpose: the name is right beside it, so a
+			// screen reader announcing the logo too is repetition.
+			$out .= '<img class="arv-results__week-logo" src="' . esc_url( $race['image'] ) . '" alt="" loading="lazy" decoding="async" />';
+		}
+
+		$out .= '<div class="arv-results__week-body">';
 		$out .= '<span class="arv-results__week-name">' . esc_html( $race['name'] ) . '</span>';
+
+		$distances = arv_split_distances( $race['distances'] );
+		if ( ! empty( $distances ) ) {
+			$out .= '<span class="arv-results__week-distances">';
+			foreach ( $distances as $distance ) {
+				$out .= '<span class="arv-results__week-pill">' . esc_html( $distance ) . '</span>';
+			}
+			$out .= '</span>';
+		}
+
 		$out .= '<time class="arv-results__week-date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
+		$out .= '</div>';
+
+		$out .= arv_results_week_status( $race );
+
 		$out .= '<a class="arv-results__link arv-results__link--live" href="' . esc_url( $race['url'] ) . '" target="_blank" rel="noopener">'
 			. esc_html( __( 'Live Results', 'aravaipa-elements' ) ) . '</a>';
 		$out .= '</li>';
@@ -426,6 +444,98 @@ function arv_results_race_week( $today ) {
 	$out .= '</section>';
 
 	return $out;
+}
+
+/**
+ * The three states one race passes through across its own weekend.
+ *
+ * All three are rendered and two are hidden, so the transitions need no
+ * request: a page left open through Friday night becomes "live" on its own
+ * at midnight. PHP decides which one starts visible, which means a reader
+ * with no JavaScript, or one behind WP Rocket's delayed-JS setting, still
+ * gets the right one for whenever the page was built.
+ *
+ * The countdown carries a server-rendered value rather than an empty span
+ * waiting to be filled. WP Rocket holds scripts until the visitor interacts
+ * with the page, so an empty span is what a real visitor sees first: the
+ * live site was showing "First race in" followed by nothing at all.
+ *
+ * "Completed" is decided by the day, not a cutoff time. The store keeps
+ * dates, so the honest claim is that the race is over once its last day
+ * is, and the label says completed rather than naming a cutoff we do not
+ * have.
+ *
+ * @param array $race
+ * @return string
+ */
+function arv_results_week_status( $race ) {
+	$out = '<span class="arv-results__week-status">';
+
+	$out .= '<span class="arv-results__countdown" data-arv-results-countdown="'
+		. esc_attr( arv_results_start_iso( $race['iso'] ) ) . '"'
+		. ( 'soon' === $race['state'] ? '' : ' hidden' ) . '>'
+		. '<span class="arv-results__countdown-value" data-arv-results-countdown-value>'
+		. esc_html( arv_results_countdown_text( $race['iso'] ) )
+		. '</span></span>';
+
+	$out .= '<span class="arv-results__live" data-arv-results-live'
+		. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
+		. '<span class="arv-results__pulse" aria-hidden="true"></span>'
+		. esc_html( __( 'Live now', 'aravaipa-elements' ) )
+		. '</span>';
+
+	$out .= '<span class="arv-results__done"'
+		. ( 'done' === $race['state'] ? '' : ' hidden' ) . '>'
+		. esc_html( __( 'Completed', 'aravaipa-elements' ) )
+		. '</span>';
+
+	$out .= '</span>';
+
+	return $out;
+}
+
+/**
+ * How long until race day, in words, worked out on the server.
+ *
+ * Deliberately coarse: this is counting to the start of race day rather
+ * than to a gun time nobody has recorded, so minutes would be precision
+ * the underlying fact does not have. The script refines it as the day gets
+ * close; this is what is true at the moment the page is built.
+ *
+ * @param string $iso Y-m-d.
+ * @return string
+ */
+function arv_results_countdown_text( $iso ) {
+	// current_time( 'timestamp' ) is an int in WordPress, but this is the
+	// one place in the element that does arithmetic on it rather than
+	// comparing date strings, so it is worth not assuming. Anything that is
+	// not a number falls back to the day this element already works in,
+	// which keeps the answer coarse rather than wrong.
+	$now = function_exists( 'current_time' ) ? current_time( 'timestamp' ) : time(); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp
+
+	if ( ! is_numeric( $now ) ) {
+		$today = function_exists( 'arv_upcoming_races_today' ) ? arv_upcoming_races_today() : gmdate( 'Y-m-d' );
+		$now   = strtotime( $today . ' 00:00:00' );
+	}
+
+	$target = strtotime( $iso . ' 00:00:00' );
+	$left   = (int) $target - (int) $now;
+
+	if ( $left <= 0 ) {
+		return '';
+	}
+
+	$days = (int) floor( $left / DAY_IN_SECONDS );
+
+	if ( $days >= 1 ) {
+		/* translators: %d is a number of days. */
+		return sprintf( _n( 'in %d day', 'in %d days', $days, 'aravaipa-elements' ), $days );
+	}
+
+	$hours = max( 1, (int) round( $left / 3600 ) );
+
+	/* translators: %d is a number of hours. */
+	return sprintf( _n( 'in %d hour', 'in %d hours', $hours, 'aravaipa-elements' ), $hours );
 }
 
 /**

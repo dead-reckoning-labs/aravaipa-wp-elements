@@ -4144,17 +4144,8 @@
 	color: #f2f2f2;
 }
 
-.arv-results__week-head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 0.5rem 1rem;
-	padding-bottom: 0.85rem;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-}
-
 .arv-results__week-eyebrow {
-	margin: 0;
+	margin: 0 0 0.5rem;
 	font-size: 0.72rem;
 	font-weight: 700;
 	letter-spacing: 1.5px;
@@ -4162,21 +4153,81 @@
 	color: var(--arv-teal);
 }
 
-.arv-results__countdown,
-.arv-results__live {
+.arv-results__week-list {
 	margin: 0;
-	font-size: 0.85rem;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-results__week-race {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem 1rem;
+	padding: 0.9rem 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.arv-results__week-logo {
+	flex: 0 0 auto;
+	width: 44px;
+	height: 44px;
+	object-fit: contain;
+}
+
+.arv-results__week-body {
+	flex: 1 1 14rem;
+	min-width: 0;
+}
+
+.arv-results__week-name {
+	display: block;
+	font-size: 1rem;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.arv-results__week-distances {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	margin-top: 0.3rem;
+}
+
+.arv-results__week-pill {
+	padding: 0.1rem 0.4rem;
+	border: 1px solid rgba(255, 255, 255, 0.28);
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.arv-results__week-date {
+	display: block;
+	margin-top: 0.3rem;
+	font-size: 0.82rem;
+	color: rgba(242, 242, 242, 0.65);
+}
+
+/* One cell holding all three states, only one of them ever visible, so the
+   row does not change width as a race moves from counting down to live to
+   finished. */
+.arv-results__week-status {
+	flex: 0 0 auto;
+	min-width: 7.5rem;
+	font-size: 0.8rem;
 	font-weight: 700;
 }
 
 .arv-results__countdown[hidden],
-.arv-results__live[hidden] {
+.arv-results__live[hidden],
+.arv-results__done[hidden] {
 	display: none;
 }
 
-.arv-results__countdown-label {
-	color: rgba(242, 242, 242, 0.65);
-	font-weight: 400;
+.arv-results__countdown {
+	color: rgba(242, 242, 242, 0.8);
 }
 
 .arv-results__live {
@@ -4186,6 +4237,12 @@
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: #6ee7a8;
+}
+
+.arv-results__done {
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: rgba(242, 242, 242, 0.5);
 }
 
 .arv-results__pulse {
@@ -4210,36 +4267,11 @@
 	}
 }
 
-.arv-results__week-list {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.arv-results__week-race {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.5rem 0.9rem;
-	padding: 0.75rem 0;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.arv-results__week-race:last-child {
-	border-bottom: 0;
-	padding-bottom: 0;
-}
-
-.arv-results__week-name {
-	flex: 1 1 12rem;
-	min-width: 0;
-	font-size: 1rem;
-	font-weight: 700;
-}
-
-.arv-results__week-date {
-	font-size: 0.85rem;
-	color: rgba(242, 242, 242, 0.65);
+/* A finished race is still worth reading, but it should not shout as loudly
+   as the one happening right now. */
+.arv-results__week-race--done .arv-results__week-logo,
+.arv-results__week-race--done .arv-results__week-name {
+	opacity: 0.75;
 }
 
 /* Sized like the archive's buttons rather than stretched, so the two
@@ -4255,15 +4287,26 @@
 	}
 
 	.arv-results__week-race {
-		align-items: stretch;
+		align-items: flex-start;
+		gap: 0.5rem 0.75rem;
 	}
 
-	.arv-results__week-name {
-		flex-basis: 100%;
+	.arv-results__week-logo {
+		width: 36px;
+		height: 36px;
+	}
+
+	/* Status and button drop to their own full-width row under the name,
+	   which is the only way three things fit beside a 36px logo at 390px. */
+	.arv-results__week-status {
+		order: 3;
+		flex: 0 0 auto;
+		min-width: 0;
 	}
 
 	.arv-results__week-race .arv-results__link {
+		order: 4;
 		flex: 1 1 0;
-		width: 100%;
+		min-width: 0;
 	}
 }

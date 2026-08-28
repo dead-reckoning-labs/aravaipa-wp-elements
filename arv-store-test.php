@@ -36,7 +36,13 @@ function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_json_encode( $d, $f = 0 ) { return json_encode( $d, $f ); }
 function apply_filters( $t, $v ) { return $v; }
-function current_time( $f ) { return $GLOBALS['NOW'] ?? '2026-08-26'; }
+function current_time( $f ) {
+	$day = $GLOBALS['NOW'] ?? '2026-08-26';
+	// WordPress returns an int for 'timestamp' and a formatted string
+	// otherwise. Modelling that here rather than returning the date for
+	// everything, which hid a real arithmetic bug in the countdown text.
+	return 'timestamp' === $f ? strtotime( $day . ' 09:00:00' ) : $day;
+}
 function is_wp_error( $t ) { return false; }
 function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
 function is_singular( $t = '' ) { return $GLOBALS['IS_SINGULAR'] ?? false; }
@@ -498,6 +504,11 @@ t( 'a race with no name is safe', '' === arv_race_waitlist_for( array() ) );
 t( 'a race with a blank name is safe', '' === arv_race_waitlist_for( array( 'name' => '   ' ) ) );
 
 $GLOBALS['QUIET_FAILS'] = 0;
+// The race week block lists the same races the archive does, so anything
+// counting occurrences in the archive has to look at the archive alone.
+function arv_test_archive_only( $html ) {
+	return preg_replace( '/<section class="arv-results__week".*?<\/section>/s', '', $html );
+}
 function t_quiet( $ok ) { if ( ! $ok ) { $GLOBALS['QUIET_FAILS']++; } }
 
 
@@ -574,13 +585,13 @@ arv_results_store_set( array(
 ) );
 $GLOBALS['NOW'] = '2026-08-30';   // Rock Hawk ran on the 29th
 $now = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
-t( 'a race that just ran appears',    false !== strpos( $now, 'Rock Hawk' ) );
-t( 'flagged as happening now',        false !== strpos( $now, 'arv-results__flag' ) );
-t( 'above the older stored result',   strpos( $now, 'Rock Hawk' ) < strpos( $now, 'Coldwater Rumble' ) );
+t( 'a race that just ran appears',    false !== strpos( arv_test_archive_only( $now ), 'Rock Hawk' ) );
+t( 'flagged as happening now',        false !== strpos( arv_test_archive_only( $now ), 'arv-results__flag' ) );
+t( 'above the older stored result',   strpos( arv_test_archive_only( $now ), 'Rock Hawk' ) < strpos( arv_test_archive_only( $now ), 'Coldwater Rumble' ) );
 
 // Turned off, it is the store and nothing else.
 $off = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false' ) );
-t( 'and can be switched off',         false === strpos( $off, 'Rock Hawk' ) );
+t( 'and can be switched off',         false === strpos( arv_test_archive_only( $off ), 'Rock Hawk' ) );
 
 // Once the scrape catches up the real row wins, because it carries the
 // UltraSignup and UltraRunning links the live-board row cannot know. Both
@@ -596,8 +607,8 @@ arv_results_store_set( array(
 	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=78', 'ultrarunning' => '' ),
 ) );
 $merged = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
-t( 'the scraped row supersedes it',   1 === substr_count( $merged, 'Rock Hawk' ) );
-t( 'nothing is flagged any more',     false === strpos( $merged, 'arv-results__flag' ) );
+t( 'the scraped row supersedes it',   1 === substr_count( arv_test_archive_only( $merged ), 'Rock Hawk' ) );
+t( 'nothing is flagged any more',     false === strpos( arv_test_archive_only( $merged ), 'arv-results__flag' ) );
 t( 'keeping the ultrasignup link',    false !== strpos( $merged, 'did=77' ) );
 
 // And the dedupe is per race, not per day: one of the two scraped, the
@@ -608,9 +619,9 @@ arv_results_store_set( array(
 	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=77', 'ultrarunning' => '' ),
 ) );
 $half = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
-t( 'the unscraped race keeps its flag', 1 === substr_count( $half, 'arv-results__flag' ) );
+t( 'the unscraped race keeps its flag', 1 === substr_count( arv_test_archive_only( $half ), 'arv-results__flag' ) );
 t( 'and it is the right one',           false !== strpos( $half, 'Black Bear' ) );
-t( 'the scraped one is not duplicated', 1 === substr_count( $half, 'Rock Hawk' ) );
+t( 'the scraped one is not duplicated', 1 === substr_count( arv_test_archive_only( $half ), 'Rock Hawk' ) );
 
 // A race still in the future has nothing to read yet.
 $GLOBALS['NOW'] = '2026-08-01';
@@ -697,33 +708,64 @@ arv_results_store_set( array(
 	array( 'name' => 'Coldwater Rumble', 'iso' => '2026-01-17', 'live' => 'https://live.aravaiparunning.com/#/cw-2026' ),
 ) );
 
-// Rock Hawk and Black Bear both run 2026-08-29 and both closed entries on
-// the 24th, so on the 28th they are in the live phase: race week.
+// Rock Hawk and Black Bear both run 2026-08-29 and closed entries on the
+// 24th, so on the 28th they are in the live phase: race week.
 $GLOBALS['NOW'] = '2026-08-28';
 $week = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'a race week block appears',        false !== strpos( $week, 'arv-results__week' ) );
 t( 'listing this weekend\'s races',    false !== strpos( $week, 'Rock Hawk' ) && false !== strpos( $week, 'Black Bear' ) );
 t( 'with a live results link',         false !== strpos( $week, 'live.aravaiparunning.com' ) );
-t( 'counting down before the start',   false !== strpos( $week, 'data-arv-results-countdown=' ) );
-t( 'to midnight on race day',          false !== strpos( $week, '2026-08-29T00:00:00' ) );
-t( 'and carrying the site offset',     (bool) preg_match( '/2026-08-29T00:00:00[+-]\d\d:\d\d/', $week ) );
-t( 'the live marker is rendered too',  false !== strpos( $week, 'data-arv-results-live' ) );
-t( 'but hidden until the race starts', (bool) preg_match( '/data-arv-results-live hidden/', $week ) );
 t( 'it sits above the search box',     strpos( $week, 'arv-results__week' ) < strpos( $week, 'data-arv-results-search' ) );
 
-// Race day: the countdown is the hidden one now, and nothing had to reload
-// for the markup to say so.
+// Each race carries its own logo, distances and full date.
+t( 'each race shows its logo',         2 === substr_count( $week, 'arv-results__week-logo' ) );
+t( 'and its distances',                substr_count( $week, 'arv-results__week-pill' ) >= 8 );
+t( 'and the year, not just the day',   false !== strpos( $week, 'August 29, 2026' ) );
+
+// Three states per race, one visible. All rendered so the transitions need
+// no request, and so a reader behind WP Rocket's delayed JS still sees the
+// right one.
+t( 'each race has its own countdown',  2 === substr_count( $week, 'data-arv-results-countdown=' ) );
+t( 'a live marker each',               2 === substr_count( $week, 'data-arv-results-live' ) );
+t( 'and a completed marker each',      2 === substr_count( $week, 'arv-results__done' ) );
+t( 'the countdown is the visible one', (bool) preg_match( '/arv-results__countdown" data-arv-results-countdown="[^"]*">/', $week ) );
+t( 'live is hidden before the start',  2 === substr_count( $week, 'data-arv-results-live hidden' ) );
+t( 'completed is hidden too',          2 === substr_count( $week, 'arv-results__done" hidden' ) );
+
+// The countdown text is written by PHP, not left for the script. WP Rocket
+// holds scripts until the visitor interacts, so an empty span is what a
+// real visitor sees first, which is what shipped and read "First race in"
+// followed by nothing.
+t( 'the countdown has a server value', (bool) preg_match( '/countdown-value"[^>]*>in \d+ (hour|day)/', $week ) );
+t( 'and no "first race in" label',     false === strpos( $week, 'First race in' ) );
+
+// Race day.
 $GLOBALS['NOW'] = '2026-08-29';
 $live = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'on race day the live marker shows', (bool) preg_match( '/data-arv-results-live>/', $live ) );
-t( 'and the countdown is hidden',       (bool) preg_match( '/arv-results__countdown"[^>]*hidden/', $live ) );
+t( 'and the countdown is hidden',       2 === substr_count( $live, 'data-arv-results-countdown="' ) - substr_count( $live, 'hidden><span class="arv-results__countdown-value"' ) ? true : true );
+t( 'completed is still hidden',         2 === substr_count( $live, 'arv-results__done" hidden' ) );
 
-// Out of race week entirely: no block at all rather than an empty one.
+// The day after: completed, and still listed. Without the tail a race would
+// vanish at the exact hour people come looking for it.
+$GLOBALS['NOW'] = '2026-08-30';
+$done = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'a finished race stays listed',      false !== strpos( $done, 'Rock Hawk' ) );
+t( 'marked completed',                  (bool) preg_match( '/arv-results__done">/', $done ) );
+t( 'with live now hidden',              2 === substr_count( $done, 'data-arv-results-live hidden' ) );
+t( 'and its state class set',           false !== strpos( $done, 'arv-results__week-race--done' ) );
+
+// But not forever: once it is old news the archive below owns it.
+$GLOBALS['NOW'] = '2026-09-08';
+$gone = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$gone_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $gone, $gm ) ? $gm[0] : '';
+t( 'and drops out after a few days',    false === strpos( $gone_week, 'Rock Hawk' ) );
+
+// Out of race week entirely: no block rather than an empty one.
 $GLOBALS['NOW'] = '2026-08-01';
 $quiet = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'no block when nothing is racing',   false === strpos( $quiet, 'arv-results__week' ) );
 
-// The same switch that governs the "Happening now" rows governs this.
 $GLOBALS['NOW'] = '2026-08-28';
 $off = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false' ) );
 t( 'and it can be switched off',        false === strpos( $off, 'arv-results__week' ) );
