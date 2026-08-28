@@ -4650,3 +4650,184 @@
 		order: 5;
 	}
 }
+
+
+/* ---------------------------------------------------------------------
+   Aravaipa Live: a branded, indexable page for one race's results.
+
+   The frame is the smaller half of this. An iframe contributes nothing to
+   the page around it as far as a search engine is concerned, so the styling
+   that matters is on the report underneath: that is the part that is real
+   HTML, and the reason this page exists rather than a link to the board.
+   --------------------------------------------------------------------- */
+.arv-live {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	color: var(--arv-ink, #272727);
+}
+
+.arv-live__head {
+	margin-bottom: 0.75rem;
+}
+
+.arv-live__title {
+	margin: 0;
+	font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+	font-weight: 700;
+	line-height: 1.15;
+}
+
+/* The year sits with the title rather than under it: "Black Bear Trail Race
+   2025" is the name of the thing this page is about, and splitting it makes
+   the heading read as though it were about the race in general. */
+.arv-live__year {
+	color: var(--arv-results-muted, #6b6b6b);
+	font-weight: 400;
+}
+
+.arv-live__meta {
+	margin: 0.3rem 0 0;
+	font-size: 0.9rem;
+	color: var(--arv-results-muted, #6b6b6b);
+}
+
+/* Years as links, because the board has no way to move between them at all.
+   Not a select: a dropdown's options are not links, so neither a crawler nor
+   a middle click can reach last year's race. */
+.arv-live__years {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 1rem 0;
+}
+
+.arv-live__year-link,
+.arv-live__year-link:link,
+.arv-live__year-link:visited {
+	padding: 0.3rem 0.7rem;
+	border: 1px solid var(--arv-results-rule, #e2e2e2);
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	color: var(--arv-ink, #272727);
+	text-decoration: none;
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-live__year-link.is-current {
+	background: var(--arv-teal-deep, #2a5e6b);
+	border-color: var(--arv-teal-deep, #2a5e6b);
+	color: #fff;
+}
+
+.arv-live__frame {
+	border: 1px solid var(--arv-results-rule, #e2e2e2);
+	background: #101314;
+}
+
+.arv-live__iframe {
+	display: block;
+	width: 100%;
+	border: 0;
+}
+
+.arv-live__open {
+	margin: 0.6rem 0 0;
+	font-size: 0.85rem;
+}
+
+.arv-live__open-link,
+.arv-live__open-link:link,
+.arv-live__open-link:visited {
+	color: var(--arv-teal-deep, #2a5e6b);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+/* The report: the only part of this page a crawler can read. */
+.arv-live__report {
+	margin-top: 2rem;
+	padding-top: 1.25rem;
+	border-top: 1px solid var(--arv-results-rule, #e2e2e2);
+}
+
+.arv-live__report-title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+}
+
+.arv-live__finishers {
+	margin: 0.25rem 0 1rem;
+	font-size: 0.9rem;
+	color: var(--arv-results-muted, #6b6b6b);
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-live__winners {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9rem;
+}
+
+.arv-live__winners th,
+.arv-live__winners td {
+	padding: 0.45rem 0.9rem 0.45rem 0;
+	text-align: left;
+	vertical-align: baseline;
+}
+
+.arv-live__winners thead th {
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--arv-results-muted, #6b6b6b);
+	border-bottom: 1px solid var(--arv-results-rule, #e2e2e2);
+}
+
+.arv-live__winners tbody th {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.arv-live__winners tbody tr + tr th,
+.arv-live__winners tbody tr + tr td {
+	border-top: 1px solid var(--arv-results-rule, #e2e2e2);
+}
+
+.arv-live__winners .arv-results__winner-time {
+	color: var(--arv-results-muted, #6b6b6b);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	a.arv-live__year-link:hover {
+		border-color: var(--arv-teal-deep, #2a5e6b);
+	}
+
+	a.arv-live__open-link:hover {
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+}
+
+@media (max-width: 619px) {
+	.arv-live {
+		padding: 1.25rem 1rem;
+	}
+
+	/* A three-column winners table does not fit a phone and the content is
+	   genuinely tabular, so it scrolls rather than being flattened. Overflow
+	   on a wrapper would be better, but this table is the only child here,
+	   so the section can carry it. */
+	.arv-live__report {
+		overflow-x: auto;
+	}
+
+	.arv-live__winners th,
+	.arv-live__winners td {
+		white-space: nowrap;
+	}
+}
