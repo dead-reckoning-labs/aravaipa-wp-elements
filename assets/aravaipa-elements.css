@@ -4692,16 +4692,116 @@
 .arv-live {
 	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
-	padding: 1.5rem 0;
+	/* No top padding: the bar is its own dark surface and starts the
+	   component, so a gap above it just floats the whole thing. */
+	padding: 0 0 1.5rem;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
 	color: var(--arv-ink, #272727);
 }
 
-/* Everything that is words stays in the content column, so the heading lines
-   up with every other heading on the site rather than starting at the window
-   edge. Only the frame itself actually goes edge to edge. */
-.arv-live__head,
-.arv-live__years,
+/* The bar above the board.
+
+   Dark, and flush against the frame with no gap, because the thing it
+   introduces is a dark panel: a white heading band floating above it read as
+   two unrelated components stacked rather than one. Same family of surface
+   as the board's own header, so the seam between our chrome and their app is
+   not the first thing the eye lands on.
+
+   Full width like the frame, with its contents held to the content column so
+   the race name still lines up with every other heading on the site. */
+.arv-live__bar {
+	background: #10201f;
+	color: #f4f4f4;
+}
+
+.arv-live__bar-inner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem 1.25rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0.9rem 1.25rem;
+}
+
+/* Takes the room the clock and the years do not. */
+.arv-live__ident {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.arv-live__title {
+	margin: 0;
+	font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+	font-weight: 700;
+	line-height: 1.2;
+	color: #fff;
+}
+
+/* The year sits with the title rather than under it: "Black Bear Trail Race
+   2025" is the name of the thing this page is about, and splitting it makes
+   the heading read as though it were about the race in general. */
+.arv-live__year {
+	color: rgba(244, 244, 244, 0.6);
+	font-weight: 400;
+}
+
+.arv-live__meta {
+	margin: 0.15rem 0 0;
+	font-size: 0.82rem;
+	color: rgba(244, 244, 244, 0.62);
+}
+
+/* The clock and its live marker, borrowed wholesale from the race week
+   block: same markup, same attributes, same script. A race counts down,
+   counts up once it starts and reads Completed after its cutoff, and it does
+   that identically here and on the archive because it is the same code
+   rather than a second implementation that will drift. */
+.arv-live__clock {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	flex: 0 0 auto;
+	font-size: 0.9rem;
+	color: #f4f4f4;
+}
+
+.arv-live__clock .arv-results__week-status {
+	font-variant-numeric: tabular-nums;
+}
+
+/* Years as links, because the board has no way to move between them at all.
+   Not a select: a dropdown's options are not links, so neither a crawler nor
+   a middle click can reach last year's race. Each one loads that year's own
+   URL rather than swapping the frame in place, which is the point: a year
+   with no address of its own cannot be indexed, shared or linked to. */
+.arv-live__years {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	flex: 0 0 auto;
+}
+
+.arv-live__year-link,
+.arv-live__year-link:link,
+.arv-live__year-link:visited {
+	padding: 0.25rem 0.6rem;
+	border: 1px solid rgba(244, 244, 244, 0.28);
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	color: #f4f4f4;
+	text-decoration: none;
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-live__year-link.is-current {
+	background: var(--arv-teal, #5bbfa8);
+	border-color: var(--arv-teal, #5bbfa8);
+	color: #0d1211;
+}
+
+/* The words below the frame stay in the content column. */
 .arv-live__open,
 .arv-live__report {
 	max-width: 1200px;
@@ -4711,65 +4811,11 @@
 	padding-right: 1.25rem;
 }
 
-.arv-live__head {
-	margin-bottom: 0.75rem;
-}
-
-.arv-live__title {
-	margin: 0;
-	font-size: clamp(1.6rem, 3.4vw, 2.2rem);
-	font-weight: 700;
-	line-height: 1.15;
-}
-
-/* The year sits with the title rather than under it: "Black Bear Trail Race
-   2025" is the name of the thing this page is about, and splitting it makes
-   the heading read as though it were about the race in general. */
-.arv-live__year {
-	color: var(--arv-results-muted, #6b6b6b);
-	font-weight: 400;
-}
-
-.arv-live__meta {
-	margin: 0.3rem 0 0;
-	font-size: 0.9rem;
-	color: var(--arv-results-muted, #6b6b6b);
-}
-
-/* Years as links, because the board has no way to move between them at all.
-   Not a select: a dropdown's options are not links, so neither a crawler nor
-   a middle click can reach last year's race. */
-.arv-live__years {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.4rem;
-	margin: 1rem 0;
-}
-
-.arv-live__year-link,
-.arv-live__year-link:link,
-.arv-live__year-link:visited {
-	padding: 0.3rem 0.7rem;
-	border: 1px solid var(--arv-results-rule, #e2e2e2);
-	font-size: 0.82rem;
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	color: var(--arv-ink, #272727);
-	text-decoration: none;
-	font-variant-numeric: tabular-nums;
-}
-
-.arv-live__year-link.is-current {
-	background: var(--arv-teal-deep, #2a5e6b);
-	border-color: var(--arv-teal-deep, #2a5e6b);
-	color: #fff;
-}
-
 /* No side borders: a 1px line against the window edge reads as a rendering
-   artefact rather than as a frame. Top and bottom still separate it from the
-   text above and below. */
+   artefact rather than as a frame. No top border either, because the bar
+   above is already a hard edge and a rule between them would draw a line
+   through the middle of one component. */
 .arv-live__frame {
-	border-top: 1px solid var(--arv-results-rule, #e2e2e2);
 	border-bottom: 1px solid var(--arv-results-rule, #e2e2e2);
 	background: #101314;
 }
@@ -4851,7 +4897,8 @@
 
 @media (hover: hover) and (pointer: fine) {
 	a.arv-live__year-link:hover {
-		border-color: var(--arv-teal-deep, #2a5e6b);
+		border-color: var(--arv-teal, #5bbfa8);
+		color: #fff;
 	}
 
 	a.arv-live__open-link:hover {
@@ -4865,12 +4912,22 @@
 		padding: 1rem 0;
 	}
 
-	.arv-live__head,
-	.arv-live__years,
+	.arv-live__bar-inner {
+		padding: 0.8rem 1rem;
+	}
+
 	.arv-live__open,
 	.arv-live__report {
 		padding-left: 1rem;
 		padding-right: 1rem;
+	}
+
+	/* On a phone the name already uses the full width, so the clock drops
+	   below it and shares that row with the years rather than all three
+	   fighting for one line. */
+	.arv-live__clock {
+		order: 3;
+		flex: 1 1 auto;
 	}
 
 	/* A three-column winners table does not fit a phone and the content is

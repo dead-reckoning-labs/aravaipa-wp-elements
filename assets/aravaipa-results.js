@@ -154,8 +154,14 @@
 		var elapsedValue = root.querySelector( '[data-arv-results-elapsed-value]' );
 		var done = root.querySelector( '.arv-results__done' );
 
-		// The pulsing marker lives beside the race name, not in here.
-		var row = root.closest( '.arv-results__week-race' );
+		// The pulsing marker lives beside the race name, not in here, so the
+		// clock has to look up to whatever row holds both. Two things use
+		// this clock now: the race week block, whose row is a list item, and
+		// the live page's bar, which is not a list of anything. The data
+		// attribute is what they agree on; the class is kept as the fallback
+		// so the archive keeps working whichever ships first.
+		var row = root.closest( '[data-arv-results-row]' ) ||
+			root.closest( '.arv-results__week-race' );
 		var live = row ? row.querySelector( '[data-arv-results-live]' ) : null;
 
 		function pad( n ) {
