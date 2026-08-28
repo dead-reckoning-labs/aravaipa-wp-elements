@@ -3481,14 +3481,24 @@
 	}
 
 	/* Less dead air above the fold: at this width the logo is the first
-	   thing in the panel and does not need desktop's breathing room. */
+	   thing in the panel and does not need desktop's breathing room. It is
+	   still the largest single element above the card, so this is where
+	   trimming the panel actually buys anything. */
 	.arv-featured__logo {
-		max-height: 10rem;
+		max-height: 7.5rem;
+		margin-bottom: 0.85rem;
+	}
+
+	.arv-featured__detail {
 		margin-bottom: 1rem;
 	}
 
 	.arv-featured__distances {
-		margin-bottom: 1.25rem;
+		margin-bottom: 0.9rem;
+	}
+
+	.arv-featured__deadline {
+		margin-bottom: 0.9rem;
 	}
 
 	/* Two equal columns, not two stacked full-width slabs.
@@ -3528,20 +3538,34 @@
 	}
 
 	/* Promoted from underlined link to outlined button, so the pair reads as
-	   primary and secondary rather than as a button next to some text. */
+	   primary and secondary rather than as a button next to some text.
+	
+	   Filled, not just outlined. An outline alone left the label sitting
+	   directly on the photograph, and on a phone the panel is short enough
+	   that the runners are right behind this button: the word "Race Info"
+	   was reading over somebody's white hat. The primary button beside it
+	   is solid, so a hollow one against a busy image was the only thing on
+	   the block without something behind it. Dark and translucent rather
+	   than opaque, so it still reads as the secondary of the pair. */
 	.arv-featured__info,
 	.arv-featured__info:link,
 	.arv-featured__info:visited {
-		border: 2px solid rgba(255, 255, 255, 0.45);
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		background: rgba(10, 14, 18, 0.55);
+		-webkit-backdrop-filter: blur(4px);
+		backdrop-filter: blur(4px);
 		padding-bottom: 0.6rem;
 	}
 
-	/* The border above is a white wash, which is invisible on the light
-	   theme's near-white panel. Everything else in this element adapts
-	   through currentColor; this one cannot, because a full-strength
+	/* The border and fill above are white-on-dark, which inverts on the
+	   light theme's near-white panel. Everything else in this element
+	   adapts through currentColor; these cannot, because a full-strength
 	   currentColor border would outshout the primary button next to it. */
-	.arv-featured--light .arv-featured__info {
+	.arv-featured--light .arv-featured__info,
+	.arv-featured--light .arv-featured__info:link,
+	.arv-featured--light .arv-featured__info:visited {
 		border-color: rgba(0, 0, 0, 0.3);
+		background: rgba(255, 255, 255, 0.75);
 	}
 
 	/* Full width once stacked: a 20rem card floating in a narrower column
