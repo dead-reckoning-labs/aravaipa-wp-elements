@@ -42,6 +42,7 @@ function update_option($k,$v,$a=null){ $GLOBALS['ARV_OPTIONS'][$k]=$v; return tr
 function esc_url_raw($u){ return $u; }
 function wp_parse_url($url,$component=-1){ return parse_url($url,$component); }
 require_once $d.'includes/race-store.php';
+require_once $d.'includes/race-schema.php';
 foreach(['race-hero','distance-cards','event-timeline','partner-grid','countdown','region-map','upcoming-races','season-calendar','race-map'] as $e) require_once $d."includes/elements/$e.php";
 
 $pass=0;$fail=0;
