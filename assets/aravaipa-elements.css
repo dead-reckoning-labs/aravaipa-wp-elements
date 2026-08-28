@@ -2256,41 +2256,38 @@
 	background: #eceff1;
 }
 
-/* Close the hairline seams between tile rows on high-density screens.
+/* Tiles are left at the 256px Leaflet gives them, deliberately.
 
-   OpenStreetMap serves 256px raster tiles and Leaflet lays them out at 256
-   CSS px, so on a 2x or 3x screen every tile is upscaled and the browser
-   smooths it. That smoothing fades each tile's outermost pixel row, and
-   where two faded edges meet the background shows through as a pale line.
-   Confirmed by sampling the rendered map for rows and columns lighter than
-   their neighbours, not by eye.
+   They used to be forced to 258px on retina, to overlap away the pale
+   hairline that appears where two upscaled tiles meet. On this site that
+   made it worse, not better, and visibly so: thick white seams on both
+   axes rather than faint ones. Reported from an iPad, reproduced at 2x and
+   3x on the live /races/ page.
 
-   Two extra pixels, and both the value and the media query are load-bearing.
-   Worst seam found, by tile size and device pixel ratio:
+   The reason the original measurement disagreed is that it was taken with
+   the map sitting at a whole pixel. Here it does not: the full-bleed
+   breakout puts .arv-map__canvas at x = 18.75 inside a 986.5px container,
+   so every tile lands on a half device pixel and gets resampled. Upscaling
+   256 to 258 then paints each tile's own softened edge on top of its
+   neighbour's good pixels, which is the bright line, and the overlap is
+   what creates it rather than what hides it.
 
-              1x                    2x                    3x
-     256   h 29.9  v  4.0     h 21.5  v  3.3       h 22.5  v  3.2
-     257   h 37.0  v 50.9     h  5.5  v 26.6       h  3.6  v  3.2
-     258   h 36.2  v 53.5     h  5.7  v  3.3       h  3.6  v  3.2
+   Measured on the live page by summing the brightness spike at each tile
+   boundary against the columns either side, lower being flatter:
 
-   257 is the value usually suggested for this and it is the wrong one here:
-   clean at 3x, but it trades the horizontal seam for a worse vertical one at
-   2x, which is the sort of thing that ships when a fix is only checked on
-   one screen. And at 1x, where tiles are already pixel-for-pixel and nothing
-   needs fixing, every overlap value tested made both axes dramatically
-   worse. So the rule is gated: retina gets 258, everything else is left
-   exactly as Leaflet draws it.
+                    2x        3x
+     256 (none)    103.7     110.5
+     257           127.1     127.6
+     258           128.0     128.1
+     259           127.8     128.4
+     260           127.1     127.9
 
-   Positions still land on Leaflet's 256px grid, so tiles cannot drift
-   cumulatively; each is independently 0.8% larger, invisible on map imagery.
-   !important because Leaflet writes the size as an inline style on every
-   tile as it creates them. */
-@media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 1.5dppx) {
-	.arv-map__canvas .leaflet-tile {
-		width: 258px !important;
-		height: 258px !important;
-	}
-}
+   256 wins at both densities, and the difference is obvious side by side.
+   Pixel-snapping the tile pane and image-rendering: -webkit-optimize-contrast
+   were both tried on top and scored identically to plain 256, so neither is
+   carried. What is left at 256 is a faint hairline from the fractional
+   container offset, an order of magnitude less visible than what it
+   replaces, and not fixable from CSS without moving the container itself. */
 
 /* Race pin. A divIcon, so this is styling a real element rather than an
    image: Leaflet's stock marker is a fixed PNG that cannot be recoloured,
