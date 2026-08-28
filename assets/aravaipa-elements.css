@@ -3760,6 +3760,15 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
+	a.arv-results__week-link:hover {
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	a.arv-results__week-social:hover {
+		color: #f2f2f2;
+	}
+
 	a.arv-results__link:hover {
 		background: #6fc7b4;
 	}
@@ -4187,6 +4196,45 @@
 	line-height: 1.3;
 }
 
+/* Underlined only on hover: at rest the name is already obviously the
+   heading of its row, and a permanent underline on every race turns the
+   block into a list of links rather than a list of races. */
+.arv-results__week-link,
+.arv-results__week-link:link,
+.arv-results__week-link:visited {
+	color: inherit;
+	text-decoration: none;
+}
+
+.arv-results__week-link:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 2px;
+}
+
+.arv-results__week-logo-link {
+	display: block;
+	flex: 0 0 auto;
+}
+
+/* The account that actually covers this race, which is the regional one
+   rather than the national feed for most of them. An icon, not a button:
+   it is a sidelong offer next to the thing people came for. */
+.arv-results__week-social {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 38px;
+	height: 38px;
+	color: rgba(242, 242, 242, 0.6);
+	transition: color 0.15s ease;
+}
+
+.arv-results__week-social:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 2px;
+}
+
 .arv-results__week-distances {
 	display: flex;
 	flex-wrap: wrap;
@@ -4227,7 +4275,12 @@
 }
 
 .arv-results__countdown {
-	color: rgba(242, 242, 242, 0.8);
+	color: rgba(242, 242, 242, 0.85);
+	/* Tabular figures, so a ticking clock does not shuffle its own width
+	   every second as digits change. */
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: "tnum";
+	letter-spacing: 0.02em;
 }
 
 .arv-results__live {
