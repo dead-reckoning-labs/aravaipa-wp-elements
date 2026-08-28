@@ -381,7 +381,11 @@ function arv_results_race_week( $today, $grace = 3 ) {
 		if ( null !== $board && '' !== $board['start'] ) {
 			$now = arv_results_now();
 			$start_ts  = strtotime( $board['start'] );
-			$cutoff_ts = ( '' !== $board['cutoff'] ) ? strtotime( $board['cutoff'] ) : 0;
+			// An override we hold beats the board's own cutoff: see
+			// arv_race_cutoff_for(). The board has been wrong about this.
+			$cutoff_ts = function_exists( 'arv_race_cutoff_for' )
+				? arv_race_cutoff_for( $race['name'], $board )
+				: ( ( '' !== $board['cutoff'] ) ? strtotime( $board['cutoff'] ) : 0 );
 
 			if ( $cutoff_ts && $now >= $cutoff_ts ) {
 				$state = 'done';
@@ -735,8 +739,10 @@ function arv_results_week_status( $race ) {
 	// The board's clock where it has one, midnight on race day where it
 	// does not. The second is the honest fallback rather than a guess at a
 	// start time: it is what the store actually knows.
-	$start  = $has ? gmdate( 'c', strtotime( $board['start'] ) ) : arv_results_start_iso( $race['iso'] );
-	$cutoff = ( $has && '' !== $board['cutoff'] ) ? gmdate( 'c', strtotime( $board['cutoff'] ) ) : '';
+	$start = $has ? gmdate( 'c', strtotime( $board['start'] ) ) : arv_results_start_iso( $race['iso'] );
+
+	$cutoff_ts = function_exists( 'arv_race_cutoff_for' ) ? arv_race_cutoff_for( $race['name'], $board ) : 0;
+	$cutoff    = $cutoff_ts ? gmdate( 'c', $cutoff_ts ) : '';
 
 	$out = '<span class="arv-results__week-status" data-arv-results-clock'
 		. ' data-arv-start="' . esc_attr( $start ) . '"'

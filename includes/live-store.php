@@ -160,3 +160,127 @@ function arv_live_rest_set( $request ) {
 		'previous' => $current,
 	);
 }
+
+define( 'ARV_CUTOFF_OPTION', 'arv_race_cutoffs' );
+
+/**
+ * Cutoff durations we hold ourselves, in hours, keyed by race name.
+ *
+ * The timing board publishes a cutoffTime per event and that is normally
+ * the right answer, since the timing team maintain it as part of running
+ * the race. It is not always right though: Black Bear and Rock Hawk were
+ * both reading long against what the race directors actually run to, so
+ * there has to be somewhere to say otherwise without editing code.
+ *
+ * Hours rather than a timestamp, because a cutoff is a duration from the
+ * gun: expressed that way it survives the start time moving, which is the
+ * thing most likely to change late.
+ *
+ * @return array<string, float>
+ */
+function arv_race_cutoff_store_get() {
+	$stored = get_option( ARV_CUTOFF_OPTION, array() );
+
+	return is_array( $stored ) ? $stored : array();
+}
+
+/**
+ * Replace the stored overrides wholesale.
+ *
+ * @param array<string, float> $map Race name => hours.
+ * @return int
+ */
+function arv_race_cutoff_store_set( $map ) {
+	$clean = array();
+
+	foreach ( (array) $map as $name => $hours ) {
+		$name  = trim( (string) $name );
+		$hours = (float) $hours;
+
+		// A zero or negative cutoff would mark a race finished the moment
+		// it started, so it is treated as no override rather than stored.
+		if ( '' === $name || $hours <= 0 ) {
+			continue;
+		}
+
+		$clean[ $name ] = $hours;
+	}
+
+	update_option( ARV_CUTOFF_OPTION, $clean, false );
+
+	return count( $clean );
+}
+
+/**
+ * The cutoff for one race, as a timestamp, or 0 when there is none.
+ *
+ * Order of preference: an override we hold, then whatever the board says,
+ * then nothing. Nothing is a real answer and means the race week block
+ * falls back to marking a race finished at the end of its last day, which
+ * is what it did before any of this existed.
+ *
+ * @param string $name  Race name.
+ * @param array|null $board Board entry, or null.
+ * @return int Unix timestamp, or 0.
+ */
+function arv_race_cutoff_for( $name, $board ) {
+	$overrides = arv_race_cutoff_store_get();
+	$hours     = isset( $overrides[ $name ] ) ? (float) $overrides[ $name ] : 0;
+
+	/**
+	 * Filters the cutoff duration, in hours, for one race.
+	 *
+	 * @param float      $hours 0 when there is no override.
+	 * @param string     $name
+	 * @param array|null $board
+	 */
+	$hours = (float) apply_filters( 'arv_race_cutoff_hours', $hours, $name, $board );
+
+	$start = ( null !== $board && ! empty( $board['start'] ) ) ? strtotime( $board['start'] ) : 0;
+
+	// An override is a duration from the gun, so it needs a gun to measure
+	// from. Without a start time the board's own cutoff is all there is.
+	if ( $hours > 0 && $start ) {
+		return (int) ( $start + round( $hours * 3600 ) );
+	}
+
+	if ( null !== $board && ! empty( $board['cutoff'] ) ) {
+		return (int) strtotime( $board['cutoff'] );
+	}
+
+	return 0;
+}
+
+/**
+ * Write route for the cutoff overrides.
+ */
+function arv_race_cutoff_register_rest_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/races/cutoffs',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_race_cutoff_rest_set',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_race_cutoff_register_rest_route' );
+
+/**
+ * POST /wp-json/aravaipa/v1/races/cutoffs
+ *
+ * @param WP_REST_Request $request
+ * @return array
+ */
+function arv_race_cutoff_rest_set( $request ) {
+	$body = $request->get_json_params();
+	$map  = isset( $body['cutoffs'] ) && is_array( $body['cutoffs'] ) ? $body['cutoffs'] : array();
+
+	return array(
+		'status' => 'ok',
+		'stored' => arv_race_cutoff_store_set( $map ),
+	);
+}
