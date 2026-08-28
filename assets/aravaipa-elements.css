@@ -2781,10 +2781,13 @@
 
 .arv-featured__panel {
 	position: relative;
-	padding: 4rem 1.5rem;
+	padding: 4.5rem 1.5rem;
 	background-color: #1d2624;
 	background-size: cover;
-	background-position: center;
+	/* Biased low: these are desert race photos, where the sky is the empty
+	   half and the runners and horizon sit in the lower third. Centring the
+	   crop cuts the subject in half on a wide, short panel. */
+	background-position: center 60%;
 	overflow: hidden;
 }
 
@@ -2800,12 +2803,23 @@
    hero's: the overlay opacity control then works identically whether or
    not an image is actually set, rather than needing its own code path for
    the no-image case. */
+/* A gradient, not a flat wash. A uniform black veil over a photo dims the
+   whole image equally, which costs the picture its light without buying the
+   text much contrast where the text actually is. Weighted to the left, where
+   the copy sits, so the sky and the runners on the right stay bright and the
+   words still have something solid behind them. */
 .arv-featured--image .arv-featured__panel::before {
 	content: "";
 	position: absolute;
 	inset: 0;
-	background: #000;
-	opacity: var(--arv-overlay, 0.55);
+	background: linear-gradient(
+		100deg,
+		rgba(8, 12, 16, 0.92) 0%,
+		rgba(8, 12, 16, 0.78) 38%,
+		rgba(8, 12, 16, 0.32) 68%,
+		rgba(8, 12, 16, 0.15) 100%
+	);
+	opacity: calc(var(--arv-overlay, 0.55) * 1.6);
 }
 
 /* Full bleed. Same technique as the full-width map, and for the same
@@ -2828,11 +2842,54 @@
 	margin: 0 auto;
 }
 
+/* The race's own logo, at a size where it reads as a mark rather than as a
+   background. Capped by height, not width, so a wide lockup and a squarer
+   badge land at the same optical weight, the same rule the region map's
+   hover card uses. */
+.arv-featured__logo {
+	display: block;
+	width: auto;
+	/* Big enough that the lockup's own internal detail survives. These are
+	   illustrated badges with the race name set inside them, not simple
+	   wordmarks, so at thumbnail size the type inside them goes to mush and
+	   the whole thing reads as a smudge rather than as branding. */
+	max-width: min(100%, 30rem);
+	max-height: 13rem;
+	margin: 0 0 1.25rem;
+	object-fit: contain;
+	object-position: left center;
+	/* Most of these badges are dark artwork on transparent, which is the
+	   same trap the Bad Beard logo hit on the map: a dark mark on a dark
+	   scrim disappears. A soft dark halo behind it separates the mark from
+	   whatever part of the photo happens to sit under it, without putting a
+	   visible box around the logo. */
+	filter: drop-shadow(0 2px 18px rgba(0, 0, 0, 0.85));
+}
+
+/* Kept in the markup, hidden on screen. Every Aravaipa race logo already
+   sets the race's name, so showing the heading too prints it twice in two
+   typefaces. This keeps one real <h2> in the document for search engines
+   and screen readers without the visual duplication. */
+.arv-featured__name--sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
 .arv-featured__eyebrow {
-	margin: 0 0 0.5rem;
-	font-size: 0.82rem;
-	font-weight: 700;
-	letter-spacing: 0.14em;
+	display: inline-block;
+	margin: 0 0 1.1rem;
+	padding: 0.35rem 0.75rem;
+	border: 1px solid var(--arv-teal);
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.16em;
 	text-transform: uppercase;
 	color: var(--arv-teal);
 }
@@ -2843,12 +2900,11 @@
 
 .arv-featured__date {
 	display: block;
-	margin: 0 0 0.4rem;
-	font-size: 0.95rem;
-	font-weight: 700;
-	letter-spacing: 0.06em;
+	margin: 0 0 0.5rem;
+	font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+	font-weight: 800;
+	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	opacity: 0.85;
 }
 
 .arv-featured__name {
@@ -2860,10 +2916,10 @@
 
 .arv-featured__detail {
 	margin: 0 0 1.5rem;
-	max-width: 34rem;
-	font-size: 1.05rem;
+	max-width: 30rem;
+	font-size: 1.1rem;
 	line-height: 1.5;
-	opacity: 0.85;
+	opacity: 0.92;
 }
 
 .arv-featured__distances {
@@ -2898,7 +2954,9 @@
 }
 
 .arv-featured__cta {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
 	padding: 0.85rem 1.6rem;
 	border: 2px solid var(--arv-accent);
 	background: var(--arv-accent);
@@ -2937,6 +2995,20 @@
 
 .arv-featured--light .arv-featured__cta--closed {
 	border-color: rgba(0, 0, 0, 0.3);
+}
+
+/* The arrow is on the button rather than in the label so it survives the
+   label changing with the race's phase: Register, Join Waitlist and Live
+   Results all get it without three copies of the same character. */
+.arv-featured__cta::after {
+	content: "\2192";
+	transition: transform 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	a.arv-featured__cta:hover::after {
+		transform: translateX(3px);
+	}
 }
 
 .arv-featured__info {

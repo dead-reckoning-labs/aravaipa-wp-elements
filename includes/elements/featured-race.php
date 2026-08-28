@@ -41,11 +41,18 @@ cs_register_element(
 				// prompt for an editor to fill in. Update this default (and
 				// ship a new version) to feature a different race.
 				'race_page'  => cs_value( 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/', 'markup' ),
-				'eyebrow'    => cs_value( 'Featured', 'markup' ),
+				'eyebrow'    => cs_value( 'Featured Race', 'markup' ),
 				'detail'     => cs_value( 'Run it anywhere, any day in October.', 'markup' ),
 				'cta_label'  => cs_value( '', 'markup' ),
-				'image'      => cs_value( '', 'markup' ),
-				'overlay'    => cs_value( '0.55', 'style' ),
+				// A photograph, and deliberately not the race's own image.
+				// The store's image for a race is its logo, and using that as
+				// a full-bleed background stretches a flat graphic across the
+				// width of the page and then prints the text on top of it, so
+				// the artwork and the copy fight each other and neither wins.
+				// The logo is rendered as a logo below instead, and this is a
+				// real photo behind it.
+				'image'      => cs_value( 'https://www.aravaiparunning.com/avr/wp-content/uploads/ScottRokis_Javelina24_SRR30043.jpg', 'markup' ),
+				'overlay'    => cs_value( '0.5', 'style' ),
 				'full_width' => cs_value( 'true', 'markup' ),
 				'theme'      => cs_value( 'dark', 'style' ),
 			),
@@ -92,7 +99,7 @@ function arv_featured_race_builder() {
 					'key'         => 'image',
 					'type'        => 'image',
 					'label'       => __( 'Background image (optional)', 'aravaipa-elements' ),
-					'description' => __( 'Leave blank to use the race\'s own image from the calendar data.', 'aravaipa-elements' ),
+					'description' => __( 'A photograph. Deliberately not the race\'s own image, which is its logo: a logo stretched across a full-width panel reads as wallpaper. The logo is rendered separately, over the top of this.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'overlay',
@@ -167,10 +174,12 @@ function arv_featured_race_render( $data ) {
 	$full_width = isset( $data['full_width'] ) ? $data['full_width'] : true;
 	$full_width = ! ( 'false' === $full_width || false === $full_width || '0' === $full_width );
 
+	// No fallback to $race['image'] here on purpose: that is the race's logo,
+	// and a logo stretched to cover a full-width panel is what made the first
+	// version of this block look like wallpaper with text on top. Blank means
+	// no photo, which renders as the flat dark panel, which is a worse-looking
+	// but still legible result rather than a broken-looking one.
 	$image = isset( $data['image'] ) ? trim( (string) $data['image'] ) : '';
-	if ( '' === $image ) {
-		$image = $race['image'];
-	}
 
 	$overlay = isset( $data['overlay'] ) ? (float) $data['overlay'] : 0.55;
 	$overlay = max( 0, min( 1, $overlay ) );
@@ -195,9 +204,22 @@ function arv_featured_race_render( $data ) {
 		$out .= '<p class="arv-featured__eyebrow">' . esc_html( $eyebrow ) . '</p>';
 	}
 
+	// The race's logo, at a size where it reads as a logo. Every Aravaipa
+	// race logo is a full lockup with the race's name already set in it, so
+	// printing the name again underneath is saying the same thing twice in
+	// two typefaces. The heading stays in the markup for search engines and
+	// screen readers and is hidden visually instead, which keeps one <h2>
+	// per section without duplicating it on screen.
+	$logo = trim( (string) $race['image'] );
+	if ( '' !== $logo ) {
+		$out .= '<img class="arv-featured__logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $race['name'] ) . '" loading="lazy" decoding="async" />';
+	}
+
 	$display = '' !== $race['display'] ? $race['display'] : gmdate( 'F j', strtotime( $race['iso'] . ' 00:00:00 UTC' ) );
-	$out    .= '<time class="arv-featured__date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
-	$out    .= '<h2 class="arv-featured__name">' . esc_html( $race['name'] ) . '</h2>';
+
+	$name_class = ( '' !== $logo ) ? 'arv-featured__name arv-featured__name--sr' : 'arv-featured__name';
+	$out       .= '<h2 class="' . $name_class . '">' . esc_html( $race['name'] ) . '</h2>';
+	$out       .= '<time class="arv-featured__date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
 
 	$detail = isset( $data['detail'] ) ? trim( (string) $data['detail'] ) : '';
 	$where  = trim( implode( ', ', array_filter( array( $race['venue'], $race['location'] ) ) ) );
