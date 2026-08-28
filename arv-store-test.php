@@ -119,13 +119,22 @@ function get_posts( $args ) {
 	// year switcher uses to find a real per-year page. Looked up straight
 	// out of the meta table rather than the post list, since a live page is
 	// an ordinary WP page and never enters $GLOBALS['posts'].
-	if ( isset( $args['meta_key'] ) && isset( $args['meta_value'] ) ) {
+	// A meta_key lookup on pages. Narrowed by meta_value when there is one
+	// (the year switcher finding one page), otherwise every page carrying
+	// the key (the index finding all of them).
+	//
+	// Gated on post_type=page on purpose: the race store also passes
+	// meta_key, but only as an orderby, and treating that as a filter
+	// silently emptied every race query in the suite.
+	if ( isset( $args['meta_key'] ) && 'page' === ( $args['post_type'] ?? '' ) ) {
+		$hits = array();
 		foreach ( ( $GLOBALS['meta'] ?? array() ) as $id => $m ) {
-			if ( ( $m[ $args['meta_key'] ] ?? null ) === $args['meta_value'] ) {
-				return array( $id );
-			}
+			$have = $m[ $args['meta_key'] ] ?? null;
+			if ( null === $have || '' === $have ) { continue; }
+			if ( isset( $args['meta_value'] ) && $have !== $args['meta_value'] ) { continue; }
+			$hits[] = $id;
 		}
-		return array();
+		return $hits;
 	}
 
 	foreach ( $GLOBALS['posts'] as $id => $p ) {
@@ -1185,6 +1194,64 @@ $GLOBALS['PERMALINK'] = array();
 $last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '2025' ) );
 t( 'last year reframes the board',      false !== strpos( $last, 'black_bear-2025' ) );
 t( 'and links back to this year',       false !== strpos( $last, 'edition=2026' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nlive index: ordering and rows:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$GLOBALS['meta'] = array(
+	11 => array( '_arv_live_slug' => 'black_bear-2026' ),
+	12 => array( '_arv_live_slug' => 'rock_hawk-2026' ),
+	13 => array( '_arv_live_slug' => 'black_bear-2025' ),
+);
+$GLOBALS['PERMALINK'] = array(
+	11 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race/',
+	12 => 'https://www.aravaiparunning.com/live-results/rock-hawk/',
+	13 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race-2025/',
+);
+
+arv_race_store_import(
+	"Black Bear Trail Race | 2026-08-29 | August 29 | 50K | 23K |  |  | Waterville Valley Town Square | Waterville Valley, NH | https://ultrasignup.com/x | https://www.aravaiparunning.com/wme/bb/ | https://example.com/bb.png |  | https://live.aravaiparunning.com/#/black_bear-2026 | 2026-08-24 | 1 | 0 | 43.95 | -71.50\n" .
+	"Rock Hawk | 2026-08-29 | August 29 | 50K | 25K |  |  | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/y | https://www.aravaiparunning.com/bcs/rh/ | https://example.com/rh.png |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0 | 39.36 | -104.87\n"
+);
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+arv_stats_store_set( array( array( 'slug' => 'black_bear-2025', 'finishers' => 225 ) ) );
+arv_live_store_set( array(
+	array( 'slug' => 'black_bear-2026', 'start' => '2026-08-29T10:00:00.000Z', 'cutoff' => '2026-08-29T22:00:00.000Z', 'offset' => -4, 'races' => array() ),
+	array( 'slug' => 'rock_hawk-2026',  'start' => '2026-08-29T12:00:00.000Z', 'cutoff' => '2026-08-29T21:00:00.000Z', 'offset' => -6, 'races' => array() ),
+) );
+
+// Black Bear is running, Rock Hawk has not started, 2025 is history.
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T11:00:00Z' );
+$idx = arv_live_index_render( array( 'heading' => 'Live Results' ) );
+
+t( 'the index lists every live page',   false !== strpos( $idx, 'Black Bear Trail Race' ) && false !== strpos( $idx, 'Rock Hawk' ) );
+t( 'and links each to its own page',    false !== strpos( $idx, '/live-results/rock-hawk/' ) );
+
+// A race in progress belongs above one that has not started, and both above
+// last year. Sorting by date alone puts last weekend above this afternoon.
+$bb   = strpos( $idx, 'black-bear-trail-race/' );
+$rh   = strpos( $idx, 'rock-hawk/' );
+$last = strpos( $idx, 'black-bear-trail-race-2025/' );
+t( 'the live race is first',            $bb < $rh );
+t( 'and finished races are last',       $rh < $last );
+
+t( 'a running race is marked live',     false !== strpos( $idx, 'arv-live-index__race--live' ) );
+t( 'and carries a ticking clock',       false !== strpos( $idx, 'data-arv-results-clock' ) );
+t( 'with a row for its live marker',    false !== strpos( $idx, 'data-arv-results-row' ) );
+
+// A finished race says what happened rather than counting to something that
+// already went, and drops the clock entirely.
+t( 'a finished race counts finishers',  false !== strpos( $idx, '225 finishers' ) );
+t( 'and shows no countdown',            2 === substr_count( $idx, 'data-arv-results-clock' ) );
+
+// Nothing to list is nothing at all, not an empty shell.
+$GLOBALS['meta'] = array();
+t( 'no live pages renders nothing',     '' === arv_live_index_render() );
+$GLOBALS['PERMALINK'] = array();
+unset( $GLOBALS['NOW_TS'] );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nlive page SEO: title, description, Open Graph, schema:\n";

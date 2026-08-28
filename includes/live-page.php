@@ -709,6 +709,273 @@ function arv_live_shortcode( $atts ) {
 add_shortcode( 'arv_live', 'arv_live_shortcode' );
 
 /**
+ * Every live page on the site, newest race first.
+ *
+ * Found by the meta each one carries rather than by a parent page or a slug
+ * convention, so a page is in the index because it is a live page, not
+ * because someone remembered to file it in the right place.
+ *
+ * @return array<int, array> id, slug, url.
+ */
+function arv_live_pages() {
+	if ( ! function_exists( 'get_posts' ) ) {
+		return array();
+	}
+
+	$ids = get_posts(
+		array(
+			'post_type'        => 'page',
+			'post_status'      => 'publish',
+			'posts_per_page'   => 200,
+			'fields'           => 'ids',
+			'no_found_rows'    => true,
+			'suppress_filters' => false,
+			'meta_key'         => arv_live_meta_key(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		)
+	);
+
+	$pages = array();
+
+	foreach ( (array) $ids as $id ) {
+		$slug = trim( (string) get_post_meta( $id, arv_live_meta_key(), true ) );
+
+		if ( '' === $slug ) {
+			continue;
+		}
+
+		$pages[] = array(
+			'id'   => $id,
+			'slug' => $slug,
+			'url'  => (string) get_permalink( $id ),
+		);
+	}
+
+	return $pages;
+}
+
+/**
+ * One row's worth of facts about a live page, or null if it resolves to
+ * nothing worth listing.
+ *
+ * @param array $page
+ * @return array|null
+ */
+function arv_live_index_row( $page ) {
+	$slug     = $page['slug'];
+	$editions = arv_live_all_editions( $slug );
+	$edition  = null;
+
+	foreach ( $editions as $candidate ) {
+		if ( arv_live_store_slug( $candidate['live'] ) === $slug ) {
+			$edition = $candidate;
+			break;
+		}
+	}
+
+	if ( null === $edition ) {
+		$edition = arv_live_pick_edition( $editions, '' );
+	}
+
+	$race = arv_live_race_by_slug( $slug );
+	$name = $edition ? $edition['name'] : ( $race ? $race['name'] : '' );
+
+	if ( '' === $name ) {
+		return null;
+	}
+
+	$meta  = arv_live_race_meta( $name );
+	$board = function_exists( 'arv_live_store_find' )
+		? arv_live_store_find( ARV_LIVE_BASE . $slug )
+		: null;
+
+	$iso = $edition ? $edition['iso'] : ( $race ? $race['iso'] : '' );
+
+	return array(
+		'name'    => $name,
+		'iso'     => $iso,
+		'edition' => $edition,
+		'meta'    => $meta,
+		'board'   => $board,
+		'state'   => ( '' !== $iso ) ? arv_live_state( $name, $iso, $board ) : 'soon',
+		'url'     => $page['url'],
+		'stats'   => arv_stats_store_find( ARV_LIVE_BASE . $slug ),
+	);
+}
+
+/**
+ * The index: every live page, as a dark list.
+ *
+ * Ordered the way someone arriving on race day reads it: anything running
+ * right now first, then the next race, then backwards through the ones that
+ * have finished. A list sorted purely by date puts last weekend above this
+ * afternoon, which is the wrong answer on the one day the page matters.
+ *
+ * @param array $args
+ * @return string
+ */
+function arv_live_index_render( $args = array() ) {
+	$rows = array();
+
+	foreach ( arv_live_pages() as $page ) {
+		$row = arv_live_index_row( $page );
+
+		if ( null !== $row ) {
+			$rows[] = $row;
+		}
+	}
+
+	if ( empty( $rows ) ) {
+		return '';
+	}
+
+	$rank = array( 'live' => 0, 'soon' => 1, 'done' => 2 );
+
+	usort(
+		$rows,
+		function ( $a, $b ) use ( $rank ) {
+			$ar = isset( $rank[ $a['state'] ] ) ? $rank[ $a['state'] ] : 3;
+			$br = isset( $rank[ $b['state'] ] ) ? $rank[ $b['state'] ] : 3;
+
+			if ( $ar !== $br ) {
+				return $ar - $br;
+			}
+
+			// Soonest first among what is coming, most recent first among
+			// what is over.
+			if ( 'done' === $a['state'] ) {
+				return ( $a['iso'] < $b['iso'] ) ? 1 : -1;
+			}
+
+			return ( $a['iso'] > $b['iso'] ) ? 1 : -1;
+		}
+	);
+
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Live Results';
+	$intro   = isset( $args['intro'] ) ? trim( (string) $args['intro'] ) : '';
+
+	$out = '<section class="arv-live-index">';
+	$out .= '<div class="arv-live-index__inner">';
+
+	if ( '' !== $heading ) {
+		$out .= '<h2 class="arv-live-index__heading">' . esc_html( $heading ) . '</h2>';
+	}
+
+	if ( '' !== $intro ) {
+		$out .= '<p class="arv-live-index__intro">' . esc_html( $intro ) . '</p>';
+	}
+
+	$out .= '<ul class="arv-live-index__list">';
+
+	foreach ( $rows as $row ) {
+		$out .= arv_live_index_item( $row );
+	}
+
+	return $out . '</ul></div></section>';
+}
+
+/**
+ * One race in the index.
+ *
+ * The whole row is the link. A race is one destination, and splitting it into
+ * a linked name beside unlinked facts makes the target smaller than the thing
+ * it represents, which is worse on a phone than anywhere.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_live_index_item( $row ) {
+	$out = '<li class="arv-live-index__race arv-live-index__race--' . esc_attr( $row['state'] ) . '"'
+		. ' data-arv-results-row>';
+	$out .= '<a class="arv-live-index__link" href="' . esc_url( $row['url'] ) . '">';
+
+	$logo = ( $row['meta'] && ! empty( $row['meta']['image'] ) ) ? $row['meta']['image'] : '';
+
+	if ( '' !== $logo ) {
+		$out .= '<img class="arv-live-index__logo" src="' . esc_url( $logo ) . '" alt=""'
+			. ' loading="lazy" decoding="async" />';
+	}
+
+	$out .= '<span class="arv-live-index__body">';
+	$out .= '<span class="arv-live-index__name">' . esc_html( $row['name'] );
+
+	if ( '' !== $row['iso'] ) {
+		$out .= ' <span class="arv-live-index__year">' . esc_html( substr( $row['iso'], 0, 4 ) ) . '</span>';
+	}
+
+	$out .= arv_results_week_live_badge( $row );
+	$out .= '</span>';
+
+	$bits = array();
+
+	if ( $row['edition'] ) {
+		$bits[] = arv_results_edition_label( $row['edition'] );
+	}
+
+	if ( $row['meta'] && ! empty( $row['meta']['location'] ) ) {
+		$bits[] = $row['meta']['location'];
+	}
+
+	// A race that is over says what happened instead of when it will, which
+	// is the more useful fact once there is one.
+	if ( 'done' === $row['state'] && ! empty( $row['stats']['finishers'] ) ) {
+		$finishers = (int) $row['stats']['finishers'];
+		$bits[]    = sprintf(
+			/* translators: %s is a formatted count of finishers. */
+			_n( '%s finisher', '%s finishers', $finishers, 'aravaipa-elements' ),
+			number_format_i18n( $finishers )
+		);
+	}
+
+	if ( ! empty( $bits ) ) {
+		$out .= '<span class="arv-live-index__meta">' . esc_html( implode( ' · ', $bits ) ) . '</span>';
+	}
+
+	$out .= '</span>';
+
+	// The clock, only while it means something. "Completed" beside a race
+	// from three years ago is noise, not status.
+	if ( 'done' !== $row['state'] && '' !== $row['iso'] ) {
+		$out .= '<span class="arv-live-index__clock">'
+			. arv_results_week_status(
+				array(
+					'name'  => $row['name'],
+					'iso'   => $row['iso'],
+					'board' => $row['board'],
+					'state' => $row['state'],
+				)
+			)
+			. '</span>';
+	}
+
+	$out .= '<span class="arv-live-index__go" aria-hidden="true">'
+		. '<svg viewBox="0 0 16 16" width="14" height="14" focusable="false">'
+		. '<path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"'
+		. ' stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+
+	return $out . '</a></li>';
+}
+
+/**
+ * [arv_live_index]
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_live_index_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'heading' => 'Live Results',
+			'intro'   => '',
+		),
+		$atts,
+		'arv_live_index'
+	);
+
+	return arv_live_index_render( $atts );
+}
+add_shortcode( 'arv_live_index', 'arv_live_index_shortcode' );
+
+/**
  * Which race a WP page is showing live results for.
  *
  * Kept on the page as its own piece of meta rather than found by scanning

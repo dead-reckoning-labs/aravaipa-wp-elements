@@ -4967,3 +4967,155 @@
 		white-space: nowrap;
 	}
 }
+
+
+/* ---------------------------------------------------------------------
+   The live results index: every race with a live page, as a dark list.
+
+   Dark for the same reason the bar above each board is: this page is the
+   front door to a set of dark timing boards, and a white list of links to
+   black pages announces a seam the visitor then walks through. Full bleed,
+   same breakout as everything else in this component.
+   --------------------------------------------------------------------- */
+.arv-live-index {
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-live-index__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem 2.25rem;
+}
+
+.arv-live-index__heading {
+	margin: 0;
+	font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+	font-weight: 700;
+	line-height: 1.15;
+	color: #fff;
+}
+
+.arv-live-index__intro {
+	margin: 0.4rem 0 0;
+	font-size: 0.95rem;
+	color: rgba(244, 244, 244, 0.66);
+	max-width: 46rem;
+}
+
+.arv-live-index__list {
+	list-style: none;
+	margin: 1.5rem 0 0;
+	padding: 0;
+}
+
+.arv-live-index__race + .arv-live-index__race {
+	border-top: 1px solid rgba(244, 244, 244, 0.12);
+}
+
+/* The whole row is the link. A race is one destination, and a linked name
+   beside unlinked facts makes the target smaller than the thing it stands
+   for, which is worse on a phone than anywhere. */
+.arv-live-index__link,
+.arv-live-index__link:link,
+.arv-live-index__link:visited {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 1rem;
+	padding: 0.9rem 0;
+	color: #f4f4f4;
+	text-decoration: none;
+}
+
+.arv-live-index__logo {
+	flex: 0 0 auto;
+	width: 44px;
+	height: 44px;
+	object-fit: contain;
+}
+
+.arv-live-index__body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	flex: 1 1 14rem;
+	min-width: 0;
+}
+
+.arv-live-index__name {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.4rem;
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: #fff;
+}
+
+.arv-live-index__year {
+	color: rgba(244, 244, 244, 0.55);
+	font-weight: 400;
+}
+
+.arv-live-index__meta {
+	font-size: 0.84rem;
+	color: rgba(244, 244, 244, 0.62);
+}
+
+.arv-live-index__clock {
+	flex: 0 0 auto;
+	font-size: 0.9rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-live-index__go {
+	flex: 0 0 auto;
+	color: rgba(244, 244, 244, 0.5);
+	line-height: 0;
+}
+
+/* A race that has finished steps back rather than disappearing: the index
+   is also how someone reaches last weekend's results. */
+.arv-live-index__race--done .arv-live-index__name {
+	color: rgba(244, 244, 244, 0.82);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	a.arv-live-index__link:hover {
+		background: rgba(244, 244, 244, 0.05);
+	}
+
+	a.arv-live-index__link:hover .arv-live-index__go {
+		color: var(--arv-teal, #5bbfa8);
+	}
+}
+
+.arv-live-index__link:focus-visible {
+	outline: 2px solid var(--arv-teal, #5bbfa8);
+	outline-offset: -2px;
+}
+
+@media (max-width: 619px) {
+	.arv-live-index__inner {
+		padding: 1.5rem 1rem 1.75rem;
+	}
+
+	.arv-live-index__name {
+		font-size: 1.1rem;
+	}
+
+	/* The chevron is decoration on a row that is already entirely a link,
+	   and on a phone it costs a line to keep. */
+	.arv-live-index__go {
+		display: none;
+	}
+
+	.arv-live-index__clock {
+		flex: 1 1 100%;
+		font-size: 0.95rem;
+	}
+}
