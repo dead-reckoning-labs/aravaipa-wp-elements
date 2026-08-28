@@ -1455,23 +1455,34 @@
 		gap: 0.75rem;
 	}
 
-	/* Two columns for the logo and the text, and a third row underneath for
-	   the buttons that spans both. Grid rather than the row-flex this used
-	   to be, because the buttons need to escape the text column: nested in
-	   it they started a logo-width in from the card edge and had to squeeze
-	   two labels into what was left, which is what pushed "Join Waitlist"
-	   and "Live Results" onto two lines. */
+	/* Logo on the left, everything else stacked in the column beside it:
+	   date, name, distances, where, then the buttons.
+	
+	   The buttons briefly lived in a third row spanning the whole card,
+	   because in this column they were wrapping "Join Waitlist" onto two
+	   lines. That turned out to be the specificity bug, not a width
+	   problem: every font-size and padding this block sets was losing to
+	   the base rule's ".arv-races__cta:link", so the buttons were rendering
+	   at the desktop's 0.78rem and 1.15rem padding no matter what was set
+	   here. With that fixed they fit the column at a smaller size, which is
+	   also less shouty than two full-card-width blocks per row down a list
+	   of eighty. */
 	.arv-races__card {
 		display: grid;
-		grid-template-columns: 80px minmax(0, 1fr);
+		grid-template-columns: 72px minmax(0, 1fr);
 		grid-template-areas:
 			"media body"
-			"actions actions";
+			".     actions";
 		align-items: start;
 	}
 
 	.arv-races__media { grid-area: media; }
 	.arv-races__body { grid-area: body; }
+	/* Second row, but still in the text column rather than spanning the
+	   card: the empty cell under the logo is deliberate, so the buttons
+	   line up with the race name above them instead of sliding back under
+	   the artwork. The markup has actions as a sibling of the body, not a
+	   child, so this placement is what keeps them in the same column. */
 	.arv-races__actions { grid-area: actions; }
 
 	/* Square, and fixed width so every row's text starts on the same line
@@ -1481,8 +1492,8 @@
 	.arv-races__media {
 		aspect-ratio: 1 / 1;
 		align-self: flex-start;
-		margin-top: 0.75rem;
-		margin-left: 0.75rem;
+		margin-top: 0.8rem;
+		margin-left: 0.8rem;
 		padding: 0;
 		/* No tile behind the badge at this size. The tile colour is one step
 		   from the card colour, so stacked it does not read as a frame, it
@@ -1493,7 +1504,7 @@
 	}
 
 	.arv-races__body {
-		padding: 0.75rem 0.9rem 0.4rem;
+		padding: 0.75rem 0.9rem 0.1rem;
 		min-width: 0;
 	}
 
@@ -1507,11 +1518,16 @@
 	   down it (Register, Live Results and Join Waitlist are all different
 	   widths). Equal columns across the full card width fit the longest
 	   label at a readable size and line every card up with the one above. */
+	/* Two equal columns rather than two content-sized buttons. Sized to
+	   their labels the pair ends at a different point on every card, so a
+	   scrolling list has a ragged right edge that moves as the phase changes
+	   down it (Register, Live Results and Join Waitlist are all different
+	   widths). Equal columns line every card up with the one above. */
 	.arv-races__actions {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 0.5rem;
-		padding: 0.15rem 0.9rem 0.85rem;
+		gap: 0.45rem;
+		padding: 0.35rem 0.9rem 0.85rem 0;
 	}
 
 	/* 31px measured on a real iPhone viewport, against Apple's 44px minimum
@@ -1536,10 +1552,15 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-height: 44px;
-		padding: 0.5rem 0.7rem;
-		font-size: 0.72rem;
-		letter-spacing: 0.8px;
+		/* 40px rather than the 44px Apple asks for. These sit inside the
+		   text column now, so the width they have is what is left after the
+		   logo, and a shorter button is what buys the label enough room to
+		   stay on one line. Still a long way from the 31px this started at,
+		   and the whole row is tappable padding, not just the text. */
+		min-height: 40px;
+		padding: 0.45rem 0.4rem;
+		font-size: 0.66rem;
+		letter-spacing: 0.4px;
 		/* Grid items default to min-width:auto, so a nowrap label wider than
 		   its 1fr track cannot shrink into it and spills out of the card
 		   instead. This is what lets the track govern the button rather than
