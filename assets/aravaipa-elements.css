@@ -6,9 +6,59 @@
  * win when an editor overrides something in the builder: this file sets the
  * baseline, it does not fight the page.
  *
- * Type sizes are in rem so they inherit X's root scale rather than pinning a
- * pixel size the rest of the site does not use.
+ * Type sizes are in pixels, from the scale below. They used to be in rem, on
+ * the reasoning that inheriting X's root scale beat pinning a size the rest
+ * of the site does not use. Measured, that reasoning was backwards: the rest
+ * of the site sets its body copy at 15px, X's root is 15px on desktop and
+ * 12px under 620px, and these elements were written against an assumed 16px
+ * root, so inheriting the root scale is exactly what pinned them below the
+ * page around them.
  */
+
+/* Type scale, in pixels on purpose.
+
+   The theme sets html { font-size: 15px } on desktop and 12px under 620px,
+   so every rem in this plugin resolved against a root smaller than the 16px
+   the elements were written for, and smaller again on a phone. The rest of
+   the site sets its body copy at 15px; these elements were landing their
+   meta lines at 12.3px, their buttons at 10.8px and their smallest labels at
+   9px, so every block this plugin renders read a size or two below the page
+   around it. Sizing in rem hands the theme control of legibility, and the
+   theme is not using that control to say anything deliberate, so the scale
+   is stated outright and the phone breakpoint adjusts the scale rather than
+   each of a hundred and forty rules.
+
+   On :root rather than the element roots because Leaflet portals its popups
+   out of the map's subtree, and a scale the popup cannot see would leave it
+   with no font-size at all. These are namespaced and inert until used.
+
+   --arv-fs-body is 15px because that is what the rest of the site uses:
+   matching it is the whole point. --arv-fs-input never drops below 16px,
+   since iOS Safari zooms the page in on focusing any smaller field. */
+:root {
+	--arv-fs-micro: 11px;
+	--arv-fs-label: 12px;
+	--arv-fs-btn: 13px;
+	--arv-fs-meta: 14px;
+	--arv-fs-body: 15px;
+	--arv-fs-input: 16px;
+	--arv-fs-lead: 17px;
+	--arv-fs-name: 19px;
+	--arv-fs-title: 24px;
+	--arv-fs-heading: 30px;
+}
+
+@media (max-width: 619px) {
+	/* Only the display sizes come down. Body copy, labels and controls hold
+	   their size, because a phone is where they most need to stay readable. */
+	:root {
+		--arv-fs-btn: 12px;
+		--arv-fs-lead: 16px;
+		--arv-fs-name: 18px;
+		--arv-fs-title: 22px;
+		--arv-fs-heading: 26px;
+	}
+}
 
 .arv-distances,
 .arv-timeline,
@@ -71,7 +121,7 @@
 
 .arv-hero__date {
 	margin: 0 0 0.5rem;
-	font-size: 0.95rem;
+	font-size: var(--arv-fs-body);
 	font-weight: 700;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
@@ -80,7 +130,7 @@
 
 .arv-hero__name {
 	margin: 0 0 0.5rem;
-	font-size: clamp(2rem, 6vw, 4rem);
+	font-size: clamp(32px, 6vw, 64px);
 	line-height: 1.05;
 	font-weight: 800;
 	color: #fff;
@@ -88,7 +138,7 @@
 
 .arv-hero__location {
 	margin: 0;
-	font-size: 1.05rem;
+	font-size: var(--arv-fs-lead);
 	opacity: 0.85;
 }
 
@@ -108,7 +158,7 @@
 	display: inline-block;
 	padding: 0.3rem 0.7rem;
 	border-radius: 2px;
-	font-size: 0.72rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 800;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
@@ -126,7 +176,7 @@
 }
 
 .arv-hero__note {
-	font-size: 0.9rem;
+	font-size: var(--arv-fs-meta);
 	opacity: 0.85;
 }
 
@@ -157,7 +207,7 @@
 .arv-partners__heading,
 .arv-countdown__heading {
 	margin: 0 0 1.5rem;
-	font-size: clamp(1.4rem, 3vw, 2rem);
+	font-size: clamp(24px, 3vw, 32px);
 	font-weight: 800;
 	text-align: center;
 	color: var(--arv-ink);
@@ -180,7 +230,7 @@
 
 .arv-distance__name {
 	margin-bottom: 1rem;
-	font-size: 1.6rem;
+	font-size: var(--arv-fs-title);
 	font-weight: 800;
 	line-height: 1.1;
 	color: var(--arv-ink);
@@ -208,7 +258,7 @@
 
 .arv-distance__stat dt {
 	margin: 0;
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
@@ -228,7 +278,7 @@
 	background: var(--arv-accent);
 	color: #fff;
 	font-weight: 800;
-	font-size: 0.85rem;
+	font-size: var(--arv-fs-btn);
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	text-align: center;
@@ -252,7 +302,7 @@
 	margin: 0 0 0.5rem;
 	padding-bottom: 0.5rem;
 	border-bottom: 2px solid var(--arv-accent);
-	font-size: 1.05rem;
+	font-size: var(--arv-fs-lead);
 	font-weight: 800;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -365,7 +415,7 @@
 
 .arv-countdown__value {
 	display: block;
-	font-size: clamp(1.8rem, 5vw, 3rem);
+	font-size: clamp(30px, 5vw, 48px);
 	font-weight: 800;
 	line-height: 1;
 	color: var(--arv-ink);
@@ -375,7 +425,7 @@
 .arv-countdown__label {
 	display: block;
 	margin-top: 0.35rem;
-	font-size: 0.7rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
@@ -384,7 +434,7 @@
 
 .arv-countdown__expired {
 	margin: 0;
-	font-size: 1.1rem;
+	font-size: var(--arv-fs-lead);
 	font-weight: 700;
 	color: var(--arv-accent);
 }
@@ -436,7 +486,7 @@
 
 .arv-region-map__eyebrow {
 	margin: 0 0 0.6rem;
-	font-size: 0.72rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.18em;
 	text-transform: uppercase;
@@ -449,7 +499,7 @@
 
 .arv-region-map__heading {
 	margin: 0 0 0.6rem;
-	font-size: clamp(1.9rem, 4vw, 3rem);
+	font-size: clamp(30px, 4vw, 48px);
 	font-weight: 800;
 	line-height: 1.05;
 	color: var(--arv-map-text);
@@ -555,7 +605,7 @@
 	padding: 0.12rem 0.4rem;
 	background: var(--arv-map-chip);
 	color: var(--arv-map-text);
-	font-size: 0.68rem;
+	font-size: var(--arv-fs-micro);
 	font-weight: 700;
 	letter-spacing: 0.02em;
 	white-space: nowrap;
@@ -610,7 +660,7 @@
 	   fill already separate the card from the map perfectly well without it. */
 	background: #121817;
 	color: var(--arv-map-text);
-	font-size: 0.76rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 500;
 	line-height: 1.4;
 	text-align: left;
@@ -659,7 +709,7 @@
 	padding: 0.32rem 0.55rem;
 	background: var(--arv-teal);
 	color: #0d1211;
-	font-size: 0.68rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 800;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
@@ -844,7 +894,7 @@
 
 .arv-region-map__item-name {
 	display: block;
-	font-size: 0.95rem;
+	font-size: var(--arv-fs-body);
 	font-weight: 700;
 	color: var(--arv-map-text);
 	transition: color 0.15s ease;
@@ -868,7 +918,7 @@
 .arv-region-map__item-detail {
 	display: block;
 	margin-top: 0.2rem;
-	font-size: 0.8rem;
+	font-size: var(--arv-fs-meta);
 	line-height: 1.45;
 	color: var(--arv-map-muted);
 }
@@ -907,7 +957,7 @@
 	}
 
 	.arv-region-map__item-name {
-		font-size: 0.85rem;
+		font-size: var(--arv-fs-body);
 		line-height: 1.25;
 	}
 
@@ -1011,13 +1061,13 @@
 
 	.arv-region-map__detail {
 		max-width: 11rem;
-		font-size: 0.7rem;
+		font-size: var(--arv-fs-label);
 	}
 
 	.arv-region-map__detail-name {
 		display: block;
 		margin-bottom: 0.25rem;
-		font-size: 0.82rem;
+		font-size: var(--arv-fs-meta);
 		font-weight: 800;
 		line-height: 1.2;
 		color: #fff;
@@ -1131,7 +1181,7 @@
    eyebrow matches every other label on the site. */
 .arv-races__eyebrow {
 	margin: 0 0 0.4rem;
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-meta);
 	font-weight: 700;
 	letter-spacing: 2px;
 	text-transform: uppercase;
@@ -1140,7 +1190,7 @@
 
 .arv-races__heading {
 	margin: 0 0 0.5rem;
-	font-size: clamp(1.9rem, 4vw, 2.8rem);
+	font-size: clamp(30px, 4vw, 44px);
 	font-weight: 700;
 	line-height: 1.15;
 	color: var(--arv-races-ink);
@@ -1149,7 +1199,7 @@
 .arv-races__intro {
 	margin: 0 0 2rem;
 	max-width: 46rem;
-	font-size: 1rem;
+	font-size: var(--arv-fs-lead);
 	line-height: 1.7;
 	color: var(--arv-races-muted);
 }
@@ -1226,7 +1276,7 @@
 .arv-races__date {
 	display: block;
 	margin-bottom: 0.35rem;
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 1.5px;
 	text-transform: uppercase;
@@ -1235,7 +1285,7 @@
 
 .arv-races__name {
 	margin: 0 0 0.4rem;
-	font-size: 1.18rem;
+	font-size: var(--arv-fs-name);
 	font-weight: 700;
 	line-height: 1.25;
 	color: var(--arv-races-ink);
@@ -1248,14 +1298,14 @@
 
 .arv-races__distances {
 	margin: 0 0 0.3rem;
-	font-size: 0.92rem;
+	font-size: var(--arv-fs-body);
 	line-height: 1.5;
 	color: var(--arv-races-ink);
 }
 
 .arv-races__where {
 	margin: 0 0 1rem;
-	font-size: 0.86rem;
+	font-size: var(--arv-fs-meta);
 	line-height: 1.5;
 	color: var(--arv-races-muted);
 }
@@ -1281,7 +1331,7 @@
 	padding: 0.62rem 1.15rem;
 	background: var(--arv-accent);
 	color: #fff;
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 700;
 	letter-spacing: 1.5px;
 	text-transform: uppercase;
@@ -1302,7 +1352,7 @@
 	background: transparent;
 	border: 2px solid var(--arv-races-rule);
 	color: var(--arv-races-ink);
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 700;
 	letter-spacing: 1.5px;
 	text-transform: uppercase;
@@ -1381,7 +1431,7 @@
 }
 
 .arv-races__all a {
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 700;
 	letter-spacing: 2px;
 	text-transform: uppercase;
@@ -1508,9 +1558,9 @@
 		min-width: 0;
 	}
 
-	.arv-races__name { font-size: 1.05rem; }
-	.arv-races__distances { font-size: 0.86rem; }
-	.arv-races__where { margin-bottom: 0.7rem; font-size: 0.8rem; }
+	.arv-races__name { font-size: var(--arv-fs-name); }
+	.arv-races__distances { font-size: var(--arv-fs-body); }
+	.arv-races__where { margin-bottom: 0.7rem; font-size: var(--arv-fs-meta); }
 
 	/* Two equal columns rather than two content-sized buttons. Sized to
 	   their labels the pair ends at a different point on every card, so a
@@ -1559,7 +1609,7 @@
 		   and the whole row is tappable padding, not just the text. */
 		min-height: 40px;
 		padding: 0.45rem 0.4rem;
-		font-size: 0.66rem;
+		font-size: var(--arv-fs-btn);
 		letter-spacing: 0.4px;
 		/* Grid items default to min-width:auto, so a nowrap label wider than
 		   its 1fr track cannot shrink into it and spills out of the card
@@ -1589,7 +1639,7 @@
 	.arv-races__details:visited {
 		padding-left: 0.4rem;
 		padding-right: 0.4rem;
-		font-size: 0.68rem;
+		font-size: var(--arv-fs-btn);
 		letter-spacing: 0.3px;
 	}
 }
@@ -1627,7 +1677,7 @@
 
 .arv-calendar__eyebrow {
 	margin: 0 0 0.4rem;
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 2px;
 	text-transform: uppercase;
@@ -1636,14 +1686,14 @@
 
 .arv-calendar__heading {
 	margin: 0 0 0.5rem;
-	font-size: clamp(1.9rem, 4vw, 2.6rem);
+	font-size: clamp(30px, 4vw, 42px);
 	font-weight: 700;
 }
 
 .arv-calendar__intro {
 	margin: 0 0 2.5rem;
 	max-width: 40rem;
-	font-size: 0.95rem;
+	font-size: var(--arv-fs-lead);
 	line-height: 1.6;
 	opacity: 0.72;
 }
@@ -1665,7 +1715,7 @@
 	margin: 0 0 0.9rem;
 	padding: 0;
 	border: 0;
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-meta);
 	font-weight: 700;
 	letter-spacing: 2.5px;
 	text-transform: uppercase;
@@ -1735,7 +1785,7 @@
 }
 
 .arv-calendar__day-month {
-	font-size: 0.66rem;
+	font-size: var(--arv-fs-micro);
 	font-weight: 700;
 	letter-spacing: 1.5px;
 	text-transform: uppercase;
@@ -1743,7 +1793,7 @@
 }
 
 .arv-calendar__day-num {
-	font-size: 1.15rem;
+	font-size: var(--arv-fs-name);
 	font-weight: 700;
 	color: inherit;
 }
@@ -1757,18 +1807,18 @@
 
 .arv-calendar__name {
 	font-weight: 700;
-	font-size: 0.98rem;
+	font-size: var(--arv-fs-lead);
 }
 
 .arv-calendar__distances,
 .arv-calendar__where {
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-meta);
 	opacity: 0.65;
 }
 
 .arv-calendar__status {
 	flex: 0 0 auto;
-	font-size: 0.7rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.5px;
 	text-transform: uppercase;
@@ -1809,9 +1859,9 @@
 	}
 	.arv-calendar__logo { flex-basis: 44px; width: 44px; height: 44px; }
 	.arv-calendar__day { flex-basis: 2.6rem; }
-	.arv-calendar__day-num { font-size: 1rem; }
-	.arv-calendar__day-month { font-size: 0.6rem; }
-	.arv-calendar__name { font-size: 0.9rem; }
+	.arv-calendar__day-num { font-size: var(--arv-fs-name); }
+	.arv-calendar__day-month { font-size: var(--arv-fs-micro); }
+	.arv-calendar__name { font-size: var(--arv-fs-lead); }
 	.arv-calendar__status { display: none; }
 
 	/* Buttons drop to their own full line rather than squeezing in beside a
@@ -1845,7 +1895,7 @@
 .arv-calendar__day--tbd {
 	color: inherit;
 	opacity: 0.45;
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-meta);
 	letter-spacing: 0.5px;
 }
 
@@ -1856,7 +1906,7 @@
 
 .arv-calendar__hiatus-intro {
 	margin: 0.5rem 0 0.75rem;
-	font-size: 0.85rem;
+	font-size: var(--arv-fs-body);
 	opacity: 0.65;
 }
 
@@ -1900,7 +1950,7 @@
 	padding: 0.3rem 0.6rem;
 	border: 1px solid rgba(128, 128, 128, 0.35);
 	color: inherit;
-	font-size: 0.68rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 1px;
 	text-transform: uppercase;
@@ -1914,7 +1964,7 @@
 	padding: 0.3rem 0.6rem;
 	border: 1px solid var(--arv-teal-deep);
 	color: var(--arv-teal-deep);
-	font-size: 0.68rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 700;
 	letter-spacing: 1px;
 	text-transform: uppercase;
@@ -1986,7 +2036,7 @@
 	.arv-calendar__action {
 		margin-left: 0.5rem;
 		padding: 0.4rem 0.5rem;
-		font-size: 0.62rem;
+		font-size: var(--arv-fs-btn);
 	}
 }
 
@@ -2053,11 +2103,6 @@
 		overflow: hidden;
 	}
 
-	.arv-calendar__series {
-		max-width: 100%;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
 }
 
 /* ------------------------------------------------ Calendar filters -- */
@@ -2101,7 +2146,7 @@
 }
 
 .arv-calendar__field-label {
-	font-size: 0.68rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 1.5px;
 	text-transform: uppercase;
@@ -2121,7 +2166,7 @@
 	   deliver it, at 14.72px, which is what let iOS zoom the page on focus
 	   in spite of the comment. The label above carries the small type
 	   instead, so the input itself can afford to be a full size larger. */
-	font-size: 16px;
+	font-size: var(--arv-fs-input);
 	min-height: 44px;
 }
 
@@ -2137,7 +2182,7 @@
 	align-items: center;
 	gap: 0.45rem;
 	min-height: 44px;
-	font-size: 0.85rem;
+	font-size: var(--arv-fs-btn);
 	cursor: pointer;
 }
 
@@ -2150,7 +2195,7 @@
 .arv-calendar__count {
 	flex: 1 0 100%;
 	margin: 0;
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-meta);
 	opacity: 0.7;
 }
 
@@ -2237,7 +2282,7 @@
 
 .arv-map__eyebrow {
 	margin: 0 0 0.4rem;
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 2px;
 	text-transform: uppercase;
@@ -2246,7 +2291,7 @@
 
 .arv-map__heading {
 	margin: 0 0 1rem;
-	font-size: clamp(1.9rem, 4vw, 2.6rem);
+	font-size: clamp(30px, 4vw, 42px);
 	font-weight: 700;
 	line-height: 1.15;
 }
@@ -2324,7 +2369,7 @@
 	box-shadow: 0 0 0 4px rgba(42, 94, 107, 0.28);
 	color: #fff;
 	font-weight: 700;
-	font-size: 0.85rem;
+	font-size: var(--arv-fs-label);
 	line-height: 1;
 }
 
@@ -2399,7 +2444,7 @@
 	   viewport, triggered by focusing this exact input. Every browser's
 	   default form-control size is already 16px; this only exists to
 	   override the smaller size the rest of the map's type uses. */
-	font-size: 16px;
+	font-size: var(--arv-fs-input);
 	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	min-height: 44px;
 }
@@ -2473,25 +2518,25 @@
 }
 
 .arv-map__result-name {
-	font-size: 0.9rem;
+	font-size: var(--arv-fs-body);
 	font-weight: 700;
 }
 
 .arv-map__result-where {
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-meta);
 	opacity: 0.7;
 }
 
 .arv-map__missing {
 	margin: 1rem 0 0;
-	font-size: 0.85rem;
+	font-size: var(--arv-fs-body);
 	opacity: 0.7;
 }
 
 .arv-map__fallback ul {
 	margin: 1rem 0 0;
 	padding-left: 1.1rem;
-	font-size: 0.9rem;
+	font-size: var(--arv-fs-body);
 }
 
 /* Series affiliation on a calendar row. Set apart from the distance pills
@@ -2511,13 +2556,29 @@
 	margin: 0.1rem 0;
 	padding: 0.05rem 0.35rem;
 	border: 1px solid var(--arv-teal-deep, #2a5e6b);
-	font-size: 0.65rem;
+	font-size: var(--arv-fs-micro);
 	font-weight: 700;
 	letter-spacing: 0.4px;
 	text-transform: uppercase;
 	line-height: 1.6;
 	white-space: nowrap;
 	color: var(--arv-teal-deep, #2a5e6b);
+}
+
+@media (max-width: 619px) {
+	/* Wraps rather than truncates, and stated here rather than in the
+	   calendar's mobile query further up the file, because the base rule
+	   above is declared below that query and would win on source order.
+
+	   At the 7.8px this chip used to render at, "White Mountain Endurance"
+	   fitted its column and the ellipsis never fired. At a legible size it
+	   wants 187px against the 149px the narrowest row gives it, so holding one
+	   line now means clipping the series name off every White Mountain race. A
+	   row one line taller costs less than a series nobody can read. */
+	.arv-calendar__series {
+		max-width: 100%;
+		white-space: normal;
+	}
 }
 
 /* Distance chips in the calendar list, matching the map popup's. */
@@ -2532,7 +2593,7 @@
 	display: inline-block;
 	padding: 0.05rem 0.35rem;
 	background: rgba(0, 0, 0, 0.06);
-	font-size: 0.72rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.3px;
 	line-height: 1.5;
@@ -2551,7 +2612,7 @@
 	border: 1px solid rgba(0, 0, 0, 0.2);
 	background: #fff;
 	font-family: inherit;
-	font-size: 0.7rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 700;
 	letter-spacing: 0.5px;
 	text-transform: uppercase;
@@ -2598,7 +2659,7 @@
 	padding: 0.9rem 1rem;
 	border: 1px solid rgba(0, 0, 0, 0.15);
 	background: var(--arv-races-card, #f7f7f7);
-	font-size: 0.8rem;
+	font-size: var(--arv-fs-btn);
 }
 
 .arv-map__toggle[aria-expanded="false"]:hover {
@@ -2659,7 +2720,7 @@
 	justify-content: center;
 	gap: 0.3rem;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
-	font-size: 0.7rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.5px;
 	text-transform: uppercase;
@@ -2782,7 +2843,7 @@
 .arv-map__popup-date {
 	margin: 0 0 0.1rem;
 	font-family: Bitter, Georgia, "Times New Roman", serif;
-	font-size: 0.72rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 600;
 	font-style: italic;
 	letter-spacing: 0.3px;
@@ -2791,7 +2852,7 @@
 
 .arv-map__popup-name {
 	margin: 0 0 0.25rem;
-	font-size: 1rem;
+	font-size: var(--arv-fs-lead);
 	font-weight: 700;
 	line-height: 1.2;
 }
@@ -2824,7 +2885,7 @@
 	display: inline-block;
 	padding: 0.1rem 0.4rem;
 	background: rgba(0, 0, 0, 0.06);
-	font-size: 0.72rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.3px;
 	line-height: 1.5;
@@ -2833,7 +2894,7 @@
 
 .arv-map__popup-where {
 	margin: 0 0 0.15rem;
-	font-size: 0.82rem;
+	font-size: var(--arv-fs-meta);
 	line-height: 1.4;
 	opacity: 0.7;
 }
@@ -2850,7 +2911,7 @@
 	display: inline-flex;
 	align-items: center;
 	padding: 0.4rem 0.7rem;
-	font-size: 0.68rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 700;
 	letter-spacing: 1px;
 	text-transform: uppercase;
@@ -3072,7 +3133,7 @@
 	margin: 0 0 1.1rem;
 	padding: 0.35rem 0.75rem;
 	border: 1px solid var(--arv-teal);
-	font-size: 0.72rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 800;
 	letter-spacing: 0.16em;
 	text-transform: uppercase;
@@ -3086,7 +3147,7 @@
 .arv-featured__date {
 	display: block;
 	margin: 0 0 0.5rem;
-	font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+	font-size: clamp(19px, 2.2vw, 24px);
 	font-weight: 800;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -3094,7 +3155,7 @@
 
 .arv-featured__name {
 	margin: 0 0 0.6rem;
-	font-size: clamp(1.9rem, 5vw, 3.2rem);
+	font-size: clamp(30px, 5vw, 52px);
 	line-height: 1.08;
 	font-weight: 800;
 }
@@ -3102,7 +3163,7 @@
 .arv-featured__detail {
 	margin: 0 0 1.5rem;
 	max-width: 30rem;
-	font-size: 1.1rem;
+	font-size: var(--arv-fs-lead);
 	line-height: 1.5;
 	opacity: 0.92;
 }
@@ -3126,7 +3187,7 @@
 	padding: 0.5rem 0 0.5rem 0.85rem;
 	border-left: 3px solid #daa520;
 	max-width: 26rem;
-	font-size: 0.88rem;
+	font-size: var(--arv-fs-meta);
 	font-weight: 600;
 	line-height: 1.4;
 	color: #ffcf5c;
@@ -3140,7 +3201,7 @@
 	padding: 0.3rem 0.7rem;
 	border: 1px solid rgba(255, 255, 255, 0.35);
 	border-radius: 2px;
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.03em;
 	text-transform: uppercase;
@@ -3178,7 +3239,7 @@
 	border: 2px solid var(--arv-accent);
 	background: var(--arv-accent);
 	color: #fff;
-	font-size: 0.85rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 800;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
@@ -3273,14 +3334,14 @@
 }
 
 .arv-featured__host-label {
-	font-size: 0.9rem;
+	font-size: var(--arv-fs-meta);
 	font-weight: 700;
 	line-height: 1.25;
 }
 
 .arv-featured__price {
 	margin: 1.1rem 0 0;
-	font-size: 1.85rem;
+	font-size: var(--arv-fs-heading);
 	font-weight: 800;
 	line-height: 1.15;
 }
@@ -3312,7 +3373,7 @@
 .arv-featured__price-note {
 	display: block;
 	margin-top: 0.4rem;
-	font-size: 0.78rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -3335,7 +3396,7 @@
 
 .arv-featured__perk {
 	padding: 0.3rem 0.6rem;
-	font-size: 0.76rem;
+	font-size: var(--arv-fs-meta);
 	font-weight: 700;
 	line-height: 1.3;
 	background: rgba(255, 255, 255, 0.1);
@@ -3356,7 +3417,7 @@
 	display: flex;
 	align-items: center;
 	gap: 0.55rem;
-	font-size: 0.88rem;
+	font-size: var(--arv-fs-meta);
 }
 
 /* Each platform's own mark, on a light chip. Both are brand colours
@@ -3405,7 +3466,7 @@
 	padding: 0.8rem 1rem;
 	background: var(--arv-teal);
 	color: #fff;
-	font-size: 0.8rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 800;
 	letter-spacing: 0.06em;
 	line-height: 1.2;
@@ -3426,7 +3487,7 @@
 .arv-featured__info:link,
 .arv-featured__info:visited {
 	color: inherit;
-	font-size: 0.85rem;
+	font-size: var(--arv-fs-btn);
 	font-weight: 700;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
@@ -3528,7 +3589,7 @@
 		justify-content: center;
 		min-height: 44px;
 		padding: 0.6rem 0.5rem;
-		font-size: 0.72rem;
+		font-size: var(--arv-fs-btn);
 		letter-spacing: 0.04em;
 		text-align: center;
 		/* Grid items default to min-width:auto, so a label wider than its
@@ -3576,7 +3637,7 @@
 	}
 
 	.arv-featured__price {
-		font-size: 1.75rem;
+		font-size: var(--arv-fs-heading);
 	}
 
 	/* The card's own button is the third call to action in this block. It
@@ -3588,7 +3649,7 @@
 		min-height: 44px;
 		margin-top: 0.9rem;
 		padding: 0.6rem 0.75rem;
-		font-size: 0.72rem;
+		font-size: var(--arv-fs-btn);
 	}
 
 	/* The panel's own gutters. 1.25rem on each side of a 390px screen left
@@ -3605,48 +3666,6 @@
    cards: four columns of the same kind of thing, read across. Same plain
    register as the calendar, hairline rules and type, because this is an
    index rather than a dashboard. */
-
-/* Type scale, in pixels on purpose.
-
-   The theme sets html { font-size: 15px } on desktop and 12px under 620px,
-   so every rem in these elements resolved against a root smaller than the
-   16px they were written for, and smaller again on a phone. The rest of the
-   site sets its body copy at 15px; this element's meta lines were landing at
-   12.75px and its buttons at 10.8px, so the whole block read a size or two
-   below every other page. Sizing in rem hands the theme control of
-   legibility, and the theme is not using that control to say anything
-   deliberate, so the scale is stated outright, and the phone breakpoint
-   adjusts the scale rather than each of forty rules.
-
-   --arv-fs-body is 15px because that is what the rest of the site uses:
-   matching it is the whole point. --arv-fs-input never goes below 16px,
-   since iOS Safari zooms the page in on focusing any smaller field, a real
-   bug the old 1rem hid at both breakpoints. */
-.arv-results,
-.arv-live,
-.arv-live-index {
-	--arv-fs-label: 12px;
-	--arv-fs-btn: 13px;
-	--arv-fs-meta: 14px;
-	--arv-fs-body: 15px;
-	--arv-fs-input: 16px;
-	--arv-fs-name: 19px;
-	--arv-fs-title: 24px;
-	--arv-fs-heading: 30px;
-}
-
-@media (max-width: 619px) {
-	/* Only the display sizes come down. Body copy, labels and controls hold
-	   their size, because a phone is where they most need to stay readable. */
-	.arv-results,
-	.arv-live,
-	.arv-live-index {
-		--arv-fs-btn: 12px;
-		--arv-fs-name: 18px;
-		--arv-fs-title: 22px;
-		--arv-fs-heading: 26px;
-	}
-}
 
 .arv-results {
 	text-align: left;
