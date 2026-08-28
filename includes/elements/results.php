@@ -377,8 +377,10 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			'iso'       => $race['iso'],
 			'display'   => $race['display'],
 			'image'     => $race['image'],
+			'page'      => $race['page'],
 			'distances' => $race['distances'],
 			'url'       => $action['url'],
+			'social'    => arv_results_race_social( $race ),
 			'state'     => $state,
 		);
 	}
@@ -412,14 +414,35 @@ function arv_results_race_week( $today, $grace = 3 ) {
 
 		$out .= '<li class="arv-results__week-race arv-results__week-race--' . esc_attr( $race['state'] ) . '">';
 
+		$page = trim( (string) $race['page'] );
+
 		if ( '' !== trim( (string) $race['image'] ) ) {
 			// alt is empty on purpose: the name is right beside it, so a
-			// screen reader announcing the logo too is repetition.
-			$out .= '<img class="arv-results__week-logo" src="' . esc_url( $race['image'] ) . '" alt="" loading="lazy" decoding="async" />';
+			// screen reader announcing the logo too is repetition. That is
+			// also why the logo link is aria-hidden and not focusable: it
+			// goes exactly where the name beside it goes, and a keyboard
+			// should not have to pass through the same destination twice.
+			$logo = '<img class="arv-results__week-logo" src="' . esc_url( $race['image'] ) . '" alt="" loading="lazy" decoding="async" />';
+
+			$out .= ( '' !== $page )
+				? '<a class="arv-results__week-logo-link" href="' . esc_url( $page ) . '" tabindex="-1" aria-hidden="true">' . $logo . '</a>'
+				: $logo;
 		}
 
 		$out .= '<div class="arv-results__week-body">';
-		$out .= '<span class="arv-results__week-name">' . esc_html( $race['name'] ) . '</span>';
+
+		// Name and date share a line, and wrap to two when there is not
+		// room. On a desktop that turns three stacked lines into two; on a
+		// phone it falls back to the stack on its own, without a breakpoint
+		// having to guess where the name stops fitting.
+		$out .= '<span class="arv-results__week-head">';
+		$out .= '<span class="arv-results__week-name">';
+		$out .= ( '' !== $page )
+			? '<a class="arv-results__week-link" href="' . esc_url( $page ) . '">' . esc_html( $race['name'] ) . '</a>'
+			: esc_html( $race['name'] );
+		$out .= '</span>';
+		$out .= '<time class="arv-results__week-date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
+		$out .= '</span>';
 
 		$distances = arv_split_distances( $race['distances'] );
 		if ( ! empty( $distances ) ) {
@@ -430,13 +453,25 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			$out .= '</span>';
 		}
 
-		$out .= '<time class="arv-results__week-date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
 		$out .= '</div>';
 
 		$out .= arv_results_week_status( $race );
 
 		$out .= '<a class="arv-results__link arv-results__link--live" href="' . esc_url( $race['url'] ) . '" target="_blank" rel="noopener">'
 			. esc_html( __( 'Live Results', 'aravaipa-elements' ) ) . '</a>';
+
+		if ( '' !== $race['social']['url'] ) {
+			$out .= '<a class="arv-results__week-social" href="' . esc_url( $race['social']['url'] ) . '" target="_blank" rel="noopener">'
+				. '<span class="arv-results__sr">'
+				. esc_html( sprintf( /* translators: %s is an Instagram account name. */ __( '%s on Instagram', 'aravaipa-elements' ), $race['social']['label'] ) )
+				. '</span>'
+				. '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">'
+				. '<rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+				. '<circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+				. '<circle cx="17.4" cy="6.6" r="1.2" fill="currentColor"/>'
+				. '</svg></a>';
+		}
+
 		$out .= '</li>';
 	}
 
@@ -444,6 +479,57 @@ function arv_results_race_week( $today, $grace = 3 ) {
 	$out .= '</section>';
 
 	return $out;
+}
+
+/**
+ * Which of Aravaipa's accounts actually covers this race.
+ *
+ * A runner at Black Bear wants White Mountain Endurance, not the national
+ * account: that is where the course photos and the start-line video go.
+ * Rock Hawk wants Aravaipa Colorado for the same reason.
+ *
+ * Keyed off the region the store already works out at import time, so this
+ * is not a second mapping of races to places that can disagree with the
+ * first one.
+ *
+ * Every handle here was read off that region's own page on
+ * aravaiparunning.com rather than guessed. Regions with no account of their
+ * own fall through to the national one, which is the honest answer: the
+ * California page links an embedded post from a partner club, and sending
+ * people there as though it were ours would be worse than sending them to
+ * the main account.
+ *
+ * @param array $race
+ * @return array {url, label}
+ */
+function arv_results_race_social( $race ) {
+	$accounts = array(
+		'white-mountain-endurance' => array( 'whitemountainendurance', 'White Mountain Endurance' ),
+		'great-lakes-endurance'    => array( 'greatlakesendurance', 'Great Lakes Endurance' ),
+		'ultra-adventures'         => array( 'ultraadventures', 'Ultra Adventures' ),
+		'bad-beard'                => array( 'badbeardevents', 'Bad Beard Events' ),
+		'colorado'                 => array( 'aravaipacolorado', 'Aravaipa Colorado' ),
+	);
+
+	$region = function_exists( 'arv_race_store_region_for' ) ? arv_race_store_region_for( $race ) : '';
+
+	$account = isset( $accounts[ $region ] )
+		? $accounts[ $region ]
+		: array( 'aravaiparunning', 'Aravaipa Running' );
+
+	/**
+	 * Filters the Instagram account shown beside a race.
+	 *
+	 * @param array  $account array( handle, label )
+	 * @param string $region
+	 * @param array  $race
+	 */
+	$account = apply_filters( 'arv_results_race_social', $account, $region, $race );
+
+	return array(
+		'url'   => 'https://www.instagram.com/' . $account[0] . '/',
+		'label' => $account[1],
+	);
 }
 
 /**

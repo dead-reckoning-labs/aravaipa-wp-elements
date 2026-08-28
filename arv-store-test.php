@@ -718,7 +718,7 @@ t( 'with a live results link',         false !== strpos( $week, 'live.aravaiparu
 t( 'it sits above the search box',     strpos( $week, 'arv-results__week' ) < strpos( $week, 'data-arv-results-search' ) );
 
 // Each race carries its own logo, distances and full date.
-t( 'each race shows its logo',         2 === substr_count( $week, 'arv-results__week-logo' ) );
+t( 'each race shows its logo',         2 === substr_count( $week, 'arv-results__week-logo"' ) );
 t( 'and its distances',                substr_count( $week, 'arv-results__week-pill' ) >= 8 );
 t( 'and the year, not just the day',   false !== strpos( $week, 'August 29, 2026' ) );
 
@@ -738,6 +738,23 @@ t( 'completed is hidden too',          2 === substr_count( $week, 'arv-results__
 // followed by nothing.
 t( 'the countdown has a server value', (bool) preg_match( '/countdown-value"[^>]*>in \d+ (hour|day)/', $week ) );
 t( 'and no "first race in" label',     false === strpos( $week, 'First race in' ) );
+
+// Name and logo both go to the race's own page. The logo link is hidden
+// from assistive tech and unfocusable: same destination as the name beside
+// it, so a keyboard should not stop on it twice.
+t( 'the race name links to its page',  false !== strpos( $week, 'arv-results__week-link" href="https://www.aravaiparunning.com/bear-chase-series/rock-hawk/"' ) );
+t( 'the logo links there too',         false !== strpos( $week, 'arv-results__week-logo-link' ) );
+t( 'and is skipped by the keyboard',   false !== strpos( $week, 'tabindex="-1" aria-hidden="true"' ) );
+
+// The account that actually covers each race, not the national feed.
+t( 'Rock Hawk points at Colorado',     false !== strpos( $week, 'instagram.com/aravaipacolorado/' ) );
+t( 'Black Bear points at WME',         false !== strpos( $week, 'instagram.com/whitemountainendurance/' ) );
+t( 'the icon link is named',           false !== strpos( $week, 'on Instagram' ) );
+
+// A race in a region with no account of its own falls back rather than
+// borrowing somebody else's: the California page links a partner club.
+$az = arv_results_race_social( array( 'name' => 'Javelina Jundred', 'page' => 'https://www.aravaiparunning.com/javelina/', 'location' => 'Fountain Hills, AZ' ) );
+t( 'a region with no account falls back', false !== strpos( $az['url'], 'instagram.com/aravaiparunning/' ) );
 
 // Race day.
 $GLOBALS['NOW'] = '2026-08-29';

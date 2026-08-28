@@ -50,6 +50,10 @@
 		var live = scope ? scope.querySelector( '[data-arv-results-live]' ) : null;
 		var timer = null;
 
+		function pad( n ) {
+			return n < 10 ? '0' + n : String( n );
+		}
+
 		function tick() {
 			var left = target - Date.now();
 
@@ -72,18 +76,20 @@
 			var d = Math.floor( s / 86400 );
 			var h = Math.floor( ( s % 86400 ) / 3600 );
 			var m = Math.floor( ( s % 3600 ) / 60 );
+			var sec = s % 60;
 
-			// Refines what PHP already wrote rather than replacing it with a
-			// different shape. Days and hours until the last day, then hours
-			// and minutes. Seconds are noise at this range and would redraw
-			// the line sixty times a minute to say nothing.
-			value.textContent = d > 0
-				? 'in ' + d + ( 1 === d ? ' day ' : ' days ' ) + h + ( 1 === h ? ' hour' : ' hours' )
-				: 'in ' + h + ( 1 === h ? ' hour ' : ' hours ' ) + m + ( 1 === m ? ' minute' : ' minutes' );
+			// Replaces the coarse phrase PHP rendered, which exists so the
+			// line is never blank before this runs. Days only appear while
+			// there are any, so the common case on race eve is a plain
+			// clock rather than "0d" padding.
+			value.textContent = ( d > 0 ? d + 'd ' : '' ) + pad( h ) + ':' + pad( m ) + ':' + pad( sec );
 		}
 
 		tick();
-		timer = window.setInterval( tick, 30000 );
+		// Every second, because it is a countdown and a countdown that does
+		// not move is a date. Cheap: one text node per race, and the whole
+		// thing stops the moment it reaches zero.
+		timer = window.setInterval( tick, 1000 );
 	}
 
 	function wire( input ) {
