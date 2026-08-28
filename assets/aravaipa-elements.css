@@ -4017,12 +4017,36 @@
 .arv-results__latest {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
+	/* Top rather than centre: the left column is now two lines tall on a
+	   race with winners, and centring against it floated the buttons into
+	   the middle of the block instead of lining them up with the name. */
+	align-items: flex-start;
 	justify-content: space-between;
 	gap: 0.75rem;
 }
 
+/* Name and date on one line, the way the race week block above already
+   sets them. They stay separate elements, a heading and a paragraph, so the
+   document still says "this race" and "this running of it"; only the layout
+   puts them side by side. Baseline alignment rather than centre, because the
+   date is much smaller than the name and centring floats it. */
 .arv-results__race-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.1rem 0.6rem;
+	/* Takes the space the buttons do not, and no more. Without the basis of
+	   zero the winners line below, which is deliberately full width, sets
+	   this column's preferred width to the whole row and pushes the buttons
+	   onto a line of their own. */
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+/* The winners line belongs under the name, not beside it, so it claims the
+   whole row of this column and wraps onto its own line. */
+.arv-results__race-head > .arv-results__winners {
+	flex: 1 1 100%;
 	min-width: 0;
 }
 
@@ -4034,43 +4058,34 @@
 }
 
 .arv-results__race-meta {
-	margin: 0.15rem 0 0;
+	margin: 0;
 	font-size: 0.85rem;
 	color: var(--arv-results-muted);
 }
 
-/* The one line on a row that varies.
+/* The one number on a row that varies.
 
    Every other part of a race group is the same shape on all seventy-four of
    them: a name, a date, three buttons. Numbers are the only thing that
    differs from row to row, which is what gives the eye somewhere to land
-   while scanning, so this line is the reason the archive reads as a list of
-   results rather than as a list of links. Muted and small all the same: it
-   is a fact about the race, not a claim on attention, and the race name has
-   to stay the loudest thing in the group. */
-.arv-results__stats {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 0.3rem 0.5rem;
-	margin: 0.2rem 0 0;
-	font-size: 0.8rem;
-	color: var(--arv-results-muted);
-}
-
+   while scanning. Muted and small all the same: it is a fact about the race,
+   not a claim on attention, and the race name has to stay the loudest thing
+   in the group. */
 .arv-results__stat {
 	font-variant-numeric: tabular-nums;
 }
 
-/* Inside the expander the count rides on the date line, so it needs its own
-   separation there; the wrapper above does not apply. */
-.arv-results__edition-date .arv-results__stat {
+/* The count always rides on a date line, latest edition and older ones
+   alike, so it carries its own separator rather than relying on a wrapper. */
+.arv-results__edition-date .arv-results__stat,
+.arv-results__race-meta .arv-results__stat {
 	margin-left: 0.15rem;
 	font-weight: 400;
 	color: var(--arv-results-muted);
 }
 
-.arv-results__edition-date .arv-results__stat::before {
+.arv-results__edition-date .arv-results__stat::before,
+.arv-results__race-meta .arv-results__stat::before {
 	content: "\00b7";
 	margin-right: 0.35rem;
 }

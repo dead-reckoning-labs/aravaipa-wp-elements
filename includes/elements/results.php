@@ -950,22 +950,31 @@ function arv_results_by_race( $rows, $show_search ) {
 		$out .= '<div class="arv-results__race-group" data-arv-results-race="'
 			. esc_attr( strtolower( $latest['name'] ) ) . '">';
 
+		$stats = arv_stats_store_find( $latest['live'] );
+
 		$out .= '<div class="arv-results__latest">';
 		$out .= '<div class="arv-results__race-head">';
 		$out .= '<h3 class="arv-results__race-name">' . esc_html( $latest['name'] ) . '</h3>';
+
+		// The date sits beside the name rather than under it, the way the
+		// race week block already puts them, and the finisher count joins it
+		// rather than taking a line of its own. Three separate lines of
+		// heading before the first fact about the race, seventy-four times
+		// down the page, is most of what made this list feel long. They are
+		// still separate elements: a heading is the race, a paragraph is when
+		// it ran and how many finished, and only the layout puts them on one
+		// line.
 		$out .= '<p class="arv-results__race-meta">' . esc_html( arv_results_edition_label( $latest ) );
 
 		if ( ! empty( $latest['current'] ) ) {
 			$out .= ' <span class="arv-results__flag">' . esc_html( __( 'Happening now', 'aravaipa-elements' ) ) . '</span>';
 		}
 
-		$out .= '</p>';
-		$out .= arv_results_stat_line( $latest, true );
+		$out .= arv_results_finisher_count( $stats ) . '</p>';
+		$out .= arv_results_headline_winners( $stats );
 		$out .= '</div>';
 		$out .= arv_results_links( $latest );
 		$out .= '</div>';
-
-		$stats = arv_stats_store_find( $latest['live'] );
 
 		if ( null !== $stats ) {
 			$out .= arv_results_winners_table( $stats );
@@ -1001,7 +1010,7 @@ function arv_results_by_race( $rows, $show_search ) {
 			foreach ( $older as $edition ) {
 				$out .= '<div class="arv-results__edition">';
 				$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) )
-					. arv_results_stat_line( $edition, false ) . '</p>';
+					. arv_results_finisher_count( arv_stats_store_find( $edition['live'] ) ) . '</p>';
 				$out .= arv_results_links( $edition );
 				$out .= '</div>';
 			}
@@ -1018,48 +1027,34 @@ function arv_results_by_race( $rows, $show_search ) {
 }
 
 /**
- * What happened at one edition: how many finished, and who won.
+ * How many people finished, as a fragment of the line it sits on.
  *
- * The archive's whole problem was that no part of a row varied. Name, date,
- * three buttons, seventy-four times, so the eye had nothing to catch on and
- * the page scanned as wallpaper. A finisher count is the fix and it is also
- * the one fact the events calendar structurally cannot carry, since an event
- * that has not happened has no finishers.
+ * Never its own line. It rides on the date, for the latest edition and for
+ * every older one, because a count is a fact about that running rather than
+ * a separate thing to say about it, and giving it a line of its own is what
+ * made a race group four lines tall before the first result appeared.
  *
  * Silent when there is nothing to say. A race that has not been run yet
  * reads zero finishers, correctly, and "0 finishers" under next weekend's
  * race would be a worse answer than none.
  *
- * @param array $row
- * @param bool  $with_winner Whether this row is the one that names winners.
+ * @param array|null $stats
  * @return string
  */
-function arv_results_stat_line( $row, $with_winner ) {
-	$stats = arv_stats_store_find( isset( $row['live'] ) ? $row['live'] : '' );
-
+function arv_results_finisher_count( $stats ) {
 	if ( null === $stats || empty( $stats['finishers'] ) ) {
 		return '';
 	}
 
 	$finishers = (int) $stats['finishers'];
 
-	$count = sprintf(
-		// translators: %s is a formatted count of finishers.
-		_n( '%s finisher', '%s finishers', $finishers, 'aravaipa-elements' ),
-		number_format_i18n( $finishers )
-	);
-
-	if ( ! $with_winner ) {
-		// Folded into the date line rather than given one of its own: an
-		// expander holding six editions is already tall, and doubling its
-		// height to carry six short numbers is how a disclosure stops
-		// being worth closing.
-		return ' <span class="arv-results__stat">' . esc_html( $count ) . '</span>';
-	}
-
-	return '<p class="arv-results__stats"><span class="arv-results__stat">'
-		. esc_html( $count ) . '</span></p>'
-		. arv_results_headline_winners( $stats );
+	return ' <span class="arv-results__stat">' . esc_html(
+		sprintf(
+			// translators: %s is a formatted count of finishers.
+			_n( '%s finisher', '%s finishers', $finishers, 'aravaipa-elements' ),
+			number_format_i18n( $finishers )
+		)
+	) . '</span>';
 }
 
 /**

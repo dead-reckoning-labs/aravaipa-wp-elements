@@ -1174,52 +1174,59 @@ arv_stats_store_set( array(
 	array( 'slug' => 'rock_hawk-2026', 'finishers' => 0 ),
 ) );
 
-$latest = array( 'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' );
-$line   = arv_results_stat_line( $latest, true );
-t( 'the count is on the row',           false !== strpos( $line, '1,470 finishers' ) );
+$stats = arv_stats_store_find( 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' );
 
-// Both divisions, not one winner. At Bear Chase 2024 the women's 100K
-// champion beat the men's, so naming a single winner was a wrong answer.
-t( 'the headline names the men',        false !== strpos( $line, 'Alex Bustamante' ) );
-t( 'and the women',                     false !== strpos( $line, 'Sydney Park' ) );
-t( 'with their times',                  false !== strpos( $line, '5:49:58' ) && false !== strpos( $line, '6:02:07' ) );
-t( 'and the distance they ran',         false !== strpos( $line, '>52K<' ) );
-t( 'normalised, like everywhere else',  false === strpos( $line, '52KM' ) );
-
-// The division is named for a screen reader and not drawn: sighted readers
-// get it from the names, and "Men Alex Bustamante" is scaffolding.
-t( 'divisions are named for a11y',      false !== strpos( $line, 'Men: ' ) && false !== strpos( $line, 'Women: ' ) );
-
-// Only the premier distance. The rest are in the table.
-t( 'the headline is one distance',      false === strpos( $line, 'Devin Sharps' ) );
-
-// The winner belongs to the top of a group only.
-$older = arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2025' ), false );
-t( 'an older edition still counts',     false !== strpos( $older, '312 finishers' ) );
-t( 'but names no winner',               false === strpos( $older, 'Alex Bustamante' ) );
-t( 'and stays inside the date line',    false === strpos( $older, '<p' ) );
+// The count rides on the date line rather than taking one of its own.
+$count = arv_results_finisher_count( $stats );
+t( 'the count is a line fragment',      false !== strpos( $count, '1,470 finishers' ) );
+t( 'and never its own block',           false === strpos( $count, '<p' ) );
 
 // Silence, not "0 finishers", under a race that has not happened.
-t( 'a future race says nothing',        '' === arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026' ), true ) );
-t( 'nor does an unknown race',          '' === arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/nope-2026' ), true ) );
-t( 'nor one with no live link',         '' === arv_results_stat_line( array( 'live' => '' ), true ) );
-t( 'nor one with no link key at all',   '' === arv_results_stat_line( array(), true ) );
+t( 'a future race counts nothing',      '' === arv_results_finisher_count( arv_stats_store_find( 'https://live.aravaiparunning.com/#/rock_hawk-2026' ) ) );
+t( 'nor does an unknown race',          '' === arv_results_finisher_count( arv_stats_store_find( 'https://live.aravaiparunning.com/#/nope-2026' ) ) );
+t( 'nor no stats at all',               '' === arv_results_finisher_count( null ) );
 
 // One finisher is a finisher, not a finishers.
 arv_stats_store_set( array( array( 'slug' => 'solo-2026', 'finishers' => 1 ) ) );
-t( 'one finisher reads singular',       false !== strpos( arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/solo-2026' ), true ), '1 finisher<' ) );
+t( 'one finisher reads singular',       false !== strpos( arv_results_finisher_count( arv_stats_store_find( 'https://live.aravaiparunning.com/#/solo-2026' ) ), '1 finisher<' ) );
+
+echo "\nresults stats: the marquee winners:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$head = arv_results_headline_winners( array(
+	'headline' => true,
+	'winners'  => array(
+		array(
+			'distance' => '52KM',
+			'men'      => array( 'name' => 'Alex Bustamante', 'time' => '5:49:58' ),
+			'women'    => array( 'name' => 'Sydney Park', 'time' => '6:02:07' ),
+		),
+		array( 'distance' => '20K', 'men' => array( 'name' => 'Devin Sharps', 'time' => '1:33:38' ) ),
+	),
+) );
+
+// Both divisions, not one winner. At Bear Chase 2024 the women's 100K
+// champion beat the men's, so naming a single winner was a wrong answer.
+t( 'the headline names the men',        false !== strpos( $head, 'Alex Bustamante' ) );
+t( 'and the women',                     false !== strpos( $head, 'Sydney Park' ) );
+t( 'with their times',                  false !== strpos( $head, '5:49:58' ) && false !== strpos( $head, '6:02:07' ) );
+t( 'and the distance they ran',         false !== strpos( $head, '>52K<' ) );
+t( 'normalised, like everywhere else',  false === strpos( $head, '52KM' ) );
+
+// The division is named for a screen reader and not drawn: sighted readers
+// get it from the names, and "Men Alex Bustamante" is scaffolding.
+t( 'divisions are named for a11y',      false !== strpos( $head, 'Men: ' ) && false !== strpos( $head, 'Women: ' ) );
+
+// Only the premier distance. The rest are in the table.
+t( 'the headline is one distance',      false === strpos( $head, 'Devin Sharps' ) );
 
 // A winner's name is untrusted text like any other.
-arv_stats_store_set( array( array(
-	'slug'      => 'xss-2026',
-	'finishers' => 5,
-	'headline'  => true,
-	'winners'   => array( array(
-		'distance' => '50K',
-		'men'      => array( 'name' => '<script>x</script>', 'time' => '1:00:00' ),
+t( 'a winner name is escaped',          false === strpos(
+	arv_results_headline_winners( array(
+		'headline' => true,
+		'winners'  => array( array( 'distance' => '50K', 'men' => array( 'name' => '<script>x</script>', 'time' => '1:00:00' ) ) ),
 	) ),
-) ) );
-t( 'a winner name is escaped',          false === strpos( arv_results_stat_line( array( 'live' => 'https://live.aravaiparunning.com/#/xss-2026' ), true ), '<script>' ) );
+	'<script>x'
+) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nresults stats: the winners table:\n";
@@ -1319,6 +1326,10 @@ $rows = array(
 
 $html = arv_results_by_race( $rows, false );
 t( 'the latest edition counts',         false !== strpos( $html, '349 finishers' ) );
+
+// The count belongs on the date line. Its own paragraph is what made a race
+// group four lines tall before the first result showed up.
+t( 'on the date line, not its own',     false !== strpos( $html, 'August 8, 2026 <span class="arv-results__stat">349 finishers</span>' ) );
 t( 'and names its marquee winners',     false !== strpos( $html, 'Alex Bustamante' ) && false !== strpos( $html, 'Sydney Park' ) );
 t( 'the table holds the other one',     false !== strpos( $html, 'Devin Sharps' ) );
 t( 'the older edition carries a count', false !== strpos( $html, '312 finishers' ) );
