@@ -34,6 +34,13 @@ function _n( $a, $b, $n, $d = '' ) { return 1 === (int) $n ? $a : $b; }
 // WordPress groups thousands here. Modelled rather than stubbed to a bare
 // cast, because "1,470 finishers" is the string the page actually renders.
 function number_format_i18n( $n, $d = 0 ) { return number_format( (float) $n, (int) $d ); }
+function add_shortcode( $tag, $fn ) { $GLOBALS['SHORTCODES'][ $tag ] = $fn; }
+function shortcode_atts( $pairs, $atts, $tag = '' ) { return array_merge( $pairs, (array) $atts ); }
+function esc_html__( $s, $d = '' ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+function wp_unslash( $v ) { return $v; }
+function get_queried_object_id() { return 0; }
+function get_permalink( $id = 0 ) { return 'https://www.aravaiparunning.com/live/test/'; }
+
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_json_encode( $d, $f = 0 ) { return json_encode( $d, $f ); }
@@ -58,7 +65,16 @@ function is_singular( $t = '' ) { return $GLOBALS['IS_SINGULAR'] ?? false; }
 function is_page( $p = '' ) { return $GLOBALS['IS_PAGE'] ?? false; }
 function is_front_page() { return $GLOBALS['IS_FRONT'] ?? false; }
 function esc_attr__( $s, $d = '' ) { return $s; }
-function add_query_arg( $a ) { return $GLOBALS['CURRENT_PATH'] ?? '/'; }
+// WordPress accepts both add_query_arg( array ) and add_query_arg( k, v, url ).
+// Modelled rather than stubbed to one, because the SEO code calls the first
+// form and the live page calls the second.
+function add_query_arg( $a, $v = null, $url = null ) {
+	if ( null === $v ) {
+		return $GLOBALS['CURRENT_PATH'] ?? '/';
+	}
+	$sep = ( false === strpos( (string) $url, '?' ) ) ? '?' : '&';
+	return $url . $sep . rawurlencode( $a ) . '=' . rawurlencode( $v );
+}
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function register_rest_route( $ns, $route, $args = array() ) {}
 
@@ -128,6 +144,7 @@ require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/stats-store.php';
+require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
 
 $pass = 0; $fail = 0;
@@ -1336,6 +1353,124 @@ t( 'unless it is forced',               'ok' === arv_stats_rest_set( new ARV_Req
 ) ) )['status'] );
 $GLOBALS['ARV_OPTIONS'] = array();
 
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nlive page: editions and year picking:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+	// A different race, which must not be swept into the group.
+	array( 'name' => 'Rock Hawk', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026' ),
+) );
+
+$eds = arv_live_editions( 'black_bear-2026' );
+t( 'both editions are found',           2 === count( $eds ) );
+t( 'newest first',                      '2026-08-29' === $eds[0]['iso'] );
+t( 'another race is not swept in',      1 === count( arv_live_editions( 'rock_hawk-2026' ) ) );
+t( 'an unknown slug finds none',        array() === arv_live_editions( 'nope-2026' ) );
+t( 'and a blank slug is safe',          array() === arv_live_editions( '' ) );
+
+// The board renames races between years: Kilkenny Ridge is
+// "kilkenny_ridge-2025" and then "killeny_ridge-2026", typo included. Slug
+// surgery would split the race in two; grouping by name does not.
+arv_results_store_set( array(
+	array( 'name' => 'Kilkenny Ridge Race', 'iso' => '2026-09-19', 'display' => 'September 19',
+	       'live' => 'https://live.aravaiparunning.com/#/killeny_ridge-2026' ),
+	array( 'name' => 'Kilkenny Ridge Race', 'iso' => '2025-09-20', 'display' => 'September 20',
+	       'live' => 'https://live.aravaiparunning.com/#/kilkenny_ridge-2025' ),
+) );
+t( 'a renamed slug still groups',       2 === count( arv_live_editions( 'killeny_ridge-2026' ) ) );
+t( 'from either end of the rename',     2 === count( arv_live_editions( 'kilkenny_ridge-2025' ) ) );
+
+$two = array( array( 'iso' => '2026-08-29' ), array( 'iso' => '2025-08-30' ) );
+t( 'a year picks its edition',          '2025-08-30' === arv_live_pick_edition( $two, '2025' )['iso'] );
+t( 'no year picks the newest',          '2026-08-29' === arv_live_pick_edition( $two, '' )['iso'] );
+// A stale link should land on this year's race, not on an empty page.
+t( 'a year that never ran falls back',  '2026-08-29' === arv_live_pick_edition( $two, '2019' )['iso'] );
+t( 'and junk does too',                 '2026-08-29' === arv_live_pick_edition( $two, 'drop table' )['iso'] );
+t( 'nothing at all is null',            null === arv_live_pick_edition( array(), '2025' ) );
+
+echo "\nlive page: what a crawler sees:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+arv_stats_store_set( array(
+	array( 'slug' => 'black_bear-2026', 'finishers' => 0 ),
+	array(
+		'slug' => 'black_bear-2025', 'finishers' => 225, 'headline' => true,
+		'winners' => array(
+			array( 'distance' => '50K',
+			       'men'   => array( 'name' => 'Sam Reed', 'time' => '4:41:02' ),
+			       'women' => array( 'name' => 'Ana Cruz', 'time' => '5:02:19' ) ),
+			array( 'distance' => '23K',
+			       'men'   => array( 'name' => 'Tom Vale', 'time' => '1:52:40' ) ),
+		),
+	),
+) );
+
+$html = arv_live_page_render( array( 'slug' => 'black_bear-2026' ) );
+t( 'the race is named in the heading',  false !== strpos( $html, 'Black Bear Trail Race' ) );
+t( 'the board is framed',               false !== strpos( $html, '<iframe' ) && false !== strpos( $html, 'black_bear-2026' ) );
+
+// An iframe is invisible to a crawler and unreachable to some assistive
+// technology, so a real anchor to the board has to exist alongside it.
+t( 'and also plainly linked',           false !== strpos( $html, 'Open full live results' ) );
+t( 'the frame cannot navigate the top', false !== strpos( $html, 'sandbox="allow-scripts allow-same-origin allow-popups"' ) );
+t( 'the years are real links',          false !== strpos( $html, 'year=2025' ) );
+
+// This edition has not been run, so there is nothing to report and
+// "0 finishers" would be worse than silence.
+t( 'an unrun edition reports nothing',  false === strpos( $html, 'finisher' ) );
+
+$last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '2025' ) );
+t( 'last year renders its own page',    false !== strpos( $last, '2025 results' ) );
+t( 'with its finisher count',           false !== strpos( $last, '225 finishers' ) );
+t( 'and its winners, in real HTML',     false !== strpos( $last, 'Sam Reed' ) && false !== strpos( $last, 'Ana Cruz' ) );
+t( 'columns are the scored divisions',  false !== strpos( $last, '>Men<' ) && false !== strpos( $last, '>Women<' ) );
+t( 'a division nobody won is blank',    false !== strpos( $last, '<td></td>' ) );
+t( 'the frame follows the year',        false !== strpos( $last, 'black_bear-2025' ) );
+
+// The board is the authority on what it is timing. A race added this week
+// should get a working live page before the archive scraper has ever run.
+$GLOBALS['ARV_OPTIONS'] = array();
+$bare = arv_live_page_render( array( 'slug' => 'brand_new-2026' ) );
+t( 'an unknown race still gets a frame', false !== strpos( $bare, 'brand_new-2026' ) );
+t( 'but claims nothing about it',        false === strpos( $bare, 'finisher' ) );
+t( 'and no slug renders nothing',        '' === arv_live_page_render( array( 'slug' => '' ) ) );
+t( 'nor does no argument at all',        '' === arv_live_page_render() );
+
+// A single edition needs no switcher.
+arv_results_store_set( array(
+	array( 'name' => 'One Off', 'iso' => '2026-01-01', 'display' => 'January 1',
+	       'live' => 'https://live.aravaiparunning.com/#/one_off-2026' ),
+) );
+t( 'one edition shows no year switcher', false === strpos( arv_live_page_render( array( 'slug' => 'one_off-2026' ) ), 'arv-live__years' ) );
+
+// A winner's name is untrusted text like any other.
+arv_stats_store_set( array( array(
+	'slug' => 'one_off-2026', 'finishers' => 3, 'headline' => true,
+	'winners' => array( array( 'distance' => '10K', 'men' => array( 'name' => '<script>x</script>', 'time' => '0:40:00' ) ) ),
+) ) );
+t( 'a winner name is escaped',           false === strpos( arv_live_page_render( array( 'slug' => 'one_off-2026' ) ), '<script>x' ) );
+
+// The height is an editor field, so it is clamped rather than trusted.
+$tall = arv_live_page_render( array( 'slug' => 'one_off-2026', 'height' => 999999 ) );
+t( 'an absurd height is clamped',        false !== strpos( $tall, 'height:2000px' ) );
+$short = arv_live_page_render( array( 'slug' => 'one_off-2026', 'height' => -5 ) );
+t( 'and so is a negative one',           false !== strpos( $short, 'height:400px' ) );
+// The shortcode is the path bulk-created pages use, so it is exercised as
+// itself rather than trusted to be a thin wrapper.
+t( 'the shortcode renders a page',       false !== strpos( arv_live_shortcode( array( 'slug' => 'one_off-2026' ) ), '<iframe' ) );
+t( 'and defaults its own attributes',    false !== strpos( arv_live_shortcode( array( 'slug' => 'one_off-2026' ) ), 'height:780px' ) );
+t( 'and is registered under [arv_live]', isset( $GLOBALS['SHORTCODES']['arv_live'] ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\n$pass passed, $fail failed\n";

@@ -52,7 +52,7 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/race-admin.php "$STAGE/includes/"
+cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
