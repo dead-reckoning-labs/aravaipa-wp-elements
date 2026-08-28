@@ -3749,6 +3749,10 @@
 	justify-content: center;
 	width: 100%;
 	min-height: 38px;
+	/* Two words that are one label. Allowed to wrap, "LIVE RESULTS" broke
+	   across two lines inside a box that had been squeezed to 19px wide on
+	   the race week block, and the text simply spilled out of it. */
+	white-space: nowrap;
 	padding: 0.45rem 0.6rem;
 	background: var(--arv-teal);
 	color: #0d1211;
@@ -4308,6 +4312,52 @@
 }
 
 @media (max-width: 619px) {
+	/* Explicit pixels, not rem, for every size in this element on a phone.
+
+	   The theme sets html { font-size: 12px } at this width and 15px on
+	   desktop, so every rem here rendered twenty per cent SMALLER on a phone
+	   than on a laptop, which is backwards: the archive's link buttons came
+	   out at 8.4px and the race names at 12.6px. Sizing in rem quietly hands
+	   the theme control of legibility on the one device where it matters
+	   most, so these are stated outright. */
+	.arv-results__race-name {
+		font-size: 17px;
+	}
+
+	.arv-results__race-meta,
+	.arv-results__edition-date {
+		font-size: 14px;
+	}
+
+	.arv-results__winners,
+	.arv-results__stat {
+		font-size: 14px;
+	}
+
+	.arv-results__winners-distance {
+		font-size: 13px;
+	}
+
+	.arv-results__link,
+	.arv-results__link:link,
+	.arv-results__link:visited {
+		font-size: 12px;
+		min-height: 44px;
+	}
+
+	.arv-results__older-toggle,
+	.arv-results__older-years {
+		font-size: 13px;
+	}
+
+	.arv-results__winners-table {
+		font-size: 14px;
+	}
+
+	.arv-results__search-label {
+		font-size: 13px;
+	}
+
 	.arv-results__search {
 		gap: 0.4rem;
 	}
@@ -4350,23 +4400,22 @@
 		align-items: stretch;
 	}
 
-	/* Back to flex on a phone: there is no ragged edge to fix once the
-	   links are on their own full-width row, and an empty slot holding a
-	   third of that row would be a visible gap rather than an invisible
-	   alignment aid. */
+	/* Three equal columns here too, not flex. Flex sized each button to the
+	   row it was in, so a race with two listings got two half-width buttons
+	   and the race under it got three at a third each: no two rows lined up
+	   down the page. The empty slot costs a gap on a two-listing row and
+	   buys alignment on every row, which is the better trade at this width
+	   for the same reason it is on desktop. */
 	.arv-results__links {
-		display: flex;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
 		width: 100%;
 		gap: 0.45rem;
 	}
 
 	.arv-results__links .arv-results__link {
-		flex: 1 1 0;
+		width: 100%;
 		min-width: 0;
-	}
-
-	.arv-results__slot {
-		display: none;
 	}
 }
 
@@ -4630,6 +4679,33 @@
 }
 
 @media (max-width: 619px) {
+	/* These sizes live in this query rather than the results one above,
+	   because the race week block's own base rules are declared between the
+	   two: same specificity, later source wins, and stated up there the
+	   week name silently stayed at its 1rem default (12px at this width). */
+	.arv-results__week-name,
+	.arv-results__week-name a {
+		font-size: 17px;
+	}
+
+	.arv-results__week-date,
+	.arv-results__week-place {
+		font-size: 13px;
+	}
+
+	.arv-results__week-pill {
+		font-size: 12px;
+	}
+
+	.arv-results__week-status,
+	.arv-results__live {
+		font-size: 14px;
+	}
+
+	.arv-results__week-eyebrow {
+		font-size: 13px;
+	}
+
 	.arv-results__week {
 		padding: 1rem 1.1rem 1.1rem;
 	}
@@ -4645,17 +4721,20 @@
 	}
 
 	/* Status and button drop to their own full-width row under the name,
-	   which is the only way three things fit beside a 36px logo at 390px. */
+	   which is the only way three things fit beside a 36px logo at 390px.
+	   The status takes what is left over and the button keeps its size:
+	   the other way round, which is what this was, crushed the button to
+	   nineteen pixels and pushed its label outside the box. */
 	.arv-results__week-status {
 		order: 3;
-		flex: 0 0 auto;
+		flex: 1 1 auto;
 		min-width: 0;
 	}
 
 	.arv-results__week-race .arv-results__link {
 		order: 4;
-		flex: 1 1 0;
-		min-width: 0;
+		flex: 0 0 auto;
+		min-width: 8.5rem;
 	}
 
 	/* Explicit, because the others in this row are ordered and anything
@@ -4912,6 +4991,9 @@
 		padding: 1rem 0;
 	}
 
+	/* Pixels for the same reason as the results element above: the theme
+	   drops the root to 12px at this width, so rem sizes shrink on exactly
+	   the device that needs them largest. */
 	.arv-live__bar-inner {
 		padding: 0.9rem 1rem;
 	}
@@ -4922,22 +5004,29 @@
 	   above their headline: the page looked like it belonged to the embed
 	   rather than the other way round. */
 	.arv-live__title {
-		font-size: 1.35rem;
+		font-size: 20px;
 	}
 
 	.arv-live__meta {
-		font-size: 0.88rem;
+		font-size: 13px;
 	}
 
 	.arv-live__clock {
-		font-size: 0.95rem;
+		font-size: 14px;
 	}
 
 	.arv-live__year-link,
 	.arv-live__year-link:link,
 	.arv-live__year-link:visited {
-		padding: 0.3rem 0.7rem;
-		font-size: 0.85rem;
+		padding: 0.35rem 0.8rem;
+		font-size: 13px;
+	}
+
+	.arv-live__open,
+	.arv-live__report-title,
+	.arv-live__finishers,
+	.arv-live__winners {
+		font-size: 14px;
 	}
 
 	.arv-live__open,
@@ -5104,8 +5193,20 @@
 		padding: 1.5rem 1rem 1.75rem;
 	}
 
+	.arv-live-index__heading {
+		font-size: 26px;
+	}
+
+	.arv-live-index__intro {
+		font-size: 14px;
+	}
+
 	.arv-live-index__name {
-		font-size: 1.1rem;
+		font-size: 17px;
+	}
+
+	.arv-live-index__meta {
+		font-size: 13px;
 	}
 
 	/* The chevron is decoration on a row that is already entirely a link,
@@ -5116,6 +5217,6 @@
 
 	.arv-live-index__clock {
 		flex: 1 1 100%;
-		font-size: 0.95rem;
+		font-size: 14px;
 	}
 }
