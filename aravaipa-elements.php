@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.21.51
+ * Version:           0.22.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.21.51' );
+define( 'ARV_ELEMENTS_VERSION', '0.22.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -42,6 +42,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/results-store.php';
 // What the live timing board is carrying: real start times, cutoffs and
 // the per-distance ids that let a chip link to its own results.
 require_once ARV_ELEMENTS_PATH . 'includes/live-store.php';
+
+// Finisher counts and winners, keyed by the same board slug the live store
+// uses, so it has to load after it: arv_stats_store_find() reads the slug
+// out of a race's live URL with arv_live_store_slug().
+require_once ARV_ELEMENTS_PATH . 'includes/stats-store.php';
 require_once ARV_ELEMENTS_PATH . 'includes/race-admin.php';
 
 // Admin only: every hook in updater.php answers questions WordPress only
