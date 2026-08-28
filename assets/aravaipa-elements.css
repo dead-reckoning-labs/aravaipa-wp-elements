@@ -2950,6 +2950,26 @@
 	list-style: none;
 }
 
+/* Same amber as a sold-out race's waitlist button and the card's price
+   rise note: this site's one colour for "act now, on a real deadline"
+   rather than a fresh one invented for this line. A left border rather
+   than a filled background, so it reads as a note attached to the CTA
+   beneath it rather than as a second button competing with it. */
+.arv-featured__deadline {
+	margin: 0 0 1.1rem;
+	padding: 0.5rem 0 0.5rem 0.85rem;
+	border-left: 3px solid #daa520;
+	max-width: 26rem;
+	font-size: 0.88rem;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #ffcf5c;
+}
+
+.arv-featured--light .arv-featured__deadline {
+	color: #8a6200;
+}
+
 .arv-featured__pill {
 	padding: 0.3rem 0.7rem;
 	border: 1px solid rgba(255, 255, 255, 0.35);

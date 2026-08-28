@@ -78,6 +78,18 @@ cs_register_element(
 				'price'      => cs_value( '$52.89', 'markup' ),
 				'price_note' => cs_value( 'Goes up to $59 on September 1', 'markup' ),
 				'syncs'      => cs_value( 'Strava, Coros', 'markup' ),
+
+				// A separate fact from the price rise, confirmed directly by
+				// Jamil rather than found on the public challenge page: this
+				// is the first year of goody-pack fulfilment for this race,
+				// and September 1 is also the order cutoff to be guaranteed
+				// one before the challenge starts. Two real reasons to act by
+				// the same date, kept as two lines rather than merged into
+				// one, since a visitor who already has last year's shirt and
+				// does not care about a new one should still see the price
+				// note clearly, and a visitor lured mainly by the goody pack
+				// should not have to parse it out of a sentence about price.
+				'deadline_note' => cs_value( 'Order by September 1 to guarantee your goody pack before the challenge begins.', 'markup' ),
 			),
 			'omega'
 		),
@@ -117,6 +129,12 @@ function arv_featured_race_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Button label override (optional)', 'aravaipa-elements' ),
 					'description' => __( 'Leave blank to use the same phase-driven label everywhere else uses (Register, Live Results, Join Waitlist, and so on).', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'deadline_note',
+					'type'        => 'text',
+					'label'       => __( 'Deadline note (optional)', 'aravaipa-elements' ),
+					'description' => __( 'A short urgency line above the button, e.g. "Order by September 1 to guarantee your goody pack before the challenge begins." Leave blank to show none.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'image',
@@ -261,6 +279,16 @@ function arv_featured_race_render( $data ) {
 			$out .= '<span class="arv-featured__pill">' . esc_html( $distance ) . '</span>';
 		}
 		$out .= '</p>';
+	}
+
+	// Only while entries are actually open. A deadline urging someone to
+	// order before the challenge begins makes no sense once it already has
+	// (Live Results, Results) or once there is nowhere left to send anyone
+	// (Entries Closed, Join Waitlist): those states already answer the
+	// question this line exists to create urgency about.
+	$deadline_note = isset( $data['deadline_note'] ) ? trim( (string) $data['deadline_note'] ) : '';
+	if ( '' !== $deadline_note && 'upcoming' === $action['phase'] ) {
+		$out .= '<p class="arv-featured__deadline">' . esc_html( $deadline_note ) . '</p>';
 	}
 
 	$out .= '<div class="arv-featured__actions">';
