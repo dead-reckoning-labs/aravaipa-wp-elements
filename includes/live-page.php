@@ -58,15 +58,29 @@ function arv_live_editions( $slug ) {
 		return array();
 	}
 
-	$rows = arv_results_store_get();
-	$name = '';
-
-	foreach ( $rows as $row ) {
+	foreach ( arv_results_store_get() as $row ) {
 		if ( arv_live_store_slug( $row['live'] ) === $slug ) {
-			$name = $row['name'];
-			break;
+			return arv_live_editions_by_name( $row['name'] );
 		}
 	}
+
+	return array();
+}
+
+/**
+ * Every stored edition of a race, by name, newest first.
+ *
+ * Split out from the slug lookup above because a slug can only find its own
+ * siblings once it is itself in the store, and the edition a live page is
+ * usually showing is the one that has not been scraped yet. Resolving the
+ * name first, from whichever store knows it, is what lets this year's page
+ * list last year's.
+ *
+ * @param string $name
+ * @return array<int, array>
+ */
+function arv_live_editions_by_name( $name ) {
+	$name = trim( (string) $name );
 
 	if ( '' === $name ) {
 		return array();
@@ -75,7 +89,7 @@ function arv_live_editions( $slug ) {
 	$key  = arv_results_race_key( $name );
 	$mine = array();
 
-	foreach ( $rows as $row ) {
+	foreach ( arv_results_store_get() as $row ) {
 		if ( arv_results_race_key( $row['name'] ) === $key ) {
 			$mine[] = $row;
 		}
@@ -116,6 +130,149 @@ function arv_live_pick_edition( $editions, $year ) {
 }
 
 /**
+ * The race on the calendar whose live URL carries this board slug.
+ *
+ * The link that was missing. The results store only learns about a running
+ * once it has happened and been scraped onto a results page, so on the day
+ * of the race, and every day before it, the current edition is not in there
+ * and the page could not find its own name. The race store has known all
+ * along: every race on the calendar carries its live URL, which is what the
+ * race week block on the archive already joins on.
+ *
+ * @param string $slug
+ * @return array|null
+ */
+function arv_live_race_by_slug( $slug ) {
+	$slug = trim( (string) $slug );
+
+	if ( '' === $slug || ! function_exists( 'arv_race_store_get' ) ) {
+		return null;
+	}
+
+	foreach ( arv_race_store_get() as $race ) {
+		if ( arv_live_store_slug( $race['live'] ) === $slug ) {
+			return $race;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Every edition of this race, newest first, from both stores.
+ *
+ * The results store holds the runnings that have happened. The race store
+ * holds the one that has not yet, which is precisely the edition a live page
+ * is usually showing. Neither alone can build a year switcher that includes
+ * both this year and last.
+ *
+ * @param string $slug
+ * @return array<int, array>
+ */
+function arv_live_all_editions( $slug ) {
+	// The name comes from whichever store knows this slug. The calendar
+	// knows the running that has not happened yet; the archive knows the
+	// ones that have. Going through either alone loses half the years.
+	$current = arv_live_race_by_slug( $slug );
+	$name    = '';
+
+	if ( null !== $current ) {
+		$name = $current['name'];
+	} else {
+		foreach ( arv_results_store_get() as $row ) {
+			if ( arv_live_store_slug( $row['live'] ) === $slug ) {
+				$name = $row['name'];
+				break;
+			}
+		}
+	}
+
+	if ( '' === $name ) {
+		return array();
+	}
+
+	$editions = arv_live_editions_by_name( $name );
+
+	// The calendar's entry for this race, whichever year's page we arrived
+	// on. Matched by name rather than by the slug we came in with, so the
+	// 2025 page can still offer a link forward to 2026.
+	$upcoming = arv_live_race_meta( $name );
+
+	if ( null === $upcoming || '' === trim( (string) $upcoming['live'] ) ) {
+		return $editions;
+	}
+
+	$upcoming_slug = arv_live_store_slug( $upcoming['live'] );
+
+	// Already scraped onto a results page: that row is the better record,
+	// since it carries the result links as well as the date.
+	foreach ( $editions as $edition ) {
+		if ( arv_live_store_slug( $edition['live'] ) === $upcoming_slug ) {
+			return $editions;
+		}
+	}
+
+	$editions[] = array(
+		'name'         => $upcoming['name'],
+		'iso'          => $upcoming['iso'],
+		'display'      => $upcoming['display'],
+		'live'         => $upcoming['live'],
+		'ultrasignup'  => '',
+		'ultrarunning' => '',
+	);
+
+	usort(
+		$editions,
+		function ( $a, $b ) {
+			return ( $a['iso'] < $b['iso'] ) ? 1 : -1;
+		}
+	);
+
+	return $editions;
+}
+
+/**
+ * Where this edition is in its life: soon, live or done.
+ *
+ * The same three states the race week block uses, computed the same way and
+ * against the same sources, so a race reads identically on the archive and
+ * on its own page. The board's clock wins where it has one; an override we
+ * hold beats the board's cutoff, because the board has been wrong about
+ * that.
+ *
+ * @param string     $name
+ * @param string     $iso
+ * @param array|null $board
+ * @return string
+ */
+function arv_live_state( $name, $iso, $board ) {
+	$now = arv_results_now();
+
+	if ( null !== $board && '' !== $board['start'] ) {
+		$start_ts  = strtotime( $board['start'] );
+		$cutoff_ts = function_exists( 'arv_race_cutoff_for' )
+			? arv_race_cutoff_for( $name, $board )
+			: ( ( '' !== $board['cutoff'] ) ? strtotime( $board['cutoff'] ) : 0 );
+
+		if ( $cutoff_ts && $now >= $cutoff_ts ) {
+			return 'done';
+		}
+
+		return ( $now >= $start_ts ) ? 'live' : 'soon';
+	}
+
+	// No board clock, so the date is all there is. A race is over once its
+	// day has passed and not before.
+	$day = strtotime( $iso . ' 00:00:00' );
+
+	if ( ! $day ) {
+		return 'soon';
+	}
+
+	return ( $now > ( $day + DAY_IN_SECONDS ) ) ? 'done' : 'soon';
+}
+
+/**
  * The race post matching a results row, for its venue and location.
  *
  * The results store knows a race's name, date and where to read its results,
@@ -151,12 +308,11 @@ function arv_live_page_render( $args = array() ) {
 		return '';
 	}
 
-	$editions = arv_live_editions( $slug );
+	$editions = arv_live_all_editions( $slug );
 
-	// A slug the results store has never seen still gets a frame. The board
-	// is the source of truth for what is being timed right now, and a race
-	// added this week should not need the archive scraper to have run before
-	// its live page works.
+	// A slug neither store has ever seen still gets a frame. The board is the
+	// source of truth for what it is timing, and a race added this week
+	// should not need anything else to have caught up first.
 	$requested = isset( $args['year'] ) ? $args['year'] : ( isset( $_GET['year'] ) ? wp_unslash( $_GET['year'] ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$edition   = arv_live_pick_edition( $editions, $requested );
 
@@ -167,6 +323,13 @@ function arv_live_page_render( $args = array() ) {
 		$show = $slug;
 	}
 
+	// Falls back to the calendar when the picked edition has no name of its
+	// own, which is every race that has not been scraped yet.
+	if ( '' === $name ) {
+		$current = arv_live_race_by_slug( $show );
+		$name    = $current ? $current['name'] : '';
+	}
+
 	$height = isset( $args['height'] ) ? (int) $args['height'] : 780;
 	$height = max( 400, min( 2000, $height ) );
 
@@ -175,8 +338,7 @@ function arv_live_page_render( $args = array() ) {
 
 	$out = '<section class="arv-live" aria-label="' . esc_attr__( 'Live results', 'aravaipa-elements' ) . '">';
 
-	$out .= arv_live_head( $name, $edition, $meta, $slug, $show );
-	$out .= arv_live_years( $editions, $show );
+	$out .= arv_live_bar( $name, $edition, $meta, $editions, $show );
 	$out .= arv_live_frame( $show, $height, $name );
 	$out .= arv_live_report( $stats, $edition, $name );
 
@@ -186,23 +348,42 @@ function arv_live_page_render( $args = array() ) {
 }
 
 /**
- * Title, date and place.
+ * The bar above the board: what race, when, and how long until it starts.
  *
- * @param string $name
+ * Dark, and sitting directly on top of the frame with no gap, because the
+ * board it introduces is a dark panel and a white heading band floating
+ * above it read as two unrelated things stacked rather than one component.
+ *
+ * The clock is the race week block's clock, markup and all: same three
+ * states, same attributes, same script already loaded on every page. A race
+ * counts down to its start, counts up once it is running, and reads
+ * Completed after its cutoff, and it does that identically here and on the
+ * archive because it is the same code rather than a second implementation
+ * that will drift.
+ *
+ * @param string     $name
  * @param array|null $edition
  * @param array|null $meta
- * @param string $slug
- * @param string $show
+ * @param array      $editions
+ * @param string     $show Board slug being shown.
  * @return string
  */
-function arv_live_head( $name, $edition, $meta, $slug, $show ) {
+function arv_live_bar( $name, $edition, $meta, $editions, $show ) {
 	$heading = '' !== $name ? $name : __( 'Live Results', 'aravaipa-elements' );
+	$year    = $edition ? substr( $edition['iso'], 0, 4 ) : '';
 
-	$out = '<header class="arv-live__head">';
+	$board = function_exists( 'arv_live_store_find' )
+		? arv_live_store_find( ARV_LIVE_BASE . $show )
+		: null;
+
+	$out = '<div class="arv-live__bar" data-arv-results-row>';
+	$out .= '<div class="arv-live__bar-inner">';
+
+	$out .= '<div class="arv-live__ident">';
 	$out .= '<h2 class="arv-live__title">' . esc_html( $heading );
 
-	if ( $edition ) {
-		$out .= ' <span class="arv-live__year">' . esc_html( substr( $edition['iso'], 0, 4 ) ) . '</span>';
+	if ( '' !== $year ) {
+		$out .= ' <span class="arv-live__year">' . esc_html( $year ) . '</span>';
 	}
 
 	$out .= '</h2>';
@@ -213,19 +394,36 @@ function arv_live_head( $name, $edition, $meta, $slug, $show ) {
 		$bits[] = arv_results_edition_label( $edition );
 	}
 
-	if ( $meta ) {
-		$where = trim( (string) ( isset( $meta['location'] ) ? $meta['location'] : '' ) );
-
-		if ( '' !== $where ) {
-			$bits[] = $where;
-		}
+	if ( $meta && ! empty( $meta['location'] ) ) {
+		$bits[] = $meta['location'];
 	}
 
 	if ( ! empty( $bits ) ) {
 		$out .= '<p class="arv-live__meta">' . esc_html( implode( ' · ', $bits ) ) . '</p>';
 	}
 
-	return $out . '</header>';
+	$out .= '</div>';
+
+	// The clock only means anything for an edition we can date. A year picked
+	// out of the archive is history, and counting down to it would be absurd.
+	if ( $edition && '' !== $name ) {
+		$race = array(
+			'name'  => $name,
+			'iso'   => $edition['iso'],
+			'board' => $board,
+			'state' => arv_live_state( $name, $edition['iso'], $board ),
+		);
+
+		$out .= '<div class="arv-live__clock">';
+		$out .= arv_results_week_live_badge( $race );
+		$out .= arv_results_week_status( $race );
+		$out .= '</div>';
+	}
+
+	$out .= arv_live_years( $editions, $show );
+	$out .= '</div></div>';
+
+	return $out;
 }
 
 /**

@@ -57,7 +57,15 @@ function current_time( $f ) {
 	// WordPress returns an int for 'timestamp' and a formatted string
 	// otherwise. Modelling that here rather than returning the date for
 	// everything, which hid a real arithmetic bug in the countdown text.
-	return 'timestamp' === $f ? strtotime( $day . ' 09:00:00' ) : $day;
+	//
+	// NOW_TS pins an exact instant, which NOW cannot: the clock states turn
+	// on the hour a race starts and the hour it closes, and a stub that can
+	// only say "some time on this date" cannot tell those apart.
+	if ( 'timestamp' === $f ) {
+		return $GLOBALS['NOW_TS'] ?? strtotime( $day . ' 09:00:00' );
+	}
+
+	return $day;
 }
 function is_wp_error( $t ) { return false; }
 function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
@@ -1050,6 +1058,106 @@ $GLOBALS['CURRENT_PATH'] = '/about/';
 ob_start();
 arv_seo_races_index_schema();
 t( 'only on the configured path',      '' === ob_get_clean() );
+
+echo "\nlive page: the status bar and year switcher:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+
+// This year's race is on the calendar and has not been scraped onto a
+// results page yet, which is the normal state of a live page and the exact
+// case the results store alone could not resolve.
+arv_race_store_import( "Black Bear Trail Race | 2026-08-29 | August 29 | 50K, 23K | Waterville Valley Town Square | Waterville Valley, NH |  | https://www.aravaiparunning.com/wme/black-bear/ |  |  |  | https://live.aravaiparunning.com/#/black_bear-2026 |  | 1 | 0\n" );
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+
+t( 'the calendar finds this year',      null !== arv_live_race_by_slug( 'black_bear-2026' ) );
+t( 'and names it',                      'Black Bear Trail Race' === arv_live_race_by_slug( 'black_bear-2026' )['name'] );
+t( 'an unknown slug finds nothing',     null === arv_live_race_by_slug( 'nope-2026' ) );
+
+// The switcher needs both stores: this year from the calendar, last year
+// from the archive. Neither alone can list both.
+$all = arv_live_all_editions( 'black_bear-2026' );
+t( 'both years are listed',             2 === count( $all ) );
+t( 'this year first',                   '2026-08-29' === $all[0]['iso'] );
+t( 'last year after it',                '2025-08-30' === $all[1]['iso'] );
+t( 'and from the other end too',        2 === count( arv_live_all_editions( 'black_bear-2025' ) ) );
+
+// Once a race has been scraped it is in the results store, and that row is
+// the better record. It must not appear twice.
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+t( 'a scraped year is not doubled',     2 === count( arv_live_all_editions( 'black_bear-2026' ) ) );
+
+echo "\nlive page: the three clock states:\n";
+$board = array(
+	'slug'   => 'black_bear-2026',
+	'start'  => '2026-08-29T10:00:00.000Z',
+	'cutoff' => '2026-08-29T22:00:00.000Z',
+	'offset' => -4,
+	'races'  => array(),
+);
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T08:00:00Z' );
+t( 'before the gun it counts down',     'soon' === arv_live_state( 'Black Bear Trail Race', '2026-08-29', $board ) );
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T14:00:00Z' );
+t( 'while running it is live',          'live' === arv_live_state( 'Black Bear Trail Race', '2026-08-29', $board ) );
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-30T02:00:00Z' );
+t( 'past the cutoff it is done',        'done' === arv_live_state( 'Black Bear Trail Race', '2026-08-29', $board ) );
+
+// An override we hold beats the board, here as everywhere else. Nine hours
+// off a 10:00 gun closes at 19:00, three hours before the board's own
+// cutoff, so 21:00 is done only if the override is the one being read.
+arv_race_cutoff_store_set( array( 'Black Bear Trail Race' => 9 ) );
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T21:00:00Z' );
+t( 'an override moves the finish',      'done' === arv_live_state( 'Black Bear Trail Race', '2026-08-29', $board ) );
+t( 'and the board alone would not',     'live' === arv_live_state( 'Some Other Race', '2026-08-29', $board ) );
+$GLOBALS['ARV_OPTIONS']['arv_race_cutoffs'] = array();
+
+// No board clock at all: the date is all there is, and a race is not over
+// until its day has passed.
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T14:00:00Z' );
+t( 'no board, race day is not over',    'soon' === arv_live_state( 'X', '2026-08-29', null ) );
+$GLOBALS['NOW_TS'] = strtotime( '2026-09-05T14:00:00Z' );
+t( 'but a week later it is',            'done' === arv_live_state( 'X', '2026-08-29', null ) );
+unset( $GLOBALS['NOW_TS'] );
+
+echo "\nlive page: what the bar renders:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_race_store_import( "Black Bear Trail Race | 2026-08-29 | August 29 | 50K, 23K | Waterville Valley Town Square | Waterville Valley, NH |  | https://www.aravaiparunning.com/wme/black-bear/ |  |  |  | https://live.aravaiparunning.com/#/black_bear-2026 |  | 1 | 0\n" );
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+arv_live_store_set( array( $board ) );
+
+$html = arv_live_page_render( array( 'slug' => 'black_bear-2026' ) );
+t( 'the bar names the race',            false !== strpos( $html, 'Black Bear Trail Race' ) );
+t( 'even though it is unscraped',       false !== strpos( $html, 'arv-live__bar' ) );
+t( 'and dates it',                      false !== strpos( $html, 'August 29, 2026' ) );
+t( 'and places it',                     false !== strpos( $html, 'Waterville Valley, NH' ) );
+
+// The clock is the race week block's clock, not a second one.
+t( 'it carries a real start time',      false !== strpos( $html, 'data-arv-start=' ) );
+t( 'and the cutoff',                    false !== strpos( $html, 'data-arv-cutoff=' ) );
+t( 'wired to the shared script',        false !== strpos( $html, 'data-arv-results-clock' ) );
+t( 'with a live marker to reveal',      false !== strpos( $html, 'data-arv-results-live' ) );
+
+// The marker sits outside the clock, so the clock has to be able to find it.
+t( 'and a row for it to be found in',   false !== strpos( $html, 'data-arv-results-row' ) );
+
+// Both years, and this year is not a link to itself.
+t( 'the switcher offers last year',     false !== strpos( $html, 'year=2025' ) );
+t( 'and marks this one current',        false !== strpos( $html, 'is-current' ) );
+
+// Asking for last year swaps the frame and the whole bar with it.
+$last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '2025' ) );
+t( 'last year reframes the board',      false !== strpos( $last, 'black_bear-2025' ) );
+t( 'and links back to this year',       false !== strpos( $last, 'year=2026' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nlive page SEO: title, description, Open Graph, schema:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
