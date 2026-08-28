@@ -430,10 +430,18 @@ function arv_results_race_week( $today, $grace = 3 ) {
 		}
 
 		$out .= '<div class="arv-results__week-body">';
+
+		// Name and date share a line, and wrap to two when there is not
+		// room. On a desktop that turns three stacked lines into two; on a
+		// phone it falls back to the stack on its own, without a breakpoint
+		// having to guess where the name stops fitting.
+		$out .= '<span class="arv-results__week-head">';
 		$out .= '<span class="arv-results__week-name">';
 		$out .= ( '' !== $page )
 			? '<a class="arv-results__week-link" href="' . esc_url( $page ) . '">' . esc_html( $race['name'] ) . '</a>'
 			: esc_html( $race['name'] );
+		$out .= '</span>';
+		$out .= '<time class="arv-results__week-date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
 		$out .= '</span>';
 
 		$distances = arv_split_distances( $race['distances'] );
@@ -445,7 +453,6 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			$out .= '</span>';
 		}
 
-		$out .= '<time class="arv-results__week-date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
 		$out .= '</div>';
 
 		$out .= arv_results_week_status( $race );

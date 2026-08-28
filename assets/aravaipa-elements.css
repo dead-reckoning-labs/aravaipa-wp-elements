@@ -4189,8 +4189,17 @@
 	min-width: 0;
 }
 
+/* Name and date on one line where they fit, stacked where they do not.
+   Baseline-aligned rather than centred, so the small date sits on the same
+   line as the large name instead of floating in the middle of it. */
+.arv-results__week-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.15rem 0.7rem;
+}
+
 .arv-results__week-name {
-	display: block;
 	font-size: 1rem;
 	font-weight: 700;
 	line-height: 1.3;
@@ -4239,7 +4248,7 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.3rem;
-	margin-top: 0.3rem;
+	margin-top: 0.35rem;
 }
 
 .arv-results__week-pill {
@@ -4252,10 +4261,11 @@
 }
 
 .arv-results__week-date {
-	display: block;
-	margin-top: 0.3rem;
 	font-size: 0.82rem;
 	color: rgba(242, 242, 242, 0.65);
+	/* Never broken across lines: "August 29," on one line and "2026" on the
+	   next is the worst of both layouts. */
+	white-space: nowrap;
 }
 
 /* One cell holding all three states, only one of them ever visible, so the
@@ -4361,5 +4371,12 @@
 		order: 4;
 		flex: 1 1 0;
 		min-width: 0;
+	}
+
+	/* Explicit, because the others in this row are ordered and anything
+	   left unset defaults to 0 and jumps ahead of them: the icon was
+	   landing to the left of the countdown instead of after the button. */
+	.arv-results__week-social {
+		order: 5;
 	}
 }
