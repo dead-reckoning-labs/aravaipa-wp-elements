@@ -3264,7 +3264,71 @@
 
 @media (max-width: 619px) {
 	.arv-featured__panel {
-		padding: 2.5rem 1.25rem;
+		padding: 2.25rem 1.25rem 2.5rem;
+	}
+
+	/* The scrim above is a left-to-right gradient, tuned for the desktop
+	   layout where the copy occupies the left column and the photo is meant
+	   to stay bright under the card on the right. Stacked, that assumption
+	   inverts: every line of text now runs the full width of the panel, so
+	   the bright end of the gradient sits under the right half of each line
+	   and the copy loses its backing exactly where the photo is busiest.
+	   Vertical instead, so text is legible at any point across the width,
+	   with the middle left lightest so the photo is still a photo. */
+	.arv-featured--image .arv-featured__panel::before {
+		background: linear-gradient(
+			180deg,
+			rgba(8, 12, 16, 0.88) 0%,
+			rgba(8, 12, 16, 0.74) 42%,
+			rgba(8, 12, 16, 0.9) 100%
+		);
+	}
+
+	/* Less dead air above the fold: at this width the logo is the first
+	   thing in the panel and does not need desktop's breathing room. */
+	.arv-featured__logo {
+		max-height: 10rem;
+		margin-bottom: 1rem;
+	}
+
+	.arv-featured__distances {
+		margin-bottom: 1.25rem;
+	}
+
+	/* Stacked and full width. Side by side, a solid red block and an
+	   underlined text link are two different kinds of thing crushed onto one
+	   row: unequal height, unequal weight, and a tap target on the right
+	   that is only as big as its own text. Full width gives both a real
+	   target and puts the primary action first without the secondary one
+	   fighting it for the same row. */
+	.arv-featured__actions {
+		display: grid;
+		gap: 0.65rem;
+	}
+
+	.arv-featured__cta {
+		justify-content: center;
+		padding: 0.95rem 1.25rem;
+	}
+
+	/* Promoted from underlined link to outlined button, so the pair reads as
+	   primary and secondary rather than as a button next to some text. */
+	.arv-featured__info {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.85rem 1.25rem;
+		border: 2px solid rgba(255, 255, 255, 0.45);
+		border-bottom-width: 2px;
+		text-align: center;
+	}
+
+	/* The border above is a white wash, which is invisible on the light
+	   theme's near-white panel. Everything else in this element adapts
+	   through currentColor; this one cannot, because a full-strength
+	   currentColor border would outshout the primary button next to it. */
+	.arv-featured--light .arv-featured__info {
+		border-color: rgba(0, 0, 0, 0.3);
 	}
 
 	/* Full width once stacked: a 20rem card floating in a narrower column
