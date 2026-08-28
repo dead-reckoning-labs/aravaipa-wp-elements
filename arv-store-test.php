@@ -109,6 +109,8 @@ require_once __DIR__ . '/includes/elements/season-calendar.php';
 require_once __DIR__ . '/includes/elements/race-status.php';
 require_once __DIR__ . '/includes/elements/featured-race.php';
 require_once __DIR__ . '/includes/race-store.php';
+require_once __DIR__ . '/includes/results-store.php';
+require_once __DIR__ . '/includes/elements/results.php';
 
 $pass = 0; $fail = 0;
 function t( $name, $cond ) {
@@ -496,6 +498,124 @@ t( 'a race with a blank name is safe', '' === arv_race_waitlist_for( array( 'nam
 
 $GLOBALS['QUIET_FAILS'] = 0;
 function t_quiet( $ok ) { if ( ! $ok ) { $GLOBALS['QUIET_FAILS']++; } }
+
+
+echo "\nresults store:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$stored = arv_results_store_set( array(
+	array( 'name' => 'Black Canyon 100K', 'iso' => '2026-02-14', 'display' => 'February 14',
+	       'live' => 'https://live.aravaiparunning.com/#/black_canyon-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=1',
+	       'ultrarunning' => 'https://ultrarunning.com/x/results' ),
+	array( 'name' => 'Coldwater Rumble', 'iso' => '2026-01-17', 'display' => 'January 17-18',
+	       'live' => 'https://live.aravaiparunning.com/#/coldwater-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=2', 'ultrarunning' => '' ),
+	// No links at all: a row that promises something it cannot deliver.
+	array( 'name' => 'Nowhere', 'iso' => '2026-03-01', 'display' => 'March 1',
+	       'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	// No date.
+	array( 'name' => 'Undated', 'iso' => '', 'live' => 'https://example.com' ),
+	// Exact duplicate of the first.
+	array( 'name' => 'Black Canyon 100K', 'iso' => '2026-02-14', 'display' => 'February 14',
+	       'live' => 'https://live.aravaiparunning.com/#/black_canyon-2026' ),
+) );
+t( 'only rows that link somewhere are kept', 2 === $stored );
+
+$got = arv_results_store_get();
+t( 'newest first',                    'Black Canyon 100K' === $got[0]['name'] );
+t( 'and the older one after it',      'Coldwater Rumble' === $got[1]['name'] );
+t( 'a row with no links is dropped',  2 === count( $got ) );
+
+// Full replace, not a merge: a result removed from the site has to disappear.
+arv_results_store_set( array(
+	array( 'name' => 'Only One', 'iso' => '2026-05-01', 'live' => 'https://live.aravaiparunning.com/#/x' ),
+) );
+$after = arv_results_store_get();
+t( 'a later write replaces, not merges', 1 === count( $after ) && 'Only One' === $after[0]['name'] );
+
+echo "\nresults element:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$GLOBALS['NOW'] = '2026-08-28';
+arv_results_store_set( array(
+	array( 'name' => 'Jackrabbit Jubilee', 'iso' => '2026-08-22', 'display' => 'August 22',
+	       'live' => 'https://live.aravaiparunning.com/#/jackrabbit-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=9', 'ultrarunning' => '' ),
+	array( 'name' => 'Coldwater Rumble', 'iso' => '2026-01-17', 'display' => 'January 17-18',
+	       'live' => 'https://live.aravaiparunning.com/#/coldwater-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=2',
+	       'ultrarunning' => 'https://ultrarunning.com/y/results' ),
+) );
+
+$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'heading' => 'Results', 'upcoming' => 'false' ) );
+t( 'renders a table',                 false !== strpos( $html, 'arv-results__table' ) );
+t( 'names a race',                    false !== strpos( $html, 'Jackrabbit Jubilee' ) );
+t( 'groups by month',                 false !== strpos( $html, 'August 2026' ) );
+t( 'and the older month too',         false !== strpos( $html, 'January 2026' ) );
+t( 'newest month comes first',        strpos( $html, 'August 2026' ) < strpos( $html, 'January 2026' ) );
+t( 'links to live results',           false !== strpos( $html, 'live.aravaiparunning.com/#/jackrabbit-2026' ) );
+t( 'a missing listing is not a link', 1 === substr_count( $html, 'arv-results__cell--empty' ) );
+
+// Year filter, for anyone who still wants the old per-year page.
+$y = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'year' => '2025', 'upcoming' => 'false' ) );
+t( 'a year with nothing says so',     false !== strpos( $y, 'arv-results__empty' ) );
+t( 'and draws no empty table',        false === strpos( $y, 'arv-results__table' ) );
+
+$limit = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'limit' => '1', 'upcoming' => 'false' ) );
+t( 'limit is honoured',               1 === substr_count( $limit, 'arv-results__row' ) );
+
+echo "\nresults: a race that has just run:\n";
+// The scraper lags the calendar. A race that ran on Saturday has results on
+// the live board on Sunday and no scraped row until the next run, so the
+// element has to find it in the race store instead.
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Coldwater Rumble', 'iso' => '2026-01-17', 'live' => 'https://live.aravaiparunning.com/#/coldwater-2026' ),
+) );
+$GLOBALS['NOW'] = '2026-08-30';   // Rock Hawk ran on the 29th
+$now = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'a race that just ran appears',    false !== strpos( $now, 'Rock Hawk' ) );
+t( 'flagged as happening now',        false !== strpos( $now, 'arv-results__flag' ) );
+t( 'above the older stored result',   strpos( $now, 'Rock Hawk' ) < strpos( $now, 'Coldwater Rumble' ) );
+
+// Turned off, it is the store and nothing else.
+$off = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false' ) );
+t( 'and can be switched off',         false === strpos( $off, 'Rock Hawk' ) );
+
+// Once the scrape catches up the real row wins, because it carries the
+// UltraSignup and UltraRunning links the live-board row cannot know. Both
+// races that ran that day are seeded, not just one: Black Bear shares the
+// date, and leaving it out would leave its own live-board row on the page
+// and make the flag look like it had survived on Rock Hawk.
+arv_results_store_set( array(
+	array( 'name' => 'Rock Hawk', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=77', 'ultrarunning' => '' ),
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=78', 'ultrarunning' => '' ),
+) );
+$merged = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'the scraped row supersedes it',   1 === substr_count( $merged, 'Rock Hawk' ) );
+t( 'nothing is flagged any more',     false === strpos( $merged, 'arv-results__flag' ) );
+t( 'keeping the ultrasignup link',    false !== strpos( $merged, 'did=77' ) );
+
+// And the dedupe is per race, not per day: one of the two scraped, the
+// other still only on the live board, has to leave exactly one flag.
+arv_results_store_set( array(
+	array( 'name' => 'Rock Hawk', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=77', 'ultrarunning' => '' ),
+) );
+$half = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'the unscraped race keeps its flag', 1 === substr_count( $half, 'arv-results__flag' ) );
+t( 'and it is the right one',           false !== strpos( $half, 'Black Bear' ) );
+t( 'the scraped one is not duplicated', 1 === substr_count( $half, 'Rock Hawk' ) );
+
+// A race still in the future has nothing to read yet.
+$GLOBALS['NOW'] = '2026-08-01';
+$future = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'a race not yet run is not listed', false === strpos( $future, 'Black Bear' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nSEO: single race page schema:\n";
 require_once __DIR__ . '/includes/seo.php';
