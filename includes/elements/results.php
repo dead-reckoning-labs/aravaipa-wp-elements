@@ -30,8 +30,12 @@ cs_register_element(
 		'title'   => __( 'Aravaipa Results', 'aravaipa-elements' ),
 		'values'  => cs_compose_values(
 			array(
-				'eyebrow'  => cs_value( 'Every race', 'markup' ),
-				'heading'  => cs_value( 'Results', 'markup' ),
+				// Both blank by default. The page this sits on already has a
+				// "Results" hero directly above it, so an eyebrow and an
+				// <h2> saying it again is the same word three times before
+				// any content. Still settable for a page that has no hero.
+				'eyebrow'  => cs_value( '', 'markup' ),
+				'heading'  => cs_value( '', 'markup' ),
 				'intro'    => cs_value( '', 'markup' ),
 				// Blank shows everything. A year narrows it, for anyone who
 				// still wants the old per-year page.
@@ -277,6 +281,10 @@ function arv_results_render( $data ) {
 	$show_search = isset( $data['search'] ) ? $data['search'] : true;
 	$show_search = ! ( 'false' === $show_search || false === $show_search || '0' === $show_search );
 
+	if ( $include_current ) {
+		$out .= arv_results_race_week( $today );
+	}
+
 	$out .= arv_results_by_race( $rows, $show_search );
 	$out .= '</div></div>';
 
@@ -312,6 +320,135 @@ function arv_results_race_key( $name ) {
 	$stripped = trim( preg_replace( '/\s+/', ' ', (string) $stripped ) );
 
 	return ( strlen( $stripped ) < 4 ) ? $light : $stripped;
+}
+
+/**
+ * The races this weekend, above everything else.
+ *
+ * "Race week" is not a new idea here: arv_upcoming_races_action() already
+ * has a phase for it, entered once entries close or the race is within five
+ * days, whichever comes first, and held until the race finishes. That is the
+ * same phase the events page uses to swap a Register button for Live
+ * Results, so this block and that page agree by construction rather than by
+ * both being told the same rule twice.
+ *
+ * Before the first one starts this counts down to it. Once it has, the
+ * countdown is replaced by a live marker. Both states are rendered here and
+ * one is hidden, so the swap at midnight needs no request and no reload,
+ * and a visitor with no JavaScript still gets the correct one for whenever
+ * the page was built.
+ *
+ * @param string $today Y-m-d in site time.
+ * @return string
+ */
+function arv_results_race_week( $today ) {
+	if ( ! function_exists( 'arv_race_store_get' ) ) {
+		return '';
+	}
+
+	$races = array();
+
+	foreach ( arv_race_store_get() as $race ) {
+		$action = arv_upcoming_races_action( $race, $today );
+
+		if ( 'live' !== $action['phase'] || '' === $action['url'] ) {
+			continue;
+		}
+
+		$races[] = array(
+			'name'    => $race['name'],
+			'iso'     => $race['iso'],
+			'display' => $race['display'],
+			'url'     => $action['url'],
+			'started' => ( $today >= $race['iso'] ),
+		);
+	}
+
+	if ( empty( $races ) ) {
+		return '';
+	}
+
+	usort(
+		$races,
+		function ( $a, $b ) {
+			if ( $a['iso'] === $b['iso'] ) {
+				return strcasecmp( $a['name'], $b['name'] );
+			}
+			return ( $a['iso'] < $b['iso'] ) ? -1 : 1;
+		}
+	);
+
+	$first = $races[0];
+	$live  = false;
+
+	foreach ( $races as $race ) {
+		if ( $race['started'] ) {
+			$live = true;
+			break;
+		}
+	}
+
+	$out  = '<section class="arv-results__week" aria-label="' . esc_attr( __( 'Racing this week', 'aravaipa-elements' ) ) . '">';
+	$out .= '<div class="arv-results__week-head">';
+	$out .= '<p class="arv-results__week-eyebrow">' . esc_html( __( 'Race week', 'aravaipa-elements' ) ) . '</p>';
+
+	// Both states, one hidden. The live one is what a countdown reaching
+	// zero reveals, so the page does not have to be reloaded to become
+	// correct on race morning.
+	$out .= '<p class="arv-results__live" data-arv-results-live' . ( $live ? '' : ' hidden' ) . '>'
+		. '<span class="arv-results__pulse" aria-hidden="true"></span>'
+		. esc_html( __( 'Live now', 'aravaipa-elements' ) )
+		. '</p>';
+
+	$out .= '<p class="arv-results__countdown" data-arv-results-countdown="' . esc_attr( arv_results_start_iso( $first['iso'] ) ) . '"'
+		. ( $live ? ' hidden' : '' ) . '>'
+		. '<span class="arv-results__countdown-label">' . esc_html( __( 'First race in', 'aravaipa-elements' ) ) . '</span> '
+		. '<span class="arv-results__countdown-value" data-arv-results-countdown-value></span>'
+		. '</p>';
+
+	$out .= '</div>';
+
+	$out .= '<ul class="arv-results__week-list">';
+
+	foreach ( $races as $race ) {
+		$stamp   = strtotime( $race['iso'] . ' 00:00:00 UTC' );
+		$display = '' !== $race['display'] ? $race['display'] : gmdate( 'F j', $stamp );
+
+		$out .= '<li class="arv-results__week-race">';
+		$out .= '<span class="arv-results__week-name">' . esc_html( $race['name'] ) . '</span>';
+		$out .= '<time class="arv-results__week-date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
+		$out .= '<a class="arv-results__link arv-results__link--live" href="' . esc_url( $race['url'] ) . '" target="_blank" rel="noopener">'
+			. esc_html( __( 'Live Results', 'aravaipa-elements' ) ) . '</a>';
+		$out .= '</li>';
+	}
+
+	$out .= '</ul>';
+	$out .= '</section>';
+
+	return $out;
+}
+
+/**
+ * Midnight on race day, as an instant the browser can count down to.
+ *
+ * The store keeps dates, not gun times, so this is the start of race day
+ * rather than the start of the race. That is why the label above it says
+ * "first race in" against a date rather than naming a start time it does
+ * not have: the honest version of a fact we only half know.
+ *
+ * Carries the site's own UTC offset rather than leaving the browser to
+ * assume its own. A reader in another timezone should be counting down to
+ * the same moment as a reader in Phoenix, not to their own local midnight.
+ *
+ * @param string $iso Y-m-d.
+ * @return string ISO 8601 with offset.
+ */
+function arv_results_start_iso( $iso ) {
+	$offset = function_exists( 'get_option' ) ? (float) get_option( 'gmt_offset', 0 ) : 0;
+	$sign   = ( $offset < 0 ) ? '-' : '+';
+	$abs    = abs( $offset );
+
+	return $iso . 'T00:00:00' . sprintf( '%s%02d:%02d', $sign, (int) floor( $abs ), (int) round( ( $abs - floor( $abs ) ) * 60 ) );
 }
 
 /**

@@ -20,6 +20,66 @@
 		for ( var i = 0; i < inputs.length; i++ ) {
 			wire( inputs[ i ] );
 		}
+
+		var counters = document.querySelectorAll( '[data-arv-results-countdown]' );
+
+		for ( var k = 0; k < counters.length; k++ ) {
+			countdown( counters[ k ] );
+		}
+	}
+
+	/**
+	 * Tick down to the first race of the week, then hand over to the live
+	 * marker sitting hidden beside it.
+	 *
+	 * Both states are already in the page, rendered by PHP, so this only
+	 * ever swaps which one is hidden. Nothing here decides whether a race
+	 * is live: it only notices that the moment PHP named has arrived, which
+	 * means a page left open overnight becomes correct on its own.
+	 */
+	function countdown( el ) {
+		var target = Date.parse( el.getAttribute( 'data-arv-results-countdown' ) );
+		if ( isNaN( target ) ) {
+			return;
+		}
+
+		var value = el.querySelector( '[data-arv-results-countdown-value]' );
+		var live = el.parentNode ? el.parentNode.querySelector( '[data-arv-results-live]' ) : null;
+		var timer = null;
+
+		function tick() {
+			var left = target - Date.now();
+
+			if ( left <= 0 ) {
+				el.hidden = true;
+				if ( live ) {
+					live.hidden = false;
+				}
+				if ( timer ) {
+					window.clearInterval( timer );
+				}
+				return;
+			}
+
+			if ( ! value ) {
+				return;
+			}
+
+			var s = Math.floor( left / 1000 );
+			var d = Math.floor( s / 86400 );
+			var h = Math.floor( ( s % 86400 ) / 3600 );
+			var m = Math.floor( ( s % 3600 ) / 60 );
+
+			// Days and hours until the last day, then hours and minutes.
+			// Seconds are noise at this range and would redraw the line
+			// sixty times a minute to say nothing.
+			value.textContent = d > 0
+				? d + ( 1 === d ? ' day ' : ' days ' ) + h + ( 1 === h ? ' hour' : ' hours' )
+				: h + ( 1 === h ? ' hour ' : ' hours ' ) + m + ( 1 === m ? ' minute' : ' minutes' );
+		}
+
+		tick();
+		timer = window.setInterval( tick, 30000 );
 	}
 
 	function wire( input ) {
