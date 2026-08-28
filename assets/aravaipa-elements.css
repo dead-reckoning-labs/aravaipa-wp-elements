@@ -4913,7 +4913,31 @@
 	}
 
 	.arv-live__bar-inner {
-		padding: 0.8rem 1rem;
+		padding: 0.9rem 1rem;
+	}
+
+	/* Bigger than the desktop clamp would give at this width, on purpose.
+	   The board's own "Black Bear" heading inside the frame is set large, so
+	   at the phone sizes this clamped down to, our title read as a caption
+	   above their headline: the page looked like it belonged to the embed
+	   rather than the other way round. */
+	.arv-live__title {
+		font-size: 1.35rem;
+	}
+
+	.arv-live__meta {
+		font-size: 0.88rem;
+	}
+
+	.arv-live__clock {
+		font-size: 0.95rem;
+	}
+
+	.arv-live__year-link,
+	.arv-live__year-link:link,
+	.arv-live__year-link:visited {
+		padding: 0.3rem 0.7rem;
+		font-size: 0.85rem;
 	}
 
 	.arv-live__open,

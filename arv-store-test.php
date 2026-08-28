@@ -39,7 +39,7 @@ function shortcode_atts( $pairs, $atts, $tag = '' ) { return array_merge( $pairs
 function esc_html__( $s, $d = '' ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_unslash( $v ) { return $v; }
 function get_queried_object_id() { return $GLOBALS['QUERIED_ID'] ?? 0; }
-function get_permalink( $id = 0 ) { return 'https://www.aravaiparunning.com/live/test/'; }
+function get_permalink( $id = 0 ) { return $GLOBALS['PERMALINK'][ $id ] ?? 'https://www.aravaiparunning.com/live/test/'; }
 
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
@@ -115,6 +115,19 @@ function esc_url_raw($u){ return $u; }
 function get_posts( $args ) {
 	$out = array();
 	$statuses = (array) ( $args['post_status'] ?? 'publish' );
+	// The simple meta_key/meta_value pair, which is what the live page's
+	// year switcher uses to find a real per-year page. Looked up straight
+	// out of the meta table rather than the post list, since a live page is
+	// an ordinary WP page and never enters $GLOBALS['posts'].
+	if ( isset( $args['meta_key'] ) && isset( $args['meta_value'] ) ) {
+		foreach ( ( $GLOBALS['meta'] ?? array() ) as $id => $m ) {
+			if ( ( $m[ $args['meta_key'] ] ?? null ) === $args['meta_value'] ) {
+				return array( $id );
+			}
+		}
+		return array();
+	}
+
 	foreach ( $GLOBALS['posts'] as $id => $p ) {
 		if ( ! in_array( $p['status'], $statuses, true ) ) { continue; }
 		if ( isset( $args['meta_query'] ) ) {
@@ -1150,13 +1163,28 @@ t( 'with a live marker to reveal',      false !== strpos( $html, 'data-arv-resul
 t( 'and a row for it to be found in',   false !== strpos( $html, 'data-arv-results-row' ) );
 
 // Both years, and this year is not a link to itself.
-t( 'the switcher offers last year',     false !== strpos( $html, 'year=2025' ) );
+t( 'the switcher offers last year',     false !== strpos( $html, 'edition=2025' ) );
+
+// Never "year". That is WordPress's own query var for date archives, and
+// setting it on a page rewrites the main query: ?year=2025 here 301'd to the
+// race's own page and ?year=2024 was a flat 404, live, on production.
+t( 'and never uses WordPress\'s own',    false === strpos( $html, '?year=' ) );
 t( 'and marks this one current',        false !== strpos( $html, 'is-current' ) );
+
+// A real page for that year wins over the parameter: a path is what gets
+// indexed and shared, and it avoids query vars altogether.
+$GLOBALS['meta'] = array( 991 => array( '_arv_live_slug' => 'black_bear-2025' ) );
+$GLOBALS['PERMALINK'] = array( 991 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race-2025/' );
+$paged = arv_live_page_render( array( 'slug' => 'black_bear-2026' ) );
+t( 'a real page beats the parameter',   false !== strpos( $paged, 'black-bear-trail-race-2025/' ) );
+t( 'and the parameter is not used',     false === strpos( $paged, 'edition=2025' ) );
+$GLOBALS['meta'] = array();
+$GLOBALS['PERMALINK'] = array();
 
 // Asking for last year swaps the frame and the whole bar with it.
 $last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '2025' ) );
 t( 'last year reframes the board',      false !== strpos( $last, 'black_bear-2025' ) );
-t( 'and links back to this year',       false !== strpos( $last, 'year=2026' ) );
+t( 'and links back to this year',       false !== strpos( $last, 'edition=2026' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nlive page SEO: title, description, Open Graph, schema:\n";
@@ -1643,7 +1671,7 @@ t( 'the board is framed',               false !== strpos( $html, '<iframe' ) && 
 // technology, so a real anchor to the board has to exist alongside it.
 t( 'and also plainly linked',           false !== strpos( $html, 'Open full live results' ) );
 t( 'the frame cannot navigate the top', false !== strpos( $html, 'sandbox="allow-scripts allow-same-origin allow-popups"' ) );
-t( 'the years are real links',          false !== strpos( $html, 'year=2025' ) );
+t( 'the years are real links',          false !== strpos( $html, 'edition=2025' ) );
 
 // This edition has not been run, so there is nothing to report and
 // "0 finishers" would be worse than silence.

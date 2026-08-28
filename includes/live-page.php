@@ -23,7 +23,7 @@
  * from the stats store, which already holds it for 438 events, so this is a
  * new view of data the site has rather than a new pipeline.
  *
- * Editions are selected with ?year=, which makes each running its own URL
+ * Editions are selected with ?edition=, which makes each running its own URL
  * with its own title, its own description and its own winners. That is also
  * the answer to a second problem: the board itself offers no way at all to
  * move between years, so a runner looking for their 2024 time has nowhere to
@@ -35,6 +35,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'ARV_LIVE_BASE', 'https://live.aravaiparunning.com/#/' );
+
+/**
+ * The query variable that selects an edition.
+ *
+ * Deliberately not "year". That is one of WordPress's own public query vars,
+ * the one that drives date archives, and setting it on a page rewrites the
+ * main query underneath us: ?year=2025 on this page 301-redirected to the
+ * race's own page and ?year=2024 was a flat 404, while ?yr= and ?foo= on the
+ * same URL both returned 200. The collision is silent and total, and it took
+ * a live request to see it.
+ */
+define( 'ARV_LIVE_YEAR_VAR', 'edition' );
 
 /**
  * Every stored edition of the race a given board slug belongs to, newest
@@ -313,7 +325,9 @@ function arv_live_page_render( $args = array() ) {
 	// A slug neither store has ever seen still gets a frame. The board is the
 	// source of truth for what it is timing, and a race added this week
 	// should not need anything else to have caught up first.
-	$requested = isset( $args['year'] ) ? $args['year'] : ( isset( $_GET['year'] ) ? wp_unslash( $_GET['year'] ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$requested = isset( $args['year'] )
+		? $args['year']
+		: ( isset( $_GET[ ARV_LIVE_YEAR_VAR ] ) ? wp_unslash( $_GET[ ARV_LIVE_YEAR_VAR ] ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$edition   = arv_live_pick_edition( $editions, $requested );
 
 	$name = $edition ? $edition['name'] : '';
@@ -447,16 +461,16 @@ function arv_live_years( $editions, $current ) {
 
 	foreach ( $editions as $edition ) {
 		$year = substr( $edition['iso'], 0, 4 );
-		$is   = arv_live_store_slug( $edition['live'] ) === $current;
+		$slug = arv_live_store_slug( $edition['live'] );
 
-		if ( $is ) {
+		if ( $slug === $current ) {
 			$out .= '<span class="arv-live__year-link is-current" aria-current="page">'
 				. esc_html( $year ) . '</span>';
 			continue;
 		}
 
 		$out .= '<a class="arv-live__year-link" href="'
-			. esc_url( add_query_arg( 'year', $year, arv_live_self_url() ) ) . '">'
+			. esc_url( arv_live_edition_url( $slug, $year ) ) . '">'
 			. esc_html( $year ) . '</a>';
 	}
 
@@ -464,7 +478,62 @@ function arv_live_years( $editions, $current ) {
 }
 
 /**
- * This page's own URL, without the year already on it.
+ * Where a given edition lives.
+ *
+ * A page of its own if one exists, which is the better shape by a distance:
+ * a real path is what gets indexed, shared and linked, and it sidesteps
+ * query variables entirely. Falls back to this page with the edition
+ * parameter, so a race whose older years have no page yet still switches.
+ *
+ * @param string $slug Board slug of the edition being linked to.
+ * @param string $year
+ * @return string
+ */
+function arv_live_edition_url( $slug, $year ) {
+	$page = arv_live_page_for_slug( $slug );
+
+	if ( '' !== $page ) {
+		return $page;
+	}
+
+	return add_query_arg( ARV_LIVE_YEAR_VAR, $year, arv_live_self_url() );
+}
+
+/**
+ * The permalink of the page whose live slug is this one, or ''.
+ *
+ * Looked up by the same meta the SEO layer reads, so a per-year page is
+ * discovered by being what it says it is rather than by a naming convention
+ * anyone has to remember.
+ *
+ * @param string $slug
+ * @return string
+ */
+function arv_live_page_for_slug( $slug ) {
+	$slug = trim( (string) $slug );
+
+	if ( '' === $slug || ! function_exists( 'get_posts' ) ) {
+		return '';
+	}
+
+	$found = get_posts(
+		array(
+			'post_type'        => 'page',
+			'post_status'      => 'publish',
+			'posts_per_page'   => 1,
+			'fields'           => 'ids',
+			'no_found_rows'    => true,
+			'suppress_filters' => false,
+			'meta_key'         => arv_live_meta_key(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'meta_value'       => $slug, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+		)
+	);
+
+	return empty( $found ) ? '' : (string) get_permalink( $found[0] );
+}
+
+/**
+ * This page's own URL, without an edition already on it.
  *
  * Built from the permalink rather than from REQUEST_URI so the links are
  * canonical and do not carry along whatever tracking parameters the visitor
@@ -720,7 +789,7 @@ function arv_live_seo_context() {
 	}
 
 	$editions  = arv_live_editions( $slug );
-	$requested = isset( $_GET['year'] ) ? wp_unslash( $_GET['year'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$requested = isset( $_GET[ ARV_LIVE_YEAR_VAR ] ) ? wp_unslash( $_GET[ ARV_LIVE_YEAR_VAR ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$edition   = arv_live_pick_edition( $editions, $requested );
 	$name      = $edition ? $edition['name'] : '';
 	$show      = $edition ? arv_live_store_slug( $edition['live'] ) : $slug;
