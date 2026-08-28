@@ -4130,3 +4130,140 @@
 		display: none;
 	}
 }
+
+/* --- Results: race week ------------------------------------------------ */
+/* The races happening this weekend, above the archive, because during race
+   week that is the only thing anyone has come to the page for. Dark, unlike
+   everything below it, so it reads as the live thing rather than as the
+   first row of the list. */
+
+.arv-results__week {
+	margin-top: 1.5rem;
+	padding: 1.1rem 1.25rem 1.25rem;
+	background: #1d2624;
+	color: #f2f2f2;
+}
+
+.arv-results__week-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.5rem 1rem;
+	padding-bottom: 0.85rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.arv-results__week-eyebrow {
+	margin: 0;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: var(--arv-teal);
+}
+
+.arv-results__countdown,
+.arv-results__live {
+	margin: 0;
+	font-size: 0.85rem;
+	font-weight: 700;
+}
+
+.arv-results__countdown[hidden],
+.arv-results__live[hidden] {
+	display: none;
+}
+
+.arv-results__countdown-label {
+	color: rgba(242, 242, 242, 0.65);
+	font-weight: 400;
+}
+
+.arv-results__live {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #6ee7a8;
+}
+
+.arv-results__pulse {
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: #3ddc84;
+	box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.7);
+	animation: arv-results-pulse 1.8s ease-out infinite;
+}
+
+@keyframes arv-results-pulse {
+	70% { box-shadow: 0 0 0 9px rgba(61, 220, 132, 0); }
+	100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); }
+}
+
+/* A dot that never stops moving is exactly what this setting exists to
+   turn off. The colour still carries the meaning without it. */
+@media (prefers-reduced-motion: reduce) {
+	.arv-results__pulse {
+		animation: none;
+	}
+}
+
+.arv-results__week-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-results__week-race {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.9rem;
+	padding: 0.75rem 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.arv-results__week-race:last-child {
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+
+.arv-results__week-name {
+	flex: 1 1 12rem;
+	min-width: 0;
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.arv-results__week-date {
+	font-size: 0.85rem;
+	color: rgba(242, 242, 242, 0.65);
+}
+
+/* Sized like the archive's buttons rather than stretched, so the two
+   sections read as the same site. */
+.arv-results__week-race .arv-results__link {
+	width: auto;
+	min-width: 7.75rem;
+}
+
+@media (max-width: 619px) {
+	.arv-results__week {
+		padding: 1rem 1.1rem 1.1rem;
+	}
+
+	.arv-results__week-race {
+		align-items: stretch;
+	}
+
+	.arv-results__week-name {
+		flex-basis: 100%;
+	}
+
+	.arv-results__week-race .arv-results__link {
+		flex: 1 1 0;
+		width: 100%;
+	}
+}

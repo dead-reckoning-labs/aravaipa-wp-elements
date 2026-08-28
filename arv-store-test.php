@@ -690,6 +690,52 @@ t( 'three slots per edition, always',     0 === $slots % 3 );
 t( 'the expander has a chevron',          false !== strpos( $withsearch, 'arv-results__chevron' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
+
+echo "\nresults race week:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Coldwater Rumble', 'iso' => '2026-01-17', 'live' => 'https://live.aravaiparunning.com/#/cw-2026' ),
+) );
+
+// Rock Hawk and Black Bear both run 2026-08-29 and both closed entries on
+// the 24th, so on the 28th they are in the live phase: race week.
+$GLOBALS['NOW'] = '2026-08-28';
+$week = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'a race week block appears',        false !== strpos( $week, 'arv-results__week' ) );
+t( 'listing this weekend\'s races',    false !== strpos( $week, 'Rock Hawk' ) && false !== strpos( $week, 'Black Bear' ) );
+t( 'with a live results link',         false !== strpos( $week, 'live.aravaiparunning.com' ) );
+t( 'counting down before the start',   false !== strpos( $week, 'data-arv-results-countdown=' ) );
+t( 'to midnight on race day',          false !== strpos( $week, '2026-08-29T00:00:00' ) );
+t( 'and carrying the site offset',     (bool) preg_match( '/2026-08-29T00:00:00[+-]\d\d:\d\d/', $week ) );
+t( 'the live marker is rendered too',  false !== strpos( $week, 'data-arv-results-live' ) );
+t( 'but hidden until the race starts', (bool) preg_match( '/data-arv-results-live hidden/', $week ) );
+t( 'it sits above the search box',     strpos( $week, 'arv-results__week' ) < strpos( $week, 'data-arv-results-search' ) );
+
+// Race day: the countdown is the hidden one now, and nothing had to reload
+// for the markup to say so.
+$GLOBALS['NOW'] = '2026-08-29';
+$live = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'on race day the live marker shows', (bool) preg_match( '/data-arv-results-live>/', $live ) );
+t( 'and the countdown is hidden',       (bool) preg_match( '/arv-results__countdown"[^>]*hidden/', $live ) );
+
+// Out of race week entirely: no block at all rather than an empty one.
+$GLOBALS['NOW'] = '2026-08-01';
+$quiet = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'no block when nothing is racing',   false === strpos( $quiet, 'arv-results__week' ) );
+
+// The same switch that governs the "Happening now" rows governs this.
+$GLOBALS['NOW'] = '2026-08-28';
+$off = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false' ) );
+t( 'and it can be switched off',        false === strpos( $off, 'arv-results__week' ) );
+
+// The heading and eyebrow default to nothing: the page has a hero already.
+$bare = arv_results_render( array( 'mod_id' => 'e1', 'class' => '' ) );
+t( 'no eyebrow by default',             false === strpos( $bare, 'arv-results__eyebrow' ) );
+t( 'no heading by default',             false === strpos( $bare, 'arv-results__heading' ) );
+$titled = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'heading' => 'Results' ) );
+t( 'but both are still settable',       false !== strpos( $titled, 'arv-results__heading' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
 echo "\nSEO: single race page schema:\n";
 require_once __DIR__ . '/includes/seo.php';
 
