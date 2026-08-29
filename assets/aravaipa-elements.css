@@ -5025,7 +5025,12 @@
 .arv-live__clock {
 	display: flex;
 	align-items: center;
-	gap: 0.6rem;
+	/* Pixels, not rem. At 0.6rem this was 9px on a desktop and 7.2px on a
+	   phone, because the theme drops the root font size there, so the one
+	   place the gap mattered most was the one place it shrank: an elapsed
+	   time and a temperature are both numbers, and seven pixels apart they
+	   read as one. Same reason the type scale on this plugin is in pixels. */
+	gap: 12px;
 	flex: 0 0 auto;
 	font-size: var(--arv-fs-body);
 	color: #f4f4f4;
@@ -5041,8 +5046,17 @@
 .arv-live__weather {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.3rem;
+	gap: 5px;
 	color: rgba(244, 244, 244, 0.82);
+}
+
+/* The same middot the meta line above already uses to separate a date from a
+   place. Two unrelated numbers sitting side by side need to be told apart by
+   something, and this bar has an established way of doing it. */
+.arv-live__weather::before {
+	content: '·';
+	margin-right: 7px;
+	color: rgba(244, 244, 244, 0.45);
 }
 
 .arv-live__weather-temp {
