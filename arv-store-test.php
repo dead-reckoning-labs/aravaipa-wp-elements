@@ -2625,9 +2625,48 @@ $GLOBALS['_http_queue'] = array();
 // Watch, one race: every edition, embedded, on its own page.
 // -------------------------------------------------------------------------
 echo "\nwatch, race key & name:\n";
-t( 'strips the trailing year off a slug', 'black-canyon' === arv_watch_race_key( 'black-canyon-2026' ) );
-t( 'and off one with a distance in it',   'cocodona-250' === arv_watch_race_key( 'cocodona-250-2026' ) );
-t( 'a slug with no year is left alone',   'ghost' === arv_watch_race_key( 'ghost' ) );
+// Keyed on the name, normalised through arv_results_race_key(), because
+// Mountain Outpost's slugs drift between seasons and the names do not.
+t( 'strips the trailing year off a name', 'black canyon' === arv_watch_race_key( 'Black Canyon Ultras 2026' ) );
+t( 'and the distance with it',            'cocodona' === arv_watch_race_key( 'Cocodona 250 2026' ) );
+t( 'a name with no year is fine',         'ghost' === arv_watch_race_key( 'Ghost' ) );
+
+// The three races MO spells two ways across years. Each pair has to land on
+// one key or its dedicated page shows half its own history: this shipped
+// keyed on the slug, and /watch/black-canyon/ hid 2024, 2023 and 2022 while
+// /watch/jackpot/ and /watch/javelina/ showed one year and no switcher.
+t( 'black canyon, both spellings',        arv_watch_race_key( 'Black Canyon Ultras 2026' ) === arv_watch_race_key( 'Black Canyon Ultras 2024' ) );
+t( 'jackpot, both spellings',             arv_watch_race_key( 'Jackpot Ultras 2025' ) === arv_watch_race_key( 'Jackpot Ultras 2022' ) );
+t( 'javelina, both spellings',            arv_watch_race_key( 'Javelina Jundred 2025' ) === arv_watch_race_key( 'Javelina Jundred 2021' ) );
+// And a page's stored key, which is written as a slug, has to normalise to
+// the same thing the feed's name does, or the index links nowhere.
+t( 'a stored slug key matches its name',  arv_watch_race_key( 'black-canyon' ) === arv_watch_race_key( 'Black Canyon Ultras 2026' ) );
+t( 'even with a distance in it',          arv_watch_race_key( 'cocodona-250' ) === arv_watch_race_key( 'Cocodona 250 2026' ) );
+// Two genuinely different races must not collapse together.
+t( 'and two real races stay apart',       arv_watch_race_key( 'Black Canyon Ultras' ) !== arv_watch_race_key( 'Cocodona 250' ) );
+
+// A page's stored key does not have to be the normaliser's exact output.
+// The Javelina page was created as "javelina" while every edition is named
+// "Javelina Jundred", so its key resolved to "javelina", the feed's to
+// "javelina jundred", and the page found none of its own five broadcasts.
+$GLOBALS['_transients']['arv_watch_events'] = array(
+	array( 'slug' => 'javelina-2025', 'name' => 'Javelina Jundred 2025', 'live' => false, 'start' => '2025-10-25', 'streams' => array( array( 'id' => 'jv25aaaaaaa', 'title' => 'A', 'url' => 'https://youtu.be/jv25aaaaaaa', 'thumbnail' => '', 'live' => false, 'type' => '', 'start' => '' ) ) ),
+	array( 'slug' => 'javelina-jundred-2024', 'name' => 'Javelina Jundred 2024', 'live' => false, 'start' => '2024-10-26', 'streams' => array( array( 'id' => 'jv24aaaaaaa', 'title' => 'B', 'url' => 'https://youtu.be/jv24aaaaaaa', 'thumbnail' => '', 'live' => false, 'type' => '', 'start' => '' ) ) ),
+	array( 'slug' => 'cocodona-250-2025', 'name' => 'Cocodona 250 2025', 'live' => false, 'start' => '2025-05-05', 'streams' => array( array( 'id' => 'cc25aaaaaaa', 'title' => 'C', 'url' => 'https://youtu.be/cc25aaaaaaa', 'thumbnail' => '', 'live' => false, 'type' => '', 'start' => '' ) ) ),
+);
+t( 'a short stored key resolves to the race', 'javelina jundred' === arv_watch_resolve_key( arv_watch_race_key( 'javelina' ) ) );
+t( 'and finds both its editions',          2 === count( arv_watch_race_editions( arv_watch_resolve_key( arv_watch_race_key( 'javelina' ) ) ) ) );
+t( 'an exact key is returned unchanged',   'cocodona' === arv_watch_resolve_key( 'cocodona' ) );
+t( 'a key matching nothing is unchanged',  'nonsense' === arv_watch_resolve_key( 'nonsense' ) );
+t( 'and an empty one stays empty',         '' === arv_watch_resolve_key( '' ) );
+
+// Ambiguity is refused rather than guessed: showing the wrong race's
+// broadcasts is worse than showing none.
+$GLOBALS['_transients']['arv_watch_events'] = array(
+	array( 'slug' => 'desert-solstice-2025', 'name' => 'Desert Solstice Track 2025', 'live' => false, 'start' => '2025-12-20', 'streams' => array( array( 'id' => 'ds25aaaaaaa', 'title' => 'A', 'url' => 'https://youtu.be/ds25aaaaaaa', 'thumbnail' => '', 'live' => false, 'type' => '', 'start' => '' ) ) ),
+	array( 'slug' => 'desert-solstice-night-2025', 'name' => 'Desert Solstice Night 2025', 'live' => false, 'start' => '2025-12-21', 'streams' => array( array( 'id' => 'dn25aaaaaaa', 'title' => 'B', 'url' => 'https://youtu.be/dn25aaaaaaa', 'thumbnail' => '', 'live' => false, 'type' => '', 'start' => '' ) ) ),
+);
+t( 'two candidates resolve to neither',    'desert solstice' === arv_watch_resolve_key( 'desert solstice' ) );
 t( 'strips the trailing year off a name', 'Black Canyon Ultras' === arv_watch_race_name( 'Black Canyon Ultras 2026' ) );
 t( 'a name with no year is left alone',   'Desert Solstice' === arv_watch_race_name( 'Desert Solstice' ) );
 
@@ -2664,7 +2703,7 @@ $races_fixture = array(
 
 echo "\nwatch, grouping editions:\n";
 $GLOBALS['_transients']['arv_watch_events'] = $races_fixture;
-$editions = arv_watch_race_editions( 'black-canyon' );
+$editions = arv_watch_race_editions( arv_watch_race_key( 'black-canyon' ) );
 t( 'both editions come back',            2 === count( $editions ) );
 t( 'newest first',                        '2026-02-14T14:00:00Z' === $editions[0]['start'] );
 t( 'a race with no broadcasts is empty',  array() === arv_watch_race_editions( 'nonexistent' ) );
