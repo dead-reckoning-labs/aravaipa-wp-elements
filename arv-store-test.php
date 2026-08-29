@@ -1898,6 +1898,41 @@ $bare_bar = arv_live_bar( 'Some Retired Race', null, null, array(), 'retired-201
 t( 'no race, no instagram guess',       false === strpos( $bare_bar, 'instagram.com' ) );
 t( 'and no clock to count to',          false === strpos( $bare_bar, 'arv-results__countdown' ) );
 
+// The summary goes above the board, not below it. The board is sized to its
+// whole field now, three thousand pixels for a small race, so a summary at
+// the far end of it is not a summary of anything anyone has reached.
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_stats_store_set( array(
+	array(
+		'slug'      => 'black_bear-2025',
+		'name'      => 'Black Bear Trail Races',
+		'finishers' => 225,
+		'starters'  => 260,
+		'rows'      => 64,
+		'headline'  => true,
+		'winners'   => array(
+			array( 'distance' => '50K', 'men' => array( 'name' => 'Jarrod Beauregard', 'time' => '5:54:47' ) ),
+		),
+	),
+) );
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+) );
+
+$page = arv_live_page_render( array( 'slug' => 'black_bear-2025', 'year' => '2025' ) );
+t( 'a finished race gets a summary',    false !== strpos( $page, 'arv-live__report' ) );
+t( 'and it names a winner',             false !== strpos( $page, 'Jarrod Beauregard' ) );
+t( 'above the board, not below it',     strpos( $page, 'arv-live__report' ) < strpos( $page, 'arv-live__iframe' ) );
+t( 'and below the bar',                 strpos( $page, 'arv-live__bar' ) < strpos( $page, 'arv-live__report' ) );
+
+// It is also the only thing on the page a search engine can read: the board
+// is a cross-origin iframe. Deleting it would leave these pages with no race
+// results in them at all, which is what they were built to have.
+t( 'the winner is in the page itself',  false !== strpos( strip_tags( $page ), 'Jarrod Beauregard' ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
+
 // ------------------------------------------------------ Pinned editions --
 // A year page pins itself with year=, because the slug alone cannot: the
 // main page for a race carries the current year's slug and has to follow the
