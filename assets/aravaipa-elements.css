@@ -5433,8 +5433,13 @@
 		display: none;
 	}
 
+	/* Lined up under the name and the date, not under the logo. It was
+	   flush with the row's own left edge, which is the logo's column, while
+	   everything else on the card starts one column over: measured, name
+	   and meta both started at x68 on a 390px row and the clock at x12. */
 	.arv-live-index__clock {
 		flex: 1 1 100%;
+		margin-left: calc(44px + 1rem);
 	}
 }
 
