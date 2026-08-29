@@ -720,3 +720,49 @@ function arv_results_elapsed_text( $start ) {
 
 	return sprintf( '%d:%02d', $hours, $minutes );
 }
+
+/**
+ * The name a race should be shown under, whatever the source called it.
+ *
+ * Two sources disagree, and both of them are wrong about some races. The
+ * calendar page calls one "Rock Hawk" while its own logo reads ROCK HAWK
+ * TRAIL RACES; the timing board called Black Bear "Black Bear Trail Races"
+ * in 2025 and "Black Bear Trail Race" in 2026. Picking the newest edition's
+ * name, which the live index used to do, just meant inheriting whichever
+ * mistake was most recent.
+ *
+ * Applied on the way out of the stores rather than on the way in, so a
+ * re-scrape cannot undo it and nothing has to remember to call it: read a
+ * race from either store and it is already named correctly.
+ *
+ * Keyed by arv_results_race_key() so one entry catches every spelling of a
+ * race across every year, which is the same normalisation that already
+ * decides two rows are the same race.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_race_display_name( $name ) {
+	$name = (string) $name;
+
+	if ( '' === $name || ! function_exists( 'arv_results_race_key' ) ) {
+		return $name;
+	}
+
+	/**
+	 * Filters the canonical display names, keyed by race key.
+	 *
+	 * @param array $names key => display name
+	 */
+	$names = apply_filters(
+		'arv_race_display_names',
+		array(
+			'rock hawk'  => 'Rock Hawk Trail Races',
+			'black bear' => 'Black Bear Trail Races',
+		)
+	);
+
+	$key = arv_results_race_key( $name );
+
+	return isset( $names[ $key ] ) ? $names[ $key ] : $name;
+}

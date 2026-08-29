@@ -271,7 +271,10 @@ add_action( 'trashed_post', 'arv_race_store_flush_cache' );
  *                    rather than rendering something broken.
  */
 function arv_race_store_to_race( $post ) {
-	$race = array( 'name' => $post->post_title );
+	// Corrected on the way out, so every consumer of the store gets the name
+	// the race is actually called rather than whatever the calendar page it
+	// was scraped from happened to say. See arv_race_display_name().
+	$race = array( 'name' => arv_race_display_name( $post->post_title ) );
 
 	foreach ( arv_race_store_fields() as $meta_key => $race_key ) {
 		$value = get_post_meta( $post->ID, $meta_key, true );

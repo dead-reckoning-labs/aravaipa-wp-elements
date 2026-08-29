@@ -40,7 +40,10 @@ function arv_results_store_get() {
 		}
 
 		$out[] = array(
-			'name'         => (string) $row['name'],
+			// Corrected on read for the same reason the race store does it:
+			// the board named the same race two different things in two
+			// consecutive years and neither is what it is called.
+			'name'         => arv_race_display_name( (string) $row['name'] ),
 			'iso'          => (string) $row['iso'],
 			'display'      => isset( $row['display'] ) ? (string) $row['display'] : '',
 			'live'         => isset( $row['live'] ) ? (string) $row['live'] : '',
