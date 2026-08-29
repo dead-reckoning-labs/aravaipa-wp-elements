@@ -46,6 +46,18 @@
 	--arv-fs-name: 19px;
 	--arv-fs-title: 24px;
 	--arv-fs-heading: 30px;
+
+	/* Corner radius, measured off the theme rather than chosen. Its own
+	   buttons round at 12px on a 58px hero button and 5.25px on a 42px one,
+	   ratios of 0.21 and 0.12. This plugin's buttons are 45px, and the one
+	   button in it that was already rounded, the featured card's CTA, sits at
+	   8px on 55px: 0.145, right between the two. Square was a deliberate
+	   choice here once, and it was wrong: nothing else on the site is.
+	   Chips take half, so a 24px distance badge is softened rather than
+	   turned into a lozenge. */
+	--arv-radius: 8px;
+	--arv-radius-chip: 4px;
+	--arv-radius-card: 12px;
 }
 
 @media (max-width: 619px) {
@@ -157,7 +169,7 @@
 .arv-hero__badge {
 	display: inline-block;
 	padding: 0.3rem 0.7rem;
-	border-radius: 2px;
+	border-radius: var(--arv-radius-chip);
 	font-size: var(--arv-fs-label);
 	font-weight: 800;
 	letter-spacing: 0.1em;
@@ -184,7 +196,7 @@
 	display: inline-block;
 	margin-top: 1.5rem;
 	padding: 0.85rem 2rem;
-	border-radius: 2px;
+	border-radius: var(--arv-radius);
 	background: var(--arv-accent);
 	color: #fff;
 	font-weight: 800;
@@ -284,6 +296,7 @@
 	text-align: center;
 	text-decoration: none;
 	transition: filter 0.15s ease;
+	border-radius: var(--arv-radius);
 }
 
 .arv-distance__cta:hover,
@@ -715,6 +728,7 @@
 	text-transform: uppercase;
 	text-align: center;
 	transition: background 0.15s ease;
+	border-radius: var(--arv-radius);
 }
 
 .arv-region-map__cta::after {
@@ -1222,8 +1236,11 @@
 	display: flex;
 	flex-direction: column;
 	background: var(--arv-races-card);
-	/* Square, like everything else on this site. */
-	border-radius: 0;
+	/* "Square, like everything else on this site" is what this said, and it
+	   was not true of the site: the theme's own buttons round at 12px and
+	   the featured race card at 14px. A square tile wrapping rounded buttons
+	   is the specific thing that reads as dated. */
+	border-radius: var(--arv-radius-card);
 }
 
 /* Fixed aspect box so a grid of race tiles lines up whatever shape the
@@ -1373,7 +1390,7 @@
 	letter-spacing: 1.5px;
 	text-transform: uppercase;
 	text-decoration: none;
-	border-radius: 0;
+	border-radius: var(--arv-radius);
 	transition: background 0.15s ease;
 }
 
@@ -1395,7 +1412,7 @@
 	text-transform: uppercase;
 	text-decoration: none;
 	white-space: nowrap;
-	border-radius: 0;
+	border-radius: var(--arv-radius);
 	transition: border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -1924,6 +1941,7 @@
 		min-height: 36px;
 		padding: 0.4rem 0.7rem;
 	}
+	border-radius: var(--arv-radius);
 }
 
 /* A date nobody has committed to yet. Muted rather than accent-coloured: it
@@ -2190,11 +2208,11 @@
 	opacity: 0.6;
 }
 
-.arv-calendar__search,
-.arv-calendar__select {
+.arv-calendar__field .arv-calendar__search,
+.arv-calendar__field .arv-calendar__select {
 	padding: 0.55rem 0.7rem;
 	border: 1px solid rgba(128, 128, 128, 0.4);
-	border-radius: 0;
+	border-radius: var(--arv-radius);
 	background: transparent;
 	color: inherit;
 	font-family: inherit;
@@ -2221,6 +2239,7 @@
 	min-height: 44px;
 	font-size: var(--arv-fs-btn);
 	cursor: pointer;
+	border-radius: var(--arv-radius);
 }
 
 .arv-calendar__toggle input {
@@ -2437,6 +2456,7 @@
 .arv-map__search-input {
 	flex: 1 1 auto;
 	min-width: 0;
+	border-radius: var(--arv-radius);
 }
 
 /* Near me, inline beside the search rather than as its own Leaflet control.
@@ -2464,10 +2484,10 @@
 	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 }
 
-.arv-map__search-input {
+.arv-map__search .arv-map__search-input {
 	padding: 0.55rem 0.7rem;
 	border: 1px solid rgba(0, 0, 0, 0.2);
-	border-radius: 0;
+	border-radius: var(--arv-radius);
 	/* Opaque, not transparent: this sits over map tiles now, and a
 	   see-through input over a road map is unreadable. */
 	background: #fff;
@@ -2600,6 +2620,7 @@
 	line-height: 1.6;
 	white-space: nowrap;
 	color: var(--arv-teal-deep, #2a5e6b);
+	border-radius: var(--arv-radius-chip);
 }
 
 @media (max-width: 619px) {
@@ -2636,6 +2657,7 @@
 	line-height: 1.5;
 	white-space: nowrap;
 	opacity: 1;
+	border-radius: var(--arv-radius-chip);
 }
 
 /* Hide map / Show map toggle. Right-aligned above the map so it reads as
@@ -2655,6 +2677,7 @@
 	text-transform: uppercase;
 	color: var(--arv-ink, #272727);
 	cursor: pointer;
+	border-radius: var(--arv-radius);
 }
 
 /* While the map is open the toggle floats over its top right corner, the
@@ -2927,6 +2950,7 @@
 	letter-spacing: 0.3px;
 	line-height: 1.5;
 	white-space: nowrap;
+	border-radius: var(--arv-radius-chip);
 }
 
 .arv-map__popup-where {
@@ -2955,6 +2979,7 @@
 	text-decoration: none;
 	white-space: nowrap;
 	border: 1px solid transparent;
+	border-radius: var(--arv-radius);
 }
 
 .arv-map__popup-cta--upcoming {
@@ -3237,7 +3262,7 @@
 .arv-featured__pill {
 	padding: 0.3rem 0.7rem;
 	border: 1px solid rgba(255, 255, 255, 0.35);
-	border-radius: 2px;
+	border-radius: var(--arv-radius-chip);
 	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 0.03em;
@@ -3282,6 +3307,7 @@
 	text-transform: uppercase;
 	text-decoration: none;
 	transition: background 0.15s ease, border-color 0.15s ease;
+	border-radius: var(--arv-radius);
 }
 
 /* Same amber for a sold-out race with a waitlist, same teal for something
@@ -3510,7 +3536,7 @@
 	text-align: center;
 	text-transform: uppercase;
 	text-decoration: none;
-	border-radius: 8px;
+	border-radius: var(--arv-radius);
 }
 
 .arv-featured__card-cta-arrow {
@@ -3531,6 +3557,7 @@
 	text-decoration: none;
 	border-bottom: 1px solid currentColor;
 	padding-bottom: 2px;
+	border-radius: var(--arv-radius);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -3837,6 +3864,7 @@
 	font-weight: 800;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
+	border-radius: var(--arv-radius-chip);
 }
 
 .arv-results__link,
@@ -3861,6 +3889,7 @@
 	text-transform: uppercase;
 	text-decoration: none;
 	transition: background 0.15s ease;
+	border-radius: var(--arv-radius);
 }
 
 /* Aravaipa's own timing is the primary of the three, and the only one that
@@ -4066,12 +4095,12 @@
 	outline-offset: -2px;
 }
 
-.arv-results__search-input {
+.arv-results__search-field .arv-results__search-input {
 	flex: 1 1 auto;
 	min-width: 0;
 	padding: 0.6rem 2.2rem 0.6rem 0.75rem;
 	border: 1px solid #d4d4d4;
-	border-radius: 0;
+	border-radius: var(--arv-radius);
 	/* 16px. Anything smaller and iOS Safari zooms the whole page in on
 	   focus, which is the same trap the calendar's search hit. */
 	font-size: var(--arv-fs-input);
@@ -4267,6 +4296,7 @@
 
 .arv-results__winners-all[open] > .arv-results__older-toggle {
 	margin-bottom: 0.4rem;
+	border-radius: var(--arv-radius);
 }
 
 .arv-results__winners-all[open] > .arv-results__older-toggle .arv-results__chevron {
@@ -4618,6 +4648,7 @@
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
 	color: inherit;
+	border-radius: var(--arv-radius-chip);
 }
 
 /* Only the chips that actually go somewhere look like they do. A distance
@@ -5087,6 +5118,7 @@
 	color: #f4f4f4;
 	text-decoration: none;
 	font-variant-numeric: tabular-nums;
+	border-radius: var(--arv-radius);
 }
 
 .arv-live__year-link.is-current {
@@ -5315,6 +5347,7 @@
 	letter-spacing: 0.04em;
 	color: rgba(244, 244, 244, 0.82);
 	text-decoration: none;
+	border-radius: var(--arv-radius);
 }
 
 .arv-live-index__season:hover,
