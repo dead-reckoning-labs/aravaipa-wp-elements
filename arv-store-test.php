@@ -1901,8 +1901,7 @@ $last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '202
 // straight at, so it went.
 t( 'last year renders its own page',    false !== strpos( $last, 'black_bear-2025' ) );
 t( 'and does not restate the results',  false === strpos( $last, '2025 results' ) );
-t( 'nor the finisher count',            false === strpos( $last, '225 finishers' ) );
-t( 'nor the winners',                   false === strpos( $last, 'Sam Reed' ) && false === strpos( $last, 'Ana Cruz' ) );
+t( 'but does say who won it',           false !== strpos( $last, 'Sam Reed' ) );
 t( 'the frame follows the year',        false !== strpos( $last, 'black_bear-2025' ) );
 
 // The board is the authority on what it is timing. A race added this week
@@ -2010,9 +2009,37 @@ arv_results_store_set( array(
 ) );
 
 $page = arv_live_page_render( array( 'slug' => 'black_bear-2025', 'year' => '2025' ) );
-t( 'a finished race gets no summary',   false === strpos( $page, 'arv-live__report' ) );
-t( 'and names no winner',               false === strpos( $page, 'Jarrod Beauregard' ) );
-t( 'nor counts its finishers',          false === strpos( $page, '225 finisher' ) );
+t( 'a finished race gets no table',     false === strpos( $page, 'arv-live__report' ) );
+
+// One line rather than the table that was there: it answers "who won" at a
+// glance and is the only text on the page a crawler can read, since the
+// board is a cross-origin iframe.
+t( 'but it says who won',               false !== strpos( $page, 'Jarrod Beauregard' ) );
+t( 'with the winning time',             false !== strpos( $page, '5:54:47' ) );
+t( 'and how many finished',             false !== strpos( $page, '225 finishers' ) );
+t( 'naming the headline distance',      false !== strpos( $page, '>50K ' ) );
+t( 'and only that distance',            false === strpos( $page, 'Matthew Reynolds' ) );
+t( 'it is one line, not a table',       false === strpos( $page, '<table' ) );
+t( 'and readable with the tags off',    false !== strpos( strip_tags( $page ), 'Jarrod Beauregard' ) );
+
+// A lap event runs every category over the same loop, so its distances come
+// back within metres of each other and "who won the event" is not a question
+// with an answer. The scraper already decides this; the headline honours it
+// and reports the count alone.
+t( 'a lap event names no winner',       false === strpos( arv_live_headline( array(
+	'finishers' => 74, 'headline' => false,
+	'winners'   => array( array( 'distance' => '6 Hour', 'men' => array( 'name' => 'Someone', 'time' => '1:00:00' ) ) ),
+) ), 'Someone' ) );
+t( 'but still counts its finishers',    false !== strpos( arv_live_headline( array(
+	'finishers' => 74, 'headline' => false, 'winners' => array(),
+) ), '74 finishers' ) );
+
+// A race with no finishers has nothing to report and should not say "0".
+t( 'an unrun race says nothing',        '' === arv_live_headline( array( 'finishers' => 0, 'rows' => 113 ) ) );
+t( 'and neither does no stats row',     '' === arv_live_headline( null ) );
+t( 'one finisher is singular',          false !== strpos( arv_live_headline( array(
+	'finishers' => 1, 'headline' => false, 'winners' => array(),
+) ), '1 finisher<' ) );
 
 // The entrant count is still read from the same stats row, for the frame.
 t( 'but the frame is still sized',      false !== strpos( $page, 'height:3252px' ) );

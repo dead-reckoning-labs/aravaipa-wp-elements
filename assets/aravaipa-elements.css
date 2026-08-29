@@ -5029,6 +5029,37 @@
 	color: #0d1211;
 }
 
+/* Who won, one line, directly under the bar. Sits in the same content
+   column as everything else and reads as a caption to the board below it,
+   which is what stops it looking like the table that used to be here. */
+.arv-live__headline {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.2rem 0.6rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0.75rem 1.25rem 0;
+	font-size: var(--arv-fs-body);
+	color: var(--arv-ink, #272727);
+}
+
+.arv-live__headline-win {
+	font-weight: 700;
+}
+
+/* The count is context for the names, not a headline of its own. */
+.arv-live__headline-count {
+	color: #6d6d6d;
+}
+
+@media (max-width: 619px) {
+	.arv-live__headline {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+}
+
 /* The words below the frame stay in the content column. */
 .arv-live__open {
 	max-width: 1200px;
