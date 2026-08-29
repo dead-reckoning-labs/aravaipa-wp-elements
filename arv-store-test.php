@@ -1238,11 +1238,13 @@ $GLOBALS['meta'] = array(
 	11 => array( '_arv_live_slug' => 'black_bear-2026' ),
 	12 => array( '_arv_live_slug' => 'rock_hawk-2026' ),
 	13 => array( '_arv_live_slug' => 'black_bear-2025' ),
+	14 => array( '_arv_live_slug' => 'jackrabbit-2026' ),
 );
 $GLOBALS['PERMALINK'] = array(
 	11 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race/',
 	12 => 'https://www.aravaiparunning.com/live-results/rock-hawk/',
 	13 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race-2025/',
+	14 => 'https://www.aravaiparunning.com/live-results/jackrabbit-jubilee/',
 );
 
 arv_race_store_import(
@@ -1250,10 +1252,19 @@ arv_race_store_import(
 	"Rock Hawk | 2026-08-29 | August 29 | 50K | 25K |  |  | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/y | https://www.aravaiparunning.com/bcs/rh/ | https://example.com/rh.png |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0 | 39.36 | -104.87\n"
 );
 arv_results_store_set( array(
-	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'display' => 'August 30',
+	// Named the way the board named it that year, which is the whole point
+	// of the canonical-name test below: the index should not repeat it.
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30',
 	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+	// A 2026 race that has already run, so ordering across all three states
+	// is still exercised inside one season now that the index shows one.
+	array( 'name' => 'Jackrabbit Jubilee', 'iso' => '2026-08-22', 'display' => 'August 22',
+	       'live' => 'https://live.aravaiparunning.com/#/jackrabbit-2026' ),
 ) );
-arv_stats_store_set( array( array( 'slug' => 'black_bear-2025', 'finishers' => 225 ) ) );
+arv_stats_store_set( array(
+	array( 'slug' => 'black_bear-2025', 'finishers' => 225 ),
+	array( 'slug' => 'jackrabbit-2026', 'finishers' => 123 ),
+) );
 arv_live_store_set( array(
 	array( 'slug' => 'black_bear-2026', 'start' => '2026-08-29T10:00:00.000Z', 'cutoff' => '2026-08-29T22:00:00.000Z', 'offset' => -4, 'races' => array() ),
 	array( 'slug' => 'rock_hawk-2026',  'start' => '2026-08-29T12:00:00.000Z', 'cutoff' => '2026-08-29T21:00:00.000Z', 'offset' => -6, 'races' => array() ),
@@ -1263,16 +1274,17 @@ arv_live_store_set( array(
 $GLOBALS['NOW_TS'] = strtotime( '2026-08-29T11:00:00Z' );
 $idx = arv_live_index_render( array( 'heading' => 'Live Results' ) );
 
-t( 'the index lists every live page',   false !== strpos( $idx, 'Black Bear Trail Race' ) && false !== strpos( $idx, 'Rock Hawk' ) );
+t( 'the index lists this season',       false !== strpos( $idx, 'Black Bear Trail Race' ) && false !== strpos( $idx, 'Rock Hawk' ) );
 t( 'and links each to its own page',    false !== strpos( $idx, '/live-results/rock-hawk/' ) );
 
 // A race in progress belongs above one that has not started, and both above
-// last year. Sorting by date alone puts last weekend above this afternoon.
+// one that has finished. Sorting by date alone puts this morning above this
+// afternoon regardless of which is actually running.
 $bb   = strpos( $idx, 'black-bear-trail-race/' );
 $rh   = strpos( $idx, 'rock-hawk/' );
-$last = strpos( $idx, 'black-bear-trail-race-2025/' );
+$done = strpos( $idx, 'jackrabbit-jubilee/' );
 t( 'the live race is first',            $bb < $rh );
-t( 'and finished races are last',       $rh < $last );
+t( 'and finished races are last',       $rh < $done );
 
 t( 'a running race is marked live',     false !== strpos( $idx, 'arv-live-index__race--live' ) );
 t( 'and carries a ticking clock',       false !== strpos( $idx, 'data-arv-results-clock' ) );
@@ -1280,8 +1292,41 @@ t( 'with a row for its live marker',    false !== strpos( $idx, 'data-arv-result
 
 // A finished race says what happened rather than counting to something that
 // already went, and drops the clock entirely.
-t( 'a finished race counts finishers',  false !== strpos( $idx, '225 finishers' ) );
+t( 'a finished race counts finishers',  false !== strpos( $idx, '123 finishers' ) );
 t( 'and shows no countdown',            2 === substr_count( $idx, 'data-arv-results-clock' ) );
+
+// ------------------------------------------------------ Season filter --
+// This page is where someone lands looking for a race happening now, and
+// every past season pushed the thing they came for further down it.
+t( 'last season is not on this page',   false === strpos( $idx, 'black-bear-trail-race-2025/' ) );
+t( 'but it is offered as a year',       false !== strpos( $idx, 'season=2025' ) );
+t( 'and this year is marked current',   false !== strpos( $idx, 'is-current' ) );
+t( 'never using WordPress\'s own var',  false === strpos( $idx, '?year=' ) );
+
+$prev = arv_live_index_render( array( 'heading' => 'Live Results', 'season' => '2025' ) );
+t( 'asking for last season gets it',    false !== strpos( $prev, 'black-bear-trail-race-2025/' ) );
+t( 'and this season is not in it',      false === strpos( $prev, '/live-results/rock-hawk/' ) );
+t( 'with its finisher count',           false !== strpos( $prev, '225 finishers' ) );
+
+// The reader's own ?season= outranks whatever the shortcode was told.
+$_GET[ ARV_LIVE_SEASON_VAR ] = '2025';
+$asked = arv_live_index_render( array( 'heading' => 'Live Results', 'season' => '2026' ) );
+t( 'the reader outranks the default',   false !== strpos( $asked, 'black-bear-trail-race-2025/' ) );
+$_GET[ ARV_LIVE_SEASON_VAR ] = '1999';
+$junk = arv_live_index_render( array( 'heading' => 'Live Results' ) );
+t( 'a season with no races falls back', false !== strpos( $junk, '/live-results/rock-hawk/' ) );
+unset( $_GET[ ARV_LIVE_SEASON_VAR ] );
+
+// One season is not a choice, so there is no switcher to draw.
+t( 'the years come back newest first',  array( '2026', '2025' ) === arv_live_index_years( array(
+	array( 'iso' => '2025-08-30' ), array( 'iso' => '2026-08-29' ), array( 'iso' => '2026-08-22' ),
+) ) );
+t( 'one season draws no switcher',      '' === arv_live_index_seasons( array( '2026' ), '2026' ) );
+t( 'and none at all draws none',        '' === arv_live_index_seasons( array(), '' ) );
+
+// The same race under three of the board's spellings is still one race.
+// Rock Hawk Trail Races became Rock Hawk; the index should not say both.
+t( 'the index uses one name per race',  false === strpos( $prev, 'Black Bear Trail Races' ) );
 
 // Nothing to list is nothing at all, not an empty shell.
 $GLOBALS['meta'] = array();

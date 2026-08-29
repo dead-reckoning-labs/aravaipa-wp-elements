@@ -5176,6 +5176,44 @@
 	max-width: 46rem;
 }
 
+/* Year switcher. Sized and coloured like the year buttons on a race's own
+   page, because it does the same job and should not look like a new idea. */
+.arv-live-index__seasons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.4rem;
+	margin: 1.1rem 0 0;
+}
+
+.arv-live-index__season,
+.arv-live-index__season:link,
+.arv-live-index__season:visited {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 36px;
+	padding: 0.3rem 0.85rem;
+	border: 1px solid rgba(244, 244, 244, 0.28);
+	font-size: var(--arv-fs-btn);
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	color: rgba(244, 244, 244, 0.82);
+	text-decoration: none;
+}
+
+.arv-live-index__season:hover,
+.arv-live-index__season:focus-visible {
+	border-color: var(--arv-teal, #5bb5a2);
+	color: #ffffff;
+}
+
+.arv-live-index__season.is-current {
+	background: var(--arv-teal, #5bb5a2);
+	border-color: var(--arv-teal, #5bb5a2);
+	color: #10201f;
+}
+
 .arv-live-index__list {
 	list-style: none;
 	margin: 1.5rem 0 0;
