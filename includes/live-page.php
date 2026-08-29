@@ -837,6 +837,26 @@ function arv_live_index_row( $page ) {
 }
 
 /**
+ * When an index row's race actually starts, where the board says so.
+ *
+ * The date is not enough to order two races on the same day: they can be in
+ * different timezones, which Black Bear in New Hampshire and Rock Hawk in
+ * Colorado are, so the one listed first was the one starting last.
+ *
+ * @param array $row
+ * @return int Timestamp, or 0 where the board has no clock for it.
+ */
+function arv_live_start_ts( $row ) {
+	$board = isset( $row['board'] ) ? $row['board'] : null;
+
+	if ( ! is_array( $board ) || empty( $board['start'] ) ) {
+		return 0;
+	}
+
+	return (int) strtotime( $board['start'] );
+}
+
+/**
  * The index: every live page, as a dark list.
  *
  * Ordered the way someone arriving on race day reads it: anything running
@@ -878,6 +898,23 @@ function arv_live_index_render( $args = array() ) {
 			// what is over.
 			if ( 'done' === $a['state'] ) {
 				return ( $a['iso'] < $b['iso'] ) ? 1 : -1;
+			}
+
+			// Two races on the same day are ordered by the clock, not left
+			// to whatever order the pages came back in. Black Bear and Rock
+			// Hawk both run on the 29th and start two hours apart, and the
+			// later one was listed first, under a heading that says soonest.
+			// The date alone cannot tell them apart: they are in different
+			// timezones, so the start time is the only thing that can.
+			if ( $a['iso'] === $b['iso'] ) {
+				$as = arv_live_start_ts( $a );
+				$bs = arv_live_start_ts( $b );
+
+				if ( $as && $bs && $as !== $bs ) {
+					return ( $as > $bs ) ? 1 : -1;
+				}
+
+				return strcasecmp( $a['name'], $b['name'] );
 			}
 
 			return ( $a['iso'] > $b['iso'] ) ? 1 : -1;

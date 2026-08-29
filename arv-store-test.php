@@ -1937,6 +1937,20 @@ t( 'nor counts its finishers',          false === strpos( $page, '225 finisher' 
 t( 'but the frame is still sized',      false !== strpos( $page, 'height:3252px' ) );
 t( 'and the board is still there',      false !== strpos( $page, 'black_bear-2025' ) );
 
+// Two races on the same day are ordered by the clock. Black Bear in New
+// Hampshire and Rock Hawk in Colorado both run on the 29th and start two
+// hours apart, and the later one was listed first under a heading that says
+// soonest: the date alone cannot separate them, since they are in different
+// timezones, so the board's start time is the only thing that can.
+$later   = array( 'iso' => '2026-08-29', 'name' => 'Rock Hawk',  'board' => array( 'start' => '2026-08-29T14:00:00Z', 'cutoff' => '' ) );
+$sooner  = array( 'iso' => '2026-08-29', 'name' => 'Black Bear', 'board' => array( 'start' => '2026-08-29T12:00:00Z', 'cutoff' => '' ) );
+
+t( 'the board start is read off a row', strtotime( '2026-08-29T12:00:00Z' ) === arv_live_start_ts( $sooner ) );
+t( 'and a row with no board gives 0',   0 === arv_live_start_ts( array( 'iso' => '2026-08-29' ) ) );
+t( 'and neither does an empty start',   0 === arv_live_start_ts( array( 'board' => array( 'start' => '', 'cutoff' => '' ) ) ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
+
 $GLOBALS['ARV_OPTIONS'] = array();
 
 // ------------------------------------------------------ Pinned editions --
