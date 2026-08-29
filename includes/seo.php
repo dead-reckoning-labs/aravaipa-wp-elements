@@ -431,3 +431,107 @@ function arv_live_seo_head() {
 	}
 }
 add_action( 'wp_head', 'arv_live_seo_head', 4 );
+
+/**
+ * Title, description, Open Graph and video structured data on a Watch race
+ * page.
+ *
+ * These pages shipped with none of it: WordPress's bare "Cocodona 250 |
+ * Aravaipa Running", no meta description, Jetpack's "Visit the post for
+ * more." as the og:description, the site logo as the og:image, and no
+ * structured data at all. To a crawler the 219 broadcasts on them, four and
+ * a third million views between them, were not videos.
+ *
+ * Same shape and the same reasoning as arv_live_seo_head() above, which is
+ * why they sit next to each other: one context resolved once, every piece
+ * built from it so none of them can disagree, and arv_seo_handled_elsewhere()
+ * checked first so a real SEO plugin wins instead of competing.
+ *
+ * @param array $parts
+ * @return array
+ */
+function arv_watch_seo_title_parts( $parts ) {
+	if ( arv_seo_handled_elsewhere() || ! function_exists( 'arv_watch_seo_context' ) ) {
+		return $parts;
+	}
+
+	$ctx = arv_watch_seo_context();
+
+	if ( null === $ctx ) {
+		return $parts;
+	}
+
+	$title = arv_watch_seo_title( $ctx );
+
+	if ( '' !== $title ) {
+		$parts['title'] = $title;
+	}
+
+	return $parts;
+}
+add_filter( 'document_title_parts', 'arv_watch_seo_title_parts' );
+
+/**
+ * @return void
+ */
+function arv_watch_seo_head() {
+	if ( arv_seo_handled_elsewhere() || ! function_exists( 'arv_watch_seo_context' ) ) {
+		return;
+	}
+
+	$ctx = arv_watch_seo_context();
+
+	if ( null === $ctx ) {
+		return;
+	}
+
+	$title       = arv_watch_seo_title( $ctx );
+	$description = arv_watch_seo_description( $ctx );
+	$url         = $ctx['url'];
+
+	if ( '' !== $description ) {
+		echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
+		echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
+		echo '<meta name="twitter:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	}
+
+	// og:title carries the site name, which WordPress appends to <title> but
+	// not to this, for the same reason it is spelled out in the live page's
+	// head: a card with no publisher on it is a worse preview.
+	if ( '' !== $title ) {
+		echo '<meta property="og:title" content="' . esc_attr( $title . ' | Aravaipa Running' ) . '" />' . "\n";
+		echo '<meta name="twitter:title" content="' . esc_attr( $title . ' | Aravaipa Running' ) . '" />' . "\n";
+	}
+
+	// video.other, not the article Jetpack was declaring. This page is a
+	// video page and the whole point of the markup below is saying so.
+	echo '<meta property="og:type" content="video.other" />' . "\n";
+
+	if ( '' !== $url ) {
+		echo '<meta property="og:url" content="' . esc_url( $url ) . '" />' . "\n";
+	}
+
+	// The broadcast's own thumbnail, not the site logo: a link to a race
+	// broadcast should preview as that race. Prefers the segment actually on
+	// screen, falls back to the event's hero.
+	$streams = $ctx['edition']['streams'];
+	$image   = ! empty( $streams ) ? $streams[0]['thumbnail'] : $ctx['edition']['hero'];
+
+	if ( '' !== $image ) {
+		echo '<meta property="og:image" content="' . esc_url( $image ) . '" />' . "\n";
+		echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+	}
+
+	$nodes = array();
+
+	$videos = arv_watch_seo_videos( $ctx );
+
+	if ( ! empty( $videos ) ) {
+		$nodes[] = $videos;
+	}
+
+	$nodes[] = arv_watch_seo_breadcrumbs( $ctx );
+
+	echo arv_seo_schema_script( $nodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+add_action( 'wp_head', 'arv_watch_seo_head', 4 );

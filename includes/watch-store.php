@@ -137,6 +137,14 @@ function arv_watch_clean( $raw ) {
 				'live'      => ! empty( $stream['live'] ),
 				'type'      => isset( $stream['streamType'] ) ? (string) $stream['streamType'] : '',
 				'start'     => isset( $stream['scheduledStart'] ) ? (string) $stream['scheduledStart'] : '',
+				'desc'      => isset( $stream['description'] ) ? (string) $stream['description'] : '',
+				// When it actually aired, which is what schema.org's
+				// uploadDate means. Null on 25 of 219 rows upstream; the
+				// schema builder falls back to the event date rather than
+				// omit a field Google requires.
+				'aired'     => isset( $stream['actualStart'] ) ? (string) $stream['actualStart'] : '',
+				'minutes'   => isset( $stream['durationMinutes'] ) ? (int) $stream['durationMinutes'] : 0,
+				'views'     => isset( $stream['views'] ) ? (int) $stream['views'] : 0,
 			);
 		}
 
@@ -151,6 +159,9 @@ function arv_watch_clean( $raw ) {
 			'name'    => arv_watch_event_name( (string) $event['name'], $start ),
 			'live'    => ! empty( $event['live'] ),
 			'start'   => $start,
+			'place'   => isset( $event['location'] ) ? (string) $event['location'] : '',
+			'desc'    => isset( $event['description'] ) ? (string) $event['description'] : '',
+			'hero'    => isset( $event['heroImage'] ) ? (string) $event['heroImage'] : '',
 			'streams' => $streams,
 		);
 	}
@@ -404,6 +415,39 @@ function arv_watch_live_block( $event ) {
 }
 
 /**
+ * Where a card, or one of its segments, should send a click.
+ *
+ * The race's own page where one exists, carrying the edition so a 2022
+ * thumbnail lands on 2022 rather than on whatever is newest, and the video
+ * so a named segment opens on that segment. Falls back to the YouTube URL
+ * for a race with no page yet, which is the only case where leaving the
+ * site is the honest answer.
+ *
+ * @param string     $base    Page URL, or the YouTube URL to fall back to.
+ * @param bool       $on_site Whether $base is a page on this site.
+ * @param string     $year
+ * @param array|null $stream  Null for the card itself rather than a segment.
+ * @return string
+ */
+function arv_watch_segment_url( $base, $on_site, $year, $stream = null ) {
+	if ( ! $on_site ) {
+		return ( null === $stream ) ? $base : $stream['url'];
+	}
+
+	$args = array();
+
+	if ( '' !== $year ) {
+		$args['edition'] = $year;
+	}
+
+	if ( null !== $stream ) {
+		$args['v'] = $stream['id'];
+	}
+
+	return empty( $args ) ? $base : add_query_arg( $args, $base );
+}
+
+/**
  * One past broadcast: the event, with its segments behind a toggle.
  *
  * Same shape the results archive uses for a race's earlier editions, and
@@ -426,14 +470,19 @@ function arv_watch_event( $event ) {
 	// edition rather than sending this click to YouTube. Falls back to the
 	// lead segment's own URL for a race nobody has built a page for yet,
 	// exactly like arv_live_page_for_live_url() falls back to the board.
-	$page = arv_watch_page_map();
-	$key  = arv_watch_race_key( $event['name'] );
-	$href = isset( $page[ $key ] ) ? $page[ $key ] : $lead['url'];
+	$page     = arv_watch_page_map();
+	$key      = arv_watch_race_key( $event['name'] );
+	$page_hit = isset( $page[ $key ] );
+	$href     = $page_hit ? $page[ $key ] : $lead['url'];
+
+	// The card itself opens the race page on the right edition, not just the
+	// race: a 2022 thumbnail that lands on 2026 is a card that lied.
+	$card = arv_watch_segment_url( $href, $page_hit, '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '', null );
 
 	$out = '<li class="arv-watch__race" data-arv-watch-name="' . esc_attr( strtolower( $event['name'] ) ) . '"'
 		. ' data-arv-watch-year="' . esc_attr( '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '' ) . '">';
-	$out .= '<a class="arv-watch__link" href="' . esc_url( $href ) . '"'
-		. ( isset( $page[ $key ] ) ? '' : ' target="_blank" rel="noopener"' ) . '>';
+	$out .= '<a class="arv-watch__link" href="' . esc_url( $card ) . '"'
+		. ( $page_hit ? '' : ' target="_blank" rel="noopener"' ) . '>';
 
 	$out .= '<img class="arv-watch__thumb" src="' . esc_url( $lead['thumbnail'] ) . '" alt=""'
 		. ' loading="lazy" decoding="async" width="480" height="360" />';
@@ -476,9 +525,17 @@ function arv_watch_event( $event ) {
 
 		$out .= '<ul class="arv-watch__segments">';
 
+		$year = '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '';
+
 		foreach ( $event['streams'] as $stream ) {
-			$out .= '<li><a class="arv-watch__segment" href="' . esc_url( $stream['url'] ) . '"'
-				. ' target="_blank" rel="noopener">'
+			// Straight to that segment on our own page, playing here, rather
+			// than out to YouTube. Before this every one of the 227 segment
+			// links on the index left the site, which is the whole thing the
+			// dedicated pages were built to stop.
+			$to = arv_watch_segment_url( $href, $page_hit, $year, $stream );
+
+			$out .= '<li><a class="arv-watch__segment" href="' . esc_url( $to ) . '"'
+				. ( $page_hit ? '' : ' target="_blank" rel="noopener"' ) . '>'
 				. esc_html( '' !== $stream['title'] ? $stream['title'] : $event['name'] )
 				. '</a></li>';
 		}
@@ -789,14 +846,29 @@ add_action( 'init', 'arv_watch_register_meta' );
  * @param array $edition
  * @return string
  */
-function arv_watch_race_player( $edition ) {
+function arv_watch_race_player( $edition, $want = '' ) {
 	$streams = $edition['streams'];
 	$active  = null;
 
-	foreach ( $streams as $candidate ) {
-		if ( ! empty( $candidate['live'] ) ) {
-			$active = $candidate;
-			break;
+	// A ?v= from a segment link on the index, so "Day 2 | Mingus to Jerome"
+	// opens on Day 2. Matched against this edition's own segments rather
+	// than trusted, so a stale or invented id falls through to the normal
+	// choice instead of embedding whatever was in the URL.
+	if ( '' !== $want ) {
+		foreach ( $streams as $candidate ) {
+			if ( $candidate['id'] === $want ) {
+				$active = $candidate;
+				break;
+			}
+		}
+	}
+
+	if ( null === $active ) {
+		foreach ( $streams as $candidate ) {
+			if ( ! empty( $candidate['live'] ) ) {
+				$active = $candidate;
+				break;
+			}
 		}
 	}
 
@@ -1019,8 +1091,10 @@ function arv_watch_race_render( $args = array() ) {
 		. esc_html( '' !== $year ? $name . ' ' . $year : $name ) . '</h1>';
 	$out .= '</div>';
 
+	$want = isset( $_GET['v'] ) ? preg_replace( '/[^A-Za-z0-9_-]/', '', wp_unslash( $_GET['v'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
 	$out .= arv_watch_race_years( $editions, $edition['start'] );
-	$out .= arv_watch_race_player( $edition );
+	$out .= arv_watch_race_player( $edition, $want );
 
 	$links = array();
 
@@ -1074,3 +1148,256 @@ function arv_watch_race_shortcode( $atts ) {
 	return arv_watch_race_render( $atts );
 }
 add_shortcode( 'arv_watch_race', 'arv_watch_race_shortcode' );
+
+/**
+ * -----------------------------------------------------------------------
+ * SEO. Everything below answers one question: is this request a Watch race
+ * page, and if so what should be in its head.
+ *
+ * These pages carried nothing. Title was WordPress's bare "Cocodona 250 |
+ * Aravaipa Running", there was no meta description at all, og:description
+ * was Jetpack's "Visit the post for more." and og:image the site logo, and
+ * there was no structured data of any kind. Which means 219 broadcasts
+ * totalling four and a third million views were, to a crawler, not videos.
+ * Google will not put a video in video results, or report it in Search
+ * Console's video indexing report, without a VideoObject carrying at least
+ * name, description, thumbnailUrl and uploadDate.
+ *
+ * Worth being honest about the ceiling: these videos are hosted on YouTube,
+ * and Google will generally treat the YouTube watch page as canonical for
+ * the video itself. This markup does not win that fight. What it does is
+ * make these pages eligible for video-rich results on race-intent queries,
+ * put them in the video indexing report so the traffic is measurable at
+ * all, and fix the link previews.
+ *
+ * Same posture as the rest of includes/seo.php: every printer checks
+ * arv_seo_handled_elsewhere() first, so a real SEO plugin's output wins
+ * rather than competing with a second copy from here.
+ * -----------------------------------------------------------------------
+ */
+
+/**
+ * Everything the head needs about the Watch race page being requested, or
+ * null when this request is not one.
+ *
+ * Built once and shared by the title, the description, the Open Graph tags
+ * and the schema, so all four agree about which edition is on screen rather
+ * than each resolving ?edition= separately and risking a title that says
+ * 2024 above a description that says 2026.
+ *
+ * @return array|null
+ */
+function arv_watch_seo_context() {
+	static $ctx = null;
+	static $done = false;
+
+	if ( $done ) {
+		return $ctx;
+	}
+
+	$done = true;
+
+	if ( ! function_exists( 'is_singular' ) || ! is_singular() ) {
+		return null;
+	}
+
+	$id = get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$stored = trim( (string) get_post_meta( $id, arv_watch_meta_key(), true ) );
+
+	if ( '' === $stored ) {
+		return null;
+	}
+
+	$editions = arv_watch_race_editions( arv_watch_resolve_key( arv_watch_race_key( $stored ) ) );
+
+	if ( empty( $editions ) ) {
+		return null;
+	}
+
+	$requested = isset( $_GET['edition'] ) ? wp_unslash( $_GET['edition'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$edition   = arv_watch_pick_edition( $editions, $requested );
+
+	return $ctx = array(
+		'edition'  => $edition,
+		'editions' => $editions,
+		'name'     => arv_watch_race_name( $edition['name'] ),
+		'year'     => '' !== $edition['start'] ? substr( $edition['start'], 0, 4 ) : '',
+		'url'      => get_permalink( $id ),
+	);
+}
+
+/**
+ * "Cocodona 250 2025 Live Broadcast", which is what someone actually types.
+ *
+ * @param array $ctx
+ * @return string
+ */
+function arv_watch_seo_title( $ctx ) {
+	$name = '' !== $ctx['year'] ? $ctx['name'] . ' ' . $ctx['year'] : $ctx['name'];
+
+	return $name . ' ' . __( 'Live Broadcast', 'aravaipa-elements' );
+}
+
+/**
+ * A description built from what this edition actually is.
+ *
+ * Mountain Outpost's own event description where there is one, since a
+ * human wrote it. Otherwise assembled from the facts, which beats a
+ * templated sentence repeated across ten pages.
+ *
+ * @param array $ctx
+ * @return string
+ */
+function arv_watch_seo_description( $ctx ) {
+	$edition = $ctx['edition'];
+	$count   = count( $edition['streams'] );
+
+	if ( '' !== trim( $edition['desc'] ) ) {
+		// Google truncates around 160 characters, and a description cut
+		// mid-word reads as broken; cut on a word boundary instead.
+		$desc = trim( preg_replace( '/\s+/', ' ', $edition['desc'] ) );
+
+		if ( strlen( $desc ) > 160 ) {
+			$desc = rtrim( substr( $desc, 0, strrpos( substr( $desc, 0, 158 ), ' ' ) ), " ,.;:" ) . '…';
+		}
+
+		return $desc;
+	}
+
+	$bits = array();
+
+	if ( '' !== $edition['start'] ) {
+		$stamp = strtotime( $edition['start'] );
+
+		if ( $stamp ) {
+			$bits[] = gmdate( 'F j, Y', $stamp );
+		}
+	}
+
+	if ( '' !== $edition['place'] ) {
+		$bits[] = $edition['place'];
+	}
+
+	return sprintf(
+		/* translators: 1: race name and year, 2: video count, 3: date and place. */
+		__( 'Watch the full %1$s broadcast from Aravaipa Running: %2$s of live race coverage%3$s.', 'aravaipa-elements' ),
+		'' !== $ctx['year'] ? $ctx['name'] . ' ' . $ctx['year'] : $ctx['name'],
+		sprintf(
+			/* translators: %s is a count of videos. */
+			_n( '%s video', '%s videos', $count, 'aravaipa-elements' ),
+			number_format_i18n( $count )
+		),
+		$bits ? ', ' . implode( ', ', $bits ) : ''
+	);
+}
+
+/**
+ * One VideoObject per segment, wrapped in an ItemList.
+ *
+ * Every required field is present on every node or the node is dropped:
+ * a VideoObject missing uploadDate is not a partial win, it is an invalid
+ * one, and Google reports the whole page as an error rather than indexing
+ * the rest. uploadDate falls back to the event's own start date for the
+ * twenty-five segments upstream has no actualStart for.
+ *
+ * @param array $ctx
+ * @return array
+ */
+function arv_watch_seo_videos( $ctx ) {
+	$edition = $ctx['edition'];
+	$items   = array();
+	$n       = 0;
+
+	foreach ( $edition['streams'] as $stream ) {
+		$title = '' !== trim( $stream['title'] ) ? $stream['title'] : $edition['name'];
+		$aired = '' !== $stream['aired'] ? $stream['aired'] : $edition['start'];
+		$stamp = $aired ? strtotime( $aired ) : 0;
+
+		if ( '' === trim( $title ) || ! $stamp ) {
+			continue;
+		}
+
+		$video = array(
+			'@type'        => 'VideoObject',
+			'name'         => $title,
+			// Its own description where upstream has one, the title
+			// otherwise: an empty string here fails validation, and the
+			// title is at least true.
+			'description'  => '' !== trim( $stream['desc'] ) ? $stream['desc'] : $title,
+			'thumbnailUrl' => $stream['thumbnail'],
+			'uploadDate'   => gmdate( 'c', $stamp ),
+			'embedUrl'     => 'https://www.youtube-nocookie.com/embed/' . $stream['id'],
+			'contentUrl'   => $stream['url'],
+			'url'          => arv_watch_segment_url( $ctx['url'], true, $ctx['year'], $stream ),
+		);
+
+		// Only where upstream actually has one. Duration is on 63 of 219
+		// rows, and an invented PT0M is worse than an absent field.
+		if ( $stream['minutes'] > 0 ) {
+			$video['duration'] = 'PT' . (int) $stream['minutes'] . 'M';
+		}
+
+		if ( $stream['views'] > 0 ) {
+			$video['interactionStatistic'] = array(
+				'@type'                => 'InteractionCounter',
+				'interactionType'      => array( '@type' => 'WatchAction' ),
+				'userInteractionCount' => $stream['views'],
+			);
+		}
+
+		$items[] = array(
+			'@type'    => 'ListItem',
+			'position' => ++$n,
+			'item'     => $video,
+		);
+	}
+
+	if ( empty( $items ) ) {
+		return array();
+	}
+
+	return array(
+		'@type'           => 'ItemList',
+		'name'            => arv_watch_seo_title( $ctx ),
+		'numberOfItems'   => count( $items ),
+		'itemListElement' => $items,
+	);
+}
+
+/**
+ * Home > Watch > this race, so a result shows a real path rather than a
+ * bare URL.
+ *
+ * @param array $ctx
+ * @return array
+ */
+function arv_watch_seo_breadcrumbs( $ctx ) {
+	return array(
+		'@type'           => 'BreadcrumbList',
+		'itemListElement' => array(
+			array(
+				'@type'    => 'ListItem',
+				'position' => 1,
+				'name'     => __( 'Home', 'aravaipa-elements' ),
+				'item'     => home_url( '/' ),
+			),
+			array(
+				'@type'    => 'ListItem',
+				'position' => 2,
+				'name'     => __( 'Watch', 'aravaipa-elements' ),
+				'item'     => home_url( '/watch/' ),
+			),
+			array(
+				'@type'    => 'ListItem',
+				'position' => 3,
+				'name'     => $ctx['name'],
+				'item'     => $ctx['url'],
+			),
+		),
+	);
+}
