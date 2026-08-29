@@ -369,6 +369,51 @@ function arv_live_page_render( $args = array() ) {
 }
 
 /**
+ * The race's Instagram account, at the end of the bar.
+ *
+ * Same account resolution the race week block uses, which is per region
+ * rather than per race: White Mountain races point at White Mountain
+ * Endurance, Colorado races at Aravaipa Colorado, everything else at
+ * Aravaipa Running.
+ *
+ * Nothing renders for an edition with no race in the calendar to resolve
+ * against, which is every archived year of a race that no longer runs.
+ * Guessing the main account there would be a link to somewhere that has
+ * nothing to say about the race being read.
+ *
+ * @param array|null $meta Race store row.
+ * @return string
+ */
+function arv_live_social( $meta ) {
+	if ( ! is_array( $meta ) || ! function_exists( 'arv_results_race_social' ) ) {
+		return '';
+	}
+
+	$social = arv_results_race_social( $meta );
+
+	if ( empty( $social['url'] ) ) {
+		return '';
+	}
+
+	return '<a class="arv-live__social" href="' . esc_url( $social['url'] ) . '"'
+		. ' target="_blank" rel="noopener">'
+		. '<span class="arv-results__sr">'
+		. esc_html(
+			sprintf(
+				/* translators: %s is an Instagram account name. */
+				__( '%s on Instagram', 'aravaipa-elements' ),
+				$social['label']
+			)
+		)
+		. '</span>'
+		. '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">'
+		. '<rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+		. '<circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+		. '<circle cx="17.4" cy="6.6" r="1.2" fill="currentColor"/>'
+		. '</svg></a>';
+}
+
+/**
  * The bar above the board: what race, when, and how long until it starts.
  *
  * Dark, and sitting directly on top of the frame with no gap, because the
@@ -401,6 +446,19 @@ function arv_live_bar( $name, $edition, $meta, $editions, $show ) {
 	$out .= '<div class="arv-live__bar-inner">';
 
 	$out .= '<div class="arv-live__ident">';
+
+	// The live marker sits on the title rather than out with the clock. It is
+	// the one thing on this bar that is about right now, and beside the race
+	// name is where it is read as "this race is live" rather than as a label
+	// on the countdown next to it.
+	$out .= '<div class="arv-live__headline">';
+
+	if ( $edition && '' !== $name ) {
+		$out .= arv_results_week_live_badge(
+			array( 'state' => arv_live_state( $name, $edition['iso'], $board ) )
+		);
+	}
+
 	$out .= '<h2 class="arv-live__title">' . esc_html( $heading );
 
 	if ( '' !== $year ) {
@@ -408,6 +466,7 @@ function arv_live_bar( $name, $edition, $meta, $editions, $show ) {
 	}
 
 	$out .= '</h2>';
+	$out .= '</div>';
 
 	$bits = array();
 
@@ -436,12 +495,12 @@ function arv_live_bar( $name, $edition, $meta, $editions, $show ) {
 		);
 
 		$out .= '<div class="arv-live__clock">';
-		$out .= arv_results_week_live_badge( $race );
 		$out .= arv_results_week_status( $race );
 		$out .= '</div>';
 	}
 
 	$out .= arv_live_years( $editions, $show );
+	$out .= arv_live_social( $meta );
 	$out .= '</div></div>';
 
 	return $out;

@@ -4825,6 +4825,74 @@
 	min-width: 0;
 }
 
+/* The marker and the title on one line, and the marker keeps its size when
+   the title is long enough to wrap. */
+.arv-live__headline {
+	display: flex;
+	align-items: baseline;
+	gap: 0.6rem;
+	flex-wrap: wrap;
+}
+
+/* The live marker reads on the dark bar, where the archive's version was
+   built for white. Same green, given a glow so it carries at a glance from
+   across a room, which is where a race-day screen usually is. */
+/* The [hidden] guard is stated here, not left to the shared rule further up
+   the file. That rule is .arv-results__live[hidden], the same two-selector
+   weight as .arv-live__bar .arv-results__live below it, and at equal
+   specificity the later one wins: giving this a display without saying so
+   put a LIVE NOW badge on every page, finished races included. Two classes
+   and the attribute settle it wherever either rule sits. */
+.arv-live__bar .arv-results__live[hidden] {
+	display: none;
+}
+
+.arv-live__bar .arv-results__live {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.2rem 0.55rem;
+	border: 1px solid rgba(61, 220, 132, 0.45);
+	background: rgba(61, 220, 132, 0.12);
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #6bf0a6;
+	animation: arv-live-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes arv-live-glow {
+	0%, 100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); }
+	50%      { box-shadow: 0 0 14px 1px rgba(61, 220, 132, 0.35); }
+}
+
+/* Same reasoning as the dot this sits around: the colour and the border
+   still say "live" with nothing moving. */
+@media (prefers-reduced-motion: reduce) {
+	.arv-live__bar .arv-results__live {
+		animation: none;
+	}
+}
+
+/* Last in the bar, and the only thing in it that leaves the site, so it is
+   set apart rather than sized up. */
+.arv-live__social {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	margin-left: 0.25rem;
+	color: rgba(255, 255, 255, 0.72);
+	text-decoration: none;
+}
+
+.arv-live__social:hover,
+.arv-live__social:focus-visible {
+	color: #ffffff;
+}
+
 .arv-live__title {
 	margin: 0;
 	font-size: clamp(20px, 2.4vw, 24px);
