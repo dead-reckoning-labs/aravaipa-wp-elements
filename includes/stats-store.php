@@ -127,6 +127,11 @@ function arv_stats_store_set( $events ) {
 			'slug'      => (string) $event['slug'],
 			'finishers' => isset( $event['finishers'] ) ? max( 0, (int) $event['finishers'] ) : 0,
 			'starters'  => isset( $event['starters'] ) ? max( 0, (int) $event['starters'] ) : 0,
+			// The largest single distance, which is what sizes the embedded
+			// board. Not the same as starters: the board shows one distance
+			// at a time, so an event with six of them is six short lists
+			// rather than one long one.
+			'rows'      => isset( $event['rows'] ) ? max( 0, (int) $event['rows'] ) : 0,
 		);
 
 		// Whether the longest distance is the event's premier race rather than

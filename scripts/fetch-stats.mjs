@@ -254,11 +254,27 @@ function summarise( event ) {
 			scored[ 0 ].distance >=
 				scored[ 1 ].distance * DISTINCT_LONGEST_RATIO );
 
+	// How many entrants the board lists on arrival, which is what the embedded
+	// frame is sized to. It shows one distance at a time and opens on the
+	// longest, the same one scored[0] is, so this is that race's field rather
+	// than the event's.
+	//
+	// The largest field would be the safer number, since the reader can
+	// switch distance and a shorter frame then scrolls inside itself again.
+	// It is not the one used: Black Bear's longest distance is 64 entrants
+	// against 87 in its biggest, so sizing to the biggest hangs a thousand
+	// pixels of empty board under every page on arrival to spare a nested
+	// scrollbar on a deliberate second action. Switching distance is no worse
+	// than it is today; the view everyone lands on is fixed.
+	const listed = scored.length ? scored[ 0 ] : races[ 0 ];
+	const rows = listed ? ( byRace.get( listed.id ) || [] ).length : 0;
+
 	return {
 		slug: event.slug,
 		name: event.name,
 		starters: participants.length,
 		finishers,
+		rows,
 		headline,
 		...( winners.length ? { winners } : {} ),
 	};
