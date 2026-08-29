@@ -699,6 +699,24 @@ $future = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming'
 t( 'a race not yet run is not listed', false === strpos( $future, 'Black Bear' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
+// A month after the race, well past the old 10-day grace, it must still be
+// there. /results-2026/ is now this element and the scraper that used to
+// backfill within 10 days reads that same page, so it cannot write anything
+// for as long as that circularity stands: a race dropping off 10 days after
+// it finished would stay gone for the rest of the year, not reappear once
+// the scraper next runs.
+$GLOBALS['NOW'] = '2026-09-28';
+$month_later = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'a month later it has not vanished', false !== strpos( arv_test_archive_only( $month_later ), 'Rock Hawk' ) );
+
+// But a year-old race with still no scrape is the archive's problem to solve
+// once the scraper works again, not this grace's to hide forever.
+$GLOBALS['NOW'] = '2027-11-15';
+$year_later = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'but not indefinitely',              false === strpos( arv_test_archive_only( $year_later ), 'Rock Hawk' ) );
+
+$GLOBALS['NOW'] = '2026-08-28';
+
 
 echo "\nresults grouped by race:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
