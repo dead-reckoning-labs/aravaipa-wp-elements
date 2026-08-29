@@ -65,8 +65,21 @@ function arv_upcoming_races_today() {
  * @return array {phase, label, url}
  */
 function arv_upcoming_races_action( $race, $today, $lead = 5 ) {
-	$last    = '' !== $race['end'] ? $race['end'] : $race['iso'];
-	$results = '' !== $race['live'] ? $race['live'] : arv_upcoming_races_results_url( $race['register'] );
+	$last = '' !== $race['end'] ? $race['end'] : $race['iso'];
+
+	// The branded page for this race where one has been built, the board
+	// itself where one has not. Decided here rather than at each button,
+	// because every Live Results and Results link on the site comes through
+	// this one function: the home page cards, the calendar, the featured
+	// race block and the races list all read the url it returns.
+	$page    = function_exists( 'arv_live_page_for_live_url' )
+		? arv_live_page_for_live_url( $race['live'] )
+		: '';
+	$results = '' !== $page ? $page : $race['live'];
+
+	if ( '' === $results ) {
+		$results = arv_upcoming_races_results_url( $race['register'] );
+	}
 
 	if ( $today < $race['iso'] ) {
 		// The live board is populated well before the gun: it carries the

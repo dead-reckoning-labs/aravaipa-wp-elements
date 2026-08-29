@@ -1456,8 +1456,15 @@ function arv_results_edition_label( $row ) {
 function arv_results_links( $row ) {
 	$out = '<div class="arv-results__links">';
 
+	// The branded page for this edition where one has been built, the board
+	// itself where one has not, which is most of them.
+	$live = function_exists( 'arv_live_page_for_live_url' )
+		? arv_live_page_for_live_url( $row['live'] )
+		: '';
+	$live = '' !== $live ? $live : $row['live'];
+
 	foreach ( array(
-		array( $row['live'], __( 'Live Results', 'aravaipa-elements' ), 'live' ),
+		array( $live, __( 'Live Results', 'aravaipa-elements' ), 'live' ),
 		array( $row['ultrasignup'], __( 'UltraSignup', 'aravaipa-elements' ), 'us' ),
 		array( $row['ultrarunning'], __( 'UltraRunning', 'aravaipa-elements' ), 'ur' ),
 	) as $link ) {

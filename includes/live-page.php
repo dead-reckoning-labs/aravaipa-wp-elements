@@ -579,6 +579,69 @@ function arv_live_edition_url( $slug, $year ) {
 }
 
 /**
+ * Every board slug that has a branded page of its own, mapped to its URL.
+ *
+ * One query and one static, because the callers are the opposite of one-off:
+ * the results archive asks this for every edition of every race on the page,
+ * which on /results-2026/ is a hundred and twenty odd lookups, and the home
+ * page and the calendar ask it for every card. arv_live_page_for_slug()
+ * answers from this rather than querying per slug for the same reason.
+ *
+ * Cached for the request, not beyond it: pages do not get published halfway
+ * through rendering one. $fresh exists for the test suite, which changes the
+ * fixture between assertions, and for any caller that has just written a
+ * page and wants to see it.
+ *
+ * @param bool $fresh Rebuild rather than answer from the cache.
+ * @return array slug => permalink
+ */
+function arv_live_page_map( $fresh = false ) {
+	static $map = null;
+
+	if ( null !== $map && ! $fresh ) {
+		return $map;
+	}
+
+	$map = array();
+
+	foreach ( arv_live_pages() as $page ) {
+		if ( '' !== $page['url'] ) {
+			$map[ $page['slug'] ] = $page['url'];
+		}
+	}
+
+	return $map;
+}
+
+/**
+ * The branded page for a board URL, where one has been built.
+ *
+ * Returns '' for a race with no page of its own, which is most of them: the
+ * board URL it would otherwise have used is still the right answer, so every
+ * caller can treat this as an upgrade rather than a lookup that can fail.
+ *
+ * @param string $live Full live board URL.
+ * @return string
+ */
+function arv_live_page_for_live_url( $live ) {
+	$live = trim( (string) $live );
+
+	if ( '' === $live ) {
+		return '';
+	}
+
+	$slug = arv_live_store_slug( $live );
+
+	if ( '' === $slug ) {
+		return '';
+	}
+
+	$map = arv_live_page_map();
+
+	return isset( $map[ $slug ] ) ? $map[ $slug ] : '';
+}
+
+/**
  * The permalink of the page whose live slug is this one, or ''.
  *
  * Looked up by the same meta the SEO layer reads, so a per-year page is
@@ -595,20 +658,9 @@ function arv_live_page_for_slug( $slug ) {
 		return '';
 	}
 
-	$found = get_posts(
-		array(
-			'post_type'        => 'page',
-			'post_status'      => 'publish',
-			'posts_per_page'   => 1,
-			'fields'           => 'ids',
-			'no_found_rows'    => true,
-			'suppress_filters' => false,
-			'meta_key'         => arv_live_meta_key(), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-			'meta_value'       => $slug, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-		)
-	);
+	$map = arv_live_page_map();
 
-	return empty( $found ) ? '' : (string) get_permalink( $found[0] );
+	return isset( $map[ $slug ] ) ? $map[ $slug ] : '';
 }
 
 /**
