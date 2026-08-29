@@ -372,8 +372,23 @@ function arv_live_page_render( $args = array() ) {
 	$out = '<section class="arv-live" aria-label="' . esc_attr__( 'Live results', 'aravaipa-elements' ) . '">';
 
 	$out .= arv_live_bar( $name, $edition, $meta, $editions, $show );
-	$out .= arv_live_frame( $show, $height, $name );
+
+	// Above the board, not below it. The board is sized to its whole field
+	// now, which is three thousand pixels for a small race and eighteen for
+	// Cocodona, and a summary at the far end of that is not a summary of
+	// anything anyone has reached: it reads as an orphan, which is what
+	// Jamil called it.
+	//
+	// It also happens to be the page's only crawlable content. The board is
+	// a cross-origin iframe, so a search engine sees the bar and nothing
+	// else: 156 characters on a page with no report against 442 with one.
+	// Deleting it would leave these pages with no race results in them at
+	// all, which is the one thing they were built to have.
+	//
+	// Renders nothing until a race has finishers, so a race still to come
+	// gets the bar and the board and no empty heading.
 	$out .= arv_live_report( $stats, $edition, $name );
+	$out .= arv_live_frame( $show, $height, $name );
 
 	$out .= '</section>';
 
