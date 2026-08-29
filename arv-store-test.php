@@ -2907,5 +2907,24 @@ $ctx4['edition']['start'] = '';
 t( 'an unusable segment is dropped',      array() === arv_watch_seo_videos( $ctx4 ) );
 
 
+
+// -------------------------------------------------------------------------
+// The live board's touch shield.
+// -------------------------------------------------------------------------
+echo "\nlive frame, mobile scroll:\n";
+$frame = arv_live_frame( 'rock_hawk-2026', 3912, 'Rock Hawk Trail Races' );
+t( 'the frame is still sized to its content', false !== strpos( $frame, 'height:3912px' ) );
+t( 'and carries a hook for the script',       false !== strpos( $frame, 'data-arv-live-frame' ) );
+t( 'a shield sits over it',                   false !== strpos( $frame, 'data-arv-live-shield' ) );
+// Rendered hidden and revealed by script. The other way round, a page whose
+// JavaScript never runs would have an undismissable layer over its results,
+// which is a worse bug than the one this fixes.
+t( 'rendered hidden, not visible',            false !== strpos( $frame, 'hidden data-arv-live-shield' ) );
+// A real button, so it is reachable by keyboard and announced, rather than a
+// bare div that only a pointer can dismiss.
+t( 'and is a real button',                    false !== strpos( $frame, '<button class="arv-live__shield"' ) );
+t( 'saying what the first tap does',          false !== strpos( $frame, 'Tap to use the board' ) );
+
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );

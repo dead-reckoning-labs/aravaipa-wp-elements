@@ -852,13 +852,34 @@ function arv_live_frame( $slug, $height, $name ) {
 		? sprintf( __( 'Live results for %s', 'aravaipa-elements' ), $name )
 		: __( 'Live results', 'aravaipa-elements' );
 
-	$out = '<div class="arv-live__frame">';
+	// The shield is why this wrapper exists. The frame is sized to its whole
+	// content so nothing inside it is cut off, which on a race with 82
+	// finishers is 3912px: five straight screens on a phone where the only
+	// thing under a thumb is a cross-origin iframe. iOS does not propagate
+	// that drag to the page, so the page could not be scrolled past the
+	// board at all, on race day, on the page people were on.
+	//
+	// A transparent layer over the frame takes the touch instead, so a drag
+	// scrolls the page the way it does everywhere else, and a tap lifts it
+	// so the board underneath is fully usable. Same pattern an embedded
+	// Google Map uses, for the same reason.
+	//
+	// Rendered inert and revealed by script rather than the other way round:
+	// with JavaScript off, or before it runs, a shield that cannot be
+	// dismissed would make the board unusable, which is worse than the bug
+	// it fixes. Desktop never sees it; a mouse wheel over an iframe scrolls
+	// the page already.
+	$out = '<div class="arv-live__frame" data-arv-live-frame>';
 	$out .= '<iframe class="arv-live__iframe" src="' . esc_url( $url ) . '"'
 		. ' title="' . esc_attr( $title ) . '"'
 		. ' style="height:' . (int) $height . 'px"'
 		. ' loading="lazy"'
 		. ' referrerpolicy="no-referrer-when-downgrade"'
 		. ' sandbox="allow-scripts allow-same-origin allow-popups"></iframe>';
+	$out .= '<button class="arv-live__shield" type="button" hidden data-arv-live-shield>'
+		. '<span class="arv-live__shield-hint">'
+		. esc_html__( 'Tap to use the board', 'aravaipa-elements' )
+		. '</span></button>';
 	$out .= '</div>';
 
 	$out .= '<p class="arv-live__open"><a class="arv-live__open-link" href="' . esc_url( $url ) . '"'
