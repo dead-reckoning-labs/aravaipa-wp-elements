@@ -330,9 +330,13 @@ function arv_live_page_render( $args = array() ) {
 	// A slug neither store has ever seen still gets a frame. The board is the
 	// source of truth for what it is timing, and a race added this week
 	// should not need anything else to have caught up first.
-	$requested = isset( $args['year'] )
-		? $args['year']
-		: ( isset( $_GET[ ARV_LIVE_YEAR_VAR ] ) ? wp_unslash( $_GET[ ARV_LIVE_YEAR_VAR ] ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	// The reader's own request first, then whatever the page pinned itself
+	// to, then the newest edition. This order round the other way meant a
+	// pinned page ignored its own year links: the 2025 page offers 2024 as
+	// ?edition=2024, having no page to send it to, and answered with 2025.
+	$requested = isset( $_GET[ ARV_LIVE_YEAR_VAR ] ) && '' !== $_GET[ ARV_LIVE_YEAR_VAR ] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		? wp_unslash( $_GET[ ARV_LIVE_YEAR_VAR ] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		: ( isset( $args['year'] ) ? $args['year'] : '' );
 	$edition   = arv_live_pick_edition( $editions, $requested );
 
 	$name = $edition ? $edition['name'] : '';

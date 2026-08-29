@@ -1878,6 +1878,41 @@ t( 'and names the account it goes to',  false !== strpos( $live_bar, 'on Instagr
 $bare_bar = arv_live_bar( 'Some Retired Race', null, null, array(), 'retired-2013' );
 t( 'no race, no instagram guess',       false === strpos( $bare_bar, 'instagram.com' ) );
 t( 'and no clock to count to',          false === strpos( $bare_bar, 'arv-results__countdown' ) );
+
+// ------------------------------------------------------ Pinned editions --
+// A year page pins itself with year=, because the slug alone cannot: the
+// main page for a race carries the current year's slug and has to follow the
+// race into next year, so a slug year cannot mean "stay here". Without the
+// attribute the 2025 page rendered the 2026 board under a 2025 breadcrumb,
+// with 2026 lit in its own year switcher.
+$eds = array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29', 'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30', 'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2024-08-31', 'display' => 'August 31', 'live' => 'https://live.aravaiparunning.com/#/black_bear-2024' ),
+);
+
+t( 'no year asked for takes newest',    '2026-08-29' === arv_live_pick_edition( $eds, '' )['iso'] );
+t( 'a year asked for is honoured',      '2025-08-30' === arv_live_pick_edition( $eds, '2025' )['iso'] );
+t( 'and a year with no edition falls back', '2026-08-29' === arv_live_pick_edition( $eds, '1999' )['iso'] );
+
+// The reader's own ?edition= beats the page's pin, so a pinned page's own
+// year links still work where there is no separate page to send them to.
+$GLOBALS['ARV_OPTIONS']['arv_race_results'] = $eds;
+
+$_GET[ ARV_LIVE_YEAR_VAR ] = '2024';
+$pinned = arv_live_page_render( array( 'slug' => 'black_bear-2025', 'year' => '2025' ) );
+t( 'the reader outranks the pin',       false !== strpos( $pinned, 'black_bear-2024' ) );
+unset( $_GET[ ARV_LIVE_YEAR_VAR ] );
+
+$pinned = arv_live_page_render( array( 'slug' => 'black_bear-2025', 'year' => '2025' ) );
+t( 'and the pin outranks newest',       false !== strpos( $pinned, 'black_bear-2025' ) );
+t( 'so the pinned year is the frame',   false === strpos( $pinned, 'black_bear-2026' ) );
+
+// And the same page with no pin at all is the bug that started this.
+$unpinned = arv_live_page_render( array( 'slug' => 'black_bear-2025' ) );
+t( 'no pin still means newest',         false !== strpos( $unpinned, 'black_bear-2026' ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
 t( 'and so is a negative one',           false !== strpos( $short, 'height:400px' ) );
 // The shortcode is the path bulk-created pages use, so it is exercised as
 // itself rather than trusted to be a thin wrapper.
