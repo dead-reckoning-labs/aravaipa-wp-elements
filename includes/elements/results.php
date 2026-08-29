@@ -92,7 +92,7 @@ function arv_results_builder() {
 					'key'         => 'year',
 					'type'        => 'text',
 					'label'       => __( 'Year (optional)', 'aravaipa-elements' ),
-					'description' => __( 'Leave blank for every year, newest first. Set to 2026 for that year alone.', 'aravaipa-elements' ),
+					'description' => __( 'Leave blank to follow the page: a page called results-2026 shows that year, anything else shows every year. Set it to override.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'limit',
@@ -183,6 +183,82 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 }
 
 /**
+ * The year a per-year results page is about, read off its own slug.
+ *
+ * The site has a page per year, /results-2026/ back to /results-2008-2010/,
+ * and a Results menu built on them. The element's own Year setting still
+ * wins where it is set, but it lives in Cornerstone's data rather than in
+ * anything reachable from here, so a page whose whole identity is its year
+ * would otherwise have to be told that year a second time by hand, in a
+ * builder, once a year, forever.
+ *
+ * Deliberately strict: results-2026 and nothing else. A page called
+ * results-archive keeps every year, which is what a page not named after
+ * one should do.
+ *
+ * @return string Four digits, or '' where the page is not a year page.
+ */
+function arv_results_year_from_page() {
+	if ( ! function_exists( 'get_queried_object_id' ) ) {
+		return '';
+	}
+
+	$id = (int) get_queried_object_id();
+
+	if ( $id < 1 || ! function_exists( 'get_post_field' ) ) {
+		return '';
+	}
+
+	$slug = (string) get_post_field( 'post_name', $id );
+
+	return preg_match( '/^results-(\d{4})$/', $slug, $m ) ? $m[1] : '';
+}
+
+/**
+ * Narrow the archive to one year's races.
+ *
+ * Keeps a race that ran in the year and drops one that did not, rather than
+ * keeping only rows dated in it. The difference is the earlier editions
+ * folded under each race: filtering row by row threw away every one of them,
+ * so a year page lost the history that is half of what the archive is for.
+ * A race's own past is not another year's event.
+ *
+ * Editions newer than the year go, so that /results-2026/ still headlines
+ * each race with its 2026 running once 2027 exists.
+ *
+ * @param array  $rows Newest first.
+ * @param string $year Four digits, or '' to keep everything.
+ * @return array
+ */
+function arv_results_filter_year( $rows, $year ) {
+	$year = trim( (string) $year );
+
+	if ( ! preg_match( '/^\d{4}$/', $year ) ) {
+		return $rows;
+	}
+
+	$ran = array();
+
+	foreach ( $rows as $row ) {
+		if ( substr( $row['iso'], 0, 4 ) === $year ) {
+			$ran[ arv_results_race_key( $row['name'] ) ] = true;
+		}
+	}
+
+	$kept = array();
+
+	foreach ( $rows as $row ) {
+		$key = arv_results_race_key( $row['name'] );
+
+		if ( isset( $ran[ $key ] ) && substr( $row['iso'], 0, 4 ) <= $year ) {
+			$kept[] = $row;
+		}
+	}
+
+	return $kept;
+}
+
+/**
  * Render callback.
  *
  * @param array $data Element values.
@@ -232,16 +308,12 @@ function arv_results_render( $data ) {
 	}
 
 	$year = isset( $data['year'] ) ? trim( (string) $data['year'] ) : '';
-	if ( '' !== $year && preg_match( '/^\d{4}$/', $year ) ) {
-		$rows = array_values(
-			array_filter(
-				$rows,
-				function ( $row ) use ( $year ) {
-					return substr( $row['iso'], 0, 4 ) === $year;
-				}
-			)
-		);
+
+	if ( '' === $year ) {
+		$year = arv_results_year_from_page();
 	}
+
+	$rows = arv_results_filter_year( $rows, $year );
 
 	$limit = isset( $data['limit'] ) ? (int) $data['limit'] : 0;
 	if ( $limit > 0 ) {

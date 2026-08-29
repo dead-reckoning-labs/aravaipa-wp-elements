@@ -39,6 +39,7 @@ function shortcode_atts( $pairs, $atts, $tag = '' ) { return array_merge( $pairs
 function esc_html__( $s, $d = '' ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_unslash( $v ) { return $v; }
 function get_queried_object_id() { return $GLOBALS['QUERIED_ID'] ?? 0; }
+function get_post_field( $field, $id = 0 ) { return $GLOBALS['POST_FIELD'][ $id ][ $field ] ?? ''; }
 function get_permalink( $id = 0 ) { return $GLOBALS['PERMALINK'][ $id ] ?? 'https://www.aravaiparunning.com/live/test/'; }
 
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
@@ -1941,6 +1942,54 @@ $stale_markup = arv_results_week_status(
 	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'board' => $stale, 'state' => 'done' )
 );
 t( 'the clock is given a cutoff',       false !== strpos( $stale_markup, 'data-arv-cutoff' ) );
+
+// --------------------------------------------------------- Year pages --
+// The site has a page per year and a menu built on them, so a page called
+// results-2026 says what it is about in its own slug. The element's Year
+// setting lives in Cornerstone's data, which is not reachable from here, so
+// without this a year page has to be told its year by hand in a builder,
+// once a year, forever.
+$GLOBALS['POST_FIELD'] = array(
+	11 => array( 'post_name' => 'results-2026' ),
+	12 => array( 'post_name' => 'results-2008-2010' ),
+	13 => array( 'post_name' => 'results-archive' ),
+	14 => array( 'post_name' => 'live-results' ),
+);
+
+$GLOBALS['QUERIED_ID'] = 11;
+t( 'a year page names its own year',    '2026' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 12;
+t( 'a span of years is not one year',   '' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 13;
+t( 'and an archive keeps every year',   '' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 14;
+t( 'and so does an unrelated page',     '' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 0;
+t( 'off a page entirely, no year',      '' === arv_results_year_from_page() );
+
+// Filtering keeps the races that ran that year, not the rows dated in it.
+// Row by row threw away every earlier edition folded under a race, which is
+// half of what the archive is for: a race's own past is not another event.
+$hist = array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2027-08-28', 'display' => 'August 28', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Hypnosis', 'iso' => '2023-06-24', 'display' => 'June 24', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+);
+
+$only26 = arv_results_filter_year( $hist, '2026' );
+t( 'a race that ran that year stays',   2 === count( $only26 ) );
+t( 'and keeps its earlier editions',    '2025-08-30' === $only26[1]['iso'] );
+t( 'a race that did not ran goes',      false === strpos( wp_json_encode( $only26 ), 'Hypnosis' ) );
+t( 'and later years go too',            false === strpos( wp_json_encode( $only26 ), '2027' ) );
+t( 'so the year heads its own race',    '2026-08-29' === $only26[0]['iso'] );
+
+t( 'no year keeps everything',          4 === count( arv_results_filter_year( $hist, '' ) ) );
+t( 'and so does a junk year',           4 === count( arv_results_filter_year( $hist, 'soon' ) ) );
+t( 'a year nobody ran is empty',        0 === count( arv_results_filter_year( $hist, '1999' ) ) );
+
+$GLOBALS['POST_FIELD'] = array();
+$GLOBALS['QUERIED_ID'] = 0;
 
 $GLOBALS['ARV_OPTIONS'] = array();
 t( 'and so is a negative one',           false !== strpos( $short, 'height:400px' ) );
