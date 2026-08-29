@@ -4211,6 +4211,15 @@
 
 .arv-results__race-meta {
 	margin: 0;
+	/* flex-grow: 0 on a flex-wrap item does not mean "shrink to content": it
+	   means "do not claim more than your own hypothetical size even when
+	   you are alone on the line", so a wrapped meta line still shrank as if
+	   it were sharing the row with the name. That squeezed a live race's
+	   date and its "Happening now" chip into a box too narrow for both,
+	   forcing the chip onto a line of its own instead of beside the date it
+	   describes. flex-basis: 100% claims the whole row once this wraps to
+	   it, which is the only place it needed the width. */
+	flex: 1 1 100%;
 	font-size: var(--arv-fs-body);
 	color: var(--arv-results-muted);
 }
