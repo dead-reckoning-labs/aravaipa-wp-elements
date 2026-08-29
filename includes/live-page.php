@@ -53,6 +53,10 @@ define( 'ARV_LIVE_FRAME_CHROME', 129 );
  */
 define( 'ARV_LIVE_YEAR_VAR', 'edition' );
 
+// The index's own filter. Not 'year' either, for the same reason
+// ARV_LIVE_YEAR_VAR is not: WordPress owns that one.
+define( 'ARV_LIVE_SEASON_VAR', 'season' );
+
 /**
  * Every stored edition of the race a given board slug belongs to, newest
  * first.
@@ -863,7 +867,17 @@ function arv_live_index_row( $page ) {
 	}
 
 	$race = arv_live_race_by_slug( $slug );
-	$name = $edition ? $edition['name'] : ( $race ? $race['name'] : '' );
+
+	// The race's current name, not the one the board happened to use that
+	// year. The board renamed Rock Hawk Trail Races to Rock Hawk and Black
+	// Bear Trail Races to Black Bear Trail Race, so an index built from each
+	// edition's own name listed the same race under three spellings, one per
+	// row, which reads as three races. Editions come back newest first, so
+	// the first one is what the race is called now.
+	$current = ! empty( $editions ) ? $editions[0]['name'] : '';
+	$name    = '' !== $current
+		? $current
+		: ( $edition ? $edition['name'] : ( $race ? $race['name'] : '' ) );
 
 	if ( '' === $name ) {
 		return null;
@@ -906,6 +920,124 @@ function arv_live_start_ts( $row ) {
 	}
 
 	return (int) strtotime( $board['start'] );
+}
+
+/**
+ * Every season the index has a race for, newest first.
+ *
+ * @param array $rows
+ * @return array Four-digit years.
+ */
+function arv_live_index_years( $rows ) {
+	$years = array();
+
+	foreach ( $rows as $row ) {
+		if ( '' !== $row['iso'] ) {
+			$years[ substr( $row['iso'], 0, 4 ) ] = true;
+		}
+	}
+
+	// Back to strings: PHP casts a numeric array key to an integer, so
+	// array_keys() hands back 2026 rather than '2026', and every strict
+	// comparison against a four-character substring of a date then fails.
+	$years = array_map( 'strval', array_keys( $years ) );
+	rsort( $years );
+
+	return $years;
+}
+
+/**
+ * Which season to show.
+ *
+ * The reader's own request first, then whatever the shortcode was told, then
+ * the newest season there is. Same order the race pages resolve an edition
+ * in, and for the same reason: a link someone followed outranks a default.
+ *
+ * @param array $years Newest first.
+ * @param array $args  Shortcode attributes.
+ * @return string
+ */
+function arv_live_index_season( $years, $args ) {
+	$asked = '';
+
+	if ( isset( $_GET[ ARV_LIVE_SEASON_VAR ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$asked = (string) wp_unslash( $_GET[ ARV_LIVE_SEASON_VAR ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	} elseif ( isset( $args['season'] ) ) {
+		$asked = (string) $args['season'];
+	}
+
+	$asked = preg_replace( '/\D/', '', $asked );
+
+	if ( '' !== $asked && in_array( $asked, $years, true ) ) {
+		return $asked;
+	}
+
+	return empty( $years ) ? '' : $years[0];
+}
+
+/**
+ * The rows belonging to one season.
+ *
+ * @param array  $rows
+ * @param string $season
+ * @return array
+ */
+function arv_live_index_for_season( $rows, $season ) {
+	if ( '' === $season ) {
+		return $rows;
+	}
+
+	$kept = array();
+
+	foreach ( $rows as $row ) {
+		if ( substr( $row['iso'], 0, 4 ) === $season ) {
+			$kept[] = $row;
+		}
+	}
+
+	return $kept;
+}
+
+/**
+ * The season switcher.
+ *
+ * Nothing at all for an index with one season in it, which is what this page
+ * looked like until the second year of pages was built: a row of one button
+ * that does nothing is furniture.
+ *
+ * Real links to real URLs rather than a script that hides rows, so a season
+ * can be shared, linked and indexed, and so the page carries one season's
+ * worth of markup rather than every season's.
+ *
+ * @param array  $years   Newest first.
+ * @param string $current
+ * @return string
+ */
+function arv_live_index_seasons( $years, $current ) {
+	if ( count( $years ) < 2 ) {
+		return '';
+	}
+
+	$base = function_exists( 'get_permalink' ) ? (string) get_permalink() : '';
+
+	$out = '<nav class="arv-live-index__seasons" aria-label="'
+		. esc_attr__( 'Results by year', 'aravaipa-elements' ) . '">';
+
+	foreach ( $years as $year ) {
+		$is  = ( $year === $current );
+		$url = ( '' !== $base ) ? add_query_arg( ARV_LIVE_SEASON_VAR, $year, $base ) : '';
+
+		if ( $is || '' === $url ) {
+			$out .= '<span class="arv-live-index__season is-current" aria-current="page">'
+				. esc_html( $year ) . '</span>';
+			continue;
+		}
+
+		$out .= '<a class="arv-live-index__season" href="' . esc_url( $url ) . '">'
+			. esc_html( $year ) . '</a>';
+	}
+
+	return $out . '</nav>';
 }
 
 /**
@@ -976,6 +1108,15 @@ function arv_live_index_render( $args = array() ) {
 	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Live Results';
 	$intro   = isset( $args['intro'] ) ? trim( (string) $args['intro'] ) : '';
 
+	// Every year this index has a race for, newest first, and the one being
+	// shown. Defaults to the newest rather than to all of them: this page is
+	// where someone lands looking for a race happening now, and every past
+	// season pushed further down the thing they came for. The other years
+	// are a click away and each is its own URL.
+	$years  = arv_live_index_years( $rows );
+	$season = arv_live_index_season( $years, $args );
+	$shown  = arv_live_index_for_season( $rows, $season );
+
 	$out = '<section class="arv-live-index">';
 	$out .= '<div class="arv-live-index__inner">';
 
@@ -987,9 +1128,11 @@ function arv_live_index_render( $args = array() ) {
 		$out .= '<p class="arv-live-index__intro">' . esc_html( $intro ) . '</p>';
 	}
 
+	$out .= arv_live_index_seasons( $years, $season );
+
 	$out .= '<ul class="arv-live-index__list">';
 
-	foreach ( $rows as $row ) {
+	foreach ( $shown as $row ) {
 		$out .= arv_live_index_item( $row );
 	}
 
@@ -1089,6 +1232,7 @@ function arv_live_index_shortcode( $atts ) {
 		array(
 			'heading' => 'Live Results',
 			'intro'   => '',
+			'season'  => '',
 		),
 		$atts,
 		'arv_live_index'
@@ -1178,7 +1322,14 @@ function arv_live_seo_context() {
 		return null;
 	}
 
-	$editions  = arv_live_editions( $slug );
+	// Both stores, and the same fallbacks the renderer uses. This read the
+	// results store alone, which only holds races that have already been
+	// scraped, so an upcoming race resolved to no edition and no name: the
+	// page rendered "Black Bear Trail Race" in its heading while every piece
+	// of SEO on it silently gave up, leaving no description, no schema, and
+	// Jetpack's "Visit the post for more." as the og:description on the page
+	// the whole exercise was built to get indexed.
+	$editions  = arv_live_all_editions( $slug );
 	$requested = isset( $_GET[ ARV_LIVE_YEAR_VAR ] ) ? wp_unslash( $_GET[ ARV_LIVE_YEAR_VAR ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$edition   = arv_live_pick_edition( $editions, $requested );
 	$name      = $edition ? $edition['name'] : '';
@@ -1186,6 +1337,11 @@ function arv_live_seo_context() {
 
 	if ( '' === $show ) {
 		$show = $slug;
+	}
+
+	if ( '' === $name ) {
+		$race = arv_live_race_by_slug( $show );
+		$name = $race ? $race['name'] : '';
 	}
 
 	return array(
