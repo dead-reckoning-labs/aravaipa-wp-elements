@@ -30,6 +30,24 @@ if ( ! defined( 'ARV_RESULTS_MAX_RUN' ) ) {
 	define( 'ARV_RESULTS_MAX_RUN', 8 * DAY_IN_SECONDS );
 }
 
+// The stopgap this grace exists to cover has stretched to cover the whole
+// year, not the "few days" arv_results_live_rows was written to describe.
+//
+// A page per year, /results-2026/, is now rendered by this element rather
+// than a hand-built Cornerstone page, and the historical scraper reads that
+// same page to build next year's stored rows. It now reads its own output,
+// finds a handful of races instead of the season, and cannot write the rest
+// of 2026 until it is pointed at an independent source. Left at 10 days,
+// every race this year would drop off the results page 10 days after it
+// finished and stay gone until that scraper is rebuilt: exactly what
+// prompted this comment. 400 days holds a race for the rest of any year it
+// could realistically run in. Once the scraper reads a source that is not
+// downstream of this element, this can go back to a number that means "a
+// few days" again.
+if ( ! defined( 'ARV_RESULTS_LIVE_MERGE_GRACE' ) ) {
+	define( 'ARV_RESULTS_LIVE_MERGE_GRACE', 400 );
+}
+
 
 cs_register_element(
 	'aravaipa-results',
@@ -286,7 +304,7 @@ function arv_results_render( $data ) {
 		}
 
 		$extra = array();
-		foreach ( arv_results_live_rows( $today ) as $row ) {
+		foreach ( arv_results_live_rows( $today, ARV_RESULTS_LIVE_MERGE_GRACE ) as $row ) {
 			if ( isset( $have[ strtolower( $row['name'] ) . '|' . $row['iso'] ] ) ) {
 				continue;
 			}
