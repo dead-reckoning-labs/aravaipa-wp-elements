@@ -427,7 +427,7 @@ function arv_watch_event( $event ) {
 	// lead segment's own URL for a race nobody has built a page for yet,
 	// exactly like arv_live_page_for_live_url() falls back to the board.
 	$page = arv_watch_page_map();
-	$key  = arv_watch_race_key( $event['slug'] );
+	$key  = arv_watch_race_key( $event['name'] );
 	$href = isset( $page[ $key ] ) ? $page[ $key ] : $lead['url'];
 
 	$out = '<li class="arv-watch__race" data-arv-watch-name="' . esc_attr( strtolower( $event['name'] ) ) . '"'
@@ -523,21 +523,47 @@ add_shortcode( 'arv_watch', 'arv_watch_shortcode' );
  */
 
 /**
- * The race a broadcast slug belongs to, independent of which year it ran.
+ * The race a broadcast belongs to, independent of which year it ran.
  *
- * Mountain Outpost's own slugs always end in the four-digit year:
- * "cocodona-250-2026", "black-canyon-2026". Stripping it is what lets every
- * edition of a race share one page. Not arv_results_race_key(): that
- * normaliser is tuned for the calendar's spelling drift between seasons,
- * which this feed does not have, and it would throw away the distance in
- * "cocodona-250" that this slug needs to stay unique from a plain
- * "cocodona" MO adds later.
+ * This shipped keying on the slug with its trailing year stripped, on the
+ * stated assumption that Mountain Outpost's slugs do not drift between
+ * seasons the way the race calendar's names do. That assumption was wrong,
+ * and checking it would have taken one query:
  *
- * @param string $slug
+ *   black-canyon-2026, black-canyon-2025, black-canyon-ultras-2024
+ *   jackpot-2025,      jackpot-ultras-2026
+ *   javelina-2025,     javelina-jundred-2024
+ *
+ * So three of the five races split in half. /watch/black-canyon/ offered
+ * 2026 and 2025 and silently hid the 2024, 2023 and 2022 broadcasts;
+ * /watch/jackpot/ and /watch/javelina/ showed one year each and no switcher
+ * at all, while every one of those editions sat on the index one click away.
+ *
+ * Keyed on the name now, which is consistent where the slug is not:
+ * "Javelina Jundred" every year, "Black Canyon Ultras" every year. Run
+ * through arv_results_race_key(), the normaliser that already exists to
+ * solve exactly this for the results archive, so "Black Canyon" and "Black
+ * Canyon Ultras" collapse together here for the same reason and by the same
+ * rule they do there.
+ *
+ * Takes a name or a page's stored key, so both sides of the page lookup
+ * normalise through one function and cannot disagree.
+ *
+ * @param string $value Event name, or a page's stored race key.
  * @return string
  */
-function arv_watch_race_key( $slug ) {
-	return (string) preg_replace( '/-(?:19|20)\d{2}$/', '', trim( (string) $slug ) );
+function arv_watch_race_key( $value ) {
+	$value = trim( (string) $value );
+
+	// Both shapes of trailing year: "Javelina Jundred 2025" from a name and
+	// "javelina-jundred-2025" from a slug or a stored key.
+	$value = (string) preg_replace( '/[\s-](?:19|20)\d{2}$/', '', $value );
+
+	if ( ! function_exists( 'arv_results_race_key' ) ) {
+		return strtolower( str_replace( '-', ' ', $value ) );
+	}
+
+	return arv_results_race_key( str_replace( '-', ' ', $value ) );
 }
 
 /**
@@ -556,10 +582,56 @@ function arv_watch_race_name( $name ) {
 }
 
 /**
+ * The feed key a page's stored key means.
+ *
+ * A page carries whatever was typed when it was created, which is a slug and
+ * not necessarily the exact normalised form the feed's names produce. The
+ * Javelina page was created as "javelina" while every edition of the race is
+ * named "Javelina Jundred", so its key normalises to "javelina" and the
+ * feed's to "javelina jundred", and the page found none of its own five
+ * broadcasts.
+ *
+ * Rather than require whoever creates a page to know the normaliser's exact
+ * output, a stored key that is the opening words of exactly one race in the
+ * feed resolves to that race. Exactly one: if two races both began with it
+ * the answer would be a guess, and showing the wrong race's broadcasts is
+ * worse than showing none.
+ *
+ * @param string $key Already normalised through arv_watch_race_key().
+ * @return string The feed's own key, or $key unchanged.
+ */
+function arv_watch_resolve_key( $key ) {
+	$key = trim( (string) $key );
+
+	if ( '' === $key ) {
+		return '';
+	}
+
+	$matches = array();
+
+	foreach ( arv_watch_events() as $event ) {
+		$theirs = arv_watch_race_key( $event['name'] );
+
+		// An exact match settles it; nothing below can beat it.
+		if ( $theirs === $key ) {
+			return $key;
+		}
+
+		if ( 0 === strpos( $theirs, $key . ' ' ) ) {
+			$matches[ $theirs ] = true;
+		}
+	}
+
+	return ( 1 === count( $matches ) ) ? (string) key( $matches ) : $key;
+}
+
+/**
  * Every edition of one race, newest first.
  *
  * Grouped by arv_watch_race_key() over the same feed arv_watch_events()
- * already fetched and cached, so this adds no request of its own. Sorted
+ * already fetched and cached, so this adds no request of its own. Grouped on
+ * the name rather than the slug because the slugs drift between seasons; see
+ * arv_watch_race_key(). Sorted
  * explicitly rather than trusted to arrive that way: the feed happens to be
  * newest-first today, and a bare assumption about upstream ordering is
  * exactly what put segments out of order the first time this plugin read
@@ -578,7 +650,7 @@ function arv_watch_race_editions( $key ) {
 	$mine = array();
 
 	foreach ( arv_watch_events() as $event ) {
-		if ( arv_watch_race_key( $event['slug'] ) === $key ) {
+		if ( arv_watch_race_key( $event['name'] ) === $key ) {
 			$mine[] = $event;
 		}
 	}
@@ -656,7 +728,11 @@ function arv_watch_page_map( $fresh = false ) {
 	);
 
 	foreach ( (array) $ids as $id ) {
-		$key = trim( (string) get_post_meta( $id, arv_watch_meta_key(), true ) );
+		// Normalised on the way in, so a page whose meta is written as a
+		// slug ("black-canyon") is found by the key the feed's name produces
+		// ("black canyon"). Both sides through one function, or the index
+		// links nowhere and does it silently.
+		$key = arv_watch_resolve_key( arv_watch_race_key( (string) get_post_meta( $id, arv_watch_meta_key(), true ) ) );
 
 		if ( '' !== $key ) {
 			$map[ $key ] = get_permalink( $id );
@@ -823,13 +899,42 @@ function arv_watch_race_page_link( $name ) {
 
 	$key = arv_results_race_key( $name );
 
+	if ( '' === $key ) {
+		return '';
+	}
+
+	$fallback = '';
+
 	foreach ( arv_race_store_get() as $race ) {
-		if ( arv_results_race_key( $race['name'] ) === $key && '' !== $race['page'] ) {
+		if ( '' === $race['page'] ) {
+			continue;
+		}
+
+		$theirs = arv_results_race_key( $race['name'] );
+
+		if ( $theirs === $key ) {
 			return $race['page'];
+		}
+
+		// The calendar sometimes carries a longer formal name than the
+		// broadcast does: Mountain Outpost says "Desert Solstice" and the
+		// race store says "Desert Solstice Track Invitational", which are
+		// one race and do not match on equality, so Desert Solstice was the
+		// one page of five with no registration link on it.
+		//
+		// Anchored at the start and cut on a word boundary, so this can only
+		// ever match a race whose name this one is the opening words of. It
+		// cannot pair "Black Canyon" with "Canyon de Chelly", and it cannot
+		// fire on a partial word, which is what would let "Rock Hawk" claim
+		// a hypothetical "Rock Hawkins". Held as a fallback rather than
+		// returned immediately so an exact match anywhere in the store still
+		// wins over a prefix match found earlier in the loop.
+		if ( '' === $fallback && 0 === strpos( $theirs, $key . ' ' ) ) {
+			$fallback = $race['page'];
 		}
 	}
 
-	return '';
+	return $fallback;
 }
 
 /**
@@ -872,13 +977,16 @@ function arv_watch_race_results_link( $name, $year ) {
  * @return string
  */
 function arv_watch_race_render( $args = array() ) {
-	$key = isset( $args['race'] ) ? trim( (string) $args['race'] ) : '';
+	// Normalised for the same reason arv_watch_page_map() normalises: this
+	// arrives as whatever was typed into the builder or stored on the page,
+	// usually a slug, and it has to match what the feed's names produce.
+	$key = isset( $args['race'] ) ? arv_watch_race_key( $args['race'] ) : '';
 
 	if ( '' === $key ) {
 		return '';
 	}
 
-	$editions = arv_watch_race_editions( $key );
+	$editions = arv_watch_race_editions( arv_watch_resolve_key( $key ) );
 
 	if ( empty( $editions ) ) {
 		return arv_watch_race_empty();
