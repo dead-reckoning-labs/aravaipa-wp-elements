@@ -742,6 +742,20 @@ t( 'suffix drift groups together',        arv_results_race_key( 'Rock Hawk' ) ==
 t( 'case drift groups together',          arv_results_race_key( 'Mountain To Fountain' ) === arv_results_race_key( 'Mountain to Fountain' ) );
 t( 'different races stay apart',          arv_results_race_key( 'San Tan Scramble' ) !== arv_results_race_key( 'Crown King Scramble' ) );
 
+// The three the board renamed between 2024 and 2025, which split one race's
+// history into two entries and sank the older half to the bottom of the page
+// under a year nobody expected to see there.
+t( 'a dropped distance merges',            arv_results_race_key( 'Cocodona' ) === arv_results_race_key( 'Cocodona 250' ) );
+t( 'and so does a dropped 50',             arv_results_race_key( 'North Fork' ) === arv_results_race_key( 'North Fork 50' ) );
+t( 'and a dropped plural',                 arv_results_race_key( 'Silverton Alpine Marathon' ) === arv_results_race_key( 'Silverton Alpine Marathons' ) );
+
+// The guard on all three. Stripping numbers and plurals buys the merges
+// above at the risk of collapsing races that only ever looked alike, so the
+// pairs most likely to go are named here rather than trusted.
+t( 'a number is not the whole name',       arv_results_race_key( 'Javelina Jundred' ) !== arv_results_race_key( 'Black Canyon 100K' ) );
+t( 'and a plural is not either',           arv_results_race_key( 'Coldwater Rumble' ) !== arv_results_race_key( 'Crown King Scramble' ) );
+t( 'a short name keeps its plural',        arv_results_race_key( 'Elephant Mountain' ) !== arv_results_race_key( 'Estrella Mountain' ) );
+
 // The date layout is still available and unchanged by any of this.
 $dated = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'date', 'upcoming' => 'false' ) );
 t( 'the date layout still renders',       false !== strpos( $dated, 'arv-results__table' ) );
@@ -1647,6 +1661,43 @@ t( 'no stats means no stat line',       false === strpos( $bare, 'finishers' ) )
 t( 'and no winners table',              false === strpos( $bare, 'arv-results__winners' ) );
 t( 'but the races still render',        false !== strpos( $bare, 'Vertigo Night Runs' ) );
 t( 'and so do their links',             false !== strpos( $bare, 'vertigo_night_runs-2026' ) );
+
+// ----------------------------------------------------------- Month heads --
+// Seventy-four races in one column gave no sense of where in the list you
+// were, and the tail of it read as the page wandering off rather than as the
+// archive running out of races.
+$monthly = arv_results_by_race(
+	array(
+		array( 'name' => 'Rock Hawk', 'iso' => '2026-08-29', 'display' => 'August 29', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+		array( 'name' => 'Vertigo Night Runs', 'iso' => '2026-08-08', 'display' => 'August 8', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+		array( 'name' => 'Silverton Alpine Marathon', 'iso' => '2026-07-18', 'display' => 'July 18', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+		array( 'name' => 'Flagstaff Big Pine', 'iso' => '2023-06-10', 'display' => 'June 10', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	),
+	false
+);
+
+t( 'the month heads the run',           false !== strpos( $monthly, '>August 2026</h3>' ) );
+t( 'the year is on it',                 false !== strpos( $monthly, '>June 2023</h3>' ) );
+t( 'one head per month, not per race',  1 === substr_count( $monthly, 'August 2026</h3>' ) );
+t( 'newest month first',                strpos( $monthly, 'August 2026' ) < strpos( $monthly, 'July 2026' ) );
+t( 'and the oldest last',               strpos( $monthly, 'July 2026' ) < strpos( $monthly, 'June 2023' ) );
+// Four races, three months: the two August races share a heading.
+t( 'a month per month, not per race',   3 === substr_count( $monthly, 'data-arv-results-month' ) );
+t( 'and every one of them closes',      substr_count( $monthly, '<section' ) === substr_count( $monthly, '</section>' ) );
+
+// Races sit under a month heading now, so they are a level deeper than they
+// were. A heading that skips a level is the accessibility bug this avoids.
+t( 'the race is under the month',       false !== strpos( $monthly, '<h4 class="arv-results__race-name">' ) );
+t( 'and the month is under the block',  false !== strpos( $monthly, '<h3 class="arv-results__month-head">' ) );
+
+// The date sits on the group, so a race whose latest edition is old files
+// under that old month rather than under the month the page was built in.
+t( 'an old race files under its own',   strpos( $monthly, 'June 2023' ) < strpos( $monthly, 'Flagstaff Big Pine' ) );
+
+t( 'a month label is month and year',   'August 2026' === arv_results_month_label( '2026-08-29' ) );
+t( 'and it reads the date as a date',   'August 2026' === arv_results_month_label( '2026-08-01' ) );
+t( 'a junk date labels nothing',        '' === arv_results_month_label( '' ) );
+t( 'and neither does a bad one',        '' === arv_results_month_label( 'soon' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nstats import route:\n";

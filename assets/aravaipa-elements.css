@@ -4059,6 +4059,33 @@
 	border-top: 1px solid var(--arv-results-rule);
 }
 
+/* The month a run of races belongs to. Sticky, because the whole point is
+   knowing where in seventy-four races you are, and a heading that scrolls
+   away answers that only at the moment you pass it.
+
+   The theme has no fixed chrome of its own, checked rather than assumed, so
+   the only thing that can sit over this is the admin bar. WordPress puts its
+   height on the document element when it renders one, and the fallback is
+   what every logged-out visitor gets. */
+.arv-results__month-head {
+	position: sticky;
+	top: var(--wp-admin--admin-bar--height, 0px);
+	z-index: 2;
+	margin: 0;
+	padding: 0.55rem 0;
+	background: #ffffff;
+	border-bottom: 2px solid var(--arv-teal);
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--arv-teal-deep);
+}
+
+.arv-results__month-group + .arv-results__month-group {
+	margin-top: 1.75rem;
+}
+
 .arv-results__race-group {
 	padding: 1rem 0;
 	border-bottom: 1px solid var(--arv-results-rule);
