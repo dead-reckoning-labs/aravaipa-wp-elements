@@ -5306,3 +5306,64 @@
 		flex: 1 1 100%;
 	}
 }
+
+/* The footer's own accordion, added by aravaipa-footer.js. This is theme
+   content this plugin does not own, so nothing here can lean on the
+   --arv-fs-* scale or the teal custom properties: those are declared on
+   .arv-results, .arv-live and .arv-live-index, and the footer sits outside
+   all three. Sized and coloured to match the widget's own inline styles
+   (13px, #272727, #888) rather than this plugin's usual palette. */
+@media (max-width: 767px) {
+	.arv-footer-accordion {
+		/* Stated, not inherited: the page centres its text by default, the
+		   same thing that made the live bar's title look centred earlier
+		   tonight, and it was reaching this widget's links too. */
+		text-align: left;
+		border-top: 1px solid rgba(0, 0, 0, 0.08);
+	}
+
+	.arv-footer-accordion:first-of-type {
+		border-top: none;
+	}
+
+	.arv-footer-accordion summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.65rem 0;
+		font-size: 13px;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+		font-weight: 800;
+		color: #272727;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.arv-footer-accordion summary::-webkit-details-marker {
+		display: none;
+	}
+
+	/* A plain chevron rather than an icon font or an SVG sprite: the footer
+	   loads no icon set of its own, and the site's other chevrons live inside
+	   elements this widget is not part of. */
+	.arv-footer-accordion summary::after {
+		content: '';
+		width: 7px;
+		height: 7px;
+		flex: 0 0 auto;
+		border-right: 2px solid #aaa;
+		border-bottom: 2px solid #aaa;
+		transform: rotate(45deg);
+		transition: transform 0.15s ease;
+	}
+
+	.arv-footer-accordion[open] summary::after {
+		transform: rotate(-135deg);
+	}
+
+	.arv-footer-accordion a {
+		padding: 0.3rem 0;
+	}
+}
