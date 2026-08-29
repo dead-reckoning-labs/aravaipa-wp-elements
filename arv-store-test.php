@@ -2272,6 +2272,53 @@ t( 'and defaults its own attributes',    false !== strpos( arv_live_shortcode( a
 t( 'and is registered under [arv_live]', isset( $GLOBALS['SHORTCODES']['arv_live'] ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
+echo "\nrace cards: live marker on race day only:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_race_store_import(
+	"Rock Hawk | 2026-08-29 | August 29 | 50K | 25K |  |  | Phillip S. Miller Park | Castle Rock, CO | https://ultrasignup.com/y | https://www.aravaiparunning.com/bcs/rh/ |  |  | https://live.aravaiparunning.com/#/rock_hawk-2026 | 2026-08-24 | 1 | 0 | 39.36 | -104.87\n"
+);
+arv_live_store_set( array( array(
+	'slug' => 'rock_hawk-2026', 'start' => '2026-08-29T12:00:00.000Z',
+	'cutoff' => '2026-08-29T21:00:00.000Z', 'offset' => -6, 'races' => array(),
+) ) );
+$card_race = arv_race_store_get()[0];
+
+// A countdown on every card in a list of eight upcoming races is eight
+// numbers nobody asked for. "This one is running right now" is worth the
+// interruption, and nothing else is.
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T09:00:00Z' );
+$before = arv_races_live_clock( $card_race );
+t( 'before the gun the marker hides',   false !== strpos( $before, 'data-arv-results-live hidden' ) );
+t( 'and no elapsed time is written',    false !== strpos( $before, 'elapsed-value>' ) );
+
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T15:30:00Z' );
+$during = arv_races_live_clock( $card_race );
+t( 'during the race it shows',          false !== strpos( $during, 'data-arv-results-live>' ) );
+t( 'with the time elapsed so far',      false !== strpos( $during, '>3:30<' ) );
+t( 'and a pulse to catch the eye',      false !== strpos( $during, 'arv-results__pulse' ) );
+
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T22:00:00Z' );
+$after = arv_races_live_clock( $card_race );
+t( 'after the cutoff it hides again',   false !== strpos( $after, 'data-arv-results-live hidden' ) );
+t( 'and stops reporting a time',        false === strpos( $after, '>10:00<' ) );
+
+// Both states ship on every card whatever PHP decided, because this site is
+// behind a page cache: HTML generated hours before the gun still has to be
+// able to go live without a reload. The script swaps them on data-arv-start.
+t( 'the clock ships either way',        false !== strpos( $before, 'data-arv-results-clock' ) );
+t( 'carrying the real start time',      false !== strpos( $before, 'data-arv-start="2026-08-29T12:00:00+00:00"' ) );
+t( 'and a cutoff to stop at',           false !== strpos( $before, 'data-arv-cutoff=' ) );
+
+// A race the board has no clock for gets nothing at all. Falling back to
+// midnight would put a confident "Elapsed 14:32:07" on a race that has not
+// started.
+$GLOBALS['ARV_OPTIONS']['arv_live_board'] = array();
+t( 'no board start, no clock',          '' === arv_races_live_clock( $card_race ) );
+t( 'and no live URL, no clock',         '' === arv_races_live_clock( array( 'name' => 'X', 'live' => '' ) ) );
+
+$GLOBALS['NOW_TS'] = null;
+$GLOBALS['ARV_OPTIONS'] = array();
+
 echo "\nweather: forecast beside the clock:\n";
 
 // Wiring weather into arv_live_bar() means every live-page test run before

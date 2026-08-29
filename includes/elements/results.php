@@ -24,11 +24,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Eight days. Longer than any race on the calendar: Cocodona 250 allows
-// about 125 hours. See arv_results_backstop_cutoff().
-if ( ! defined( 'ARV_RESULTS_MAX_RUN' ) ) {
-	define( 'ARV_RESULTS_MAX_RUN', 8 * DAY_IN_SECONDS );
-}
 
 // The stopgap this grace exists to cover has stretched to cover the whole
 // year, not the "few days" arv_results_live_rows was written to describe.
@@ -642,22 +637,6 @@ function arv_results_race_week( $today, $grace = 3 ) {
 	return $out;
 }
 
-/**
- * Now, as a unix timestamp, in a way the test harness can move.
- *
- * @return int
- */
-function arv_results_now() {
-	$now = function_exists( 'current_time' ) ? current_time( 'timestamp' ) : time(); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp
-
-	if ( is_numeric( $now ) ) {
-		return (int) $now;
-	}
-
-	$today = function_exists( 'arv_upcoming_races_today' ) ? arv_upcoming_races_today() : gmdate( 'Y-m-d' );
-
-	return (int) strtotime( $today . ' 00:00:00' );
-}
 
 
 /**
@@ -807,34 +786,6 @@ function arv_results_race_social( $race ) {
 	);
 }
 
-/**
- * A cutoff for a race that has none, so that "live" cannot last forever.
- *
- * Without one, both this and the script that drives the clock decided a race
- * was live on the strength of its start time alone, which is true from the
- * gun until the end of time. Black Bear's 2025 page carried a LIVE NOW marker
- * and an elapsed clock reading 363 days.
- *
- * ARV_RESULTS_MAX_RUN is longer than anything on the calendar. Cocodona 250,
- * the longest race Aravaipa puts on, allows about 125 hours.
- *
- * Returned rather than applied so the same number reaches the markup, where
- * the script reads it off data-arv-cutoff. One rule, one place, and no way
- * for the server and the browser to disagree a second after load.
- *
- * @param int    $cutoff_ts Real cutoff, or 0 where there is none.
- * @param string $start     ISO 8601 start.
- * @return int
- */
-function arv_results_backstop_cutoff( $cutoff_ts, $start ) {
-	if ( $cutoff_ts ) {
-		return (int) $cutoff_ts;
-	}
-
-	$start_ts = strtotime( (string) $start );
-
-	return $start_ts ? ( $start_ts + ARV_RESULTS_MAX_RUN ) : 0;
-}
 
 /**
  * The three states one race passes through across its own weekend.
@@ -901,53 +852,7 @@ function arv_results_week_status( $race ) {
 	return $out;
 }
 
-/**
- * The pulsing marker, on its own rather than inside the clock cell.
- *
- * It sits beside the race name because that is what it is about: this
- * race, right now. Keeping it out of the status cell also means the
- * elapsed clock can run next to it rather than instead of it, which is
- * what someone watching a race in progress actually wants to see.
- *
- * @param array $race
- * @return string
- */
-function arv_results_week_live_badge( $race ) {
-	return '<span class="arv-results__live" data-arv-results-live'
-		. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
-		. '<span class="arv-results__pulse" aria-hidden="true"></span>'
-		. esc_html( __( 'Live now', 'aravaipa-elements' ) )
-		. '</span>';
-}
 
-/**
- * How long a race has been running, coarsely, worked out on the server.
- *
- * Same reason the countdown has a server-rendered value: WP Rocket holds
- * scripts until the visitor interacts, so an empty span is what a real
- * visitor reads first. Hours and minutes rather than seconds, because that
- * is as precise as a number can usefully be before the script takes over
- * and starts ticking.
- *
- * @param string $start ISO 8601, or empty when the board has no time.
- * @return string
- */
-function arv_results_elapsed_text( $start ) {
-	if ( '' === $start ) {
-		return '';
-	}
-
-	$since = arv_results_now() - (int) strtotime( $start );
-
-	if ( $since <= 0 ) {
-		return '';
-	}
-
-	$hours   = (int) floor( $since / 3600 );
-	$minutes = (int) floor( ( $since % 3600 ) / 60 );
-
-	return sprintf( '%d:%02d', $hours, $minutes );
-}
 
 /**
  * How long until race day, in words, worked out on the server.
@@ -995,28 +900,6 @@ function arv_results_countdown_text( $iso, $start = '' ) {
 	return sprintf( _n( '%d hour', '%d hours', $hours, 'aravaipa-elements' ), $hours );
 }
 
-/**
- * Midnight on race day, as an instant the browser can count down to.
- *
- * The store keeps dates, not gun times, so this is the start of race day
- * rather than the start of the race. That is why the label above it says
- * "first race in" against a date rather than naming a start time it does
- * not have: the honest version of a fact we only half know.
- *
- * Carries the site's own UTC offset rather than leaving the browser to
- * assume its own. A reader in another timezone should be counting down to
- * the same moment as a reader in Phoenix, not to their own local midnight.
- *
- * @param string $iso Y-m-d.
- * @return string ISO 8601 with offset.
- */
-function arv_results_start_iso( $iso ) {
-	$offset = function_exists( 'get_option' ) ? (float) get_option( 'gmt_offset', 0 ) : 0;
-	$sign   = ( $offset < 0 ) ? '-' : '+';
-	$abs    = abs( $offset );
-
-	return $iso . 'T00:00:00' . sprintf( '%s%02d:%02d', $sign, (int) floor( $abs ), (int) round( ( $abs - floor( $abs ) ) * 60 ) );
-}
 
 /**
  * "August 2026" from an ISO date.
