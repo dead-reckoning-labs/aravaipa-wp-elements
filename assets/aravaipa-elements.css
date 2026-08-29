@@ -4785,6 +4785,11 @@
    the scrollbar width, measured in JS, because 100vw counts the scrollbar on
    Windows and Linux but not on macOS's overlay scrollbars. */
 .arv-live {
+	/* Stated, not inherited. The page template this renders in centres its
+	   text, so the bar's date and location line sat centred under a
+	   left-aligned title, which read as a mistake because it was one:
+	   .arv-results has always stated this and never had the problem. */
+	text-align: left;
 	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 	/* No top padding: the bar is its own dark surface and starts the
@@ -5135,6 +5140,7 @@
    same breakout as everything else in this component.
    --------------------------------------------------------------------- */
 .arv-live-index {
+	text-align: left;
 	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 	background: #10201f;
@@ -5150,6 +5156,7 @@
 
 .arv-live-index__heading {
 	margin: 0;
+	text-align: center;
 	font-size: clamp(26px, 3.4vw, 34px);
 	font-weight: 700;
 	line-height: 1.15;
@@ -5157,7 +5164,8 @@
 }
 
 .arv-live-index__intro {
-	margin: 0.4rem 0 0;
+	margin: 0.4rem auto 0;
+	text-align: center;
 	font-size: var(--arv-fs-body);
 	color: rgba(244, 244, 244, 0.66);
 	max-width: 46rem;

@@ -39,6 +39,7 @@ function shortcode_atts( $pairs, $atts, $tag = '' ) { return array_merge( $pairs
 function esc_html__( $s, $d = '' ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function wp_unslash( $v ) { return $v; }
 function get_queried_object_id() { return $GLOBALS['QUERIED_ID'] ?? 0; }
+function get_post_field( $field, $id = 0 ) { return $GLOBALS['POST_FIELD'][ $id ][ $field ] ?? ''; }
 function get_permalink( $id = 0 ) { return $GLOBALS['PERMALINK'][ $id ] ?? 'https://www.aravaiparunning.com/live/test/'; }
 
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
@@ -1878,6 +1879,119 @@ t( 'and names the account it goes to',  false !== strpos( $live_bar, 'on Instagr
 $bare_bar = arv_live_bar( 'Some Retired Race', null, null, array(), 'retired-2013' );
 t( 'no race, no instagram guess',       false === strpos( $bare_bar, 'instagram.com' ) );
 t( 'and no clock to count to',          false === strpos( $bare_bar, 'arv-results__countdown' ) );
+
+// ------------------------------------------------------ Pinned editions --
+// A year page pins itself with year=, because the slug alone cannot: the
+// main page for a race carries the current year's slug and has to follow the
+// race into next year, so a slug year cannot mean "stay here". Without the
+// attribute the 2025 page rendered the 2026 board under a 2025 breadcrumb,
+// with 2026 lit in its own year switcher.
+$eds = array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29', 'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30', 'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2024-08-31', 'display' => 'August 31', 'live' => 'https://live.aravaiparunning.com/#/black_bear-2024' ),
+);
+
+t( 'no year asked for takes newest',    '2026-08-29' === arv_live_pick_edition( $eds, '' )['iso'] );
+t( 'a year asked for is honoured',      '2025-08-30' === arv_live_pick_edition( $eds, '2025' )['iso'] );
+t( 'and a year with no edition falls back', '2026-08-29' === arv_live_pick_edition( $eds, '1999' )['iso'] );
+
+// The reader's own ?edition= beats the page's pin, so a pinned page's own
+// year links still work where there is no separate page to send them to.
+$GLOBALS['ARV_OPTIONS']['arv_race_results'] = $eds;
+
+$_GET[ ARV_LIVE_YEAR_VAR ] = '2024';
+$pinned = arv_live_page_render( array( 'slug' => 'black_bear-2025', 'year' => '2025' ) );
+t( 'the reader outranks the pin',       false !== strpos( $pinned, 'black_bear-2024' ) );
+unset( $_GET[ ARV_LIVE_YEAR_VAR ] );
+
+$pinned = arv_live_page_render( array( 'slug' => 'black_bear-2025', 'year' => '2025' ) );
+t( 'and the pin outranks newest',       false !== strpos( $pinned, 'black_bear-2025' ) );
+t( 'so the pinned year is the frame',   false === strpos( $pinned, 'black_bear-2026' ) );
+
+// And the same page with no pin at all is the bug that started this.
+$unpinned = arv_live_page_render( array( 'slug' => 'black_bear-2025' ) );
+t( 'no pin still means newest',         false !== strpos( $unpinned, 'black_bear-2026' ) );
+
+// -------------------------------------------------- Live cannot outlast --
+// A board start with no cutoff said a race was live from the gun to the end
+// of time, in the markup and again in the script that drives the clock a
+// second later. Black Bear's 2025 page carried LIVE NOW and an elapsed clock
+// reading 363 days.
+$long_ago = gmdate( 'c', strtotime( '-363 days' ) );
+// Relative to the clock the harness freezes, not the wall, or a start two
+// real hours ago lands in this run's future.
+$earlier  = gmdate( 'c', arv_results_now() - 7200 );
+
+t( 'a real cutoff is left alone',       1234 === arv_results_backstop_cutoff( 1234, $long_ago ) );
+t( 'no cutoff gets one from the start', arv_results_backstop_cutoff( 0, $long_ago ) === strtotime( $long_ago ) + ARV_RESULTS_MAX_RUN );
+t( 'and it is in the past for a race a year old', arv_results_backstop_cutoff( 0, $long_ago ) < time() );
+t( 'but not for one that started today', arv_results_backstop_cutoff( 0, $earlier ) > arv_results_now() );
+t( 'no start means no backstop',        0 === arv_results_backstop_cutoff( 0, '' ) );
+
+// The state both ends agree on.
+$stale = array( 'start' => $long_ago, 'cutoff' => '' );
+t( 'a year-old race reads as done',     'done' === arv_live_state( 'Black Bear Trail Race', '2025-08-30', $stale ) );
+
+$running = array( 'start' => $earlier, 'cutoff' => '' );
+t( 'one that started today is live',    'live' === arv_live_state( 'Black Bear Trail Race', gmdate( 'Y-m-d', arv_results_now() ), $running ) );
+
+// And the markup hands the script the same number rather than leaving it to
+// work one out, which is how the two disagreed in the first place.
+$stale_markup = arv_results_week_status(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'board' => $stale, 'state' => 'done' )
+);
+t( 'the clock is given a cutoff',       false !== strpos( $stale_markup, 'data-arv-cutoff' ) );
+
+// --------------------------------------------------------- Year pages --
+// The site has a page per year and a menu built on them, so a page called
+// results-2026 says what it is about in its own slug. The element's Year
+// setting lives in Cornerstone's data, which is not reachable from here, so
+// without this a year page has to be told its year by hand in a builder,
+// once a year, forever.
+$GLOBALS['POST_FIELD'] = array(
+	11 => array( 'post_name' => 'results-2026' ),
+	12 => array( 'post_name' => 'results-2008-2010' ),
+	13 => array( 'post_name' => 'results-archive' ),
+	14 => array( 'post_name' => 'live-results' ),
+);
+
+$GLOBALS['QUERIED_ID'] = 11;
+t( 'a year page names its own year',    '2026' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 12;
+t( 'a span of years is not one year',   '' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 13;
+t( 'and an archive keeps every year',   '' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 14;
+t( 'and so does an unrelated page',     '' === arv_results_year_from_page() );
+$GLOBALS['QUERIED_ID'] = 0;
+t( 'off a page entirely, no year',      '' === arv_results_year_from_page() );
+
+// Filtering keeps the races that ran that year, not the rows dated in it.
+// Row by row threw away every earlier edition folded under a race, which is
+// half of what the archive is for: a race's own past is not another event.
+$hist = array(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2027-08-28', 'display' => 'August 28', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Hypnosis', 'iso' => '2023-06-24', 'display' => 'June 24', 'live' => '', 'ultrasignup' => '', 'ultrarunning' => '' ),
+);
+
+$only26 = arv_results_filter_year( $hist, '2026' );
+t( 'a race that ran that year stays',   2 === count( $only26 ) );
+t( 'and keeps its earlier editions',    '2025-08-30' === $only26[1]['iso'] );
+t( 'a race that did not ran goes',      false === strpos( wp_json_encode( $only26 ), 'Hypnosis' ) );
+t( 'and later years go too',            false === strpos( wp_json_encode( $only26 ), '2027' ) );
+t( 'so the year heads its own race',    '2026-08-29' === $only26[0]['iso'] );
+
+t( 'no year keeps everything',          4 === count( arv_results_filter_year( $hist, '' ) ) );
+t( 'and so does a junk year',           4 === count( arv_results_filter_year( $hist, 'soon' ) ) );
+t( 'a year nobody ran is empty',        0 === count( arv_results_filter_year( $hist, '1999' ) ) );
+
+$GLOBALS['POST_FIELD'] = array();
+$GLOBALS['QUERIED_ID'] = 0;
+
+$GLOBALS['ARV_OPTIONS'] = array();
 t( 'and so is a negative one',           false !== strpos( $short, 'height:400px' ) );
 // The shortcode is the path bulk-created pages use, so it is exercised as
 // itself rather than trusted to be a thin wrapper.
