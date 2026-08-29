@@ -178,12 +178,27 @@
 			return n < 10 ? '0' + n : String( n );
 		}
 
+		// The leading unit is written plainly and everything after it is
+		// padded, the way a clock is read aloud: "7:58:12", not "07:58:12",
+		// and "5:33" rather than "00:05:33" in the last hour. Padding exists
+		// to keep the columns of a fixed-width field from jumping, which
+		// applies to the minutes and seconds inside the number and never to
+		// the first digit of it.
 		function span( ms ) {
 			var s = Math.floor( ms / 1000 );
 			var d = Math.floor( s / 86400 );
 			var h = Math.floor( ( s % 86400 ) / 3600 );
 			var m = Math.floor( ( s % 3600 ) / 60 );
-			return ( d > 0 ? d + 'd ' : '' ) + pad( h ) + ':' + pad( m ) + ':' + pad( s % 60 );
+
+			if ( d > 0 ) {
+				return d + 'd ' + h + ':' + pad( m ) + ':' + pad( s % 60 );
+			}
+
+			if ( h > 0 ) {
+				return h + ':' + pad( m ) + ':' + pad( s % 60 );
+			}
+
+			return m + ':' + pad( s % 60 );
 		}
 
 		function show( which ) {
