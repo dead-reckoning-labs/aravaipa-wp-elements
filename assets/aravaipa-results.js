@@ -43,6 +43,7 @@
 		}
 
 		var groups = list.querySelectorAll( '[data-arv-results-race]' );
+		var months = list.querySelectorAll( '[data-arv-results-month]' );
 
 		// Search narrow enough that every match can be opened without
 		// burying the page. Someone who typed a race name wants that race's
@@ -87,6 +88,15 @@
 					shown++;
 					hits.push( groups[ i ] );
 				}
+			}
+
+			// A month heading with nothing under it reads as a month with no
+			// races in it, which is a different and wrong claim. Hidden with
+			// its races rather than left standing over the gap.
+			for ( var m = 0; m < months.length; m++ ) {
+				months[ m ].hidden = ! months[ m ].querySelector(
+					'[data-arv-results-race]:not([hidden])'
+				);
 			}
 
 			var expand = '' !== q && shown > 0 && shown <= AUTO_OPEN_MAX;

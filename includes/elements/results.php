@@ -317,7 +317,27 @@ function arv_results_race_key( $name ) {
 	$light = trim( preg_replace( '/\s+/', ' ', $light ) );
 
 	$stripped = preg_replace( '/\b(trail|trails|run|runs|race|races|ultra|ultras|endurance|the|presented by.*)\b/i', ' ', $light );
+
+	// A distance in the name, which the board adds and drops between years:
+	// "Cocodona 250" is now "Cocodona", "North Fork 50" is now "North Fork".
+	// Nothing here can wrongly merge on it, because two races differing only
+	// by a number are one race at two distances, and this store holds a
+	// single row per race with its distances listed on that row.
+	$stripped = preg_replace( '/\b\d+\s*(k|km|m|mi|mile|miler|hour|hr)?\b/i', ' ', (string) $stripped );
 	$stripped = trim( preg_replace( '/\s+/', ' ', (string) $stripped ) );
+
+	// And a plural, for the same reason: "Silverton Alpine Marathons" is now
+	// "Silverton Alpine Marathon". Past four letters only, so the list above
+	// keeps handling "runs" and "races" and short names are left alone.
+	$stripped = implode(
+		' ',
+		array_map(
+			function ( $word ) {
+				return ( strlen( $word ) > 4 && 's' === substr( $word, -1 ) ) ? substr( $word, 0, -1 ) : $word;
+			},
+			array_filter( explode( ' ', $stripped ) )
+		)
+	);
 
 	return ( strlen( $stripped ) < 4 ) ? $light : $stripped;
 }
@@ -892,6 +912,28 @@ function arv_results_start_iso( $iso ) {
 }
 
 /**
+ * "August 2026" from an ISO date.
+ *
+ * UTC on purpose: these are dates, not moments. Rendering 2026-08-01 in a
+ * timezone behind UTC would put it in July.
+ *
+ * @param string $iso Y-m-d.
+ * @return string
+ */
+function arv_results_month_label( $iso ) {
+	// Matched before it is parsed. strtotime( ' 00:00:00 UTC' ) is a valid
+	// call that returns today, so an empty date would otherwise label itself
+	// with whatever month the page happened to be built in.
+	if ( ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})/', (string) $iso, $m ) ) {
+		return '';
+	}
+
+	$stamp = strtotime( $m[0] . ' 00:00:00 UTC' );
+
+	return $stamp ? gmdate( 'F Y', $stamp ) : '';
+}
+
+/**
  * Every edition of every race, the most recent race first.
  *
  * Each race shows its latest edition open, because that is the one most
@@ -941,11 +983,34 @@ function arv_results_by_race( $rows, $show_search ) {
 
 	$out .= '<div class="arv-results__races" data-arv-results-list>';
 
+	// Grouped under the month of its newest edition, the way the calendar
+	// already groups the season. Seventy-four races in one unbroken column
+	// gave no sense of where in the list you were, and the tail of it, races
+	// whose last running was 2023, read as the page wandering off rather than
+	// as the archive reaching the end of what it has. A month heading makes
+	// that the answer to a question instead of a surprise.
+	$month = '';
+
 	foreach ( $races as $editions ) {
 		// Newest edition first, and its name is the one to show: a race that
 		// was renamed is called whatever it is called now.
 		$latest = $editions[0];
 		$older  = array_slice( $editions, 1 );
+
+		$this_month = arv_results_month_label( $latest['iso'] );
+
+		if ( $this_month !== $month ) {
+			if ( '' !== $month ) {
+				$out .= '</section>';
+			}
+			$month = $this_month;
+			// A section per month, rather than headings loose among the
+			// races, so the search can hide a month whose every race it
+			// filtered out by hiding one element rather than working out
+			// which heading belongs to which run of siblings.
+			$out .= '<section class="arv-results__month-group" data-arv-results-month>';
+			$out .= '<h3 class="arv-results__month-head">' . esc_html( $month ) . '</h3>';
+		}
 
 		$out .= '<div class="arv-results__race-group" data-arv-results-race="'
 			. esc_attr( strtolower( $latest['name'] ) ) . '">';
@@ -954,7 +1019,7 @@ function arv_results_by_race( $rows, $show_search ) {
 
 		$out .= '<div class="arv-results__latest">';
 		$out .= '<div class="arv-results__race-head">';
-		$out .= '<h3 class="arv-results__race-name">' . esc_html( $latest['name'] ) . '</h3>';
+		$out .= '<h4 class="arv-results__race-name">' . esc_html( $latest['name'] ) . '</h4>';
 
 		// The date sits beside the name rather than under it, the way the
 		// race week block already puts them, and the finisher count joins it
@@ -1019,6 +1084,10 @@ function arv_results_by_race( $rows, $show_search ) {
 		}
 
 		$out .= '</div>';
+	}
+
+	if ( '' !== $month ) {
+		$out .= '</section>';
 	}
 
 	$out .= '</div>';
