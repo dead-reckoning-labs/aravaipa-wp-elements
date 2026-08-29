@@ -209,6 +209,7 @@ require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/stats-store.php';
+require_once __DIR__ . '/includes/watch-store.php';
 require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
@@ -2454,6 +2455,172 @@ t( 'and the temperature with its degree', false !== strpos( $markup, '68&deg;' )
 $GLOBALS['NOW_TS'] = null;
 $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
+
+// -------------------------------------------------------------------------
+// Watch: Aravaipa's broadcasts, read from Mountain Outpost.
+// -------------------------------------------------------------------------
+echo "\nwatch, youtube ids:\n";
+t( 'a watch?v= url',                     'dQw4w9WgXcQ' === arv_watch_youtube_id( 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' ) );
+t( 'with other params in front',         'dQw4w9WgXcQ' === arv_watch_youtube_id( 'https://www.youtube.com/watch?list=PL1&v=dQw4w9WgXcQ&t=90' ) );
+t( 'a youtu.be short url',               'abcdefghijk' === arv_watch_youtube_id( 'https://youtu.be/abcdefghijk' ) );
+t( 'a /live/ url',                       'AB_cd-EFghi' === arv_watch_youtube_id( 'https://www.youtube.com/live/AB_cd-EFghi?feature=share' ) );
+t( 'a channel url is not a video',       '' === arv_watch_youtube_id( 'https://www.youtube.com/@aravaiparunning' ) );
+t( 'nor is an empty string',             '' === arv_watch_youtube_id( '' ) );
+// Eleven characters exactly. A ten-character v= is not a YouTube id, and
+// matching it anyway would build an embed URL that 404s inside the iframe,
+// where nothing here can see it fail.
+t( 'a ten-character id is refused',      '' === arv_watch_youtube_id( 'https://youtu.be/0123456789' ) );
+
+echo "\nwatch, cleaning the feed:\n";
+$feed = array(
+	array(
+		'slug'      => 'cocodona-250-2026',
+		'name'      => 'Cocodona 250',
+		'live'      => false,
+		'startDate' => '2026-05-04',
+		'streams'   => array(
+			array( 'title' => 'Start Line', 'youtubeUrl' => 'https://www.youtube.com/watch?v=aaaaaaaaaaa', 'streamType' => 'race', 'scheduledStart' => '2026-05-04T12:00:00Z' ),
+			array( 'title' => 'Mingus Mountain', 'youtubeUrl' => 'https://youtu.be/bbbbbbbbbbb' ),
+			// No URL: there is nowhere to send anyone, so it is not a card.
+			array( 'title' => 'Never published' ),
+		),
+	),
+	array(
+		'slug'    => 'black-canyon-2026',
+		'name'    => 'Black Canyon Ultras',
+		'live'    => true,
+		'streams' => array(
+			array( 'title' => 'Live Coverage', 'youtubeUrl' => 'https://www.youtube.com/live/ccccccccccc', 'live' => true ),
+		),
+	),
+	// Every stream unusable, so the event goes with them rather than
+	// rendering as a race with nothing to watch.
+	array( 'slug' => 'ghost-2026', 'name' => 'Ghost Race', 'streams' => array( array( 'youtubeUrl' => 'https://example.com/nope' ) ) ),
+	// Shapes the API should never send, which is exactly why they are here.
+	array( 'name' => 'No slug', 'streams' => array() ),
+	'not even an array',
+);
+$clean = arv_watch_clean( $feed );
+t( 'two events survive',                 2 === count( $clean ) );
+t( 'the urlless stream is dropped',      2 === count( $clean[0]['streams'] ) );
+t( 'and the unwatchable event with it',  'black-canyon-2026' === $clean[1]['slug'] );
+t( 'a live event is marked live',        true === $clean[1]['live'] );
+t( 'a past one is not',                  false === $clean[0]['live'] );
+t( 'the id is pulled out of the url',    'aaaaaaaaaaa' === $clean[0]['streams'][0]['id'] );
+// hqdefault, not the maxresdefault the API hands over: same picture, 23KB
+// instead of 220KB, on a page that shows a grid of them.
+t( 'the thumbnail is built from the id', 'https://i.ytimg.com/vi/aaaaaaaaaaa/hqdefault.jpg' === $clean[0]['streams'][0]['thumbnail'] );
+t( 'a missing field becomes empty, not null', '' === $clean[0]['streams'][1]['type'] );
+
+// Desert Solstice has been broadcast every December since 2018 under one
+// name, so without this the archive is nine cards all reading the same
+// thing. Names that already carry a year are left alone.
+t( 'a yearless name gains its year',     'Desert Solstice 2019' === arv_watch_event_name( 'Desert Solstice', '2019-12-14T14:24:08.000Z' ) );
+t( 'a name with one is left alone',      'Cocodona 250 2025' === arv_watch_event_name( 'Cocodona 250 2025', '2025-05-05' ) );
+t( 'a distance is not mistaken for one', 'Jackpot 100 2025' === arv_watch_event_name( 'Jackpot 100', '2025-02-22' ) );
+t( 'no date means no guess',             'Desert Solstice' === arv_watch_event_name( 'Desert Solstice', '' ) );
+t( 'and the feed comes through named',   'Cocodona 250 2026' === $clean[0]['name'] );
+
+echo "\nwatch, fetching:\n";
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+$GLOBALS['_http_calls'] = 0;
+arv_test_queue_response( array( 'code' => 200, 'body' => json_encode( array( 'events' => $feed ) ) ) );
+$got = arv_watch_events();
+t( 'a good response comes back cleaned', 2 === count( $got ) );
+t( 'and asked the network once',         1 === $GLOBALS['_http_calls'] );
+$got2 = arv_watch_events();
+t( 'the second read is cached',          1 === $GLOBALS['_http_calls'] );
+t( 'and is the same data',               $got === $got2 );
+
+// A failure has to be cached too. Caching nothing would put an outbound
+// request on every single page view for as long as an outage lasts.
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( new WP_Error( 'down' ) );
+t( 'a transport error renders nothing',  array() === arv_watch_events() );
+$calls = $GLOBALS['_http_calls'];
+t( 'and the failure is remembered',      array() === arv_watch_events() );
+t( 'so the outage is not hammered',      $calls === $GLOBALS['_http_calls'] );
+
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 500, 'body' => 'nope' ) );
+t( 'a 500 is a failure too',             array() === arv_watch_events() );
+
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 200, 'body' => '{"error":"unauthorized"}' ) );
+t( 'a 200 with the wrong shape too',     array() === arv_watch_events() );
+
+// The one case the 'none' sentinel exists for: the API answered fine and
+// genuinely has no broadcasts. It must not read as a transport failure.
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 200, 'body' => '{"events":[]}' ) );
+t( 'an honestly empty feed is empty',    array() === arv_watch_events() );
+
+echo "\nwatch, rendering:\n";
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+arv_test_queue_response( new WP_Error( 'down' ) );
+// Nothing at all, not a heading over a blank space: a page that says
+// "Watch" and then shows nothing reads as broken.
+t( 'an unreachable feed renders nothing', '' === arv_watch_render( array( 'heading' => 'Watch' ) ) );
+
+$GLOBALS['_transients']['arv_watch_events'] = $clean;
+$html = arv_watch_render( array( 'heading' => 'Watch', 'intro' => 'Every broadcast.' ) );
+t( 'the heading renders',                false !== strpos( $html, 'Watch</h2>' ) );
+t( 'the intro too',                      false !== strpos( $html, 'Every broadcast.' ) );
+// Exactly one player on the page, for the race that is on air. Eighteen
+// Cocodona segments as eighteen iframes would be eighteen third-party
+// players loading on a page nobody asked to autoplay.
+t( 'the live race is embedded',          1 === substr_count( $html, '<iframe' ) );
+t( 'from the live segment',              false !== strpos( $html, 'embed/ccccccccccc' ) );
+t( 'privacy-mode player',                false !== strpos( $html, 'youtube-nocookie.com' ) );
+t( 'with the live badge',                false !== strpos( $html, 'arv-results__live' ) );
+t( 'the past race is a link out',        false !== strpos( $html, 'youtube.com/watch?v=aaaaaaaaaaa' ) );
+// The first segment by scheduled start, not the last: on a stage race the
+// last one is the finish, and opening on the finish spoils the coverage
+// above it.
+t( 'the later segment is still listed',  false !== strpos( $html, 'youtu.be/bbbbbbbbbbb' ) );
+t( 'but the card opens on the first',     strpos( $html, 'watch?v=aaaaaaaaaaa' ) < strpos( $html, 'youtu.be/bbbbbbbbbbb' ) );
+t( 'thumbnails are lazy',                false !== strpos( $html, 'loading="lazy"' ) );
+t( 'its date reads as a date',           false !== strpos( $html, 'May 4, 2026' ) );
+t( 'and its segment count',              false !== strpos( $html, '2 videos' ) );
+t( 'two segments get a toggle',          false !== strpos( $html, 'All 2 segments' ) );
+
+// One video needs no "all 1 segments" toggle over the video already linked.
+$single = array( array( 'slug' => 'solo-2026', 'name' => 'Solo', 'live' => false, 'start' => '', 'streams' => array( array( 'id' => 'ddddddddddd', 'title' => 'Only', 'url' => 'https://youtu.be/ddddddddddd', 'thumbnail' => 'https://i.ytimg.com/vi/ddddddddddd/hqdefault.jpg', 'live' => false, 'type' => '', 'start' => '' ) ) ) );
+$GLOBALS['_transients']['arv_watch_events'] = $single;
+$solo = arv_watch_render( array() );
+t( 'one video gets no toggle',           false === strpos( $solo, '<details' ) );
+t( 'and reads as one video',             false !== strpos( $solo, '1 video' ) );
+t( 'and not as one videos',              false === strpos( $solo, '1 videos' ) );
+
+// The limit keeps a homepage block short, but "we are on air right now" is
+// the one thing that block exists to say, so it is never what gets cut.
+$GLOBALS['_transients']['arv_watch_events'] = $clean;
+$capped = arv_watch_render( array( 'limit' => 1 ) );
+t( 'a limit of one keeps the live one',  1 === substr_count( $capped, '<iframe' ) );
+t( 'and drops the archive under it',     false === strpos( $capped, 'arv-watch__race' ) );
+
+// Titles come from another system's database, which is exactly the argument
+// for escaping them here rather than trusting the source.
+$GLOBALS['_transients']['arv_watch_events'] = array(
+	array( 'slug' => 'xss-2026', 'name' => '<script>alert(1)</script>', 'live' => false, 'start' => '', 'streams' => array( array( 'id' => 'eeeeeeeeeee', 'title' => '" onload="alert(1)', 'url' => 'https://youtu.be/eeeeeeeeeee', 'thumbnail' => 'https://i.ytimg.com/vi/eeeeeeeeeee/hqdefault.jpg', 'live' => false, 'type' => '', 'start' => '' ) ) ),
+);
+$nasty = arv_watch_render( array() );
+t( 'a script tag in a name is escaped',  false === strpos( $nasty, '<script>' ) );
+t( 'and a quote in a title cannot break out', false === strpos( $nasty, 'onload="' ) );
+
+// The shortcode is the other way this reaches a page, and it has to produce
+// the same markup the element does: one of them being the tested path and
+// the other quietly diverging is the whole reason both go through
+// arv_watch_render().
+$GLOBALS['_transients']['arv_watch_events'] = $clean;
+t( 'the shortcode is registered',        isset( $GLOBALS['SHORTCODES']['arv_watch'] ) );
+t( 'and renders the same thing',         arv_watch_shortcode( array( 'heading' => 'Watch', 'intro' => 'Every broadcast.' ) ) === $html );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );

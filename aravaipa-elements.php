@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.40.1
+ * Version:           0.41.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.40.1' );
+define( 'ARV_ELEMENTS_VERSION', '0.41.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -48,11 +48,17 @@ require_once ARV_ELEMENTS_PATH . 'includes/live-store.php';
 // out of a race's live URL with arv_live_store_slug().
 require_once ARV_ELEMENTS_PATH . 'includes/stats-store.php';
 
+// Aravaipa's broadcasts, read live from Mountain Outpost. Loaded
+// unconditionally because it registers a shortcode, same as the live page
+// below.
+require_once ARV_ELEMENTS_PATH . 'includes/watch-store.php';
+
+require_once ARV_ELEMENTS_PATH . 'includes/weather.php';
+
 // The branded live-results page. Loaded unconditionally rather than with the
 // elements, because it registers a shortcode: the eventual shape of this is
 // one page per race per year, which is created programmatically, and none of
 // that should depend on Cornerstone being active.
-require_once ARV_ELEMENTS_PATH . 'includes/weather.php';
 require_once ARV_ELEMENTS_PATH . 'includes/live-page.php';
 require_once ARV_ELEMENTS_PATH . 'includes/race-admin.php';
 
@@ -100,6 +106,7 @@ function arv_elements_register() {
 		'featured-race',
 		'results',
 		'live-embed',
+		'watch',
 	);
 
 	foreach ( $elements as $element ) {

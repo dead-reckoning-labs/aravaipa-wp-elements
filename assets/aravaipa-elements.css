@@ -5545,3 +5545,238 @@
 		padding: 0.3rem 0;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   Watch: every Aravaipa broadcast, live one first.
+
+   Dark, like .arv-live-index above and for the same reason: this is a page
+   of video thumbnails, and a white page around a grid of dark 16:9 stills
+   reads as a page of holes. Declares its own custom properties rather than
+   reaching for the --arv-* palette, which is scoped to .arv-results and the
+   live pages, none of which this is inside.
+   --------------------------------------------------------------------------- */
+.arv-watch {
+	/* Declared here and inherited below, the way .arv-races, .arv-hero and
+	   .arv-featured above all do it, rather than left to the theme. Under
+	   content-box the inner wrapper's padding would sit outside its width,
+	   which is 2rem of horizontal overflow on a phone. */
+	box-sizing: border-box;
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-watch * {
+	box-sizing: inherit;
+}
+
+.arv-watch__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem 2.5rem;
+}
+
+.arv-watch__heading {
+	margin: 0;
+	text-align: center;
+	font-size: clamp(26px, 3.4vw, 34px);
+	font-weight: 700;
+	line-height: 1.15;
+	color: #fff;
+}
+
+.arv-watch__intro {
+	margin: 0.5rem auto 0;
+	max-width: 60ch;
+	text-align: center;
+	font-size: var(--arv-fs-body);
+	line-height: 1.55;
+	color: rgba(244, 244, 244, 0.72);
+}
+
+/* On air. Given the full width of the column rather than dropped into the
+   grid below, because the whole point of this block is that it is not one
+   more card in a list of recordings. */
+.arv-watch__live {
+	margin: 1.75rem 0 0;
+}
+
+.arv-watch__live-label {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin: 0 0 0.6rem;
+}
+
+/* The badge is .arv-results__live, shared with the race cards, where it sits
+   on white and is coloured for it. On this background that green is close to
+   unreadable, so it is restated here rather than a second badge existing. */
+.arv-watch .arv-results__live {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #4ade80;
+}
+
+.arv-watch .arv-results__live[hidden] {
+	display: none;
+}
+
+.arv-watch__live-name {
+	font-size: var(--arv-fs-name);
+	font-weight: 700;
+	color: #fff;
+}
+
+/* Aspect-ratio rather than the padding-top trick: the region map's stage and
+   the race cards' media above both already use it. */
+.arv-watch__frame {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	background: #000;
+	border-radius: var(--arv-radius-card);
+	overflow: hidden;
+}
+
+.arv-watch__frame iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+.arv-watch__list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 1.25rem;
+	margin: 2rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-watch__race {
+	display: flex;
+	flex-direction: column;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--arv-radius-card);
+	overflow: hidden;
+}
+
+/* :link and :visited alongside the class, not because of the colour but for
+   the same specificity reason documented on .arv-featured__cta: a theme's
+   own "a:hover" outranks a bare class, and this card's text turning the
+   theme's link red on hover is exactly what that guard exists to stop. */
+.arv-watch__link,
+.arv-watch__link:link,
+.arv-watch__link:visited,
+.arv-watch__link:hover,
+.arv-watch__link:focus {
+	display: block;
+	color: #f4f4f4;
+	text-decoration: none;
+}
+
+.arv-watch__thumb {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	/* hqdefault is 480x360, a 4:3 frame with the 16:9 still letterboxed
+	   inside it. Cropping to 16:9 removes the black bars YouTube baked in
+	   rather than adding a second set of this card's own. */
+	object-fit: cover;
+	background: #000;
+}
+
+.arv-watch__body {
+	display: block;
+	padding: 0.75rem 0.9rem 0.85rem;
+}
+
+.arv-watch__name {
+	display: block;
+	font-size: var(--arv-fs-lead);
+	font-weight: 700;
+	line-height: 1.25;
+	color: #fff;
+}
+
+.arv-watch__meta {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.62);
+}
+
+/* Pushed to the bottom of the card so a row of cards with different title
+   lengths still lines its toggles up. */
+.arv-watch__more {
+	margin-top: auto;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.arv-watch__more-toggle {
+	padding: 0.6rem 0.9rem;
+	font-size: var(--arv-fs-btn);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(244, 244, 244, 0.78);
+	cursor: pointer;
+	list-style: none;
+}
+
+.arv-watch__more-toggle::-webkit-details-marker {
+	display: none;
+}
+
+.arv-watch__segments {
+	margin: 0;
+	padding: 0 0.9rem 0.75rem;
+	list-style: none;
+	/* Cocodona is eighteen segments. Left to grow, one open card would push
+	   every card beside it down by the height of all eighteen. */
+	max-height: 260px;
+	overflow-y: auto;
+}
+
+.arv-watch__segment,
+.arv-watch__segment:link,
+.arv-watch__segment:visited {
+	display: block;
+	padding: 0.3rem 0;
+	font-size: var(--arv-fs-meta);
+	line-height: 1.35;
+	color: rgba(244, 244, 244, 0.72);
+	text-decoration: none;
+}
+
+.arv-watch__segment:hover,
+.arv-watch__segment:focus {
+	color: #fff;
+	text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+	.arv-watch__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
+
+	/* One per row rather than the 260px auto-fill: at 360px wide two columns
+	   would be 165px each, which is a thumbnail too small to tell one
+	   trailhead from another. */
+	.arv-watch__list {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+}
