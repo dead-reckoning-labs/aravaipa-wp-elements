@@ -271,6 +271,14 @@ function arv_live_state( $name, $iso, $board ) {
 			? arv_race_cutoff_for( $name, $board )
 			: ( ( '' !== $board['cutoff'] ) ? strtotime( $board['cutoff'] ) : 0 );
 
+		// A start with no cutoff says when the race began and nothing about
+		// when it ended, so on its own it made every past race live forever.
+		// Same backstop the markup hands the clock script, so the two cannot
+		// disagree the moment the page loads.
+		if ( function_exists( 'arv_results_backstop_cutoff' ) ) {
+			$cutoff_ts = arv_results_backstop_cutoff( $cutoff_ts, $board['start'] );
+		}
+
 		if ( $cutoff_ts && $now >= $cutoff_ts ) {
 			return 'done';
 		}

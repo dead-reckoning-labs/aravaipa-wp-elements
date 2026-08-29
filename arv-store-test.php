@@ -1912,6 +1912,36 @@ t( 'so the pinned year is the frame',   false === strpos( $pinned, 'black_bear-2
 $unpinned = arv_live_page_render( array( 'slug' => 'black_bear-2025' ) );
 t( 'no pin still means newest',         false !== strpos( $unpinned, 'black_bear-2026' ) );
 
+// -------------------------------------------------- Live cannot outlast --
+// A board start with no cutoff said a race was live from the gun to the end
+// of time, in the markup and again in the script that drives the clock a
+// second later. Black Bear's 2025 page carried LIVE NOW and an elapsed clock
+// reading 363 days.
+$long_ago = gmdate( 'c', strtotime( '-363 days' ) );
+// Relative to the clock the harness freezes, not the wall, or a start two
+// real hours ago lands in this run's future.
+$earlier  = gmdate( 'c', arv_results_now() - 7200 );
+
+t( 'a real cutoff is left alone',       1234 === arv_results_backstop_cutoff( 1234, $long_ago ) );
+t( 'no cutoff gets one from the start', arv_results_backstop_cutoff( 0, $long_ago ) === strtotime( $long_ago ) + ARV_RESULTS_MAX_RUN );
+t( 'and it is in the past for a race a year old', arv_results_backstop_cutoff( 0, $long_ago ) < time() );
+t( 'but not for one that started today', arv_results_backstop_cutoff( 0, $earlier ) > arv_results_now() );
+t( 'no start means no backstop',        0 === arv_results_backstop_cutoff( 0, '' ) );
+
+// The state both ends agree on.
+$stale = array( 'start' => $long_ago, 'cutoff' => '' );
+t( 'a year-old race reads as done',     'done' === arv_live_state( 'Black Bear Trail Race', '2025-08-30', $stale ) );
+
+$running = array( 'start' => $earlier, 'cutoff' => '' );
+t( 'one that started today is live',    'live' === arv_live_state( 'Black Bear Trail Race', gmdate( 'Y-m-d', arv_results_now() ), $running ) );
+
+// And the markup hands the script the same number rather than leaving it to
+// work one out, which is how the two disagreed in the first place.
+$stale_markup = arv_results_week_status(
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2025-08-30', 'board' => $stale, 'state' => 'done' )
+);
+t( 'the clock is given a cutoff',       false !== strpos( $stale_markup, 'data-arv-cutoff' ) );
+
 $GLOBALS['ARV_OPTIONS'] = array();
 t( 'and so is a negative one',           false !== strpos( $short, 'height:400px' ) );
 // The shortcode is the path bulk-created pages use, so it is exercised as

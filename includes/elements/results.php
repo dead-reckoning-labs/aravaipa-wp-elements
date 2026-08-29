@@ -24,6 +24,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Eight days. Longer than any race on the calendar: Cocodona 250 allows
+// about 125 hours. See arv_results_backstop_cutoff().
+if ( ! defined( 'ARV_RESULTS_MAX_RUN' ) ) {
+	define( 'ARV_RESULTS_MAX_RUN', 8 * DAY_IN_SECONDS );
+}
+
+
 cs_register_element(
 	'aravaipa-results',
 	array(
@@ -731,6 +738,35 @@ function arv_results_race_social( $race ) {
 }
 
 /**
+ * A cutoff for a race that has none, so that "live" cannot last forever.
+ *
+ * Without one, both this and the script that drives the clock decided a race
+ * was live on the strength of its start time alone, which is true from the
+ * gun until the end of time. Black Bear's 2025 page carried a LIVE NOW marker
+ * and an elapsed clock reading 363 days.
+ *
+ * ARV_RESULTS_MAX_RUN is longer than anything on the calendar. Cocodona 250,
+ * the longest race Aravaipa puts on, allows about 125 hours.
+ *
+ * Returned rather than applied so the same number reaches the markup, where
+ * the script reads it off data-arv-cutoff. One rule, one place, and no way
+ * for the server and the browser to disagree a second after load.
+ *
+ * @param int    $cutoff_ts Real cutoff, or 0 where there is none.
+ * @param string $start     ISO 8601 start.
+ * @return int
+ */
+function arv_results_backstop_cutoff( $cutoff_ts, $start ) {
+	if ( $cutoff_ts ) {
+		return (int) $cutoff_ts;
+	}
+
+	$start_ts = strtotime( (string) $start );
+
+	return $start_ts ? ( $start_ts + ARV_RESULTS_MAX_RUN ) : 0;
+}
+
+/**
  * The three states one race passes through across its own weekend.
  *
  * All three are rendered and two are hidden, so the transitions need no
@@ -762,6 +798,7 @@ function arv_results_week_status( $race ) {
 	$start = $has ? gmdate( 'c', strtotime( $board['start'] ) ) : arv_results_start_iso( $race['iso'] );
 
 	$cutoff_ts = function_exists( 'arv_race_cutoff_for' ) ? arv_race_cutoff_for( $race['name'], $board ) : 0;
+	$cutoff_ts = arv_results_backstop_cutoff( $cutoff_ts, $start );
 	$cutoff    = $cutoff_ts ? gmdate( 'c', $cutoff_ts ) : '';
 
 	$out = '<span class="arv-results__week-status" data-arv-results-clock'
