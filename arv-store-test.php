@@ -2799,7 +2799,9 @@ $GLOBALS['meta']      = array( 6001 => array( '_arv_watch_race' => 'jackpot' ) )
 $GLOBALS['PERMALINK'] = array( 6001 => 'https://www.aravaiparunning.com/watch/jackpot/' );
 arv_watch_page_map( true );
 $idx = arv_watch_render( array() );
-t( "a card links to its dedicated page when one exists", false !== strpos( $idx, 'href="https://www.aravaiparunning.com/watch/jackpot/">' ) );
+// Carrying the edition, so a 2022 thumbnail lands on 2022 rather than on
+// whatever happens to be newest.
+t( "a card links to its dedicated page when one exists", false !== strpos( $idx, 'watch/jackpot/?edition=2025' ) );
 t( 'and does not send that click to a new tab', 0 === preg_match( '/href="https:\/\/www\.aravaiparunning\.com\/watch\/jackpot\/"[^>]*target="_blank"/', $idx ) );
 
 $GLOBALS['meta']      = array();
@@ -2810,6 +2812,99 @@ t( 'and falls back to youtube once there is no page', false !== strpos( $idx2, '
 
 $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
+
+
+
+// -------------------------------------------------------------------------
+// Watch SEO: the head these pages shipped without.
+// -------------------------------------------------------------------------
+echo "\nwatch seo:\n";
+$seo_edition = array(
+	'slug' => 'cocodona-250-2025', 'name' => 'Cocodona 250 2025', 'live' => false,
+	'start' => '2025-05-05T13:00:00Z', 'place' => 'Black Canyon City to Flagstaff, AZ',
+	'desc' => '', 'hero' => 'https://example.com/hero.jpg',
+	'streams' => array(
+		array( 'id' => 'aaaaaaaaaaa', 'title' => 'Day 1 | Start to Crown King', 'url' => 'https://youtu.be/aaaaaaaaaaa',
+		       'thumbnail' => 'https://i.ytimg.com/vi/aaaaaaaaaaa/hqdefault.jpg', 'live' => false, 'type' => 'race',
+		       'start' => '2025-05-05T13:00:00Z', 'desc' => 'Coverage of the opening leg.',
+		       'aired' => '2025-05-05T13:04:00Z', 'minutes' => 320, 'views' => 128500 ),
+		// No description, no actualStart and no duration: the three gaps the
+		// real feed has. It must still produce a valid node, not a broken one.
+		array( 'id' => 'bbbbbbbbbbb', 'title' => 'Day 2 | Mingus to Jerome', 'url' => 'https://youtu.be/bbbbbbbbbbb',
+		       'thumbnail' => 'https://i.ytimg.com/vi/bbbbbbbbbbb/hqdefault.jpg', 'live' => false, 'type' => 'race',
+		       'start' => '2025-05-06T13:00:00Z', 'desc' => '', 'aired' => '', 'minutes' => 0, 'views' => 0 ),
+	),
+);
+$ctx = array(
+	'edition' => $seo_edition, 'editions' => array( $seo_edition ),
+	'name' => 'Cocodona 250', 'year' => '2025',
+	'url' => 'https://www.aravaiparunning.com/watch/cocodona-250/',
+);
+
+t( 'title names the race and year',      'Cocodona 250 2025 Live Broadcast' === arv_watch_seo_title( $ctx ) );
+
+$d = arv_watch_seo_description( $ctx );
+t( 'description is built from the facts', false !== strpos( $d, 'Cocodona 250 2025' ) );
+t( 'and counts the videos',               false !== strpos( $d, '2 videos' ) );
+t( 'and dates it',                        false !== strpos( $d, 'May 5, 2025' ) );
+t( 'and places it',                       false !== strpos( $d, 'Flagstaff' ) );
+
+// Upstream's own words win where a human wrote them.
+$ctx2 = $ctx;
+$ctx2['edition']['desc'] = 'Welcome to the 2025 Cocodona 250 livestream.';
+t( "upstream's own description wins",     'Welcome to the 2025 Cocodona 250 livestream.' === arv_watch_seo_description( $ctx2 ) );
+
+// Google truncates around 160 characters and a cut mid-word reads broken.
+$ctx3 = $ctx;
+$ctx3['edition']['desc'] = str_repeat( 'the quick brown fox jumps over it ', 12 );
+$long = arv_watch_seo_description( $ctx3 );
+t( 'a long description is trimmed',       strlen( $long ) <= 165 );
+t( 'and not cut mid-word',                false === strpos( $long, 'quic.' ) );
+
+$list = arv_watch_seo_videos( $ctx );
+t( 'an ItemList wraps the videos',        'ItemList' === $list['@type'] );
+t( 'one node per segment',                2 === $list['numberOfItems'] );
+
+$v1 = $list['itemListElement'][0]['item'];
+$v2 = $list['itemListElement'][1]['item'];
+t( 'each node is a VideoObject',          'VideoObject' === $v1['@type'] );
+
+// The four Google requires. A node missing any one of them is not a partial
+// win, it is an error on the whole page.
+foreach ( array( 'name', 'description', 'thumbnailUrl', 'uploadDate' ) as $req ) {
+	t( "every node carries $req",         ! empty( $v1[ $req ] ) && ! empty( $v2[ $req ] ) );
+}
+
+t( 'uploadDate uses when it aired',       '2025-05-05T13:04:00+00:00' === $v1['uploadDate'] );
+// The 25 segments upstream has no actualStart for must not lose the field.
+t( 'and falls back to the event date',    '2025-05-05T13:00:00+00:00' === $v2['uploadDate'] );
+t( 'a segment with no words of its own still describes itself', 'Day 2 | Mingus to Jerome' === $v2['description'] );
+
+t( 'duration where upstream has one',     'PT320M' === $v1['duration'] );
+// An invented PT0M is worse than an absent optional field.
+t( 'and absent where it does not',        ! isset( $v2['duration'] ) );
+t( 'views where upstream has them',       128500 === $v1['interactionStatistic']['userInteractionCount'] );
+t( 'and no counter where it does not',    ! isset( $v2['interactionStatistic'] ) );
+
+t( 'embed url is the privacy-mode one',   false !== strpos( $v1['embedUrl'], 'youtube-nocookie.com/embed/aaaaaaaaaaa' ) );
+t( 'contentUrl points at youtube',        'https://youtu.be/aaaaaaaaaaa' === $v1['contentUrl'] );
+// The node's own url is this page deep-linked to that segment, not YouTube:
+// it is what makes our page, not YouTube's, the one being described.
+t( 'and url is our page, on that segment', false !== strpos( $v1['url'], 'watch/cocodona-250/' ) && false !== strpos( $v1['url'], 'v=aaaaaaaaaaa' ) );
+
+$crumbs = arv_watch_seo_breadcrumbs( $ctx );
+t( 'breadcrumbs are a BreadcrumbList',    'BreadcrumbList' === $crumbs['@type'] );
+t( 'three deep, home to race',            3 === count( $crumbs['itemListElement'] ) );
+t( 'via Watch',                           home_url( '/watch/' ) === $crumbs['itemListElement'][1]['item'] );
+
+// A segment with nothing usable is dropped rather than emitted invalid.
+$ctx4 = $ctx;
+$ctx4['edition']['streams'] = array(
+	array( 'id' => 'ccccccccccc', 'title' => '', 'url' => '', 'thumbnail' => '', 'live' => false,
+	       'type' => '', 'start' => '', 'desc' => '', 'aired' => '', 'minutes' => 0, 'views' => 0 ),
+);
+$ctx4['edition']['start'] = '';
+t( 'an unusable segment is dropped',      array() === arv_watch_seo_videos( $ctx4 ) );
 
 
 echo "\n$pass passed, $fail failed\n";
