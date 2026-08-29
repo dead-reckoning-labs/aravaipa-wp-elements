@@ -378,6 +378,7 @@ function arv_live_page_render( $args = array() ) {
 	$out = '<section class="arv-live" aria-label="' . esc_attr__( 'Live results', 'aravaipa-elements' ) . '">';
 
 	$out .= arv_live_bar( $name, $edition, $meta, $editions, $show );
+	$out .= arv_live_result_line( $stats );
 	$out .= arv_live_frame( $show, $height, $name );
 
 	$out .= '</section>';
@@ -504,15 +505,40 @@ function arv_live_bar( $name, $edition, $meta, $editions, $show ) {
 	// The clock only means anything for an edition we can date. A year picked
 	// out of the archive is history, and counting down to it would be absurd.
 	if ( $edition && '' !== $name ) {
-		$race = array(
+		$state = arv_live_state( $name, $edition['iso'], $board );
+		$race  = array(
 			'name'  => $name,
 			'iso'   => $edition['iso'],
 			'board' => $board,
-			'state' => arv_live_state( $name, $edition['iso'], $board ),
+			'state' => $state,
 		);
 
 		$out .= '<div class="arv-live__clock">';
 		$out .= arv_results_week_status( $race );
+
+		// Same row, same kind of fact: when it starts and what it will be
+		// like. Not shown once the race is over, since the forecast
+		// endpoint has no memory and the honest answer for the past is
+		// silence, not a guess.
+		if ( $meta && function_exists( 'arv_live_weather' ) ) {
+			// The board's own clock where it has one, midnight on race day
+			// where it does not: the same fallback arv_results_week_status()
+			// already uses for the same reason, since a date with no time on
+			// it is not enough to pick an hour of forecast.
+			$start = ( null !== $board && ! empty( $board['start'] ) )
+				? $board['start']
+				: arv_results_start_iso( $edition['iso'] );
+
+			$forecast = arv_live_weather(
+				isset( $meta['lat'] ) ? $meta['lat'] : 0,
+				isset( $meta['lng'] ) ? $meta['lng'] : 0,
+				$state,
+				$start
+			);
+
+			$out .= arv_live_weather_render( $forecast );
+		}
+
 		$out .= '</div>';
 	}
 
@@ -724,6 +750,79 @@ function arv_live_frame_height( $stats, $fallback ) {
 	// a longer field than that is a page nobody can navigate. Past the cap the
 	// board scrolls inside itself again, which is where it started.
 	return max( $fallback, min( 20000, $height ) );
+}
+
+/**
+ * Who won, in one line.
+ *
+ * Named arv_live_result_line() rather than reusing "headline": the bar's own
+ * title-and-badge wrapper already claims .arv-live__headline, a collision
+ * that had caused no visible bug yet, both blocks being flex containers, but
+ * would the moment either one needed its own layout.
+ *
+ * The table this replaces was removed for restating the top of a board the
+ * reader is looking straight at, which it was. A sentence is a different
+ * thing: it answers "who won" at a glance without asking anyone to read a
+ * table, and it is the only text on the page a search engine or a chatbot
+ * can read at all, since the board is a cross-origin iframe.
+ *
+ * The headline distance only. Every distance is on /results-2026/ already,
+ * and four rows of winners here would be the table again with worse manners.
+ *
+ * $stats['headline'] is the scraper's own answer to whether the longest
+ * distance is the event's premier race rather than one of several the same
+ * length, so a lap event that runs every category over one loop gets its
+ * finisher count and no winner: "who won the event" is not a question it
+ * has an answer to.
+ *
+ * @param array|null $stats
+ * @return string
+ */
+function arv_live_result_line( $stats ) {
+	if ( ! is_array( $stats ) || empty( $stats['finishers'] ) ) {
+		return '';
+	}
+
+	$finishers = (int) $stats['finishers'];
+	$bits      = array();
+
+	$winners = ! empty( $stats['headline'] ) && ! empty( $stats['winners'] )
+		? $stats['winners'][0]
+		: array();
+
+	foreach ( arv_stats_divisions_present( array( $winners ) ) as $division ) {
+		if ( empty( $winners[ $division ]['name'] ) ) {
+			continue;
+		}
+
+		$who  = $winners[ $division ]['name'];
+		$time = isset( $winners[ $division ]['time'] ) ? trim( (string) $winners[ $division ]['time'] ) : '';
+
+		$bits[] = ( '' !== $time )
+			? sprintf( '%s %s', $who, $time )
+			: $who;
+	}
+
+	$out = '<p class="arv-live__result">';
+
+	if ( ! empty( $bits ) ) {
+		$out .= '<span class="arv-live__result-win">'
+			. esc_html( arv_results_distance_label( $winners['distance'] ) ) . ' '
+			. esc_html( implode( ' · ', $bits ) )
+			. '</span>';
+	}
+
+	$out .= '<span class="arv-live__result-count">'
+		. esc_html(
+			sprintf(
+				/* translators: %s is a formatted count of finishers. */
+				_n( '%s finisher', '%s finishers', $finishers, 'aravaipa-elements' ),
+				number_format_i18n( $finishers )
+			)
+		)
+		. '</span>';
+
+	return $out . '</p>';
 }
 
 /**

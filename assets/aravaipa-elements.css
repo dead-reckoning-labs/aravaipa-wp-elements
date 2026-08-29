@@ -4756,19 +4756,35 @@
 	}
 
 	.arv-results__week-body {
-		grid-area: 1 / 2 / 2 / 4;
+		grid-area: 1 / 2 / 2 / 3;
 	}
 
-	/* Its own row: the clock, the button and the icon together are wider
-	   than the column they would have to share at 390px, and squeezing the
-	   clock is what crushed this button to nineteen pixels once before. */
+	/* Beside the name, in the space that was empty next to it, rather than
+	   on a row of its own underneath. It shares the top row with the name
+	   instead of the button row, which is what makes it fit: the clock and
+	   the button together are wider than one column at 390px, and squeezing
+	   the clock is what crushed this button to nineteen pixels once before.
+	   The name's column is the flexible one, so a long name wraps rather
+	   than pushing the clock off the edge. */
 	.arv-results__week-status {
-		grid-area: 2 / 2 / 3 / 4;
+		grid-area: 1 / 3 / 2 / 4;
+		justify-self: end;
+		align-self: start;
 		min-width: 0;
+		/* A step down from the body size, which is what buys the race name
+		   the width to stay on one line beside it: at 14px the clock took
+		   enough of the row that "Black Bear Trail Race" wrapped and its
+		   card grew taller than the one under it. */
+		font-size: var(--arv-fs-btn);
+		white-space: nowrap;
+	}
+
+	.arv-results__week-race {
+		column-gap: 0.6rem;
 	}
 
 	.arv-results__week-race .arv-results__link {
-		grid-area: 3 / 2 / 4 / 3;
+		grid-area: 2 / 2 / 3 / 3;
 		justify-self: start;
 		min-width: 8.5rem;
 	}
@@ -4800,7 +4816,7 @@
 
 	/* Placed like the rest of the row rather than ordered after it. */
 	.arv-results__week-social {
-		grid-area: 3 / 3 / 4 / 4;
+		grid-area: 2 / 3 / 3 / 4;
 		justify-self: end;
 	}
 }
@@ -4982,6 +4998,21 @@
 	font-variant-numeric: tabular-nums;
 }
 
+/* Beside the clock rather than out with Instagram: same kind of fact, when
+   it starts and what it will be like, sharing the row that already exists
+   rather than costing a new one. */
+.arv-live__weather {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	color: rgba(244, 244, 244, 0.82);
+}
+
+.arv-live__weather-temp {
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
 /* Years as links, because the board has no way to move between them at all.
    Not a select: a dropdown's options are not links, so neither a crawler nor
    a middle click can reach last year's race. Each one loads that year's own
@@ -5011,6 +5042,39 @@
 	background: var(--arv-teal, #5bbfa8);
 	border-color: var(--arv-teal, #5bbfa8);
 	color: #0d1211;
+}
+
+/* Who won, one line, directly under the bar. Sits in the same content
+   column as everything else and reads as a caption to the board below it,
+   which is what stops it looking like the table that used to be here.
+   Named .arv-live__result rather than .arv-live__headline: that name was
+   already the bar's own title-and-badge wrapper, above. */
+.arv-live__result {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.2rem 0.6rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0.75rem 1.25rem 0;
+	font-size: var(--arv-fs-body);
+	color: var(--arv-ink, #272727);
+}
+
+.arv-live__result-win {
+	font-weight: 700;
+}
+
+/* The count is context for the names, not a result of its own. */
+.arv-live__result-count {
+	color: #6d6d6d;
+}
+
+@media (max-width: 619px) {
+	.arv-live__result {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
 }
 
 /* The words below the frame stay in the content column. */
