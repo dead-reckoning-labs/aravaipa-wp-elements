@@ -1428,6 +1428,36 @@ $titled = arv_live_seo_title_parts( array( 'title' => 'Some Page' ) );
 t( 'the document title is overridden', 'Some Page' !== $titled['title'] );
 t( 'but both are still settable',       false !== strpos( $titled['title'], 'Black Bear Trail Race' ) );
 
+// A race that has not run yet. This is the case production was actually in
+// and the tests above were not: the results store only holds races that have
+// already been scraped, so an upcoming race resolved to no edition, no name,
+// and every function here gave up silently. The page rendered "Black Bear
+// Trail Race" in its heading while shipping no description and no schema,
+// leaving Jetpack's "Visit the post for more." as its og:description on the
+// one page built to be indexed.
+$GLOBALS['ARV_OPTIONS'] = array();
+$GLOBALS['meta'] = array( 78 => array( '_arv_live_slug' => 'black_bear-2026' ) );
+arv_live_page_map( true );
+$GLOBALS['QUERIED_ID'] = 78;
+$GLOBALS['PERMALINK'] = array( 78 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race/' );
+
+arv_race_store_import(
+	"Black Bear Trail Race | 2026-08-29 | August 29 | 50K | 23K |  |  | Waterville Valley Town Square | Waterville Valley, NH | https://ultrasignup.com/x | https://www.aravaiparunning.com/wme/bb/ | https://example.com/bb.png |  | https://live.aravaiparunning.com/#/black_bear-2026 | 2026-08-24 | 1 | 0 | 43.95 | -71.50\n"
+);
+
+$soon = arv_live_seo_context();
+t( 'an unrun race still has a name',    'Black Bear Trail Race' === $soon['name'] );
+
+ob_start();
+arv_live_seo_head();
+$soon_head = ob_get_clean();
+t( 'and still gets a description',      false !== strpos( $soon_head, 'name="description"' ) );
+t( 'and still gets its schema',         false !== strpos( $soon_head, 'application/ld+json' ) );
+t( 'typed as a SportsEvent',            false !== strpos( $soon_head, 'SportsEvent' ) );
+t( 'carrying where it is held',         false !== strpos( $soon_head, 'Waterville Valley' ) );
+t( 'and when',                          false !== strpos( $soon_head, '2026-08-29' ) );
+t( 'the title says Live Results',       false !== strpos( arv_live_seo_title( $soon ), 'Live Results' ) );
+
 // A page with no live-slug meta is not a live page at all.
 $GLOBALS['meta'] = array();
 arv_live_page_map( true );

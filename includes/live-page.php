@@ -1322,7 +1322,14 @@ function arv_live_seo_context() {
 		return null;
 	}
 
-	$editions  = arv_live_editions( $slug );
+	// Both stores, and the same fallbacks the renderer uses. This read the
+	// results store alone, which only holds races that have already been
+	// scraped, so an upcoming race resolved to no edition and no name: the
+	// page rendered "Black Bear Trail Race" in its heading while every piece
+	// of SEO on it silently gave up, leaving no description, no schema, and
+	// Jetpack's "Visit the post for more." as the og:description on the page
+	// the whole exercise was built to get indexed.
+	$editions  = arv_live_all_editions( $slug );
 	$requested = isset( $_GET[ ARV_LIVE_YEAR_VAR ] ) ? wp_unslash( $_GET[ ARV_LIVE_YEAR_VAR ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$edition   = arv_live_pick_edition( $editions, $requested );
 	$name      = $edition ? $edition['name'] : '';
@@ -1330,6 +1337,11 @@ function arv_live_seo_context() {
 
 	if ( '' === $show ) {
 		$show = $slug;
+	}
+
+	if ( '' === $name ) {
+		$race = arv_live_race_by_slug( $show );
+		$name = $race ? $race['name'] : '';
 	}
 
 	return array(
