@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.41.0
+ * Version:           0.42.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.41.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.42.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -107,6 +107,7 @@ function arv_elements_register() {
 		'results',
 		'live-embed',
 		'watch',
+		'watch-race',
 	);
 
 	foreach ( $elements as $element ) {
@@ -183,6 +184,16 @@ function arv_elements_assets() {
 	wp_enqueue_script(
 		'aravaipa-footer',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-footer.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
+	// A Watch race page's segment playlist. No-ops anywhere that markup is
+	// not present, same as every other script enqueued here.
+	wp_enqueue_script(
+		'aravaipa-watch',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-watch.js',
 		array(),
 		ARV_ELEMENTS_VERSION,
 		true
