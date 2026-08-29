@@ -36,6 +36,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'ARV_LIVE_BASE', 'https://live.aravaiparunning.com/#/' );
 
+// Measured off the board, not guessed: see arv_live_frame_height().
+define( 'ARV_LIVE_ROW', 44 );
+define( 'ARV_LIVE_LIST_CHROME', 307 );
+define( 'ARV_LIVE_FRAME_CHROME', 129 );
+
 /**
  * The query variable that selects an edition.
  *
@@ -344,11 +349,13 @@ function arv_live_page_render( $args = array() ) {
 		$name    = $current ? $current['name'] : '';
 	}
 
-	$height = isset( $args['height'] ) ? (int) $args['height'] : 780;
-	$height = max( 400, min( 2000, $height ) );
-
 	$meta  = '' !== $name ? arv_live_race_meta( $name ) : null;
 	$stats = arv_stats_store_find( ARV_LIVE_BASE . $show );
+
+	$height = arv_live_frame_height(
+		$stats,
+		isset( $args['height'] ) ? (int) $args['height'] : 780
+	);
 
 	$out = '<section class="arv-live" aria-label="' . esc_attr__( 'Live results', 'aravaipa-elements' ) . '">';
 
@@ -545,6 +552,50 @@ function arv_live_self_url() {
 	$id = get_queried_object_id();
 
 	return $id ? get_permalink( $id ) : home_url( '/' );
+}
+
+/**
+ * How tall the frame has to be for the board inside it not to scroll.
+ *
+ * The board cannot tell us. It is on live.aravaiparunning.com, we are on www,
+ * and it posts no message and exposes no document across that boundary, both
+ * checked rather than assumed. So the height is computed rather than read.
+ *
+ * It computes cleanly because the board is not responsive in the way that
+ * would break this: its entrant row is a fixed 44px that truncates rather
+ * than wraps, so its content height is the same at 390px as at 1200px.
+ * Measured across five editions from 61 entrants to 404:
+ *
+ *   content = 44 * entrants + 307     exact at both widths
+ *   chrome  = 109 desktop, 129 mobile (the board's own header and footer)
+ *
+ * ARV_LIVE_ROW and the two constants below are those numbers. The mobile
+ * chrome is the one used, since being 20px tall on a desktop costs nothing
+ * and being 20px short would put a scrollbar back.
+ *
+ * Falls back to the caller's height whenever the entrant count is unknown,
+ * which is every edition the stats scraper has not reached: a fixed frame
+ * that scrolls inside itself is the behaviour this replaces, not a failure.
+ *
+ * @param array|null $stats
+ * @param int        $fallback
+ * @return int
+ */
+function arv_live_frame_height( $stats, $fallback ) {
+	$fallback = max( 400, min( 2000, (int) $fallback ) );
+	$rows     = is_array( $stats ) && isset( $stats['rows'] ) ? (int) $stats['rows'] : 0;
+
+	if ( $rows < 1 ) {
+		return $fallback;
+	}
+
+	$height = ( ARV_LIVE_ROW * $rows ) + ARV_LIVE_LIST_CHROME + ARV_LIVE_FRAME_CHROME;
+
+	// Floored at the fallback so a three-entrant race is not a letterbox, and
+	// capped because Cocodona's 404 entrants already ask for 18,000 pixels and
+	// a longer field than that is a page nobody can navigate. Past the cap the
+	// board scrolls inside itself again, which is where it started.
+	return max( $fallback, min( 20000, $height ) );
 }
 
 /**

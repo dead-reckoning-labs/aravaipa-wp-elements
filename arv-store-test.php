@@ -1830,6 +1830,29 @@ t( 'a winner name is escaped',           false === strpos( arv_live_page_render(
 $tall = arv_live_page_render( array( 'slug' => 'one_off-2026', 'height' => 999999 ) );
 t( 'an absurd height is clamped',        false !== strpos( $tall, 'height:2000px' ) );
 $short = arv_live_page_render( array( 'slug' => 'one_off-2026', 'height' => -5 ) );
+
+// ------------------------------------------------------- Frame height --
+// The board is cross-origin and tells us nothing, so the height is computed
+// from the entrant count the stats scraper records. 44px a row plus the
+// board's own chrome, measured across five editions from 61 entrants to 404
+// and identical at 390px and 1200px.
+t( 'a known field sizes the frame',     3252 === arv_live_frame_height( array( 'rows' => 64 ), 780 ) );
+t( 'and a bigger field a taller one',   18212 === arv_live_frame_height( array( 'rows' => 404 ), 780 ) );
+t( 'one more entrant is one more row',  arv_live_frame_height( array( 'rows' => 65 ), 780 ) - arv_live_frame_height( array( 'rows' => 64 ), 780 ) === 44 );
+
+// Unknown is the common case for an edition nobody has scraped yet, and a
+// fixed frame that scrolls inside itself is what this replaces rather than a
+// failure to handle.
+t( 'no stats keeps the given height',   780 === arv_live_frame_height( null, 780 ) );
+t( 'nor does a row count of zero',      780 === arv_live_frame_height( array( 'rows' => 0 ), 780 ) );
+t( 'and neither does a missing key',    780 === arv_live_frame_height( array( 'finishers' => 12 ), 780 ) );
+
+// A tiny field would otherwise render a letterbox, and a field longer than
+// Cocodona's asks for a page nobody can navigate.
+t( 'a tiny field floors at the given',  780 === arv_live_frame_height( array( 'rows' => 3 ), 780 ) );
+t( 'and an absurd one is capped',       20000 === arv_live_frame_height( array( 'rows' => 99999 ), 780 ) );
+t( 'the fallback is clamped too',       arv_live_frame_height( null, 99999 ) <= 2000 );
+t( 'and floored',                       arv_live_frame_height( null, 1 ) >= 400 );
 t( 'and so is a negative one',           false !== strpos( $short, 'height:400px' ) );
 // The shortcode is the path bulk-created pages use, so it is exercised as
 // itself rather than trusted to be a thin wrapper.
