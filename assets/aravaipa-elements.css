@@ -4998,6 +4998,21 @@
 	font-variant-numeric: tabular-nums;
 }
 
+/* Beside the clock rather than out with Instagram: same kind of fact, when
+   it starts and what it will be like, sharing the row that already exists
+   rather than costing a new one. */
+.arv-live__weather {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	color: rgba(244, 244, 244, 0.82);
+}
+
+.arv-live__weather-temp {
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
 /* Years as links, because the board has no way to move between them at all.
    Not a select: a dropdown's options are not links, so neither a crawler nor
    a middle click can reach last year's race. Each one loads that year's own
@@ -5031,8 +5046,10 @@
 
 /* Who won, one line, directly under the bar. Sits in the same content
    column as everything else and reads as a caption to the board below it,
-   which is what stops it looking like the table that used to be here. */
-.arv-live__headline {
+   which is what stops it looking like the table that used to be here.
+   Named .arv-live__result rather than .arv-live__headline: that name was
+   already the bar's own title-and-badge wrapper, above. */
+.arv-live__result {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
@@ -5044,17 +5061,17 @@
 	color: var(--arv-ink, #272727);
 }
 
-.arv-live__headline-win {
+.arv-live__result-win {
 	font-weight: 700;
 }
 
-/* The count is context for the names, not a headline of its own. */
-.arv-live__headline-count {
+/* The count is context for the names, not a result of its own. */
+.arv-live__result-count {
 	color: #6d6d6d;
 }
 
 @media (max-width: 619px) {
-	.arv-live__headline {
+	.arv-live__result {
 		padding-left: 1rem;
 		padding-right: 1rem;
 	}

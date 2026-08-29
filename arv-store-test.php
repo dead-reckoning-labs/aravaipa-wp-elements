@@ -14,6 +14,7 @@ define( 'ABSPATH', true );
 define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
 define( 'ARV_ELEMENTS_URL', './' );
 define( 'DAY_IN_SECONDS', 86400 );
+define( 'MINUTE_IN_SECONDS', 60 );
 define( 'PHP_URL_PATH_STUB', true );
 
 $GLOBALS['posts'] = array();
@@ -68,24 +69,57 @@ function current_time( $f ) {
 
 	return $day;
 }
-function is_wp_error( $t ) { return false; }
+// Real rather than always-false now that weather queues actual WP_Error
+// objects: an int post ID, is_wp_error's other caller here, is never an
+// instance of it either, so this is backward compatible.
+function is_wp_error( $t ) { return $t instanceof WP_Error; }
 function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
 function is_singular( $t = '' ) { return $GLOBALS['IS_SINGULAR'] ?? false; }
 function is_page( $p = '' ) { return $GLOBALS['IS_PAGE'] ?? false; }
 function is_front_page() { return $GLOBALS['IS_FRONT'] ?? false; }
 function esc_attr__( $s, $d = '' ) { return $s; }
-// WordPress accepts both add_query_arg( array ) and add_query_arg( k, v, url ).
-// Modelled rather than stubbed to one, because the SEO code calls the first
-// form and the live page calls the second.
+// WordPress accepts add_query_arg( array, url ), add_query_arg( array ) with
+// no url (defaults to the current one), and add_query_arg( k, v, url ).
+// Modelled rather than stubbed to one, because the SEO code calls the second
+// form, the live page's season switcher calls the third, and the weather
+// lookup calls the first.
 function add_query_arg( $a, $v = null, $url = null ) {
-	if ( null === $v ) {
-		return $GLOBALS['CURRENT_PATH'] ?? '/';
+	if ( is_array( $a ) ) {
+		$url  = null !== $v ? $v : ( $GLOBALS['CURRENT_PATH'] ?? '/' );
+		$sep  = ( false === strpos( (string) $url, '?' ) ) ? '?' : '&';
+		$pairs = array();
+		foreach ( $a as $k => $val ) {
+			$pairs[] = rawurlencode( $k ) . '=' . rawurlencode( $val );
+		}
+		return $url . $sep . implode( '&', $pairs );
 	}
 	$sep = ( false === strpos( (string) $url, '?' ) ) ? '?' : '&';
 	return $url . $sep . rawurlencode( $a ) . '=' . rawurlencode( $v );
 }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function register_rest_route( $ns, $route, $args = array() ) {}
+
+// Weather's HTTP + transient stubs. A queue rather than one canned value, so
+// a test can prove the cache is used by queuing only one response and then
+// calling the function twice.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+$GLOBALS['_http_calls'] = 0;
+function get_transient( $key ) { return $GLOBALS['_transients'][ $key ] ?? false; }
+function set_transient( $key, $value, $exp = 0 ) { $GLOBALS['_transients'][ $key ] = $value; return true; }
+function delete_transient( $key ) { unset( $GLOBALS['_transients'][ $key ] ); return true; }
+function arv_test_queue_response( $response ) { $GLOBALS['_http_queue'][] = $response; }
+function wp_remote_get( $url, $args = array() ) {
+	$GLOBALS['_http_calls']++;
+	$GLOBALS['_last_http_url'] = $url;
+	return array_shift( $GLOBALS['_http_queue'] ) ?? new WP_Error( 'no_response_queued' );
+}
+class WP_Error {
+	public $code;
+	public function __construct( $code = '' ) { $this->code = $code; }
+}
+function wp_remote_retrieve_response_code( $r ) { return is_array( $r ) ? ( $r['code'] ?? 0 ) : 0; }
+function wp_remote_retrieve_body( $r ) { return is_array( $r ) ? ( $r['body'] ?? '' ) : ''; }
 
 class ARV_Post {
 	public $ID;
@@ -175,6 +209,7 @@ require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/stats-store.php';
+require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
 
@@ -2026,18 +2061,18 @@ t( 'and readable with the tags off',    false !== strpos( strip_tags( $page ), '
 // back within metres of each other and "who won the event" is not a question
 // with an answer. The scraper already decides this; the headline honours it
 // and reports the count alone.
-t( 'a lap event names no winner',       false === strpos( arv_live_headline( array(
+t( 'a lap event names no winner',       false === strpos( arv_live_result_line( array(
 	'finishers' => 74, 'headline' => false,
 	'winners'   => array( array( 'distance' => '6 Hour', 'men' => array( 'name' => 'Someone', 'time' => '1:00:00' ) ) ),
 ) ), 'Someone' ) );
-t( 'but still counts its finishers',    false !== strpos( arv_live_headline( array(
+t( 'but still counts its finishers',    false !== strpos( arv_live_result_line( array(
 	'finishers' => 74, 'headline' => false, 'winners' => array(),
 ) ), '74 finishers' ) );
 
 // A race with no finishers has nothing to report and should not say "0".
-t( 'an unrun race says nothing',        '' === arv_live_headline( array( 'finishers' => 0, 'rows' => 113 ) ) );
-t( 'and neither does no stats row',     '' === arv_live_headline( null ) );
-t( 'one finisher is singular',          false !== strpos( arv_live_headline( array(
+t( 'an unrun race says nothing',        '' === arv_live_result_line( array( 'finishers' => 0, 'rows' => 113 ) ) );
+t( 'and neither does no stats row',     '' === arv_live_result_line( null ) );
+t( 'one finisher is singular',          false !== strpos( arv_live_result_line( array(
 	'finishers' => 1, 'headline' => false, 'winners' => array(),
 ) ), '1 finisher<' ) );
 
@@ -2236,6 +2271,136 @@ t( 'the shortcode renders a page',       false !== strpos( arv_live_shortcode( a
 t( 'and defaults its own attributes',    false !== strpos( arv_live_shortcode( array( 'slug' => 'one_off-2026' ) ), 'height:780px' ) );
 t( 'and is registered under [arv_live]', isset( $GLOBALS['SHORTCODES']['arv_live'] ) );
 $GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nweather: forecast beside the clock:\n";
+
+// Wiring weather into arv_live_bar() means every live-page test run before
+// this point already called arv_live_weather(), each one hitting the queue
+// with nothing in it and caching that failure under its own coordinates. A
+// clean slate here, not just for _transients: the cached-failure keys from
+// those runs would otherwise sit in the same global dict this section reads.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+$GLOBALS['_http_calls'] = 0;
+
+// 0,0 is "no coordinates on file", the same guard the race map uses for the
+// same reason, not a real point off the coast of Africa.
+t( 'no coordinates, no request',        null === arv_live_weather( 0, 0, 'soon', '2026-08-29T10:00:00Z' ) );
+t( 'and no HTTP call was made for it',  0 === $GLOBALS['_http_calls'] );
+
+// Neither "done" nor a junk state asks the network anything.
+t( 'a finished race gets no forecast',  null === arv_live_weather( 43.95, -71.5, 'done', '2026-08-29T10:00:00Z' ) );
+t( 'nor does an unrecognised state',    null === arv_live_weather( 43.95, -71.5, 'nonsense', '2026-08-29T10:00:00Z' ) );
+t( 'a soon race with no start is skipped', null === arv_live_weather( 43.95, -71.5, 'soon', '' ) );
+
+// Upcoming: the forecast for the hour of the gun, not "now".
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-28T09:00:00Z' );
+arv_test_queue_response( array(
+	'code' => 200,
+	'body' => wp_json_encode( array(
+		'hourly' => array(
+			'time'           => array( '2026-08-29T09:00', '2026-08-29T10:00', '2026-08-29T11:00' ),
+			'temperature_2m' => array( 61.0, 63.4, 66.0 ),
+			'weathercode'    => array( 3, 61, 2 ),
+		),
+	) ),
+) );
+$soon = arv_live_weather( 43.95, -71.5, 'soon', '2026-08-29T10:00:00Z' );
+t( 'the hour of the gun is picked out',  63 === $soon['temp'] );
+t( 'with its own weather code',          61 === $soon['code'] );
+t( 'the hourly endpoint was asked',      false !== strpos( $GLOBALS['_last_http_url'], 'hourly=' ) );
+
+// Cached: a second call for the same race and the same hour makes no second
+// request.
+$again = arv_live_weather( 43.95, -71.5, 'soon', '2026-08-29T10:00:00Z' );
+t( 'the second call is cached',          1 === $GLOBALS['_http_calls'] );
+t( 'and returns the same answer',        $again === $soon );
+
+// Live: current conditions, not the hour of the gun, and a different
+// endpoint.
+arv_test_queue_response( array(
+	'code' => 200,
+	'body' => wp_json_encode( array(
+		'current_weather' => array( 'temperature' => 71.2, 'weathercode' => 95 ),
+	) ),
+) );
+$live_wx = arv_live_weather( 43.95, -71.5, 'live', '2026-08-29T10:00:00Z' );
+t( 'a running race reads current weather', 71 === $live_wx['temp'] );
+t( 'the current-weather endpoint asked',   false !== strpos( $GLOBALS['_last_http_url'], 'current_weather=true' ) );
+
+// A failure is cached too, briefly, rather than retried on every view.
+$GLOBALS['_transients'] = array();
+$calls_before = $GLOBALS['_http_calls'];
+arv_test_queue_response( new WP_Error( 'timeout' ) );
+$failed = arv_live_weather( 40.1, -105.2, 'live', '' );
+t( 'a failed request reports nothing',   null === $failed );
+$still_null = arv_live_weather( 40.1, -105.2, 'live', '' );
+t( 'and the failure itself is cached',   $GLOBALS['_http_calls'] === $calls_before + 1 );
+
+// A non-200 is treated the same as a transport failure.
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 500, 'body' => '' ) );
+t( 'a bad status reports nothing',       null === arv_live_weather( 51.5, -0.1, 'live', '' ) );
+
+// Malformed JSON, or JSON missing the keys expected, is not a fatal error.
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 200, 'body' => 'not json' ) );
+t( 'unparseable JSON reports nothing',   null === arv_live_weather( 51.5, -0.1, 'live', '' ) );
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 200, 'body' => wp_json_encode( array( 'current_weather' => array() ) ) ) );
+t( 'a body with no useful keys is safe', null === arv_live_weather( 51.5, -0.1, 'live', '' ) );
+
+// A race more than sixteen days out is not asked for, since Open-Meteo's own
+// forecast horizon ends there and a request past it always fails anyway.
+$GLOBALS['_transients'] = array();
+$calls_before = $GLOBALS['_http_calls'];
+$far = arv_live_weather( 43.95, -71.5, 'soon', gmdate( 'Y-m-d\TH:i:s\Z', arv_results_now() + 30 * DAY_IN_SECONDS ) );
+t( 'a race far in the future is skipped', null === $far );
+t( 'without asking the network for it',   $GLOBALS['_http_calls'] === $calls_before );
+
+// The boundary itself, at exactly sixteen and fifteen days out. Caught by
+// testing against the real API rather than trusting the arithmetic: the
+// first version of this asked for one day more than Open-Meteo's own
+// forecast_days actually needs, which silently dropped every race fifteen
+// to sixteen days out, a real week and a half of the calendar, and did so
+// without a single failed request to notice: it never asked at all.
+$GLOBALS['_transients'] = array();
+$edge_ts    = arv_results_now() + 15 * DAY_IN_SECONDS + 3600;
+$edge_start = gmdate( 'Y-m-d\TH:00:00\Z', $edge_ts );
+arv_test_queue_response( array( 'code' => 200, 'body' => wp_json_encode( array(
+	'hourly' => array( 'time' => array( gmdate( 'Y-m-d\TH:00', $edge_ts ) ), 'temperature_2m' => array( 54.0 ), 'weathercode' => array( 3 ) ),
+) ) ) );
+$edge = arv_live_weather( 43.95, -71.5, 'soon', $edge_start );
+t( 'fifteen days out still gets one',   54 === ( $edge['temp'] ?? null ) );
+
+$GLOBALS['_transients'] = array();
+$calls_before = $GLOBALS['_http_calls'];
+$edge16 = arv_live_weather( 43.95, -71.5, 'soon', gmdate( 'Y-m-d\TH:00:00\Z', arv_results_now() + 16 * DAY_IN_SECONDS + 3600 ) );
+t( 'sixteen days out gets nothing',      null === $edge16 );
+t( 'and is not even asked for',          $GLOBALS['_http_calls'] === $calls_before );
+
+// WMO codes sort into the handful of pictures this actually draws.
+t( 'clear sky is clear',                 'clear' === arv_live_weather_group( 0 ) );
+t( 'mainly clear is partly',             'partly' === arv_live_weather_group( 1 ) );
+t( 'overcast is cloudy',                 'cloudy' === arv_live_weather_group( 3 ) );
+t( 'fog is fog',                         'fog' === arv_live_weather_group( 45 ) );
+t( 'drizzle is rain',                    'rain' === arv_live_weather_group( 51 ) );
+t( 'heavy rain is rain',                 'rain' === arv_live_weather_group( 65 ) );
+t( 'snow is snow',                       'snow' === arv_live_weather_group( 73 ) );
+t( 'a thunderstorm is storm',            'storm' === arv_live_weather_group( 95 ) );
+t( 'an unknown code still draws something', '' !== arv_live_weather_icon( arv_live_weather_group( 9999 ) ) );
+
+// The rendered markup: nothing, or an icon plus a temperature, never a bare
+// number with no unit and never a crash on a half-built array.
+t( 'no forecast renders nothing',        '' === arv_live_weather_render( null ) );
+t( 'nor does a malformed one',           '' === arv_live_weather_render( array( 'temp' => 61 ) ) );
+$markup = arv_live_weather_render( array( 'temp' => 68, 'code' => 0 ) );
+t( 'a real forecast draws an svg icon',  false !== strpos( $markup, '<svg' ) );
+t( 'and the temperature with its degree', false !== strpos( $markup, '68&deg;' ) );
+
+$GLOBALS['NOW_TS'] = null;
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
