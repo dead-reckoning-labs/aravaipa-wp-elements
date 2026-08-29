@@ -1815,11 +1815,13 @@ t( 'the years are real links',          false !== strpos( $html, 'edition=2025' 
 t( 'an unrun edition reports nothing',  false === strpos( $html, 'finisher' ) );
 
 $last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '2025' ) );
-t( 'last year renders its own page',    false !== strpos( $last, '2025 results' ) );
-t( 'with its finisher count',           false !== strpos( $last, '225 finishers' ) );
-t( 'and its winners, in real HTML',     false !== strpos( $last, 'Sam Reed' ) && false !== strpos( $last, 'Ana Cruz' ) );
-t( 'columns are the scored divisions',  false !== strpos( $last, '>Men<' ) && false !== strpos( $last, '>Women<' ) );
-t( 'a division nobody won is blank',    false !== strpos( $last, '<td></td>' ) );
+// The page is the board and the bar around it, nothing else. The summary
+// that used to sit here restated the top of a table the reader is looking
+// straight at, so it went.
+t( 'last year renders its own page',    false !== strpos( $last, 'black_bear-2025' ) );
+t( 'and does not restate the results',  false === strpos( $last, '2025 results' ) );
+t( 'nor the finisher count',            false === strpos( $last, '225 finishers' ) );
+t( 'nor the winners',                   false === strpos( $last, 'Sam Reed' ) && false === strpos( $last, 'Ana Cruz' ) );
 t( 'the frame follows the year',        false !== strpos( $last, 'black_bear-2025' ) );
 
 // The board is the authority on what it is timing. A race added this week
@@ -1898,9 +1900,15 @@ $bare_bar = arv_live_bar( 'Some Retired Race', null, null, array(), 'retired-201
 t( 'no race, no instagram guess',       false === strpos( $bare_bar, 'instagram.com' ) );
 t( 'and no clock to count to',          false === strpos( $bare_bar, 'arv-results__countdown' ) );
 
-// The summary goes above the board, not below it. The board is sized to its
-// whole field now, three thousand pixels for a small race, so a summary at
-// the far end of it is not a summary of anything anyone has reached.
+// No results summary on a live page. Jamil saw it in both positions and
+// wanted it gone either way: the board below it already lists every finisher
+// and every time, so the summary restated the top of a table the reader is
+// looking straight at.
+//
+// It cost the pages their only crawlable text, since the board is a
+// cross-origin iframe and a search engine reads none of it. That content is
+// not lost to the site: /results-2026/ carries the same winners and finisher
+// counts in real HTML, and that is the page built to be indexed.
 $GLOBALS['ARV_OPTIONS'] = array();
 arv_stats_store_set( array(
 	array(
@@ -1921,15 +1929,13 @@ arv_results_store_set( array(
 ) );
 
 $page = arv_live_page_render( array( 'slug' => 'black_bear-2025', 'year' => '2025' ) );
-t( 'a finished race gets a summary',    false !== strpos( $page, 'arv-live__report' ) );
-t( 'and it names a winner',             false !== strpos( $page, 'Jarrod Beauregard' ) );
-t( 'above the board, not below it',     strpos( $page, 'arv-live__report' ) < strpos( $page, 'arv-live__iframe' ) );
-t( 'and below the bar',                 strpos( $page, 'arv-live__bar' ) < strpos( $page, 'arv-live__report' ) );
+t( 'a finished race gets no summary',   false === strpos( $page, 'arv-live__report' ) );
+t( 'and names no winner',               false === strpos( $page, 'Jarrod Beauregard' ) );
+t( 'nor counts its finishers',          false === strpos( $page, '225 finisher' ) );
 
-// It is also the only thing on the page a search engine can read: the board
-// is a cross-origin iframe. Deleting it would leave these pages with no race
-// results in them at all, which is what they were built to have.
-t( 'the winner is in the page itself',  false !== strpos( strip_tags( $page ), 'Jarrod Beauregard' ) );
+// The entrant count is still read from the same stats row, for the frame.
+t( 'but the frame is still sized',      false !== strpos( $page, 'height:3252px' ) );
+t( 'and the board is still there',      false !== strpos( $page, 'black_bear-2025' ) );
 
 $GLOBALS['ARV_OPTIONS'] = array();
 
