@@ -507,34 +507,6 @@ function arv_races_distance_list( $distances ) {
 	return implode( ' | ', array_filter( $parts, 'strlen' ) );
 }
 
-/**
- * target and rel for a link that may or may not leave the site.
- *
- * Everything this element links to used to be somewhere else, so a new tab
- * was always right. Live results can now be a page on this site, and opening
- * those in a new tab quietly accumulates windows for anyone clicking down a
- * list of races.
- *
- * Matched on the site's own home URL rather than on a hardcoded domain, so
- * this stays correct on staging and behind a different host.
- *
- * @param string $url
- * @return string Attributes, with a leading space, or ''.
- */
-function arv_races_link_target( $url ) {
-	$home = function_exists( 'home_url' ) ? (string) home_url() : '';
-
-	if ( '' !== $home ) {
-		$host = (string) wp_parse_url( $home, PHP_URL_HOST );
-		$to   = (string) wp_parse_url( $url, PHP_URL_HOST );
-
-		if ( '' !== $host && $host === $to ) {
-			return '';
-		}
-	}
-
-	return ' target="_blank" rel="noopener"';
-}
 
 /**
  * Render callback.

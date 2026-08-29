@@ -125,7 +125,7 @@ function arv_race_status_render( $data ) {
 
 	if ( '' !== $action['url'] ) {
 		$out .= '<a class="arv-status__cta arv-status__cta--' . esc_attr( $action['phase'] ) . '" href="'
-			. esc_url( $action['url'] ) . '" target="_blank" rel="noopener">'
+			. esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] ) . '>'
 			. esc_html( $action['label'] ) . '</a>';
 	} else {
 		// Entries closed with nowhere to send anyone: a label, not a button,

@@ -2000,6 +2000,13 @@ t( 'one distance still works',          '50K' === arv_races_distance_list( '50KM
 t( 'and no distances says nothing',     '' === arv_races_distance_list( '' ) );
 t( 'an empty slot is dropped',          '50K | 23K' === arv_races_distance_list( '50KM||23K' ) );
 
+// Both helpers live in helpers.php rather than inside an element, because
+// four elements use them and only one of those was guaranteed to be loaded.
+// The edge suite renders the season calendar on its own and hit an undefined
+// arv_results_distance_label() doing exactly that.
+t( 'the distance label is shared',      false !== strpos( (string) ( new ReflectionFunction( 'arv_results_distance_label' ) )->getFileName(), 'includes/helpers.php' ) );
+t( 'and so is the link target',         false !== strpos( (string) ( new ReflectionFunction( 'arv_races_link_target' ) )->getFileName(), 'includes/helpers.php' ) );
+
 $GLOBALS['meta'] = array();
 $GLOBALS['PERMALINK'] = array();
 arv_live_page_map( true );

@@ -421,3 +421,63 @@ function arv_race_waitlist_for( $race ) {
 
 	return isset( $waitlist[ $name ] ) ? $waitlist[ $name ] : '';
 }
+
+/**
+ * target and rel for a link that may or may not leave the site.
+ *
+ * Everything this element links to used to be somewhere else, so a new tab
+ * was always right. Live results can now be a page on this site, and opening
+ * those in a new tab quietly accumulates windows for anyone clicking down a
+ * list of races.
+ *
+ * Matched on the site's own home URL rather than on a hardcoded domain, so
+ * this stays correct on staging and behind a different host.
+ *
+ * @param string $url
+ * @return string Attributes, with a leading space, or ''.
+ */
+function arv_races_link_target( $url ) {
+	$home = function_exists( 'home_url' ) ? (string) home_url() : '';
+
+	if ( '' !== $home ) {
+		$host = (string) wp_parse_url( $home, PHP_URL_HOST );
+		$to   = (string) wp_parse_url( $url, PHP_URL_HOST );
+
+		if ( '' !== $host && $host === $to ) {
+			return '';
+		}
+	}
+
+	return ' target="_blank" rel="noopener"';
+}
+
+/* ------------------------------------------------------------------ *
+ * Moved here from the Results element. Four elements write a distance
+ * now (results, the season calendar, the featured race and the live
+ * page), and only the first of them was guaranteed to be loaded: the
+ * edge suite renders the calendar on its own and hit an undefined
+ * function doing it, which is what a shared helper living inside one
+ * element's file eventually does.
+ * ------------------------------------------------------------------ */
+
+/**
+ * "50KM" and "50 K" and "50k" are all 50K.
+ *
+ * The rows are typed by hand from whatever each race's own page calls its
+ * distances, so the same distance is written three ways across the
+ * calendar. Normalised only for display: the stored value is left alone,
+ * since it is also what matches a distance to the timing board's name.
+ *
+ * @param string $distance
+ * @return string
+ */
+function arv_results_distance_label( $distance ) {
+	$label = trim( (string) $distance );
+
+	// 50KM -> 50K, and 50 K -> 50K. Kilometres only: "4 Mile" and
+	// "1 Mile Fun Run" are already how anyone would say them.
+	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s*(?:km|kms|kilometers?|kilometres?)$/i', '$1K', $label );
+	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s+k$/i', '$1K', $label );
+
+	return $label;
+}

@@ -312,7 +312,10 @@ function arv_featured_race_render( $data ) {
 	if ( ! empty( $distances ) ) {
 		$out .= '<p class="arv-featured__distances">';
 		foreach ( $distances as $distance ) {
-			$out .= '<span class="arv-featured__pill">' . esc_html( $distance ) . '</span>';
+			// Same normalising as the calendar and the race week block, so
+			// one race is not 50KM here and 50K there.
+			$out .= '<span class="arv-featured__pill">'
+				. esc_html( arv_results_distance_label( $distance ) ) . '</span>';
 		}
 		$out .= '</p>';
 	}
@@ -330,7 +333,7 @@ function arv_featured_race_render( $data ) {
 	$out .= '<div class="arv-featured__actions">';
 	if ( '' !== $action['url'] ) {
 		$out .= '<a class="arv-featured__cta arv-featured__cta--' . esc_attr( $action['phase'] ) . '" href="'
-			. esc_url( $action['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
+			. esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] ) . '>' . esc_html( $label ) . '</a>';
 	} else {
 		// Entries closed with nowhere to send anyone: a label, not a button,
 		// same distinction every other element on this site draws.
@@ -435,7 +438,7 @@ function arv_featured_race_card( $data, $action ) {
 	// so correctly and a second "Register on Obsession.run" beneath it would
 	// be the one wrong thing on the page.
 	if ( '' !== $card_cta && 'upcoming' === $action['phase'] && '' !== $action['url'] ) {
-		$out .= '<a class="arv-featured__card-cta" href="' . esc_url( $action['url'] ) . '" target="_blank" rel="noopener">'
+		$out .= '<a class="arv-featured__card-cta" href="' . esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] ) . '>'
 			. esc_html( $card_cta )
 			. '<svg class="arv-featured__card-cta-arrow" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">'
 			. '<path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
