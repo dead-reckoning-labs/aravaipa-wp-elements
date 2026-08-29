@@ -413,7 +413,11 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 	if ( ! empty( $distances ) ) {
 		$out .= '<span class="arv-calendar__distances">';
 		foreach ( $distances as $distance ) {
-			$out .= '<span class="arv-calendar__pill">' . esc_html( $distance ) . '</span>';
+			// Written the way the rest of the site writes it: the store keeps
+			// whatever the source said, so this list read "50KM" and "10 KM"
+			// beside a race week block calling the same distances 50K and 10K.
+			$out .= '<span class="arv-calendar__pill">'
+				. esc_html( arv_results_distance_label( $distance ) ) . '</span>';
 		}
 		$out .= '</span>';
 	}
@@ -486,8 +490,12 @@ function arv_season_calendar_action( $race, $today ) {
 		return '';
 	}
 
+	// Registration and the timing board are off-site and open in a new tab.
+	// A race with a live page of its own is not off-site any more, and
+	// sending someone to another tab of the site they are already on is the
+	// kind of thing that quietly accumulates windows down a list this long.
 	return '<a class="arv-calendar__action arv-calendar__action--' . esc_attr( $action['phase'] ) . '" href="'
-		. esc_url( $action['url'] ) . '" target="_blank" rel="noopener">'
+		. esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] ) . '>'
 		. esc_html( $action['label'] ) . '</a>';
 }
 

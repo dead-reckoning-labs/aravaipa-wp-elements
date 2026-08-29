@@ -1217,11 +1217,14 @@ t( 'and marks this one current',        false !== strpos( $html, 'is-current' ) 
 // indexed and shared, and it avoids query vars altogether.
 $GLOBALS['meta'] = array( 991 => array( '_arv_live_slug' => 'black_bear-2025' ) );
 $GLOBALS['PERMALINK'] = array( 991 => 'https://www.aravaiparunning.com/live-results/black-bear-trail-race-2025/' );
+arv_live_page_map( true );
 $paged = arv_live_page_render( array( 'slug' => 'black_bear-2026' ) );
 t( 'a real page beats the parameter',   false !== strpos( $paged, 'black-bear-trail-race-2025/' ) );
 t( 'and the parameter is not used',     false === strpos( $paged, 'edition=2025' ) );
 $GLOBALS['meta'] = array();
+arv_live_page_map( true );
 $GLOBALS['PERMALINK'] = array();
+arv_live_page_map( true );
 
 // Asking for last year swaps the frame and the whole bar with it.
 $last = arv_live_page_render( array( 'slug' => 'black_bear-2026', 'year' => '2025' ) );
@@ -1282,6 +1285,7 @@ t( 'and shows no countdown',            2 === substr_count( $idx, 'data-arv-resu
 
 // Nothing to list is nothing at all, not an empty shell.
 $GLOBALS['meta'] = array();
+arv_live_page_map( true );
 t( 'no live pages renders nothing',     '' === arv_live_index_render() );
 $GLOBALS['PERMALINK'] = array();
 unset( $GLOBALS['NOW_TS'] );
@@ -1351,6 +1355,7 @@ t( 'no edition means no event',         array() === arv_live_seo_event( array( '
 
 echo "\nlive page SEO: wired into wp_head:\n";
 $GLOBALS['meta'] = array( 77 => array( '_arv_live_slug' => 'black_bear-2025' ) );
+arv_live_page_map( true );
 $GLOBALS['QUERIED_ID'] = 77;
 $GLOBALS['IS_SINGULAR'] = true;
 
@@ -1380,6 +1385,7 @@ t( 'but both are still settable',       false !== strpos( $titled['title'], 'Bla
 
 // A page with no live-slug meta is not a live page at all.
 $GLOBALS['meta'] = array();
+arv_live_page_map( true );
 ob_start();
 arv_live_seo_head();
 t( 'a normal page prints nothing',      '' === ob_get_clean() );
@@ -1948,6 +1954,62 @@ $sooner  = array( 'iso' => '2026-08-29', 'name' => 'Black Bear', 'board' => arra
 t( 'the board start is read off a row', strtotime( '2026-08-29T12:00:00Z' ) === arv_live_start_ts( $sooner ) );
 t( 'and a row with no board gives 0',   0 === arv_live_start_ts( array( 'iso' => '2026-08-29' ) ) );
 t( 'and neither does an empty start',   0 === arv_live_start_ts( array( 'board' => array( 'start' => '', 'cutoff' => '' ) ) ) );
+
+// ------------------------------------------- Live buttons find the page --
+// Every Live Results button on the site should land on the branded page for
+// that race where one has been built, and on the board itself where one has
+// not, which is still most races.
+$GLOBALS['meta'] = array( 55 => array( '_arv_live_slug' => 'rock_hawk-2026' ) );
+$GLOBALS['PERMALINK'] = array( 55 => 'https://www.aravaiparunning.com/live-results/rock-hawk/' );
+arv_live_page_map( true );
+
+t( 'a board url finds its own page',    'https://www.aravaiparunning.com/live-results/rock-hawk/'
+	=== arv_live_page_for_live_url( 'https://live.aravaiparunning.com/#/rock_hawk-2026' ) );
+t( 'a race with no page gets nothing',  '' === arv_live_page_for_live_url( 'https://live.aravaiparunning.com/#/javelina-2026' ) );
+t( 'and no url at all gets nothing',    '' === arv_live_page_for_live_url( '' ) );
+
+// The single place every card, list and calendar reads its button url from.
+$with = arv_upcoming_races_action(
+	array( 'name' => 'Rock Hawk', 'iso' => '2026-08-29', 'end' => '', 'closes' => '2026-08-24',
+	       'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026', 'register' => '', 'page' => '' ),
+	'2026-08-28'
+);
+t( 'the button points at the page',     'https://www.aravaiparunning.com/live-results/rock-hawk/' === $with['url'] );
+t( 'and still says Live Results',       'Live Results' === $with['label'] );
+
+$without = arv_upcoming_races_action(
+	array( 'name' => 'Javelina Jundred', 'iso' => '2026-08-29', 'end' => '', 'closes' => '2026-08-24',
+	       'live' => 'https://live.aravaiparunning.com/#/javelina-2026', 'register' => '', 'page' => '' ),
+	'2026-08-28'
+);
+t( 'a race with no page keeps the board', 'https://live.aravaiparunning.com/#/javelina-2026' === $without['url'] );
+
+// An internal destination should not open a new tab. Everything this element
+// linked to used to be off-site, so the attribute was unconditional.
+t( 'the site\'s own page opens in place', '' === arv_races_link_target( 'https://www.aravaiparunning.com/live-results/rock-hawk/' ) );
+t( 'and the board opens in a new tab',    false !== strpos( arv_races_link_target( 'https://live.aravaiparunning.com/#/x-2026' ), 'target="_blank"' ) );
+t( 'carrying noopener with it',           false !== strpos( arv_races_link_target( 'https://ultrasignup.com/x' ), 'rel="noopener"' ) );
+
+// Distances on a card read the way the race week block writes them. The
+// store keeps whatever the source said, so the same race read "50KM | 23K"
+// on the home page and "50K 23K" three sections down the results page.
+t( 'kilometres are normalised',         '50K | 23K | 4 Mile | 1 Mile' === arv_races_distance_list( '50KM|23K|4 Mile|1 Mile' ) );
+t( 'and a spaced K too',                '10K | 5K' === arv_races_distance_list( '10 KM|5KM' ) );
+t( 'miles are left as they are',        '100 Mile | 42K' === arv_races_distance_list( '100 Mile|42K' ) );
+t( 'one distance still works',          '50K' === arv_races_distance_list( '50KM' ) );
+t( 'and no distances says nothing',     '' === arv_races_distance_list( '' ) );
+t( 'an empty slot is dropped',          '50K | 23K' === arv_races_distance_list( '50KM||23K' ) );
+
+// Both helpers live in helpers.php rather than inside an element, because
+// four elements use them and only one of those was guaranteed to be loaded.
+// The edge suite renders the season calendar on its own and hit an undefined
+// arv_results_distance_label() doing exactly that.
+t( 'the distance label is shared',      false !== strpos( (string) ( new ReflectionFunction( 'arv_results_distance_label' ) )->getFileName(), 'includes/helpers.php' ) );
+t( 'and so is the link target',         false !== strpos( (string) ( new ReflectionFunction( 'arv_races_link_target' ) )->getFileName(), 'includes/helpers.php' ) );
+
+$GLOBALS['meta'] = array();
+$GLOBALS['PERMALINK'] = array();
+arv_live_page_map( true );
 
 $GLOBALS['ARV_OPTIONS'] = array();
 

@@ -476,6 +476,39 @@ function arv_races_source( $data ) {
 }
 
 /**
+ * A race's distance list, each distance written the way the rest of the site
+ * writes it.
+ *
+ * The store keeps whatever the source said, which is "50KM" for one race and
+ * "50K" for the next, so the normalising belongs at the point of display
+ * rather than in the data: arv_results_distance_label() is the same function
+ * the race week block uses, and this is what makes both agree.
+ *
+ * Splits on the pipe the store already uses and puts it back, so a race with
+ * no distances, or one distance, is left exactly as it was.
+ *
+ * @param string $distances
+ * @return string
+ */
+function arv_races_distance_list( $distances ) {
+	$distances = trim( (string) $distances );
+
+	if ( '' === $distances || ! function_exists( 'arv_results_distance_label' ) ) {
+		return $distances;
+	}
+
+	$parts = array_map(
+		function ( $part ) {
+			return arv_results_distance_label( trim( $part ) );
+		},
+		explode( '|', $distances )
+	);
+
+	return implode( ' | ', array_filter( $parts, 'strlen' ) );
+}
+
+
+/**
  * Render callback.
  *
  * @param array $data Element values.
@@ -626,7 +659,13 @@ function arv_upcoming_races_render( $data ) {
 		$cards .= '<h3 class="arv-races__name">' . $title . '</h3>';
 
 		if ( '' !== $race['distances'] ) {
-			$cards .= '<p class="arv-races__distances">' . esc_html( $race['distances'] ) . '</p>';
+			// Normalised the same way the race week block already does it, so
+			// the same race does not read "50KM | 33KM | 10 KM" here and
+			// "50K 33K 10K" three sections down the results page. It also
+			// buys back a line: Snow Mountain Ranch's five distances wrapped
+			// at 390px and no longer do.
+			$cards .= '<p class="arv-races__distances">'
+				. esc_html( arv_races_distance_list( $race['distances'] ) ) . '</p>';
 		}
 
 		$where = array_filter( array( $race['venue'], $race['location'] ) );
@@ -664,10 +703,15 @@ function arv_upcoming_races_render( $data ) {
 			// beside it becomes the only thing to press, which is correct.
 			$cards .= '<span class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '">' . esc_html( $action['label'] ) . '</span>';
 		} elseif ( '' !== $action['url'] ) {
-			// Both destinations are off-site (ultrasignup.com, or a tracker),
-			// so this leaves the site. noopener because target=_blank without
-			// it hands the opened page a live reference back to this window.
-			$cards .= '<a class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '" href="' . esc_url( $action['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $primary_label ) . '</a>';
+			// Registration and the timing board are off-site, so those open
+			// in a new tab, with noopener because target=_blank without it
+			// hands the opened page a live reference back to this window.
+			// A race with a live page of its own is not off-site any more,
+			// and sending someone to another tab of the site they are
+			// already on is the kind of thing that quietly accumulates
+			// windows.
+			$cards .= '<a class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '" href="' . esc_url( $action['url'] ) . '"'
+				. arv_races_link_target( $action['url'] ) . '>' . esc_html( $primary_label ) . '</a>';
 		}
 		if ( '' !== $card_url ) {
 			// Always present, and always the secondary of the pair, so the

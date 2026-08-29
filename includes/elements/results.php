@@ -617,7 +617,8 @@ function arv_results_race_week( $today, $grace = 3 ) {
 
 		$out .= arv_results_week_status( $race );
 
-		$out .= '<a class="arv-results__link arv-results__link--live" href="' . esc_url( $race['url'] ) . '" target="_blank" rel="noopener">'
+		$out .= '<a class="arv-results__link arv-results__link--live" href="' . esc_url( $race['url'] ) . '"'
+			. arv_races_link_target( $race['url'] ) . '>'
 			. esc_html( __( 'Live Results', 'aravaipa-elements' ) ) . '</a>';
 
 		if ( '' !== $race['social']['url'] ) {
@@ -658,27 +659,6 @@ function arv_results_now() {
 	return (int) strtotime( $today . ' 00:00:00' );
 }
 
-/**
- * "50KM" and "50 K" and "50k" are all 50K.
- *
- * The rows are typed by hand from whatever each race's own page calls its
- * distances, so the same distance is written three ways across the
- * calendar. Normalised only for display: the stored value is left alone,
- * since it is also what matches a distance to the timing board's name.
- *
- * @param string $distance
- * @return string
- */
-function arv_results_distance_label( $distance ) {
-	$label = trim( (string) $distance );
-
-	// 50KM -> 50K, and 50 K -> 50K. Kilometres only: "4 Mile" and
-	// "1 Mile Fun Run" are already how anyone would say them.
-	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s*(?:km|kms|kilometers?|kilometres?)$/i', '$1K', $label );
-	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s+k$/i', '$1K', $label );
-
-	return $label;
-}
 
 /**
  * The timing board's own link for one distance of one race.
@@ -1456,8 +1436,15 @@ function arv_results_edition_label( $row ) {
 function arv_results_links( $row ) {
 	$out = '<div class="arv-results__links">';
 
+	// The branded page for this edition where one has been built, the board
+	// itself where one has not, which is most of them.
+	$live = function_exists( 'arv_live_page_for_live_url' )
+		? arv_live_page_for_live_url( $row['live'] )
+		: '';
+	$live = '' !== $live ? $live : $row['live'];
+
 	foreach ( array(
-		array( $row['live'], __( 'Live Results', 'aravaipa-elements' ), 'live' ),
+		array( $live, __( 'Live Results', 'aravaipa-elements' ), 'live' ),
 		array( $row['ultrasignup'], __( 'UltraSignup', 'aravaipa-elements' ), 'us' ),
 		array( $row['ultrarunning'], __( 'UltraRunning', 'aravaipa-elements' ), 'ur' ),
 	) as $link ) {
