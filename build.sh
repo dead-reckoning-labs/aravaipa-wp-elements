@@ -54,7 +54,7 @@ mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 cp "$NAME.php" "$STAGE/"
 cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -132,6 +132,14 @@ done < <(grep -oE "ARV_ELEMENTS_URL \. 'assets/[a-z-]+\.js'" "$NAME.php" | sed -
 # to check for the specific override that fixes it.
 grep -q '\.arv-calendar__row\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-calendar__row[hidden] override is missing, calendar filters will silently do nothing" >&2; missing=1; }
+[ "$missing" -eq 0 ] || exit 1
+
+# Same trap, same fix, for the Watch archive's own unconditional
+# ".arv-watch__race { display: flex }": without the [hidden] override below
+# it, aravaipa-watch.js's search and year filter would set the attribute on
+# every card it means to hide and nothing would visibly happen.
+grep -q '\.arv-watch__race\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-watch__race[hidden] override is missing, the Watch search and year filter will silently do nothing" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
 # A theme's own "a:hover { color: ... }" is one element plus one

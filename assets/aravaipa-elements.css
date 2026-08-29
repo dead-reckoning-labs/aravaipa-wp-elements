@@ -5672,6 +5672,16 @@
 	overflow: hidden;
 }
 
+/* Same trap .arv-calendar__row[hidden] exists for: an unconditional
+   "display: flex" above is equal specificity to the browser's own
+   "[hidden] { display: none }" and, being an author rule, always wins the
+   tie regardless of source order. Without this, aravaipa-watch.js's search
+   and year filter would set the hidden attribute on every card it filters
+   out and nothing would visibly happen. */
+.arv-watch__race[hidden] {
+	display: none;
+}
+
 /* :link and :visited alongside the class, not because of the colour but for
    the same specificity reason documented on .arv-featured__cta: a theme's
    own "a:hover" outranks a bare class, and this card's text turning the
@@ -5778,5 +5788,327 @@
 	.arv-watch__list {
 		grid-template-columns: 1fr;
 		gap: 1rem;
+	}
+}
+
+/* The search box and year filter above the archive. Same structure as
+   .arv-results__search, restyled for this section's dark background rather
+   than sharing the class: that one is fixed white-on-dark-text, and this is
+   the opposite everywhere it sets a colour. */
+.arv-watch__controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 1.75rem 0 0;
+}
+
+.arv-watch__search-label {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+	color: rgba(244, 244, 244, 0.72);
+}
+
+.arv-watch__search-field {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1 1 16rem;
+	min-width: 0;
+}
+
+.arv-watch__search-input::-webkit-search-cancel-button,
+.arv-watch__search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.arv-watch__search-field .arv-watch__search-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.6rem 2.2rem 0.6rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius);
+	/* 16px, same reason as .arv-results__search-input: anything smaller and
+	   iOS Safari zooms the page in on focus. */
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+}
+
+.arv-watch__search-input::placeholder {
+	color: rgba(244, 244, 244, 0.5);
+}
+
+.arv-watch__search-input:focus-visible {
+	outline: 2px solid #4ade80;
+	outline-offset: 1px;
+}
+
+.arv-watch__search-clear {
+	position: absolute;
+	right: 0.35rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	background: none;
+	border: 0;
+	color: rgba(244, 244, 244, 0.62);
+	cursor: pointer;
+}
+
+.arv-watch__search-clear[hidden] {
+	display: none;
+}
+
+.arv-watch__search-clear:focus-visible {
+	outline: 2px solid #4ade80;
+	outline-offset: -2px;
+}
+
+.arv-watch__year-select {
+	padding: 0.6rem 2rem 0.6rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+}
+
+.arv-watch__year-select:focus-visible {
+	outline: 2px solid #4ade80;
+	outline-offset: 1px;
+}
+
+.arv-watch__count {
+	flex-basis: 100%;
+	margin: 0;
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.62);
+}
+
+/* ---------------------------------------------------------------------------
+   Watch, one race: every edition, embedded, on its own page.
+
+   Same dark section and inner column as .arv-watch, since this is the page
+   a Watch card's thumbnail now leads to and the two should read as one
+   family rather than a different product.
+   --------------------------------------------------------------------------- */
+.arv-watch-race {
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-watch-race__inner {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem 2.5rem;
+}
+
+.arv-watch-race__back {
+	margin: 0 0 1.25rem;
+}
+
+.arv-watch-race__back a,
+.arv-watch-race__back a:link,
+.arv-watch-race__back a:visited {
+	font-size: var(--arv-fs-meta);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.72);
+	text-decoration: none;
+}
+
+.arv-watch-race__back a:hover,
+.arv-watch-race__back a:focus {
+	color: #fff;
+}
+
+.arv-watch-race__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 0 0 1rem;
+}
+
+.arv-watch-race__head .arv-results__live {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #4ade80;
+}
+
+.arv-watch-race__head .arv-results__live[hidden] {
+	display: none;
+}
+
+.arv-watch-race__name {
+	margin: 0;
+	font-size: clamp(24px, 3.4vw, 32px);
+	font-weight: 700;
+	line-height: 1.2;
+	color: #fff;
+}
+
+.arv-watch-race__years {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0 0 1.25rem;
+}
+
+.arv-watch-race__year-link {
+	padding: 0.3rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-btn);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.72);
+	text-decoration: none;
+}
+
+.arv-watch-race__year-link:hover,
+.arv-watch-race__year-link:focus {
+	border-color: rgba(255, 255, 255, 0.4);
+	color: #fff;
+}
+
+.arv-watch-race__year-link.is-current {
+	background: #4ade80;
+	border-color: #4ade80;
+	color: #10201f;
+}
+
+.arv-watch-race__frame {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	background: #000;
+	border-radius: var(--arv-radius-card);
+	overflow: hidden;
+}
+
+.arv-watch-race__frame iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+.arv-watch-race__playlist {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin: 1.25rem 0 0;
+	padding: 0;
+	list-style: none;
+	/* Cocodona is eighteen segments. Left to grow, the playlist would push
+	   the registration and results links below it off the first screen. */
+	max-height: 420px;
+	overflow-y: auto;
+}
+
+.arv-watch-race__seg,
+.arv-watch-race__seg:link,
+.arv-watch-race__seg:visited {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.4rem;
+	border-radius: var(--arv-radius);
+	color: rgba(244, 244, 244, 0.78);
+	text-decoration: none;
+}
+
+.arv-watch-race__seg:hover,
+.arv-watch-race__seg:focus {
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+}
+
+.arv-watch-race__seg.is-active {
+	background: rgba(74, 222, 128, 0.12);
+	color: #fff;
+}
+
+.arv-watch-race__seg-thumb {
+	flex: 0 0 auto;
+	width: 90px;
+	height: 68px;
+	border-radius: var(--arv-radius-chip);
+	object-fit: cover;
+	background: #000;
+}
+
+.arv-watch-race__seg-title {
+	font-size: var(--arv-fs-meta);
+	line-height: 1.35;
+}
+
+.arv-watch-race__links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin: 1.5rem 0 0;
+}
+
+/* :link and :visited alongside the class, the same specificity guard
+   .arv-featured__cta carries: a theme's own "a:hover { color }" outranks a
+   bare class, and without this the button's text would lose its colour to
+   the theme's link colour the moment anyone hovered it. */
+.arv-watch-race__cta,
+.arv-watch-race__cta:link,
+.arv-watch-race__cta:visited {
+	padding: 0.65rem 1.1rem;
+	border-radius: var(--arv-radius);
+	background: #4ade80;
+	font-size: var(--arv-fs-btn);
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	color: #10201f;
+	text-decoration: none;
+}
+
+.arv-watch-race__cta:hover,
+.arv-watch-race__cta:focus {
+	background: #86efac;
+	color: #10201f;
+}
+
+.arv-watch-race__missing {
+	margin: 0;
+	font-size: var(--arv-fs-body);
+	color: rgba(244, 244, 244, 0.78);
+}
+
+.arv-watch-race__missing a,
+.arv-watch-race__missing a:link,
+.arv-watch-race__missing a:visited {
+	color: #4ade80;
+}
+
+@media (max-width: 767px) {
+	.arv-watch-race__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
+
+	.arv-watch-race__seg-thumb {
+		width: 72px;
+		height: 54px;
 	}
 }

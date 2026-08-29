@@ -2621,6 +2621,157 @@ t( 'and renders the same thing',         arv_watch_shortcode( array( 'heading' =
 $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
 
+// -------------------------------------------------------------------------
+// Watch, one race: every edition, embedded, on its own page.
+// -------------------------------------------------------------------------
+echo "\nwatch, race key & name:\n";
+t( 'strips the trailing year off a slug', 'black-canyon' === arv_watch_race_key( 'black-canyon-2026' ) );
+t( 'and off one with a distance in it',   'cocodona-250' === arv_watch_race_key( 'cocodona-250-2026' ) );
+t( 'a slug with no year is left alone',   'ghost' === arv_watch_race_key( 'ghost' ) );
+t( 'strips the trailing year off a name', 'Black Canyon Ultras' === arv_watch_race_name( 'Black Canyon Ultras 2026' ) );
+t( 'a name with no year is left alone',   'Desert Solstice' === arv_watch_race_name( 'Desert Solstice' ) );
+
+$races_fixture = array(
+	array(
+		'slug'    => 'black-canyon-2026',
+		'name'    => 'Black Canyon Ultras 2026',
+		'live'    => true,
+		'start'   => '2026-02-14T14:00:00Z',
+		'streams' => array(
+			array( 'id' => 'bc26live1', 'title' => 'Live Coverage', 'url' => 'https://youtu.be/bc26live1', 'thumbnail' => 'https://i.ytimg.com/vi/bc26live1/hqdefault.jpg', 'live' => true, 'type' => 'race', 'start' => '2026-02-14T14:00:00Z' ),
+		),
+	),
+	array(
+		'slug'    => 'black-canyon-2025',
+		'name'    => 'Black Canyon Ultras 2025',
+		'live'    => false,
+		'start'   => '2025-02-14T14:00:00Z',
+		'streams' => array(
+			array( 'id' => 'bc25seg1', 'title' => 'Start', 'url' => 'https://youtu.be/bc25seg1', 'thumbnail' => 'https://i.ytimg.com/vi/bc25seg1/hqdefault.jpg', 'live' => false, 'type' => 'race', 'start' => '2025-02-14T14:00:00Z' ),
+			array( 'id' => 'bc25seg2', 'title' => 'Finish', 'url' => 'https://youtu.be/bc25seg2', 'thumbnail' => 'https://i.ytimg.com/vi/bc25seg2/hqdefault.jpg', 'live' => false, 'type' => 'race', 'start' => '2025-02-14T20:00:00Z' ),
+		),
+	),
+	array(
+		'slug'    => 'jackpot-2025',
+		'name'    => 'Jackpot Ultras 2025',
+		'live'    => false,
+		'start'   => '2025-02-19T14:00:00Z',
+		'streams' => array(
+			array( 'id' => 'jp25seg1', 'title' => 'Only', 'url' => 'https://youtu.be/jp25seg1', 'thumbnail' => 'https://i.ytimg.com/vi/jp25seg1/hqdefault.jpg', 'live' => false, 'type' => 'race', 'start' => '2025-02-19T14:00:00Z' ),
+		),
+	),
+);
+
+echo "\nwatch, grouping editions:\n";
+$GLOBALS['_transients']['arv_watch_events'] = $races_fixture;
+$editions = arv_watch_race_editions( 'black-canyon' );
+t( 'both editions come back',            2 === count( $editions ) );
+t( 'newest first',                        '2026-02-14T14:00:00Z' === $editions[0]['start'] );
+t( 'a race with no broadcasts is empty',  array() === arv_watch_race_editions( 'nonexistent' ) );
+t( 'an empty key is empty too',           array() === arv_watch_race_editions( '' ) );
+
+echo "\nwatch, picking an edition:\n";
+$picked = arv_watch_pick_edition( $editions, '2025' );
+t( 'a requested year wins',               '2025-02-14T14:00:00Z' === $picked['start'] );
+$fallback = arv_watch_pick_edition( $editions, '2019' );
+t( 'a year the race did not run falls back to newest', '2026-02-14T14:00:00Z' === $fallback['start'] );
+$default = arv_watch_pick_edition( $editions, '' );
+t( 'no year at all also falls back to newest', '2026-02-14T14:00:00Z' === $default['start'] );
+t( 'an empty list picks nothing',         null === arv_watch_pick_edition( array(), '2025' ) );
+
+echo "\nwatch, the dedicated page:\n";
+$html26 = arv_watch_race_render( array( 'race' => 'black-canyon' ) );
+t( 'renders the newest edition by default', false !== strpos( $html26, 'Black Canyon Ultras 2026' ) );
+t( 'live edition carries the live badge',   false !== strpos( $html26, 'arv-results__live' ) );
+t( 'the player is embedded, not linked',    false !== strpos( $html26, 'embed/bc26live1' ) );
+t( 'a single segment gets no playlist',     false === strpos( $html26, 'arv-watch-race__playlist' ) );
+t( 'the year switcher offers 2025',         false !== strpos( $html26, '>2025<' ) );
+t( 'and marks 2026 current',                false !== strpos( $html26, 'is-current' ) );
+t( 'links back to the index',               false !== strpos( $html26, home_url( '/watch/' ) ) );
+
+$html25 = arv_watch_race_render( array( 'race' => 'black-canyon', 'edition' => '2025' ) );
+t( '?edition= switches editions',           false !== strpos( $html25, 'Black Canyon Ultras 2025' ) );
+t( 'a past edition opens on its first segment', false !== strpos( $html25, 'embed/bc25seg1' ) );
+t( 'two segments get a playlist',           false !== strpos( $html25, 'arv-watch-race__playlist' ) );
+t( 'both segments are listed',              false !== strpos( $html25, 'bc25seg1' ) && false !== strpos( $html25, 'bc25seg2' ) );
+t( 'the open segment is marked current',    false !== strpos( $html25, 'aria-current="true"' ) );
+// target="_blank" so the page works with no script, and a real data-yt-id
+// so aravaipa-watch.js has something to swap the iframe to.
+t( 'segments are real links, not just buttons', false !== strpos( $html25, 'target="_blank"' ) );
+t( 'carrying the id the script swaps to',   false !== strpos( $html25, 'data-yt-id="bc25seg2"' ) );
+
+$html_jp = arv_watch_race_render( array( 'race' => 'jackpot' ) );
+t( 'one segment gets no playlist either',   false === strpos( $html_jp, 'arv-watch-race__playlist' ) );
+
+$missing = arv_watch_race_render( array( 'race' => 'nonexistent' ) );
+t( 'an unknown race says so',               false !== strpos( $missing, 'have a broadcast' ) );
+t( 'and still links back to the index',     false !== strpos( $missing, home_url( '/watch/' ) ) );
+t( 'a blank race key renders nothing',      '' === arv_watch_race_render( array() ) );
+
+echo "\nwatch, cross-links:\n";
+// Seeded directly rather than relying on the race store's state from the
+// import tests at the top of this file: by this point in the suite several
+// of those races have been trashed or edited by tests in between, and this
+// is testing arv_watch_race_page_link() against a race store, not against
+// whatever happens to survive two thousand lines of other tests.
+$GLOBALS['posts'][9001] = array( 'title' => 'Black Canyon Ultras', 'status' => 'publish' );
+$GLOBALS['meta'][9001]  = array( '_arv_iso' => '2027-02-14', '_arv_page' => 'https://www.aravaiparunning.com/blackcanyon/' );
+arv_race_store_flush_cache();
+
+t( "finds the race's own page by name",     'https://www.aravaiparunning.com/blackcanyon/' === arv_watch_race_page_link( 'Black Canyon Ultras' ) );
+
+t( "matches through the feed's shorter name too", 'https://www.aravaiparunning.com/blackcanyon/' === arv_watch_race_page_link( 'Black Canyon' ) );
+t( 'nothing for a race the store has never heard of', '' === arv_watch_race_page_link( 'Not A Real Race' ) );
+
+update_option(
+	ARV_RESULTS_OPTION,
+	array(
+		array( 'name' => 'Black Canyon Ultras', 'iso' => '2025-02-14', 'live' => 'https://live.aravaiparunning.com/#/black_canyon-2025' ),
+		array( 'name' => 'Black Canyon Ultras', 'iso' => '2026-02-14', 'live' => 'https://live.aravaiparunning.com/#/black_canyon-2026' ),
+	)
+);
+t( "finds that year's results board",       'https://live.aravaiparunning.com/#/black_canyon-2025' === arv_watch_race_results_link( 'Black Canyon Ultras', '2025' ) );
+t( 'nothing for a year with no results on file', '' === arv_watch_race_results_link( 'Black Canyon Ultras', '2019' ) );
+t( 'nothing with no year to match',          '' === arv_watch_race_results_link( 'Black Canyon Ultras', '' ) );
+
+// A branded live-results page wins over the raw board URL, same rule
+// arv_live_edition_url() applies for the same reason: a real path is what
+// gets indexed and shared.
+$GLOBALS['meta']      = array( 5001 => array( '_arv_live_slug' => 'black_canyon-2025' ) );
+$GLOBALS['PERMALINK'] = array( 5001 => 'https://www.aravaiparunning.com/live-results/black-canyon-2025/' );
+arv_live_page_map( true );
+t( 'a branded results page wins over the raw board', 'https://www.aravaiparunning.com/live-results/black-canyon-2025/' === arv_watch_race_results_link( 'Black Canyon Ultras', '2025' ) );
+$GLOBALS['meta']      = array();
+$GLOBALS['PERMALINK'] = array();
+arv_live_page_map( true );
+
+$linked = arv_watch_race_render( array( 'race' => 'black-canyon', 'edition' => '2025' ) );
+t( 'the dedicated page offers registration', false !== strpos( $linked, 'Race info &amp; registration' ) );
+t( "and that year's results",                false !== strpos( $linked, esc_url( 'https://live.aravaiparunning.com/#/black_canyon-2025' ) ) );
+
+unset( $GLOBALS['posts'][9001] );
+unset( $GLOBALS['meta'][9001] );
+arv_race_store_flush_cache();
+update_option( ARV_RESULTS_OPTION, array() );
+
+echo "\nwatch, index links to a race's dedicated page:\n";
+$GLOBALS['_transients']['arv_watch_events'] = $races_fixture;
+$GLOBALS['meta']      = array( 6001 => array( '_arv_watch_race' => 'jackpot' ) );
+$GLOBALS['PERMALINK'] = array( 6001 => 'https://www.aravaiparunning.com/watch/jackpot/' );
+arv_watch_page_map( true );
+$idx = arv_watch_render( array() );
+t( "a card links to its dedicated page when one exists", false !== strpos( $idx, 'href="https://www.aravaiparunning.com/watch/jackpot/">' ) );
+t( 'and does not send that click to a new tab', 0 === preg_match( '/href="https:\/\/www\.aravaiparunning\.com\/watch\/jackpot\/"[^>]*target="_blank"/', $idx ) );
+
+$GLOBALS['meta']      = array();
+$GLOBALS['PERMALINK'] = array();
+arv_watch_page_map( true );
+$idx2 = arv_watch_render( array() );
+t( 'and falls back to youtube once there is no page', false !== strpos( $idx2, 'youtu.be/jp25seg1' ) );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
