@@ -249,7 +249,7 @@ t( 'so the store does not grow',   $ROW_COUNT === count( arv_race_store_get() ) 
 echo "\nround trip:\n";
 $races = arv_race_store_get();
 $rock  = null;
-foreach ( $races as $race ) { if ( 'Rock Hawk' === $race['name'] ) { $rock = $race; } }
+foreach ( $races as $race ) { if ( 'Rock Hawk Trail Races' === $race['name'] ) { $rock = $race; } }
 t( 'a known race comes back',           null !== $rock );
 t( 'with its date',                     '2026-08-29' === $rock['iso'] );
 t( 'its distances, pipes intact',       '50K | 25K | 10K | 5K' === $rock['distances'] );
@@ -298,12 +298,12 @@ t( 'colorado has races',  count( $co ) > 3 );
 t( 'new hampshire has races', count( $nh ) > 2 );
 t( 'and they are different sets', count( $az ) + count( $co ) + count( $nh ) <= $ROW_COUNT );
 $names = array_map( function ( $r ) { return $r['name']; }, $co );
-t( 'a Colorado race lands in colorado', in_array( 'Rock Hawk', $names, true ) );
-t( 'and not in arizona', ! in_array( 'Rock Hawk', array_map( function ( $r ) { return $r['name']; }, $az ), true ) );
+t( 'a Colorado race lands in colorado', in_array( 'Rock Hawk Trail Races', $names, true ) );
+t( 'and not in arizona', ! in_array( 'Rock Hawk Trail Races', array_map( function ( $r ) { return $r['name']; }, $az ), true ) );
 // Region is read off the race's own page path first, which is the site's own
 // answer and survives a venue move.
 $wme = array_map( function ( $r ) { return $r['name']; }, $nh );
-t( 'a White Mountain race is grouped by its page path', in_array( 'Black Bear Trail Race', $wme, true ) );
+t( 'a White Mountain race is grouped by its page path', in_array( 'Black Bear Trail Races', $wme, true ) );
 
 echo "\nelement region filter:\n";
 $scoped = arv_upcoming_races_render( array( 'rows' => '', 'limit' => '0', 'region' => 'colorado' ) );
@@ -313,7 +313,7 @@ t( 'and Rock Hawk is one of them',             false !== strpos( $scoped, 'Rock 
 echo "\nsingle race page:\n";
 $GLOBALS['CURRENT_PATH'] = '/bear-chase-series/rock-hawk/';
 $found = arv_race_store_find_by_page( 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/' );
-t( 'a race page finds its own race', null !== $found && 'Rock Hawk' === $found['name'] );
+t( 'a race page finds its own race', null !== $found && 'Rock Hawk Trail Races' === $found['name'] );
 t( 'an unrelated page finds nothing', null === arv_race_store_find_by_page( 'https://www.aravaiparunning.com/about/' ) );
 
 $GLOBALS['NOW'] = '2026-08-29';
@@ -1162,7 +1162,7 @@ arv_results_store_set( array(
 ) );
 
 t( 'the calendar finds this year',      null !== arv_live_race_by_slug( 'black_bear-2026' ) );
-t( 'and names it',                      'Black Bear Trail Race' === arv_live_race_by_slug( 'black_bear-2026' )['name'] );
+t( 'and names it',                      'Black Bear Trail Races' === arv_live_race_by_slug( 'black_bear-2026' )['name'] );
 t( 'an unknown slug finds nothing',     null === arv_live_race_by_slug( 'nope-2026' ) );
 
 // The switcher needs both stores: this year from the calendar, last year
@@ -1361,7 +1361,13 @@ t( 'and none at all draws none',        '' === arv_live_index_seasons( array(), 
 
 // The same race under three of the board's spellings is still one race.
 // Rock Hawk Trail Races became Rock Hawk; the index should not say both.
-t( 'the index uses one name per race',  false === strpos( $prev, 'Black Bear Trail Races' ) );
+// One name per race, and it is the canonical one. This used to assert the
+// plural was absent, back when the newest edition's spelling won and the
+// board happened to have dropped the s in 2026. The rule was always "one
+// name", not "that name": the store now corrects both spellings to what the
+// race is actually called, so the singular is the one that should not appear.
+t( 'the index uses one name per race',  false !== strpos( $prev, 'Black Bear Trail Races' ) );
+t( 'and not the board\'s other spelling', false === strpos( $prev, '>Black Bear Trail Race<' ) );
 
 // Nothing to list is nothing at all, not an empty shell.
 $GLOBALS['meta'] = array();
@@ -1481,7 +1487,7 @@ arv_race_store_import(
 );
 
 $soon = arv_live_seo_context();
-t( 'an unrun race still has a name',    'Black Bear Trail Race' === $soon['name'] );
+t( 'an unrun race still has a name',    'Black Bear Trail Races' === $soon['name'] );
 
 ob_start();
 arv_live_seo_head();
