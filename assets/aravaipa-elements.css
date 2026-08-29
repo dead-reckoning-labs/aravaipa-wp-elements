@@ -1273,14 +1273,51 @@
 	padding: 1.1rem 1.2rem 0.6rem;
 }
 
+/* The date, and on race day the live marker and elapsed clock beside it.
+   A flex row rather than the date's own block, so the marker sits on the
+   line the date already occupies instead of costing the card a new one. */
+.arv-races__when {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 0.2rem 0.5rem;
+	margin-bottom: 0.35rem;
+}
+
 .arv-races__date {
 	display: block;
-	margin-bottom: 0.35rem;
 	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 1.5px;
 	text-transform: uppercase;
 	color: var(--arv-accent);
+}
+
+/* Elapsed time, only ever visible while a race is running. Tabular so the
+   seconds ticking over does not shuffle the text beside it. */
+.arv-races__clock {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: #4a4a4a;
+}
+
+/* The card's own live marker. The archive's version is built for a dark
+   bar; this one sits on a pale card, so it needs its own colours rather
+   than the near-white text that works over the board. */
+.arv-races__card .arv-results__live {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #1f7a4d;
+}
+
+.arv-races__card .arv-results__live[hidden] {
+	display: none;
 }
 
 .arv-races__name {

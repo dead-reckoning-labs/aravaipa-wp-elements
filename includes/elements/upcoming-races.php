@@ -625,7 +625,10 @@ function arv_upcoming_races_render( $data ) {
 		// checkout for a race they have not read about yet.
 		$card_url = '' !== $race['page'] ? $race['page'] : '';
 
-		$cards .= '<div class="arv-races__card">';
+		// data-arv-results-row is what lets the clock script find this card's
+		// live marker from the clock inside it: the two are siblings rather
+		// than nested, so the script walks up to the nearest marked row.
+		$cards .= '<div class="arv-races__card" data-arv-results-row>';
 
 		if ( '' !== $race['image'] ) {
 			$cards .= '<div class="arv-races__media">';
@@ -650,7 +653,17 @@ function arv_upcoming_races_render( $data ) {
 		$cards .= '<div class="arv-races__body">';
 		// <time> rather than a bare span so the machine-readable date is in
 		// the markup itself, not only in the JSON-LD below.
+		$cards .= '<span class="arv-races__when">';
 		$cards .= '<time class="arv-races__date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
+
+		// On the date line rather than a line of its own, so a card only
+		// changes shape while a race is actually running and goes back to
+		// exactly what it was afterwards. Renders nothing at all otherwise.
+		if ( function_exists( 'arv_races_live_clock' ) ) {
+			$cards .= arv_races_live_clock( $race );
+		}
+
+		$cards .= '</span>';
 
 		$title = esc_html( $race['name'] );
 		if ( '' !== $card_url ) {
