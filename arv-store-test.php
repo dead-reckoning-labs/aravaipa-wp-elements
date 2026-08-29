@@ -1853,6 +1853,31 @@ t( 'a tiny field floors at the given',  780 === arv_live_frame_height( array( 'r
 t( 'and an absurd one is capped',       20000 === arv_live_frame_height( array( 'rows' => 99999 ), 780 ) );
 t( 'the fallback is clamped too',       arv_live_frame_height( null, 99999 ) <= 2000 );
 t( 'and floored',                       arv_live_frame_height( null, 1 ) >= 400 );
+
+// ------------------------------------------------------- Bar furniture --
+// The live marker moved onto the title, so it has to still be inside the row
+// the clock script drives, and it has to still be hidden when the race is
+// not live. It carried a [hidden] attribute the whole time it was wrong on
+// the page, because a display in the stylesheet beat the attribute, so the
+// attribute alone is not proof of much.
+$live_bar = arv_live_bar(
+	'Black Bear Trail Race',
+	array( 'name' => 'Black Bear Trail Race', 'iso' => '2026-08-29', 'display' => 'August 29', 'live' => '' ),
+	array( 'name' => 'Black Bear Trail Race', 'location' => 'Waterville Valley, NH' ),
+	array(),
+	'black_bear-2026'
+);
+
+t( 'the marker is on the title',        strpos( $live_bar, 'arv-results__live' ) < strpos( $live_bar, 'arv-live__title' ) );
+t( 'and inside the clock-driven row',   false !== strpos( $live_bar, 'data-arv-results-row' ) );
+t( 'the bar carries an instagram link', false !== strpos( $live_bar, 'instagram.com' ) );
+t( 'and it opens away from the site',   false !== strpos( $live_bar, 'rel="noopener"' ) );
+t( 'and names the account it goes to',  false !== strpos( $live_bar, 'on Instagram' ) );
+
+// No race in the calendar means no account worth guessing at.
+$bare_bar = arv_live_bar( 'Some Retired Race', null, null, array(), 'retired-2013' );
+t( 'no race, no instagram guess',       false === strpos( $bare_bar, 'instagram.com' ) );
+t( 'and no clock to count to',          false === strpos( $bare_bar, 'arv-results__countdown' ) );
 t( 'and so is a negative one',           false !== strpos( $short, 'height:400px' ) );
 // The shortcode is the path bulk-created pages use, so it is exercised as
 // itself rather than trusted to be a thin wrapper.
