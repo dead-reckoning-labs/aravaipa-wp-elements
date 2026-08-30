@@ -212,6 +212,7 @@ require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/stats-store.php';
 require_once __DIR__ . '/includes/watch-store.php';
 require_once __DIR__ . '/includes/films-store.php';
+require_once __DIR__ . '/includes/podcasts-store.php';
 require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
@@ -3070,6 +3071,42 @@ t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_fil
 
 $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
+
+
+
+// -------------------------------------------------------------------------
+// Podcasts: two Spotify shows, embedded.
+// -------------------------------------------------------------------------
+echo "\npodcasts:\n";
+$shows = arv_podcasts_shows();
+t( 'the two real shows are configured',   2 === count( $shows ) );
+t( 'Inside Aravaipa is one of them',      'Inside Aravaipa' === $shows[0]['title'] );
+
+$html = arv_podcasts_render( array( 'heading' => 'Podcasts', 'intro' => 'Two shows.' ) );
+t( 'the heading renders',                 false !== strpos( $html, 'Podcasts</h2>' ) );
+t( 'the intro too',                       false !== strpos( $html, 'Two shows.' ) );
+t( 'both shows get a card',               2 === substr_count( $html, 'arv-podcasts__card' ) );
+t( 'each embeds spotify directly',        false !== strpos( $html, 'open.spotify.com/embed/show/0MvdUlDE9VwocRhrIl9Lwv' ) );
+t( 'and the other show too',              false !== strpos( $html, 'open.spotify.com/embed/show/4cg3hl6Ek6pjd76ymrbUQd' ) );
+t( 'an open-in-spotify link is offered',  2 === substr_count( $html, 'Open in Spotify' ) );
+t( 'nothing autoplays uninvited',         2 === substr_count( $html, 'loading="lazy"' ) );
+
+// A third show, or a rename, needs no plugin release.
+add_filter( 'arv_podcasts_shows', function () {
+	return array( array( 'title' => 'A New Show', 'id' => 'aaaaaaaaaaaaaaaaaaaaaa' ) );
+} );
+$filtered = arv_podcasts_render( array() );
+t( 'the shows list is filterable',        false !== strpos( $filtered, 'A New Show' ) );
+t( 'replacing the defaults, not adding to them', false === strpos( $filtered, 'Inside Aravaipa' ) );
+$GLOBALS['FILTERS']['arv_podcasts_shows'] = array();
+
+// No shows at all renders nothing, the same rule Watch and Films use.
+add_filter( 'arv_podcasts_shows', function () { return array(); } );
+t( 'no shows renders nothing',            '' === arv_podcasts_render( array() ) );
+$GLOBALS['FILTERS']['arv_podcasts_shows'] = array();
+
+t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_podcasts'] ) );
+t( 'and renders the same thing',          arv_podcasts_shortcode( array( 'heading' => 'Podcasts', 'intro' => 'Two shows.' ) ) === $html );
 
 
 echo "\n$pass passed, $fail failed\n";

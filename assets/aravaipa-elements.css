@@ -6351,3 +6351,103 @@
 		gap: 1rem;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   Podcasts: two Spotify shows, embedded.
+
+   Same dark family as Watch and Films. No player of its own to build: each
+   iframe is Spotify's own show widget, artwork, playback and episode list
+   included, so there is nothing here to keep in sync with an episode feed.
+   --------------------------------------------------------------------------- */
+.arv-podcasts {
+	box-sizing: border-box;
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-podcasts * {
+	box-sizing: inherit;
+}
+
+.arv-podcasts__inner {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem 2.5rem;
+}
+
+.arv-podcasts__heading {
+	margin: 0;
+	text-align: center;
+	font-size: clamp(26px, 3.4vw, 34px);
+	font-weight: 700;
+	line-height: 1.15;
+	color: #fff;
+}
+
+.arv-podcasts__intro {
+	margin: 0.5rem auto 0;
+	max-width: 60ch;
+	text-align: center;
+	font-size: var(--arv-fs-body);
+	line-height: 1.55;
+	color: rgba(244, 244, 244, 0.72);
+}
+
+.arv-podcasts__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 1.5rem;
+	margin-top: 1.75rem;
+}
+
+.arv-podcasts__card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+}
+
+.arv-podcasts__name {
+	margin: 0;
+	font-size: var(--arv-fs-lead);
+	font-weight: 700;
+	color: #fff;
+}
+
+/* Spotify's embed sets its own height per show (152px for the compact show
+   widget both of these use) and its own 12px corner radius inline, so
+   nothing here overrides either: the frame is exactly as tall as the
+   player it contains, not a fixed box it floats inside. */
+.arv-podcasts__frame {
+	display: block;
+	width: 100%;
+	border: 0;
+}
+
+.arv-podcasts__open,
+.arv-podcasts__open:link,
+.arv-podcasts__open:visited {
+	align-self: flex-start;
+	font-size: var(--arv-fs-meta);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.72);
+	text-decoration: none;
+}
+
+.arv-podcasts__open:hover,
+.arv-podcasts__open:focus {
+	color: #fff;
+}
+
+@media (max-width: 767px) {
+	.arv-podcasts__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
+
+	.arv-podcasts__grid {
+		grid-template-columns: 1fr;
+	}
+}
