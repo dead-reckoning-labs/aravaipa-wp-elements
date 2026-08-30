@@ -7220,3 +7220,106 @@
 		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   Media sub-nav: the Watch / Films / Podcasts / Photos / Articles strip
+   that sits above each of those pages.
+
+   Deliberately lighter than the dark sections it sits above: it belongs to
+   the page chrome, not to any one of them, and needs to read the same way
+   whichever dark or light section follows it.
+   --------------------------------------------------------------------------- */
+.arv-media-subnav {
+	box-sizing: border-box;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #f4f4f4;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-media-subnav * {
+	box-sizing: inherit;
+}
+
+.arv-media-subnav__inner {
+	display: flex;
+	flex-wrap: wrap;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 1.25rem;
+}
+
+.arv-media-subnav__link,
+.arv-media-subnav__link:link,
+.arv-media-subnav__link:visited {
+	padding: 0.85rem 1rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	color: rgba(0, 0, 0, 0.6);
+	text-decoration: none;
+	border-bottom: 3px solid transparent;
+}
+
+.arv-media-subnav__link:hover,
+.arv-media-subnav__link:focus {
+	color: #10201f;
+}
+
+.arv-media-subnav__link.is-current,
+.arv-media-subnav__link.is-current:link,
+.arv-media-subnav__link.is-current:visited {
+	color: #10201f;
+	border-bottom-color: #4ade80;
+}
+
+@media (max-width: 620px) {
+	.arv-media-subnav__inner {
+		padding: 0 0.5rem;
+		justify-content: center;
+	}
+
+	.arv-media-subnav__link {
+		padding: 0.7rem 0.6rem;
+		font-size: 12px;
+	}
+}
+
+/* --- "Follow along": Watch and Films, at the end of the full archive --- */
+.arv-media-follow {
+	margin: 2rem 0 0;
+	padding-top: 1.5rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	font-size: var(--arv-fs-body);
+}
+
+.arv-media-follow__link,
+.arv-media-follow__link:link,
+.arv-media-follow__link:visited {
+	display: inline-block;
+	padding: 0.6rem 1.1rem;
+	border-radius: var(--arv-radius);
+	background: #ff0000;
+	font-weight: 700;
+	color: #fff;
+	text-decoration: none;
+}
+
+.arv-media-follow__link:hover,
+.arv-media-follow__link:focus {
+	background: #d60000;
+}
+
+.arv-media-follow__why {
+	margin-left: 0.6rem;
+	color: rgba(244, 244, 244, 0.65);
+}
+
+@media (max-width: 480px) {
+	.arv-media-follow__why {
+		display: block;
+		margin: 0.5rem 0 0;
+	}
+}

@@ -221,6 +221,8 @@ require_once __DIR__ . '/includes/watch-store.php';
 require_once __DIR__ . '/includes/films-store.php';
 require_once __DIR__ . '/includes/photos-store.php';
 require_once __DIR__ . '/includes/podcasts-store.php';
+require_once __DIR__ . '/includes/media-follow.php';
+require_once __DIR__ . '/includes/media-subnav.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
@@ -3635,6 +3637,33 @@ unset( $_GET['year'] );
 $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array();
 t( 'no galleries renders nothing at all',     '' === arv_photos_render( array() ) );
 $GLOBALS['_transients'] = array();
+
+
+
+echo "\nmedia sub-nav:\n";
+$subnav_items = arv_media_subnav_items();
+t( 'five sections',                   5 === count( $subnav_items ) );
+t( 'in the right order',              array( 'watch', 'films', 'podcasts', 'photos', 'articles' ) === array_column( $subnav_items, 'key' ) );
+
+$on_films = arv_media_subnav_render( 'films' );
+t( 'every section links out',         5 === substr_count( $on_films, 'arv-media-subnav__link' ) );
+t( 'the current one is marked',       1 === substr_count( $on_films, 'is-current' ) );
+t( 'and it is the right one',         false !== strpos( $on_films, 'is-current" href="https://www.aravaiparunning.com/films/"' ) );
+t( 'aria-current is set once',        1 === substr_count( $on_films, 'aria-current="page"' ) );
+
+$none_current = arv_media_subnav_render();
+t( 'no current section marks nothing', false === strpos( $none_current, 'is-current' ) );
+t( 'an unknown key marks nothing',    false === strpos( arv_media_subnav_render( 'nonsense' ), 'is-current' ) );
+
+t( 'the shortcode renders the same',  arv_media_subnav_render( 'watch' ) === arv_media_subnav_shortcode( array( 'current' => 'watch' ) ) );
+
+
+
+echo "\nmedia follow (\"subscribe on YouTube\"):\n";
+t( 'renders a real link, not a widget',  false !== strpos( arv_media_follow_render( 'youtube', 'film' ), 'youtube.com/@aravaiparunning?sub_confirmation=1' ) );
+t( 'no third-party script tag',          false === strpos( arv_media_follow_render( 'youtube', 'film' ), '<script' ) );
+t( 'the context is in the copy',         false !== strpos( arv_media_follow_render( 'youtube', 'broadcast' ), 'broadcast' ) );
+t( 'an unknown platform renders nothing', '' === arv_media_follow_render( 'tiktok', 'film' ) );
 
 
 echo "\n$pass passed, $fail failed\n";
