@@ -211,6 +211,7 @@ require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/stats-store.php';
 require_once __DIR__ . '/includes/watch-store.php';
+require_once __DIR__ . '/includes/films-store.php';
 require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
@@ -2971,6 +2972,104 @@ $el = $GLOBALS['EL']['aravaipa-race-map'] ?? null;
 t( 'the map element is registered',       null !== $el );
 t( 'and its eyebrow defaults to empty',   '' === ( $el['values']['eyebrow'] ?? 'unset' ) );
 t( 'while the heading is unchanged',      'Find a race near you' === ( $el['values']['heading'] ?? '' ) );
+
+
+
+// -------------------------------------------------------------------------
+// Films: the two YouTube playlists, one page, one player.
+// -------------------------------------------------------------------------
+echo "\nfilms, trailer folding:\n";
+t( 'a plain title has no lead phrase problem', 'THE CHASE' === arv_films_lead_phrase( 'THE CHASE | Cocodona 250 Full Documentary' ) );
+t( 'a trailer shares its feature\'s lead phrase', 'THE CHASE' === arv_films_lead_phrase( 'THE CHASE - Official Trailer - A Cocodona 250 Story' ) );
+t( 'punctuation does not break the match',    arv_films_lead_phrase( 'Inaugural Year | OFFICIAL TRAILER | A Story' ) === arv_films_lead_phrase( 'INAUGURAL YEAR | A story about the first ever Cocodona 250' ) );
+
+$films_raw = array(
+	array(
+		'key' => 'documentaries', 'title' => 'Documentaries',
+		'films' => array(
+			array( 'id' => 'aaaaaaaaaaa', 'title' => 'THE CHASE | Cocodona 250 Full Documentary', 'description' => 'A film.', 'publishedAt' => '2025-04-25T00:00:00Z', 'thumbnail' => '' ),
+			array( 'id' => 'bbbbbbbbbbb', 'title' => 'THE CHASE - Official Trailer - A Cocodona 250 Story', 'description' => 'A trailer.', 'publishedAt' => '2025-03-01T00:00:00Z', 'thumbnail' => '' ),
+			// No feature shares this trailer's lead phrase: kept as its own
+			// card rather than guessed onto the wrong one.
+			array( 'id' => 'ccccccccccc', 'title' => 'Orphan Trailer', 'description' => '', 'publishedAt' => '2024-01-01T00:00:00Z', 'thumbnail' => '' ),
+			// Not a video at all upstream would already have been filtered
+			// before reaching here, but a title or id missing is exactly
+			// the kind of shape drift arv_watch_clean() guards against too.
+			array( 'id' => '', 'title' => 'No id', 'description' => '' ),
+		),
+	),
+	array(
+		'key' => 'originals', 'title' => 'Aravaipa Originals',
+		'films' => array(
+			array( 'id' => 'ddddddddddd', 'title' => 'Molly Seidel Takes On Trail | Aravaipa Originals', 'description' => '', 'publishedAt' => '2026-02-09T00:00:00Z', 'thumbnail' => 'https://example.com/molly.jpg' ),
+		),
+	),
+);
+
+$clean = arv_films_clean( $films_raw );
+t( 'both playlists survive',              2 === count( $clean ) );
+t( 'the trailer folds into its feature',  2 === count( $clean[0]['films'] ) ); // feature (with its trailer attached) + the orphan trailer
+$doc_titles = array_map( function( $f ) { return $f['title']; }, $clean[0]['films'] );
+t( 'the folded trailer is not a card of its own', ! in_array( 'THE CHASE - Official Trailer - A Cocodona 250 Story', $doc_titles, true ) );
+t( 'an unmatched trailer stays its own card', in_array( 'Orphan Trailer', $doc_titles, true ) );
+
+$feature = null;
+foreach ( $clean[0]['films'] as $f ) { if ( 'aaaaaaaaaaa' === $f['id'] ) { $feature = $f; } }
+t( 'the feature carries its trailer',     null !== $feature && null !== $feature['trailer'] );
+t( 'the trailer keeps its own id',        'bbbbbbbbbbb' === $feature['trailer']['id'] );
+t( 'a thumbnail is built when upstream has none', 'https://i.ytimg.com/vi/aaaaaaaaaaa/hqdefault.jpg' === $feature['thumbnail'] );
+t( "upstream's own thumbnail wins when there is one", 'https://example.com/molly.jpg' === $clean[1]['films'][0]['thumbnail'] );
+
+echo "\nfilms, ordering and lookup:\n";
+$all = arv_films_all( $clean );
+t( 'flattened across both playlists',     3 === count( $all ) );
+t( 'newest first',                        'ddddddddddd' === $all[0]['id'] );
+
+t( 'finds a top-level film by id',        'aaaaaaaaaaa' === arv_films_find( $clean, 'aaaaaaaaaaa' )['id'] );
+t( 'finds a folded trailer by its own id', 'bbbbbbbbbbb' === arv_films_find( $clean, 'bbbbbbbbbbb' )['id'] );
+t( 'an unknown id finds nothing',         null === arv_films_find( $clean, 'zzzzzzzzzzz' ) );
+
+echo "\nfilms, rendering:\n";
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+arv_test_queue_response( new WP_Error( 'down' ) );
+t( 'an unreachable feed renders nothing', '' === arv_films_render( array( 'heading' => 'Films' ) ) );
+
+$GLOBALS['_transients']['arv_films'] = $clean;
+$html = arv_films_render( array( 'heading' => 'Films', 'intro' => 'Every documentary and original.' ) );
+t( 'the heading renders',                 false !== strpos( $html, 'Films</h2>' ) );
+t( 'the intro too',                       false !== strpos( $html, 'Every documentary and original.' ) );
+t( 'exactly one player on the page',      1 === substr_count( $html, '<iframe' ) );
+t( 'defaults to the newest film',         false !== strpos( $html, 'embed/ddddddddddd' ) );
+t( 'both section headings appear',        false !== strpos( $html, 'Documentaries' ) && false !== strpos( $html, 'Aravaipa Originals' ) );
+t( 'the feature has a trailer link',      false !== strpos( $html, 'arv-films__trailer' ) );
+t( 'segments are real links, not just buttons', false !== strpos( $html, 'target="_blank"' ) );
+
+$requested = arv_films_render( array( 'heading' => '' ) );
+$_GET['v'] = 'aaaaaaaaaaa';
+$picked = arv_films_render( array() );
+unset( $_GET['v'] );
+t( '?v= opens on the requested film',     false !== strpos( $picked, 'embed/aaaaaaaaaaa' ) );
+
+$_GET['v'] = 'not-a-real-id';
+$fallback = arv_films_render( array() );
+unset( $_GET['v'] );
+t( 'an unknown ?v= falls back to newest', false !== strpos( $fallback, 'embed/ddddddddddd' ) );
+
+// A script tag in a title or description is exactly the argument for
+// escaping it here rather than trusting a system Aravaipa does not run.
+$GLOBALS['_transients']['arv_films'] = array(
+	array( 'key' => 'documentaries', 'title' => 'Documentaries', 'films' => array(
+		array( 'id' => 'eeeeeeeeeee', 'title' => '<script>alert(1)</script>', 'desc' => '', 'thumbnail' => 'https://example.com/e.jpg', 'published' => '2025-01-01T00:00:00Z', 'url' => 'https://youtu.be/eeeeeeeeeee', 'lead' => 'SCRIPT', 'trailer' => null ),
+	) ),
+);
+$nasty = arv_films_render( array() );
+t( 'a script tag in a title is escaped',  false === strpos( $nasty, '<script>alert' ) );
+
+t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_films'] ) );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
 
 
 echo "\n$pass passed, $fail failed\n";
