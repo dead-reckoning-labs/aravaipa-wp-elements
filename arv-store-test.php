@@ -3310,5 +3310,87 @@ $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
 
 
+
+echo "\nfilms, dedupe across playlists:\n";
+// "THE RACE DIRECTOR" is in both Documentaries and Aravaipa Originals on
+// YouTube and rendered twice on one page. The last playlist carrying a
+// film wins, which is Originals, which is also where Jamil wants it.
+$dupe_raw = array(
+	array( 'key' => 'documentaries', 'title' => 'Documentaries', 'films' => array(
+		array( 'id' => 'shared00000', 'title' => 'THE RACE DIRECTOR', 'description' => '', 'publishedAt' => '2025-01-01T00:00:00Z', 'thumbnail' => '' ),
+		array( 'id' => 'doconly0000', 'title' => 'A Documentary', 'description' => '', 'publishedAt' => '2024-01-01T00:00:00Z', 'thumbnail' => '' ),
+	) ),
+	array( 'key' => 'originals', 'title' => 'Aravaipa Originals', 'films' => array(
+		array( 'id' => 'shared00000', 'title' => 'THE RACE DIRECTOR', 'description' => '', 'publishedAt' => '2025-01-01T00:00:00Z', 'thumbnail' => '' ),
+	) ),
+);
+$deduped = arv_films_clean( $dupe_raw );
+t( 'the shared film leaves the first playlist', 1 === count( $deduped[0]['films'] ) );
+t( 'and stays in the last one',           'shared00000' === $deduped[1]['films'][0]['id'] );
+t( 'it appears exactly once overall',     1 === count( array_filter( arv_films_all( $deduped ), function ( $f ) { return 'shared00000' === $f['id']; } ) ) );
+
+// A playlist emptied entirely by the dedupe would render as a heading over
+// nothing.
+$all_dupes = array(
+	array( 'key' => 'a', 'title' => 'A', 'films' => array( array( 'id' => 'xxxxxxxxxxx', 'title' => 'Only Film', 'description' => '', 'publishedAt' => '2025-01-01T00:00:00Z', 'thumbnail' => '' ) ) ),
+	array( 'key' => 'b', 'title' => 'B', 'films' => array( array( 'id' => 'xxxxxxxxxxx', 'title' => 'Only Film', 'description' => '', 'publishedAt' => '2025-01-01T00:00:00Z', 'thumbnail' => '' ) ) ),
+);
+$emptied = arv_films_clean( $all_dupes );
+t( 'an emptied playlist is dropped',      1 === count( $emptied ) );
+t( 'and it is the surviving one',         'b' === $emptied[0]['key'] );
+
+echo "\nfilms, tagging the race a film is about:\n";
+// Matched against the race store, so a race added to the calendar is
+// matchable the same day rather than needing a list maintained here.
+$GLOBALS['posts'][9101] = array( 'title' => 'Cocodona 250', 'status' => 'publish' );
+$GLOBALS['meta'][9101]  = array( '_arv_iso' => '2027-05-02', '_arv_page' => 'https://www.aravaiparunning.com/cocodona/' );
+$GLOBALS['posts'][9102] = array( 'title' => 'Tushars Mountain Runs', 'status' => 'publish' );
+$GLOBALS['meta'][9102]  = array( '_arv_iso' => '2027-07-10', '_arv_page' => '' );
+$GLOBALS['posts'][9103] = array( 'title' => 'Mountain Ridge Trail Race', 'status' => 'publish' );
+$GLOBALS['meta'][9103]  = array( '_arv_iso' => '2027-03-01', '_arv_page' => '' );
+$GLOBALS['posts'][9104] = array( 'title' => 'Jigger Johnson Ultras', 'status' => 'publish' );
+$GLOBALS['meta'][9104]  = array( '_arv_iso' => '2027-09-01', '_arv_page' => '' );
+arv_race_store_flush_cache();
+
+t( 'the race in a title is found',        'Cocodona 250' === arv_films_race_for( 'THE CHASE | Cocodona 250 Full Documentary' ) );
+// "Tushars Mountain Runs 2021" contains the word "mountain", which on its
+// own would just as happily match Mountain Ridge Trail Race, and did while
+// this was being written. The longest matching phrase has to win.
+t( 'the longest matching phrase wins',    'Tushars Mountain Runs' === arv_films_race_for( 'Belus Brotherhood (Short Film) | Tushars Mountain Runs 2021' ) );
+// And a film that only uses the short form still matches.
+t( 'a leading prefix matches too',        'Tushars Mountain Runs' === arv_films_race_for( "THE TUSHARS | 100K in Utah's Hidden Range" ) );
+t( 'and a two-word prefix',               'Jigger Johnson Ultras' === arv_films_race_for( 'EVERY MILE EARNED | The Inaugural Jigger Johnson 100 Mile' ) );
+// A film that is not about one race gets no tag rather than the nearest
+// guess.
+t( 'a film about no one race is untagged', '' === arv_films_race_for( 'THE RACE DIRECTOR | Crafting Endurance in the Midwest' ) );
+// A generic landscape word must never identify a race on its own.
+t( 'a bare generic word tags nothing',    '' === arv_films_race_for( 'A Film About A Mountain' ) );
+
+echo "\nfilms, durations and view counts:\n";
+t( 'an hour-long duration',               '1:50:55' === arv_films_duration( 'PT1H50M55S' ) );
+t( 'a minutes-only duration',             '8:49' === arv_films_duration( 'PT8M49S' ) );
+t( 'seconds pad correctly',               '50:07' === arv_films_duration( 'PT50M7S' ) );
+t( 'a garbage duration is empty',         '' === arv_films_duration( 'not a duration' ) );
+t( 'an empty duration is empty',          '' === arv_films_duration( '' ) );
+t( 'thousands abbreviate',                '793K' === arv_films_views( 792688 ) );
+t( 'millions abbreviate',                 '1.2M' === arv_films_views( 1234567 ) );
+t( 'a round million drops the decimal',   '2M' === arv_films_views( 2000000 ) );
+t( 'small counts are left alone',         '412' === arv_films_views( 412 ) );
+t( 'no views shows nothing',              '' === arv_films_views( 0 ) );
+
+$GLOBALS['_transients']['arv_films'] = $deduped;
+$carded = arv_films_render( array() );
+t( 'a card carries its views for sorting',  false !== strpos( $carded, 'data-arv-films-views=' ) );
+t( 'and its date for sorting',              false !== strpos( $carded, 'data-arv-films-date=' ) );
+t( 'and its race for filtering',            false !== strpos( $carded, 'data-arv-films-race=' ) );
+t( 'the controls render',                   false !== strpos( $carded, 'data-arv-films-sort' ) );
+t( 'with a search box',                     false !== strpos( $carded, 'data-arv-films-search' ) );
+
+unset( $GLOBALS['posts'][9101], $GLOBALS['posts'][9102], $GLOBALS['posts'][9103], $GLOBALS['posts'][9104] );
+unset( $GLOBALS['meta'][9101], $GLOBALS['meta'][9102], $GLOBALS['meta'][9103], $GLOBALS['meta'][9104] );
+arv_race_store_flush_cache();
+$GLOBALS['_transients'] = array();
+
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );

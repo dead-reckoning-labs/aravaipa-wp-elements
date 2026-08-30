@@ -6580,3 +6580,181 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* --- Films: controls, race badges, duration, view counts ---------------- */
+
+.arv-films__notice {
+	margin: 1.25rem 0 0;
+	font-size: var(--arv-fs-body);
+	color: rgba(244, 244, 244, 0.78);
+}
+
+.arv-films__notice a,
+.arv-films__notice a:link,
+.arv-films__notice a:visited {
+	color: #4ade80;
+}
+
+.arv-films__controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 1.75rem 0 0;
+}
+
+.arv-films__search-label {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+	color: rgba(244, 244, 244, 0.72);
+}
+
+.arv-films__search-field {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1 1 14rem;
+	min-width: 0;
+}
+
+.arv-films__search-input::-webkit-search-cancel-button,
+.arv-films__search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.arv-films__search-field .arv-films__search-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.6rem 2.2rem 0.6rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius);
+	/* 16px, same iOS-zoom reason as every other search input here. */
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+}
+
+.arv-films__search-input::placeholder {
+	color: rgba(244, 244, 244, 0.5);
+}
+
+.arv-films__search-input:focus-visible,
+.arv-films__sort:focus-visible,
+.arv-films__race-select:focus-visible {
+	outline: 2px solid #4ade80;
+	outline-offset: 1px;
+}
+
+.arv-films__search-clear {
+	position: absolute;
+	right: 0.35rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	background: none;
+	border: 0;
+	color: rgba(244, 244, 244, 0.62);
+	cursor: pointer;
+}
+
+.arv-films__search-clear[hidden] {
+	display: none;
+}
+
+.arv-films__sort,
+.arv-films__race-select {
+	padding: 0.6rem 2rem 0.6rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+}
+
+.arv-films__count {
+	flex-basis: 100%;
+	margin: 0;
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.62);
+}
+
+/* Same [hidden] trap the calendar and the Watch archive both hit: the card
+   and the list below set their own unconditional display, which ties with
+   the browser's own "[hidden] { display: none }" and wins on source order,
+   so the filter would set the attribute and nothing would happen. */
+.arv-films__card[hidden] {
+	display: none;
+}
+
+.arv-films__list[hidden],
+.arv-films__section[hidden] {
+	display: none;
+}
+
+/* Over the thumbnail's bottom-right corner, where YouTube puts it and
+   where a viewer already looks for it. */
+.arv-films__link {
+	position: relative;
+}
+
+.arv-films__duration {
+	position: absolute;
+	right: 0.5rem;
+	/* Sits above the title block, not the card: the thumbnail is the first
+	   child and its height is the 16:9 box. */
+	top: calc(56.25% - 1.9rem);
+	padding: 0.1rem 0.35rem;
+	border-radius: var(--arv-radius-chip);
+	background: rgba(0, 0, 0, 0.8);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: #fff;
+}
+
+.arv-films__race {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem;
+	margin-top: auto;
+	padding: 0 0.9rem 0.85rem;
+}
+
+.arv-films__race-tag,
+.arv-films__race-tag:link,
+.arv-films__race-tag:visited {
+	padding: 0.2rem 0.5rem;
+	border: 1px solid rgba(74, 222, 128, 0.5);
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: #4ade80;
+	text-decoration: none;
+}
+
+.arv-films__race-tag:hover,
+.arv-films__race-tag:focus {
+	background: rgba(74, 222, 128, 0.12);
+}
+
+.arv-films__race-page,
+.arv-films__race-page:link,
+.arv-films__race-page:visited {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.6);
+	text-decoration: none;
+}
+
+.arv-films__race-page:hover,
+.arv-films__race-page:focus {
+	color: #fff;
+}
