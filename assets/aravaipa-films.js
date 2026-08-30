@@ -67,3 +67,119 @@
 		section.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 	} );
 } )();
+
+/**
+ * Search, sort and race filter for the Films shelf.
+ *
+ * Same contract as aravaipa-watch.js and aravaipa-results.js: every film is
+ * already rendered server side, and this only reorders and hides what is
+ * already there. With no script the page is still the complete shelf in
+ * playlist order, and a crawler sees all of it whatever any control says.
+ *
+ * Sorting reorders within each playlist section rather than across them,
+ * because the sections are the two playlists and merging them would answer
+ * a question nobody asked: "most watched" means the most watched
+ * documentary and the most watched original, still under their own
+ * headings.
+ */
+( function () {
+	'use strict';
+
+	var section = document.querySelector( '.arv-films' );
+
+	if ( ! section ) {
+		return;
+	}
+
+	var search = section.querySelector( '[data-arv-films-search]' );
+	var sort = section.querySelector( '[data-arv-films-sort]' );
+	var race = section.querySelector( '[data-arv-films-race]' );
+	var clear = section.querySelector( '[data-arv-films-clear]' );
+	var count = section.querySelector( '[data-arv-films-count]' );
+	var lists = section.querySelectorAll( '[data-arv-films-list]' );
+
+	if ( ! search && ! sort && ! race ) {
+		return;
+	}
+
+	function apply() {
+		var q = search ? search.value.trim().toLowerCase() : '';
+		var wantRace = race ? race.value : '';
+		var by = sort ? sort.value : 'date';
+		var shown = 0;
+
+		for ( var i = 0; i < lists.length; i++ ) {
+			var list = lists[ i ];
+			var cards = Array.prototype.slice.call( list.children );
+
+			for ( var j = 0; j < cards.length; j++ ) {
+				var card = cards[ j ];
+				var title = card.getAttribute( 'data-arv-films-title' ) || '';
+				var cardRace = card.getAttribute( 'data-arv-films-race' ) || '';
+
+				// Search covers the race as well as the title, so typing
+				// "cocodona" finds a film whose own title never says it.
+				var hit = ( '' === q || title.indexOf( q ) !== -1 || cardRace.indexOf( q ) !== -1 ) &&
+					( '' === wantRace || cardRace === wantRace );
+
+				card.hidden = ! hit;
+
+				if ( hit ) {
+					shown++;
+				}
+			}
+
+			cards.sort( function ( a, b ) {
+				var key = ( 'views' === by ) ? 'data-arv-films-views' : 'data-arv-films-date';
+				return Number( b.getAttribute( key ) || 0 ) - Number( a.getAttribute( key ) || 0 );
+			} );
+
+			for ( var k = 0; k < cards.length; k++ ) {
+				list.appendChild( cards[ k ] );
+			}
+		}
+
+		// A section whose every film is filtered out would leave its
+		// heading standing over nothing.
+		for ( var m = 0; m < lists.length; m++ ) {
+			var any = lists[ m ].querySelector( '.arv-films__card:not([hidden])' );
+			var heading = lists[ m ].previousElementSibling;
+
+			lists[ m ].hidden = ! any;
+
+			if ( heading && heading.classList.contains( 'arv-films__section' ) ) {
+				heading.hidden = ! any;
+			}
+		}
+
+		if ( clear ) {
+			clear.hidden = '' === q;
+		}
+
+		if ( count ) {
+			count.textContent = ( '' === q && '' === wantRace )
+				? ''
+				: shown + ( 1 === shown ? ' film' : ' films' );
+		}
+	}
+
+	if ( search ) {
+		search.addEventListener( 'input', apply );
+	}
+
+	if ( sort ) {
+		sort.addEventListener( 'change', apply );
+	}
+
+	if ( race ) {
+		race.addEventListener( 'change', apply );
+	}
+
+	if ( clear ) {
+		clear.addEventListener( 'click', function () {
+			search.value = '';
+			search.focus();
+			apply();
+		} );
+	}
+} )();
