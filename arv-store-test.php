@@ -3644,6 +3644,10 @@ echo "\nmedia sub-nav:\n";
 $subnav_items = arv_media_subnav_items();
 t( 'five sections',                   5 === count( $subnav_items ) );
 t( 'in the right order',              array( 'watch', 'films', 'podcasts', 'photos', 'articles' ) === array_column( $subnav_items, 'key' ) );
+t( 'the Media parent link renders',   false !== strpos( arv_media_subnav_render( 'films' ), 'arv-media-subnav__parent" href="https://www.aravaiparunning.com/media/"' ) );
+// Never the active section: the strip lives on Media's own children, not
+// on /media/ itself, so nothing should ever mark this one current.
+t( 'the parent link is never current', false === strpos( arv_media_subnav_render( 'films' ), 'arv-media-subnav__parent is-current' ) );
 
 $on_films = arv_media_subnav_render( 'films' );
 t( 'every section links out',         5 === substr_count( $on_films, 'arv-media-subnav__link' ) );

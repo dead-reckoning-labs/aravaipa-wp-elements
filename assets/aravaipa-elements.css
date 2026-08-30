@@ -7245,9 +7245,29 @@
 .arv-media-subnav__inner {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: center;
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 0 1.25rem;
+}
+
+.arv-media-subnav__parent,
+.arv-media-subnav__parent:link,
+.arv-media-subnav__parent:visited {
+	padding: 0.85rem 1rem 0.85rem 0;
+	margin-right: 0.75rem;
+	border-right: 1px solid rgba(0, 0, 0, 0.15);
+	font-size: var(--arv-fs-label);
+	font-weight: 900;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	color: #10201f;
+	text-decoration: none;
+}
+
+.arv-media-subnav__parent:hover,
+.arv-media-subnav__parent:focus {
+	color: #4ade80;
 }
 
 .arv-media-subnav__link,
