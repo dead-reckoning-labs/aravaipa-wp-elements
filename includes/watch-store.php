@@ -1257,10 +1257,19 @@ function arv_watch_seo_description( $ctx ) {
 	$edition = $ctx['edition'];
 	$count   = count( $edition['streams'] );
 
-	if ( '' !== trim( $edition['desc'] ) ) {
+	// isset() throughout this function for the same reason
+	// arv_watch_seo_videos() reads its stream fields defensively: $edition
+	// comes from the same fifteen-minute transient, so the first request
+	// after a deploy that adds a field can hand this a value last cleaned by
+	// the version before it, missing the key entirely rather than holding
+	// ''.
+	$desc  = isset( $edition['desc'] ) ? trim( (string) $edition['desc'] ) : '';
+	$place = isset( $edition['place'] ) ? trim( (string) $edition['place'] ) : '';
+
+	if ( '' !== $desc ) {
 		// Google truncates around 160 characters, and a description cut
 		// mid-word reads as broken; cut on a word boundary instead.
-		$desc = trim( preg_replace( '/\s+/', ' ', $edition['desc'] ) );
+		$desc = trim( preg_replace( '/\s+/', ' ', $desc ) );
 
 		if ( strlen( $desc ) > 160 ) {
 			$desc = rtrim( substr( $desc, 0, strrpos( substr( $desc, 0, 158 ), ' ' ) ), " ,.;:" ) . '…';
@@ -1279,8 +1288,8 @@ function arv_watch_seo_description( $ctx ) {
 		}
 	}
 
-	if ( '' !== $edition['place'] ) {
-		$bits[] = $edition['place'];
+	if ( '' !== $place ) {
+		$bits[] = $place;
 	}
 
 	return sprintf(
@@ -1314,11 +1323,31 @@ function arv_watch_seo_videos( $ctx ) {
 	$n       = 0;
 
 	foreach ( $edition['streams'] as $stream ) {
-		$title = '' !== trim( $stream['title'] ) ? $stream['title'] : $edition['name'];
-		$aired = '' !== $stream['aired'] ? $stream['aired'] : $edition['start'];
-		$stamp = $aired ? strtotime( $aired ) : 0;
+		// Read defensively rather than assumed present. arv_watch_events()
+		// is cached for fifteen minutes, so a stream in $edition can be a
+		// value this very request's arv_watch_clean() never produced: it is
+		// last cleaned under whatever plugin version wrote the transient,
+		// which on the first request after a deploy that adds a field is
+		// the version before this one. A direct $stream['aired'] on a key
+		// that version never set is not '', it is null, and null !== ''
+		// is true, so the fallback to the event date never ran and every
+		// segment silently dropped out of the markup entirely. Reproduced
+		// on the live site the day this shipped.
+		$title  = isset( $stream['title'] ) ? trim( (string) $stream['title'] ) : '';
+		$desc   = isset( $stream['desc'] ) ? trim( (string) $stream['desc'] ) : '';
+		$aired  = isset( $stream['aired'] ) && '' !== $stream['aired'] ? $stream['aired'] : $edition['start'];
+		$stamp  = $aired ? strtotime( $aired ) : 0;
+		$id     = isset( $stream['id'] ) ? $stream['id'] : '';
+		$url    = isset( $stream['url'] ) ? $stream['url'] : '';
+		$thumb  = isset( $stream['thumbnail'] ) ? $stream['thumbnail'] : '';
+		$mins   = isset( $stream['minutes'] ) ? (int) $stream['minutes'] : 0;
+		$views  = isset( $stream['views'] ) ? (int) $stream['views'] : 0;
 
-		if ( '' === trim( $title ) || ! $stamp ) {
+		if ( '' === $title ) {
+			$title = $edition['name'];
+		}
+
+		if ( '' === $title || ! $stamp ) {
 			continue;
 		}
 
@@ -1328,25 +1357,25 @@ function arv_watch_seo_videos( $ctx ) {
 			// Its own description where upstream has one, the title
 			// otherwise: an empty string here fails validation, and the
 			// title is at least true.
-			'description'  => '' !== trim( $stream['desc'] ) ? $stream['desc'] : $title,
-			'thumbnailUrl' => $stream['thumbnail'],
+			'description'  => '' !== $desc ? $desc : $title,
+			'thumbnailUrl' => $thumb,
 			'uploadDate'   => gmdate( 'c', $stamp ),
-			'embedUrl'     => 'https://www.youtube-nocookie.com/embed/' . $stream['id'],
-			'contentUrl'   => $stream['url'],
+			'embedUrl'     => 'https://www.youtube-nocookie.com/embed/' . $id,
+			'contentUrl'   => $url,
 			'url'          => arv_watch_segment_url( $ctx['url'], true, $ctx['year'], $stream ),
 		);
 
 		// Only where upstream actually has one. Duration is on 63 of 219
 		// rows, and an invented PT0M is worse than an absent field.
-		if ( $stream['minutes'] > 0 ) {
-			$video['duration'] = 'PT' . (int) $stream['minutes'] . 'M';
+		if ( $mins > 0 ) {
+			$video['duration'] = 'PT' . $mins . 'M';
 		}
 
-		if ( $stream['views'] > 0 ) {
+		if ( $views > 0 ) {
 			$video['interactionStatistic'] = array(
 				'@type'                => 'InteractionCounter',
 				'interactionType'      => array( '@type' => 'WatchAction' ),
-				'userInteractionCount' => $stream['views'],
+				'userInteractionCount' => $views,
 			);
 		}
 
