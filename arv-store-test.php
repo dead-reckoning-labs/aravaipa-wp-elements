@@ -3624,15 +3624,18 @@ t( 'a pinned year shows only that year',      1 === substr_count( $pinned, 'clas
 t( 'and hides the year switcher',             false === strpos( $pinned, 'arv-photos__years' ) );
 t( 'the right year survived',                 false !== strpos( $pinned, 'Javelina Jundred' ) );
 
-// ?year= is how the year links work, and a nonsense one falls back to
+// ?arv_year= is how the year links work, and a nonsense one falls back to
 // everything rather than an empty page.
-$_GET['year'] = '2026';
+$_GET['arv_year'] = '2026';
 t( 'a requested year filters',                1 === substr_count( arv_photos_render( array() ), 'class="arv-photos__card"' ) );
-$_GET['year'] = '1999';
+$_GET['arv_year'] = '1999';
 t( 'an unknown year shows everything',        2 === substr_count( arv_photos_render( array() ), 'class="arv-photos__card"' ) );
-$_GET['year'] = 'nonsense';
+$_GET['arv_year'] = 'nonsense';
 t( 'a non-numeric year shows everything',     2 === substr_count( arv_photos_render( array() ), 'class="arv-photos__card"' ) );
-unset( $_GET['year'] );
+// A bare "year" is WordPress's own query var and must never be read here.
+$_GET['year'] = '2026';
+t( 'a bare year= is ignored',                 2 === substr_count( arv_photos_render( array() ), 'class="arv-photos__card"' ) );
+unset( $_GET['arv_year'], $_GET['year'] );
 
 $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array();
 t( 'no galleries renders nothing at all',     '' === arv_photos_render( array() ) );
@@ -3668,6 +3671,71 @@ t( 'renders a real link, not a widget',  false !== strpos( arv_media_follow_rend
 t( 'no third-party script tag',          false === strpos( arv_media_follow_render( 'youtube', 'film' ), '<script' ) );
 t( 'the context is in the copy',         false !== strpos( arv_media_follow_render( 'youtube', 'broadcast' ), 'broadcast' ) );
 t( 'an unknown platform renders nothing', '' === arv_media_follow_render( 'tiktok', 'film' ) );
+
+
+
+echo "\nphotos, newest race first:\n";
+// A year on its own is not recency. It put "Across The Years" (December
+// 31st) at the top of 2026 above races that ran eight months earlier,
+// purely because the sort fell back to alphabetical inside a year and A
+// comes first. That was the complaint: recency was invisible.
+$GLOBALS['ARV_OPTIONS'][ ARV_RESULTS_OPTION ] = array(
+	array( 'name' => 'Coldwater Rumble', 'iso' => '2026-01-17' ),
+	array( 'name' => 'Black Canyon 100K', 'iso' => '2026-02-14' ),
+	array( 'name' => 'Whiskey Basin Trail Runs', 'iso' => '2026-04-11' ),
+	array( 'name' => 'Across The Years', 'iso' => '2026-12-31' ),
+	array( 'name' => 'Coldwater Rumble', 'iso' => '2025-01-18' ),
+);
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Across The Years', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/aty' ),
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/cw26' ),
+	array( 'race' => 'Whiskey Basin Trail Runs', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/wb' ),
+	array( 'race' => 'Black Canyon 100K', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/bc' ),
+	// No date anywhere for this one.
+	array( 'race' => 'Zzz Unknown Race', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/zzz' ),
+	array( 'race' => 'Coldwater Rumble', 'year' => 2025, 'by' => 'A', 'url' => 'https://x.test/cw25' ),
+);
+$dated = arv_photos_store_get();
+$order = array_map( function ( $r ) { return $r['race']; }, $dated );
+
+t( 'the newest race in the year is first',  'Across The Years' === $order[0] );
+t( 'then the next newest',                  'Whiskey Basin Trail Runs' === $order[1] );
+t( 'then the one before that',              'Black Canyon 100K' === $order[2] );
+t( 'and the oldest race of the year',       'Coldwater Rumble' === $order[3] );
+// Not knowing the day is not a reason to lose the year.
+t( 'an undated gallery ends its own year',  'Zzz Unknown Race' === $order[4] );
+t( 'and the year below still follows it',   2025 === $dated[5]['year'] );
+
+t( 'a date is read off the results store',  '2026-01-17' === arv_photos_race_date( 'Coldwater Rumble', 2026 ) );
+t( 'the right year of a repeating race',    '2025-01-18' === arv_photos_race_date( 'Coldwater Rumble', 2025 ) );
+t( 'an unknown race has no date',           '' === arv_photos_race_date( 'Nothing At All', 2026 ) );
+t( 'and neither does a yearless row',       '' === arv_photos_race_date( 'Coldwater Rumble', 0 ) );
+
+// Grouping must not undo the sort: it walks the rows in order and PHP
+// keeps insertion order, so the cards come out newest first too.
+$order_cards = array_map( function ( $c ) { return $c['race']; }, arv_photos_group( $dated ) );
+t( 'grouping preserves the order',          'Across The Years' === $order_cards[0] );
+
+echo "\nphotos, the year filter uses a query var WordPress does not own:\n";
+// "year" is one of WordPress's own reserved query vars for date archives.
+// Using it meant /photos/?year=2025 was read as a date archive and
+// canonical-redirected to /photos-2025/, a different page that pins its
+// own year and renders no controls, so the filter links looked like they
+// were deleting the search box and the year row.
+$year_links = arv_photos_render( array() );
+t( 'the year links use arv_year',           false !== strpos( $year_links, 'arv_year=2026' ) );
+t( 'and never a bare year=',                false === strpos( $year_links, '?year=' ) );
+
+$_GET['arv_year'] = '2025';
+$filtered = arv_photos_render( array() );
+t( 'arv_year filters the grid',             1 === substr_count( $filtered, 'class="arv-photos__card"' ) );
+// The whole point: the controls survive the filter.
+t( 'the search box survives',               false !== strpos( $filtered, 'data-arv-photos-search' ) );
+t( 'the year row survives',                 false !== strpos( $filtered, 'arv-photos__years' ) );
+unset( $_GET['arv_year'] );
+
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array();
+$GLOBALS['ARV_OPTIONS'][ ARV_RESULTS_OPTION ] = array();
 
 
 echo "\n$pass passed, $fail failed\n";

@@ -48,31 +48,144 @@ function arv_photos_store_get() {
 			continue;
 		}
 
+		$race = function_exists( 'arv_race_display_name' )
+			? arv_race_display_name( (string) $row['race'] )
+			: (string) $row['race'];
+		$year = isset( $row['year'] ) ? (int) $row['year'] : 0;
+
 		$out[] = array(
 			// Corrected on read for the same reason the results store does
 			// it: the same race is spelled two ways across four years of
 			// hand-built pages.
-			'race' => function_exists( 'arv_race_display_name' )
-				? arv_race_display_name( (string) $row['race'] )
-				: (string) $row['race'],
-			'year' => isset( $row['year'] ) ? (int) $row['year'] : 0,
+			'race' => $race,
+			'year' => $year,
 			'by'   => isset( $row['by'] ) ? (string) $row['by'] : '',
 			'url'  => (string) $row['url'],
+			// When the race actually ran, so the newest one is first. See
+			// arv_photos_race_date().
+			'iso'  => arv_photos_race_date( $race, $year ),
 		);
 	}
 
-	usort(
-		$out,
-		function ( $a, $b ) {
-			if ( $a['year'] === $b['year'] ) {
-				return strcasecmp( $a['race'], $b['race'] );
-			}
-
-			return $b['year'] - $a['year'];
-		}
-	);
+	usort( $out, 'arv_photos_compare' );
 
 	return $out;
+}
+
+/**
+ * Newest race first, which is the only order anyone wants a photo page in.
+ *
+ * Sorted on the real race date, not the year: a year on its own put
+ * "Across The Years" (December 31st) at the top of 2026 above races that
+ * ran eight months earlier, purely because the list fell back to
+ * alphabetical inside a year and A comes first. Recency was invisible,
+ * which was the complaint.
+ *
+ * A gallery with no date sorts to the end of its own year rather than out
+ * of it: not knowing the day is not a reason to lose the year.
+ *
+ * @param array $a
+ * @param array $b
+ * @return int
+ */
+function arv_photos_compare( $a, $b ) {
+	if ( $a['year'] !== $b['year'] ) {
+		return $b['year'] - $a['year'];
+	}
+
+	// '' sorts last within the year, which is what strcmp gives against a
+	// real date string only if the empty one is handled first.
+	if ( ( '' === $a['iso'] ) !== ( '' === $b['iso'] ) ) {
+		return ( '' === $a['iso'] ) ? 1 : -1;
+	}
+
+	if ( $a['iso'] !== $b['iso'] ) {
+		return strcmp( $b['iso'], $a['iso'] );
+	}
+
+	return strcasecmp( $a['race'], $b['race'] );
+}
+
+/**
+ * When a race actually ran, for a race name and a year.
+ *
+ * Read from the results archive and the race calendar rather than stored
+ * on the gallery, because those two already know: the archive is every
+ * race that has run, the calendar is every race that will. A gallery is
+ * just a link to pictures and has no opinion about the date.
+ *
+ * Matched on the same key the rest of this file groups by, so "Silverton
+ * Alpine" and "Silverton Alpine Marathon" find the same date.
+ *
+ * @param string $race
+ * @param int    $year
+ * @return string ISO date, or '' when nothing knows.
+ */
+function arv_photos_race_date( $race, $year ) {
+	if ( ! $year ) {
+		return '';
+	}
+
+	$dates = arv_photos_race_dates();
+	$key   = arv_photos_race_key( $race ) . '|' . $year;
+
+	return isset( $dates[ $key ] ) ? $dates[ $key ] : '';
+}
+
+/**
+ * Every race date the site knows, keyed by race key and year.
+ *
+ * Deliberately not memoised in a static, for the same reason
+ * arv_films_race_names() is not. A static here caches whatever the two
+ * stores happened to hold the first time anything asked, and "the first
+ * thing to ask" is not something this function gets to choose: in the
+ * test suite it was an earlier render against empty stores, and every
+ * gallery came back undated for the rest of the run. This was written
+ * with a static and a comment claiming it was safe. It was not.
+ *
+ * Both stores cache their own reads, so recomputing is string work over a
+ * couple of hundred rows rather than queries.
+ *
+ * @return array<string, string>
+ */
+function arv_photos_race_dates() {
+	$dates = array();
+
+	$sources = array();
+
+	if ( function_exists( 'arv_results_store_get' ) ) {
+		$sources[] = arv_results_store_get();
+	}
+
+	if ( function_exists( 'arv_race_store_get' ) ) {
+		$sources[] = arv_race_store_get();
+	}
+
+	foreach ( $sources as $rows ) {
+		foreach ( (array) $rows as $row ) {
+			if ( empty( $row['name'] ) || empty( $row['iso'] ) ) {
+				continue;
+			}
+
+			$iso  = (string) $row['iso'];
+			$year = (int) substr( $iso, 0, 4 );
+
+			if ( ! $year ) {
+				continue;
+			}
+
+			$key = arv_photos_race_key( (string) $row['name'] ) . '|' . $year;
+
+			// First source wins. Results are read before the calendar, so a
+			// race that has run keeps the date it actually ran on rather
+			// than a provisional one still sitting on the calendar.
+			if ( ! isset( $dates[ $key ] ) ) {
+				$dates[ $key ] = $iso;
+			}
+		}
+	}
+
+	return $dates;
 }
 
 /**
@@ -309,12 +422,20 @@ function arv_photos_render( $args = array() ) {
 	$intro   = isset( $args['intro'] ) ? trim( (string) $args['intro'] ) : '';
 
 	// A year can be pinned by the element, which is what a per-year page
-	// uses, or chosen with ?year=, which is what the filter links use.
+	// uses, or chosen with ?arv_year=, which is what the filter links use.
+	//
+	// Namespaced, and it has to be: "year" is one of WordPress's own
+	// reserved query vars for date archives. Using it meant
+	// /photos/?year=2025 was parsed as a date archive, and WordPress's
+	// canonical redirect sent the request to /photos-2025/ instead, which
+	// is a different page that pins its own year and therefore renders no
+	// controls at all. The filter links looked like they were deleting the
+	// search box and the year row.
 	$pinned = isset( $args['year'] ) ? (int) $args['year'] : 0;
 	$wanted = $pinned;
 
-	if ( ! $wanted && isset( $_GET['year'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$wanted = (int) $_GET['year']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! $wanted && isset( $_GET['arv_year'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$wanted = (int) $_GET['arv_year']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	}
 
 	$years = arv_photos_years( $rows );
@@ -412,14 +533,14 @@ function arv_photos_controls( $years, $current, $photographers ) {
 			. esc_attr__( 'Filter by year', 'aravaipa-elements' ) . '">';
 
 		$out .= '<a class="arv-photos__year' . ( $current ? '' : ' is-current' ) . '"'
-			. ' href="' . esc_url( remove_query_arg( 'year' ) ) . '"'
+			. ' href="' . esc_url( remove_query_arg( 'arv_year' ) ) . '"'
 			. ( $current ? '' : ' aria-current="true"' ) . '>'
 			. esc_html__( 'All years', 'aravaipa-elements' ) . '</a>';
 
 		foreach ( $years as $year ) {
 			$is = ( $year === $current );
 			$out .= '<a class="arv-photos__year' . ( $is ? ' is-current' : '' ) . '"'
-				. ' href="' . esc_url( add_query_arg( 'year', $year ) ) . '"'
+				. ' href="' . esc_url( add_query_arg( 'arv_year', $year ) ) . '"'
 				. ( $is ? ' aria-current="true"' : '' ) . '>'
 				. esc_html( $year ) . '</a>';
 		}
