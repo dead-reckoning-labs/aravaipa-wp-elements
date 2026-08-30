@@ -180,7 +180,53 @@ function arv_films_clean( $raw ) {
 		);
 	}
 
-	return arv_films_dedupe( $playlists );
+	return arv_films_sort( arv_films_dedupe( $playlists ) );
+}
+
+/**
+ * Newest film first, inside each playlist.
+ *
+ * The API hands these back in YouTube playlist order, which is whatever
+ * order somebody dragged them into in Studio: on the Documentaries
+ * playlist that put a 2019 film above a 2024 one and left The Cutoff,
+ * the newest film on the site, fourteenth.
+ *
+ * Sorted here rather than left to aravaipa-films.js because the sort
+ * control on the page says "Newest first" and is selected by default, so
+ * that is a claim the HTML has to be able to make on its own. The script
+ * only ever ran its sort in response to a change event, so until a
+ * visitor touched a control the page and the control disagreed, and a
+ * crawler never saw the order at all.
+ *
+ * Within a playlist only, for the same reason the script sorts that way:
+ * the sections are the two playlists, and merging them would answer a
+ * question nobody asked.
+ *
+ * @param array $playlists
+ * @return array
+ */
+function arv_films_sort( $playlists ) {
+	foreach ( $playlists as $i => $playlist ) {
+		$films = $playlist['films'];
+
+		usort(
+			$films,
+			function ( $a, $b ) {
+				$ta = $a['published'] ? strtotime( $a['published'] ) : 0;
+				$tb = $b['published'] ? strtotime( $b['published'] ) : 0;
+
+				if ( $ta === $tb ) {
+					return strcasecmp( $a['title'], $b['title'] );
+				}
+
+				return $tb - $ta;
+			}
+		);
+
+		$playlists[ $i ]['films'] = $films;
+	}
+
+	return $playlists;
 }
 
 /**

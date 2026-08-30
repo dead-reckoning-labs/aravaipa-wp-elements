@@ -182,4 +182,10 @@
 			apply();
 		} );
 	}
+
+	// Deliberately not called on load. The server already renders the
+	// shelf newest-first, which is what the sort control says by default,
+	// so running this immediately would reorder nothing and only risk
+	// disagreeing with the HTML a crawler was served. It runs when a
+	// control actually changes, and not before.
 } )();

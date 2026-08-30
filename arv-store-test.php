@@ -3785,5 +3785,43 @@ $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array();
 $GLOBALS['ARV_OPTIONS'][ ARV_RESULTS_OPTION ] = array();
 
 
+
+echo "\nfilms, newest first without touching a control:\n";
+// The API hands films back in YouTube playlist order, which is whatever
+// order somebody dragged them into in Studio. On the real Documentaries
+// playlist that left The Cutoff, the newest film on the site,
+// fourteenth, under a sort control that said "Newest first" and meant
+// it only once a visitor changed something.
+$unsorted = arv_films_clean(
+	array(
+		array( 'key' => 'docs', 'title' => 'Documentaries', 'films' => array(
+			array( 'id' => 'old00000001', 'title' => 'An Old One', 'description' => '', 'publishedAt' => '2019-03-14T00:00:00Z', 'thumbnail' => '' ),
+			array( 'id' => 'new00000001', 'title' => 'The Newest', 'description' => '', 'publishedAt' => '2026-04-23T00:00:00Z', 'thumbnail' => '' ),
+			array( 'id' => 'mid00000001', 'title' => 'A Middle One', 'description' => '', 'publishedAt' => '2024-04-26T00:00:00Z', 'thumbnail' => '' ),
+		) ),
+		array( 'key' => 'originals', 'title' => 'Aravaipa Originals', 'films' => array(
+			array( 'id' => 'org00000001', 'title' => 'Older Original', 'description' => '', 'publishedAt' => '2025-09-05T00:00:00Z', 'thumbnail' => '' ),
+			array( 'id' => 'org00000002', 'title' => 'Newer Original', 'description' => '', 'publishedAt' => '2026-02-09T00:00:00Z', 'thumbnail' => '' ),
+		) ),
+	)
+);
+$doc_order = array_column( $unsorted[0]['films'], 'title' );
+t( 'the newest film leads its playlist',   'The Newest' === $doc_order[0] );
+t( 'then the next newest',                 'A Middle One' === $doc_order[1] );
+t( 'and the oldest is last',               'An Old One' === $doc_order[2] );
+// Within a playlist, not across: the sections are the two playlists.
+$org_order = array_column( $unsorted[1]['films'], 'title' );
+t( 'the second playlist sorts too',        'Newer Original' === $org_order[0] );
+t( 'and stays its own section',            2 === count( $unsorted[1]['films'] ) );
+t( 'the sections keep their own order',    'Documentaries' === $unsorted[0]['title'] );
+
+// The HTML itself has to carry the order, since that is what the default
+// sort control claims and what a crawler is served.
+$GLOBALS['_transients']['arv_films'] = $unsorted;
+$sorted_html = arv_films_render( array() );
+t( 'the rendered shelf leads with it',     strpos( $sorted_html, 'The Newest' ) < strpos( $sorted_html, 'An Old One' ) );
+$GLOBALS['_transients'] = array();
+
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
