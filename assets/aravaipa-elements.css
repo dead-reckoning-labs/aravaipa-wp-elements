@@ -6451,3 +6451,132 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   Media hub: cards for Watch, Films, Podcasts, Photos and the blog.
+
+   Same dark family as the three pages it links to, since this is the front
+   door to all of them and should read as one product walking in.
+   --------------------------------------------------------------------------- */
+.arv-media-hub {
+	box-sizing: border-box;
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-media-hub * {
+	box-sizing: inherit;
+}
+
+.arv-media-hub__inner {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem 2.5rem;
+}
+
+.arv-media-hub__heading {
+	margin: 0;
+	text-align: center;
+	font-size: clamp(26px, 3.4vw, 34px);
+	font-weight: 700;
+	line-height: 1.15;
+	color: #fff;
+}
+
+.arv-media-hub__intro {
+	margin: 0.5rem auto 0;
+	max-width: 60ch;
+	text-align: center;
+	font-size: var(--arv-fs-body);
+	line-height: 1.55;
+	color: rgba(244, 244, 244, 0.72);
+}
+
+.arv-media-hub__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 1.25rem;
+	margin-top: 1.75rem;
+}
+
+.arv-media-hub__card,
+.arv-media-hub__card:link,
+.arv-media-hub__card:visited,
+.arv-media-hub__card:hover,
+.arv-media-hub__card:focus {
+	display: flex;
+	flex-direction: column;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--arv-radius-card);
+	overflow: hidden;
+	color: #f4f4f4;
+	text-decoration: none;
+}
+
+.arv-media-hub__card:hover,
+.arv-media-hub__card:focus {
+	border-color: rgba(255, 255, 255, 0.3);
+}
+
+.arv-media-hub__thumb {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	background: #000;
+}
+
+/* A card with no live thumbnail (Podcasts, Photos, Articles) gets a flat
+   panel of its own instead, rather than an empty grey box standing in for
+   an image that was never coming. */
+.arv-media-hub__card--plain {
+	justify-content: center;
+	min-height: 140px;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.arv-media-hub__body {
+	display: block;
+	padding: 1rem 1.1rem 1.1rem;
+}
+
+.arv-media-hub__card--plain .arv-media-hub__body {
+	padding: 1.5rem 1.1rem;
+}
+
+.arv-media-hub__title {
+	display: block;
+	font-size: var(--arv-fs-name);
+	font-weight: 700;
+	color: #fff;
+}
+
+.arv-media-hub__desc {
+	display: block;
+	margin-top: 0.35rem;
+	font-size: var(--arv-fs-meta);
+	line-height: 1.4;
+	color: rgba(244, 244, 244, 0.68);
+}
+
+@media (max-width: 767px) {
+	.arv-media-hub__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
+
+	.arv-media-hub__grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (max-width: 480px) {
+	.arv-media-hub__grid {
+		grid-template-columns: 1fr;
+	}
+}
