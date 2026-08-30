@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.49.0
+ * Version:           0.50.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.49.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.50.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -60,6 +60,10 @@ require_once ARV_ELEMENTS_PATH . 'includes/films-store.php';
 // Aravaipa's podcasts, read from their own RSS feeds. Loaded
 // unconditionally for the same reason as Watch and Films above it.
 require_once ARV_ELEMENTS_PATH . 'includes/podcasts-store.php';
+
+// Race photo galleries, Aravaipa's own and outside photographers'.
+// Loaded unconditionally for the same reason as the three stores above it.
+require_once ARV_ELEMENTS_PATH . 'includes/photos-store.php';
 
 // The Media hub: cards for the above plus Photos and the blog. Loaded
 // unconditionally for the same reason as the three stores above it.
@@ -123,6 +127,7 @@ function arv_elements_register() {
 		'films',
 		'podcasts',
 		'podcast-show',
+		'photos',
 		'media-hub',
 	);
 
@@ -220,6 +225,16 @@ function arv_elements_assets() {
 	wp_enqueue_script(
 		'aravaipa-films',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-films.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
+	// The Photos grid's search and photographer filter. No-ops anywhere
+	// that markup is not present, same as every other script here.
+	wp_enqueue_script(
+		'aravaipa-photos',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-photos.js',
 		array(),
 		ARV_ELEMENTS_VERSION,
 		true
