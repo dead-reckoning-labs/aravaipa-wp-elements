@@ -181,6 +181,24 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 			continue;
 		}
 
+		// "Happening now" only while the race is actually running. This was
+		// simply true for every row in the window, so a race stayed flagged
+		// as happening now for the whole ten days the scraper has to pick it
+		// up: Black Bear and Rock Hawk both still said it the morning after
+		// they finished, on the same page whose race week block, three
+		// inches above, correctly said COMPLETED. That block was already
+		// reading the board's real clock; this was reading a date.
+		$board    = function_exists( 'arv_live_store_find' ) ? arv_live_store_find( $race['live'] ) : null;
+		$start_ts = ( null !== $board && '' !== $board['start'] ) ? strtotime( $board['start'] ) : 0;
+
+		// No board entry means no real clock to read, so fall back to the
+		// date: a race whose day it is, is happening. That is what this did
+		// for everything before, and for a race the board has never carried
+		// it remains the only answer available.
+		$current = $start_ts
+			? ( 'live' === arv_races_live_state( $race, $board, $start_ts ) )
+			: ( $race['iso'] === $today || ( '' !== $race['end'] && $race['iso'] <= $today && $today <= $race['end'] ) );
+
 		$rows[] = array(
 			'name'         => $race['name'],
 			'iso'          => $race['iso'],
@@ -188,7 +206,7 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 			'live'         => $race['live'],
 			'ultrasignup'  => '',
 			'ultrarunning' => '',
-			'current'      => true,
+			'current'      => $current,
 		);
 	}
 

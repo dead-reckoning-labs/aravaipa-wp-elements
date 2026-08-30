@@ -696,8 +696,58 @@ arv_results_store_set( array(
 $GLOBALS['NOW'] = '2026-08-30';   // Rock Hawk ran on the 29th
 $now = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'a race that just ran appears',    false !== strpos( arv_test_archive_only( $now ), 'Rock Hawk' ) );
-t( 'flagged as happening now',        false !== strpos( arv_test_archive_only( $now ), 'arv-results__flag' ) );
+// It appears, because the scraper has not caught up, but it is not
+// "Happening now": it finished yesterday. This asserted the opposite until
+// Jamil saw Black Bear and Rock Hawk both still claiming to be happening
+// the morning after they ran, three inches under a race week block that
+// correctly said COMPLETED. The flag was true for every row in the ten-day
+// window the scraper is given, rather than for a race actually running.
+t( 'but is not flagged as happening now', false === strpos( arv_test_archive_only( $now ), 'arv-results__flag' ) );
 t( 'above the older stored result',   strpos( arv_test_archive_only( $now ), 'Rock Hawk' ) < strpos( arv_test_archive_only( $now ), 'Coldwater Rumble' ) );
+
+// On the day itself the flag is decided by the board's own clock, not by
+// the date. Seeded here so this exercises that path rather than the
+// no-board fallback: 12:00Z gun, 22:00Z cutoff, which is what the real
+// board carried for Rock Hawk that day.
+arv_live_store_set( array(
+	array(
+		'slug'   => 'rock_hawk-2026',
+		'start'  => '2026-08-29T12:00:00.000Z',
+		'cutoff' => '2026-08-29T22:00:00.000Z',
+		'offset' => -6,
+		'races'  => array(),
+	),
+	// Black Bear ran the same day. Seeded too, or it falls back to the date
+	// and leaves a flag on the page that this is trying to assert is gone.
+	array(
+		'slug'   => 'black_bear-2026',
+		'start'  => '2026-08-29T10:00:00.000Z',
+		'cutoff' => '2026-08-29T22:00:00.000Z',
+		'offset' => -4,
+		'races'  => array(),
+	),
+) );
+
+$GLOBALS['NOW']    = '2026-08-29';
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T15:00:00Z' );   // three hours in
+$during = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'during the race it is flagged',   false !== strpos( arv_test_archive_only( $during ), 'arv-results__flag' ) );
+
+// Past the cutoff, still the same calendar day. This is the case a date
+// comparison cannot get right and the one the board exists for.
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T23:00:00Z' );
+$after = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'past the cutoff it is not',       false === strpos( arv_test_archive_only( $after ), 'arv-results__flag' ) );
+
+
+// Before the gun, likewise.
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T08:00:00Z' );
+$before = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'and before the gun it is not',    false === strpos( arv_test_archive_only( $before ), 'arv-results__flag' ) );
+
+arv_live_store_set( array() );
+$GLOBALS['NOW']    = '2026-08-30';
+$GLOBALS['NOW_TS'] = null;
 
 // Turned off, it is the store and nothing else.
 $off = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false' ) );
@@ -729,7 +779,10 @@ arv_results_store_set( array(
 	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=77', 'ultrarunning' => '' ),
 ) );
 $half = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
-t( 'the unscraped race keeps its flag', 1 === substr_count( arv_test_archive_only( $half ), 'arv-results__flag' ) );
+// Neither is flagged the day after, scraped or not: the flag tracks whether
+// a race is running, and the dedupe is what this is really checking.
+t( 'the unscraped race still appears', false !== strpos( arv_test_archive_only( $half ), 'Black Bear' ) );
+t( 'and neither is flagged the day after', false === strpos( arv_test_archive_only( $half ), 'arv-results__flag' ) );
 t( 'and it is the right one',           false !== strpos( $half, 'Black Bear' ) );
 t( 'the scraped one is not duplicated', 1 === substr_count( arv_test_archive_only( $half ), 'Rock Hawk' ) );
 
