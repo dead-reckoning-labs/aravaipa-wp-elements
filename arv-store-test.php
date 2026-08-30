@@ -682,6 +682,23 @@ t( 'and draws no empty table',        false === strpos( $y, 'arv-results__table'
 $limit = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'limit' => '1', 'layout' => 'date', 'upcoming' => 'false' ) );
 t( 'limit is honoured',               1 === substr_count( $limit, 'arv-results__row' ) );
 
+
+echo "\nultrasignup results link, derived from the register url:\n";
+// 2026 uses "dtid", every row before it used "did". The regex only ever
+// matched "did", so this returned '' for every current race and the one
+// call site that reaches it with nothing else to fall back on
+// (arv_upcoming_races_action(), for a race with no live board) never had
+// anything to show. Confirmed live: UltraSignup redirects
+// results_event.aspx?dtid=N straight to the canonical ?did=N for four
+// different races, so passing the id through under whichever name it
+// arrived as needs no second request to resolve it.
+t( 'derives from a dtid registration link', 'https://ultrasignup.com/results_event.aspx?dtid=63630' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx?dtid=63630' ) );
+t( 'and from the older did shape too',      'https://ultrasignup.com/results_event.aspx?did=131056' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx?did=131056' ) );
+t( 'ignoring other query params after it',  'https://ultrasignup.com/results_event.aspx?dtid=63630' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx?dtid=63630&sid=1' ) );
+t( 'not a different site',                  '' === arv_upcoming_races_results_url( 'https://example.com/register.aspx?dtid=63630' ) );
+t( 'not a bare url',                        '' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx' ) );
+t( 'not an empty one',                      '' === arv_upcoming_races_results_url( '' ) );
+
 echo "\nresults: a race that has just run:\n";
 // The scraper lags the calendar. A race that ran on Saturday has results on
 // the live board on Sunday and no scraped row until the next run, so the
@@ -693,6 +710,9 @@ arv_results_store_set( array(
 $GLOBALS['NOW'] = '2026-08-30';   // Rock Hawk ran on the 29th
 $now = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'a race that just ran appears',    false !== strpos( arv_test_archive_only( $now ), 'Rock Hawk' ) );
+// Its UltraSignup link too, derived from the calendar's own registration
+// link rather than left blank until the scraper's next run.
+t( 'with an ultrasignup link already on it', false !== strpos( arv_test_archive_only( $now ), 'ultrasignup.com/results_event.aspx?dtid=63630' ) );
 // It appears, because the scraper has not caught up, but it is not
 // "Happening now": it finished yesterday. This asserted the opposite until
 // Jamil saw Black Bear and Rock Hawk both still claiming to be happening

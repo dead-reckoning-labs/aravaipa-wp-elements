@@ -199,12 +199,21 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 			? ( 'live' === arv_races_live_state( $race, $board, $start_ts ) )
 			: ( $race['iso'] === $today || ( '' !== $race['end'] && $race['iso'] <= $today && $today <= $race['end'] ) );
 
+		// Derived from the calendar's own registration link rather than left
+		// blank until the scraper's next run. UltraSignup's results page for
+		// a race is the same id as its registration page under a different
+		// filename, so a race that has never been scraped can still carry an
+		// UltraSignup link the moment it finishes, not up to ten days later.
+		$ultrasignup = function_exists( 'arv_upcoming_races_results_url' )
+			? arv_upcoming_races_results_url( $race['register'] )
+			: '';
+
 		$rows[] = array(
 			'name'         => $race['name'],
 			'iso'          => $race['iso'],
 			'display'      => $race['display'],
 			'live'         => $race['live'],
-			'ultrasignup'  => '',
+			'ultrasignup'  => $ultrasignup,
 			'ultrarunning' => '',
 			'current'      => $current,
 		);
