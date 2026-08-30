@@ -198,3 +198,178 @@ function arv_results_rest_set( $request ) {
 		'previous' => $current,
 	);
 }
+
+define( 'ARV_ULTRARUNNING_OPTION', 'arv_race_ultrarunning' );
+
+/**
+ * UltraRunning Magazine result pages, keyed by race.
+ *
+ * Unlike UltraSignup, this one cannot be derived. UltraSignup's results page
+ * is the race's own registration id under a different filename, so it falls
+ * out of data the calendar already holds. UltraRunning's is
+ * /calendar/event/{slug}/race/{id}/results, and neither part is guessable
+ * from anything on this side: the slug is their editorial name for the race
+ * ("black-canyon-trail" for Black Canyon Ultras, "jackpot-ultra-running-
+ * festival" for Jackpot Ultras), and the id is theirs. Guessing the slug and
+ * asking returns 403, and their site sits behind a bot challenge that a real
+ * browser bounces off, which is there precisely to stop this being looked
+ * up automatically. So it is entered once and remembered.
+ *
+ * Once, though, and not once a year: their id identifies the race rather
+ * than the edition, and the same URL keeps working every season with the
+ * year selected on their end. That is the whole reason this is worth
+ * storing rather than pasting onto a page each time.
+ *
+ * Keyed by arv_results_race_key(), the same normaliser the archive groups
+ * editions with, so one entry covers every spelling of a race across every
+ * year rather than needing a row per edition.
+ *
+ * @return array<string, string> Race key => path, e.g.
+ *                               "black-canyon-trail/race/44116".
+ */
+function arv_results_ultrarunning_store_get() {
+	$stored = get_option( ARV_ULTRARUNNING_OPTION, array() );
+
+	return is_array( $stored ) ? $stored : array();
+}
+
+/**
+ * Replace the stored map wholesale.
+ *
+ * Takes whatever shape the person pasting it had to hand: a full results
+ * URL copied out of the address bar, or just the "{slug}/race/{id}" part.
+ * Asking someone to strip a URL down by hand before pasting it is asking
+ * them to make a mistake that shows up later as a dead link.
+ *
+ * @param array<string, string> $map Race name or key => URL or path.
+ * @return int How many entries were stored.
+ */
+function arv_results_ultrarunning_store_set( $map ) {
+	$clean = array();
+
+	foreach ( (array) $map as $name => $value ) {
+		$key  = function_exists( 'arv_results_race_key' )
+			? arv_results_race_key( (string) $name )
+			: strtolower( trim( (string) $name ) );
+		$path = arv_results_ultrarunning_path( $value );
+
+		if ( '' === $key || '' === $path ) {
+			continue;
+		}
+
+		$clean[ $key ] = $path;
+	}
+
+	ksort( $clean );
+
+	update_option( ARV_ULTRARUNNING_OPTION, $clean, false );
+
+	return count( $clean );
+}
+
+/**
+ * The "{slug}/race/{id}" part of an UltraRunning results URL.
+ *
+ * Validated rather than trusted, and deliberately narrow: anything that is
+ * not recognisably one of their race paths returns '' and is dropped, so a
+ * typo becomes a missing link rather than a link to nowhere. The trailing
+ * "/results" and any "#selected_year" anchor are stripped, because those are
+ * ours to add back consistently.
+ *
+ * @param string $value Full URL or bare path.
+ * @return string
+ */
+function arv_results_ultrarunning_path( $value ) {
+	$value = trim( (string) $value );
+
+	if ( '' === $value ) {
+		return '';
+	}
+
+	if ( preg_match( '#(?:^|ultrarunning\.com/)(?:calendar/event/)?([a-z0-9-]+)/race/(\d+)#i', $value, $m ) ) {
+		return strtolower( $m[1] ) . '/race/' . $m[2];
+	}
+
+	return '';
+}
+
+/**
+ * The UltraRunning results URL for a race, or '' when none is on file.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_results_ultrarunning_url( $name ) {
+	if ( ! function_exists( 'arv_results_race_key' ) ) {
+		return '';
+	}
+
+	$map = arv_results_ultrarunning_store_get();
+	$key = arv_results_race_key( (string) $name );
+
+	if ( '' === $key || ! isset( $map[ $key ] ) ) {
+		return '';
+	}
+
+	return 'https://ultrarunning.com/calendar/event/' . $map[ $key ] . '/results';
+}
+
+/**
+ * Write route for the UltraRunning map.
+ *
+ * Same shape as the cutoff overrides: a wholesale replace over REST, so the
+ * map can be maintained from a script or a paste without a plugin release
+ * and without an admin screen nobody would visit twice a year.
+ */
+function arv_results_ultrarunning_register_rest_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/races/ultrarunning',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_results_ultrarunning_rest_set',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_results_ultrarunning_register_rest_route' );
+
+/**
+ * POST /wp-json/aravaipa/v1/races/ultrarunning
+ *
+ * Body: { "races": { "Black Canyon Ultras": "https://ultrarunning.com/...", ... } }
+ *
+ * @param WP_REST_Request $request
+ * @return array
+ */
+function arv_results_ultrarunning_rest_set( $request ) {
+	$body  = (array) $request->get_json_params();
+	$races = isset( $body['races'] ) && is_array( $body['races'] ) ? $body['races'] : array();
+
+	if ( empty( $races ) ) {
+		return array(
+			'status' => 'error',
+			'reason' => 'no races given',
+		);
+	}
+
+	// Reported rather than silently dropped: a paste with a typo in it
+	// should say so, not quietly store one fewer race than was sent.
+	$rejected = array();
+
+	foreach ( $races as $name => $value ) {
+		if ( '' === arv_results_ultrarunning_path( $value ) ) {
+			$rejected[] = (string) $name;
+		}
+	}
+
+	$stored = arv_results_ultrarunning_store_set( $races );
+
+	return array(
+		'status'   => 'ok',
+		'stored'   => $stored,
+		'rejected' => $rejected,
+	);
+}
