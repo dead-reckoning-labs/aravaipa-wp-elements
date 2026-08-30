@@ -6965,6 +6965,263 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Photos: a card per race carrying the gallery's own cover picture.
+
+   Same dark family as Watch, Films and Podcasts. The cover is the point of
+   this element, so it gets the whole top of the card and the text sits
+   under it, unlike the media hub's cards where the text leads.
+   --------------------------------------------------------------------------- */
+.arv-photos {
+	box-sizing: border-box;
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-photos * {
+	box-sizing: inherit;
+}
+
+.arv-photos__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2.5rem 1.25rem 3rem;
+}
+
+.arv-photos__heading {
+	margin: 0;
+	font-size: var(--arv-fs-h2);
+	font-weight: 900;
+	letter-spacing: -0.5px;
+	text-align: center;
+	color: #fff;
+}
+
+.arv-photos__intro {
+	margin: 0.5rem 0 0;
+	font-size: var(--arv-fs-body);
+	text-align: center;
+	color: rgba(244, 244, 244, 0.75);
+}
+
+.arv-photos__controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 1.75rem 0 0;
+}
+
+.arv-photos__search-field {
+	display: flex;
+	flex: 1 1 14rem;
+	min-width: 0;
+}
+
+.arv-photos__search-input::-webkit-search-cancel-button,
+.arv-photos__search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.arv-photos__search-field .arv-photos__search-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius);
+	/* 16px, same iOS-zoom reason as every other search input here. */
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+}
+
+.arv-photos__search-input::placeholder {
+	color: rgba(244, 244, 244, 0.5);
+}
+
+.arv-photos__search-input:focus-visible,
+.arv-photos__by:focus-visible {
+	outline: 2px solid #4ade80;
+	outline-offset: 1px;
+}
+
+.arv-photos__by {
+	padding: 0.6rem 2rem 0.6rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+}
+
+.arv-photos__years {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+}
+
+.arv-photos__year,
+.arv-photos__year:link,
+.arv-photos__year:visited {
+	padding: 0.4rem 0.7rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.8);
+	text-decoration: none;
+}
+
+.arv-photos__year:hover,
+.arv-photos__year:focus {
+	border-color: rgba(255, 255, 255, 0.5);
+	color: #fff;
+}
+
+.arv-photos__year.is-current,
+.arv-photos__year.is-current:link,
+.arv-photos__year.is-current:visited {
+	background: #4ade80;
+	border-color: #4ade80;
+	color: #10201f;
+}
+
+.arv-photos__count {
+	margin: 0.75rem 0 0;
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.62);
+}
+
+.arv-photos__empty {
+	margin: 1.5rem 0 0;
+	font-size: var(--arv-fs-body);
+	color: rgba(244, 244, 244, 0.75);
+}
+
+.arv-photos__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	gap: 1rem;
+	margin: 1.5rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-photos__card {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--arv-radius);
+	background: rgba(255, 255, 255, 0.04);
+}
+
+/* Fourth time for the same specificity tie the calendar, the Watch archive
+   and the Films shelf all hit: the card sets its own unconditional
+   `display: flex`, which beats the browser's `[hidden] { display: none }`
+   on source order, so the filter would set the attribute and the grid
+   would not change. */
+.arv-photos__card[hidden] {
+	display: none;
+}
+
+.arv-photos__link {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	text-decoration: none;
+	color: inherit;
+}
+
+.arv-photos__cover {
+	display: block;
+	width: 100%;
+	/* Both of these, not just aspect-ratio. The img carries width and
+	   height attributes so the browser can reserve the space before the
+	   picture arrives, and a used height means aspect-ratio has no missing
+	   dimension left to determine, so it is ignored: measured at 277x320
+	   against a 277x185 placeholder in the same grid. `height: auto` hands
+	   the height back to aspect-ratio and the two agree again. */
+	height: auto;
+	aspect-ratio: 3 / 2;
+	object-fit: cover;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+/* No cover to be had from that host. A deliberate panel, so the card still
+   reads as a card beside the ones that have pictures. */
+.arv-photos__cover--none {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: rgba(244, 244, 244, 0.28);
+}
+
+.arv-photos__body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	padding: 0.75rem 0.9rem 0.85rem;
+}
+
+.arv-photos__race {
+	font-size: var(--arv-fs-body);
+	font-weight: 700;
+	color: #fff;
+}
+
+.arv-photos__year-tag {
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.6);
+}
+
+.arv-photos__by-name {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: #4ade80;
+}
+
+.arv-photos__more {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	padding: 0 0.9rem 0.85rem;
+}
+
+.arv-photos__more-link,
+.arv-photos__more-link:link,
+.arv-photos__more-link:visited {
+	padding: 0.15rem 0.45rem;
+	border: 1px solid rgba(74, 222, 128, 0.45);
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: #4ade80;
+	text-decoration: none;
+}
+
+.arv-photos__more-link:hover,
+.arv-photos__more-link:focus {
+	background: rgba(74, 222, 128, 0.12);
+}
+
+@media (max-width: 767px) {
+	.arv-photos__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
+
+	.arv-photos__grid {
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	}
+}
+
+/* ---------------------------------------------------------------------------
    Media sub-nav: the Watch / Films / Podcasts / Photos / Articles strip
    that sits above each of those pages.
 
