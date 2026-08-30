@@ -2018,6 +2018,12 @@
 	flex: 0 0 auto;
 	padding: 0.3rem 0.6rem;
 	border: 1px solid var(--arv-teal-deep);
+	/* The one button v0.21.36's rounding pass missed. Every other CTA in the
+	   plugin already takes --arv-radius: the race cards, the featured block,
+	   the map's popup buttons, the hero, the Watch pages. These stayed sharp
+	   rectangles on the races and results pages, which between them are most
+	   of the buttons a visitor actually sees. */
+	border-radius: var(--arv-radius);
 	color: var(--arv-teal-deep);
 	font-size: var(--arv-fs-btn);
 	font-weight: 700;

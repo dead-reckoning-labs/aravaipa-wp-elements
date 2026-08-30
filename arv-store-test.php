@@ -2946,6 +2946,26 @@ t( 'and matches the input radius',        1 === preg_match( '/\.leaflet-bar\.arv
 t( 'the link fills the wrapper',          1 === preg_match( '/\.arv-map__nearme a,[^{]*\{[^}]*height: 100%;/s', $css ) );
 t( 'and inherits its rounded corners',    1 === preg_match( '/\.arv-map__nearme a,[^{]*\{[^}]*border-radius: inherit;/s', $css ) );
 
+// Every button in the plugin takes the shared radius scale. This is a set
+// rather than one assertion because the last rounding pass missed
+// .arv-calendar__action, and the races and results pages, which is where
+// most of the buttons a visitor sees actually live, kept sharp rectangles
+// for fifteen releases without anyone noticing.
+foreach ( array(
+	'arv-hero__cta',
+	'arv-distance__cta',
+	'arv-races__cta',
+	'arv-featured__cta',
+	'arv-calendar__action',
+	'arv-map__popup-cta',
+	'arv-watch-race__cta',
+) as $button ) {
+	t(
+		"$button is rounded",
+		1 === preg_match( '/\.' . preg_quote( $button, '/' ) . '[^{}]*\{[^}]*border-radius: var\(--arv-radius\);/s', $css )
+	);
+}
+
 // "Every race" over "Find a race near you" said the same thing twice.
 $el = $GLOBALS['EL']['aravaipa-race-map'] ?? null;
 t( 'the map element is registered',       null !== $el );
