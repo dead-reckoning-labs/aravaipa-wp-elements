@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.49.0
+ * Version:           0.50.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.49.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.50.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -60,6 +60,16 @@ require_once ARV_ELEMENTS_PATH . 'includes/films-store.php';
 // Aravaipa's podcasts, read from their own RSS feeds. Loaded
 // unconditionally for the same reason as Watch and Films above it.
 require_once ARV_ELEMENTS_PATH . 'includes/podcasts-store.php';
+
+// "Subscribe on YouTube", placed inside Watch and Films rather than as a
+// button anywhere on its own. Loaded before both of them since each calls
+// into it directly rather than through a shortcode.
+require_once ARV_ELEMENTS_PATH . 'includes/media-follow.php';
+
+// The strip of links at the top of every media page: Watch, Films,
+// Podcasts, Photos, Articles. Loaded unconditionally because it registers
+// a shortcode, same as the stores above it.
+require_once ARV_ELEMENTS_PATH . 'includes/media-subnav.php';
 
 // The Media hub: cards for the above plus Photos and the blog. Loaded
 // unconditionally for the same reason as the three stores above it.

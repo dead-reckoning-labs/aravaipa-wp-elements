@@ -612,6 +612,12 @@ function arv_films_render( $args = array() ) {
 		$out .= '</ul>';
 	}
 
+	// The moment someone has just scrolled the whole shelf, not a badge
+	// sitting in a corner nobody was looking at.
+	if ( function_exists( 'arv_media_follow_render' ) ) {
+		$out .= arv_media_follow_render( 'youtube', __( 'film', 'aravaipa-elements' ) );
+	}
+
 	return $out . '</div></section>';
 }
 

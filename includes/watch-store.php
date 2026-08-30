@@ -306,6 +306,13 @@ function arv_watch_render( $args = array() ) {
 		$out .= '</ul>';
 	}
 
+	// Only on the full archive, same gate as the search box: the moment
+	// someone has just scrolled a whole shelf of broadcasts is the moment
+	// to ask, not a three-card homepage embed where it would be furniture.
+	if ( 0 === $limit && function_exists( 'arv_media_follow_render' ) ) {
+		$out .= arv_media_follow_render( 'youtube', __( 'broadcast', 'aravaipa-elements' ) );
+	}
+
 	return $out . '</div></section>';
 }
 
