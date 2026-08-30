@@ -15,6 +15,7 @@ define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
 define( 'ARV_ELEMENTS_URL', './' );
 define( 'DAY_IN_SECONDS', 86400 );
 define( 'MINUTE_IN_SECONDS', 60 );
+define( 'HOUR_IN_SECONDS', 3600 );
 define( 'PHP_URL_PATH_STUB', true );
 
 $GLOBALS['posts'] = array();
@@ -38,6 +39,7 @@ function number_format_i18n( $n, $d = 0 ) { return number_format( (float) $n, (i
 function add_shortcode( $tag, $fn ) { $GLOBALS['SHORTCODES'][ $tag ] = $fn; }
 function shortcode_atts( $pairs, $atts, $tag = '' ) { return array_merge( $pairs, (array) $atts ); }
 function esc_html__( $s, $d = '' ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+function wp_strip_all_tags( $s, $breaks = false ) { $s = preg_replace( '#<(script|style)[^>]*?>.*?</\1>#si', '', (string) $s ); return trim( strip_tags( $s ) ); }
 function wp_unslash( $v ) { return $v; }
 function get_queried_object_id() { return $GLOBALS['QUERIED_ID'] ?? 0; }
 function get_post_field( $field, $id = 0 ) { return $GLOBALS['POST_FIELD'][ $id ][ $field ] ?? ''; }
@@ -3229,38 +3231,153 @@ $GLOBALS['_http_queue'] = array();
 
 
 // -------------------------------------------------------------------------
-// Podcasts: two Spotify shows, embedded.
+// Podcasts: four shows, read from their own RSS feeds.
 // -------------------------------------------------------------------------
-echo "\npodcasts:\n";
-$shows = arv_podcasts_shows();
-t( 'the two real shows are configured',   2 === count( $shows ) );
-t( 'Inside Aravaipa is one of them',      'Inside Aravaipa' === $shows[0]['title'] );
+echo "\npodcasts, parsing a feed:\n";
 
-$html = arv_podcasts_render( array( 'heading' => 'Podcasts', 'intro' => 'Two shows.' ) );
+// A small but real RSS+iTunes document, the same shape Anchor's feeds use,
+// rather than the full thing: this is testing the parser, not Anchor.
+function arv_test_podcast_rss( $items ) {
+	$out = '<?xml version="1.0" encoding="UTF-8"?>'
+		. '<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">'
+		. '<channel><title>Test Show</title>'
+		. '<description>A show about testing.</description>'
+		. '<itunes:image href="https://example.com/show.jpg"/>'
+		. $items
+		. '</channel></rss>';
+	return $out;
+}
+
+$one_item = '<item>'
+	. '<title>Episode One</title>'
+	. '<description><![CDATA[<p>The plain description.</p>]]></description>'
+	. '<itunes:summary>The itunes summary.</itunes:summary>'
+	. '<pubDate>Fri, 17 Oct 2025 19:04:47 GMT</pubDate>'
+	. '<guid isPermaLink="false">guid-one</guid>'
+	. '<link>https://example.com/ep1</link>'
+	. '<enclosure url="https://example.com/ep1.mp3" length="123" type="audio/mpeg"/>'
+	. '<itunes:duration>01:05:09</itunes:duration>'
+	. '<itunes:image href="https://example.com/ep1.jpg"/>'
+	. '</item>';
+
+$parsed = arv_podcasts_parse_feed( arv_test_podcast_rss( $one_item ) );
+t( 'a real feed parses',                  null !== $parsed );
+t( 'channel artwork is read',             'https://example.com/show.jpg' === $parsed['artwork'] );
+t( 'channel description is read',         'A show about testing.' === $parsed['desc'] );
+t( 'one episode comes back',              1 === count( $parsed['episodes'] ) );
+
+$ep = $parsed['episodes'][0];
+t( 'episode title',                       'Episode One' === $ep['title'] );
+// itunes:summary wins over the CDATA description: it is already
+// entity-escaped plain text without HTML to strip.
+t( 'itunes:summary wins for the description', 'The itunes summary.' === $ep['desc'] );
+t( 'the enclosure is the audio file',     'https://example.com/ep1.mp3' === $ep['audio'] );
+t( 'guid is read',                        'guid-one' === $ep['guid'] );
+t( "the episode's own artwork wins",      'https://example.com/ep1.jpg' === $ep['artwork'] );
+t( 'the date is normalised to ISO 8601',  '2025-10-17T19:04:47+00:00' === $ep['published'] );
+
+// No enclosure, or no title: not playable, dropped rather than rendered
+// with a dead player.
+$no_audio = '<item><title>No Audio</title><pubDate>Fri, 17 Oct 2025 19:04:47 GMT</pubDate><guid>g2</guid></item>';
+$parsed2  = arv_podcasts_parse_feed( arv_test_podcast_rss( $no_audio ) );
+t( 'an episode with no audio file is dropped', null === $parsed2 );
+
+t( 'garbage is not a feed',               null === arv_podcasts_parse_feed( '<not><xml' ) );
+t( 'an empty body is not a feed',         null === arv_podcasts_parse_feed( '' ) );
+
+echo "\npodcasts, durations:\n";
+t( 'H:MM:SS to ISO 8601',                 'PT1H5M9S' === arv_podcasts_iso_duration( '01:05:09' ) );
+t( 'MM:SS to ISO 8601',                   'PT51M5S' === arv_podcasts_iso_duration( '51:05' ) );
+t( 'a bare second count to ISO 8601',     'PT51M5S' === arv_podcasts_iso_duration( '3065' ) );
+t( 'a garbage duration is empty',         '' === arv_podcasts_iso_duration( 'not a duration' ) );
+t( 'H:MM:SS for display keeps its shape', '1:05:09' === arv_podcasts_display_duration( '01:05:09' ) );
+t( 'a bare second count displays as M:SS', '51:05' === arv_podcasts_display_duration( '3065' ) );
+
+echo "\npodcasts, fetching all four shows:\n";
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+// Config order: inside-aravaipa, white-mountain, race-briefings, aravaipa-rides.
+arv_test_queue_response( array( 'code' => 200, 'body' => arv_test_podcast_rss( $one_item ) ) );
+arv_test_queue_response( array( 'code' => 200, 'body' => arv_test_podcast_rss( $one_item ) ) );
+// White Mountain's feed 500s: dropped, not fatal to the other three.
+arv_test_queue_response( array( 'code' => 500, 'body' => '' ) );
+arv_test_queue_response( array( 'code' => 200, 'body' => arv_test_podcast_rss( $one_item ) ) );
+$shows = arv_podcasts_fetch();
+t( 'three of four shows survive a failure', 3 === count( $shows ) );
+t( 'the failed show is the one missing',  ! isset( $shows['race-briefings'] ) );
+t( 'a surviving show keeps its config title', 'Inside Aravaipa' === $shows['inside-aravaipa']['title'] );
+t( 'and its platform ids',                '0MvdUlDE9VwocRhrIl9Lwv' === $shows['inside-aravaipa']['spotify'] );
+
+echo "\npodcasts, merging episodes:\n";
+$all = arv_podcasts_all( $shows );
+t( 'one episode per surviving show',      3 === count( $all ) );
+t( 'each carries its show',               'inside-aravaipa' === $all[0]['show_key'] );
+t( 'find an episode falls back to the show art when the episode has none', '' !== $all[0]['artwork'] );
+
+echo "\npodcasts, rendering the index:\n";
+$html = arv_podcasts_render( array( 'heading' => 'Podcasts', 'intro' => 'All four shows.' ) );
 t( 'the heading renders',                 false !== strpos( $html, 'Podcasts</h2>' ) );
-t( 'the intro too',                       false !== strpos( $html, 'Two shows.' ) );
-t( 'both shows get a card',               2 === substr_count( $html, 'arv-podcasts__card' ) );
-t( 'each embeds spotify directly',        false !== strpos( $html, 'open.spotify.com/embed/show/0MvdUlDE9VwocRhrIl9Lwv' ) );
-t( 'and the other show too',              false !== strpos( $html, 'open.spotify.com/embed/show/4cg3hl6Ek6pjd76ymrbUQd' ) );
-t( 'an open-in-spotify link is offered',  2 === substr_count( $html, 'Open in Spotify' ) );
-t( 'nothing autoplays uninvited',         2 === substr_count( $html, 'loading="lazy"' ) );
-
-// A third show, or a rename, needs no plugin release.
-add_filter( 'arv_podcasts_shows', function () {
-	return array( array( 'title' => 'A New Show', 'id' => 'aaaaaaaaaaaaaaaaaaaaaa' ) );
-} );
-$filtered = arv_podcasts_render( array() );
-t( 'the shows list is filterable',        false !== strpos( $filtered, 'A New Show' ) );
-t( 'replacing the defaults, not adding to them', false === strpos( $filtered, 'Inside Aravaipa' ) );
-$GLOBALS['FILTERS']['arv_podcasts_shows'] = array();
+t( 'the intro too',                       false !== strpos( $html, 'All four shows.' ) );
+t( 'a card per surviving show',           3 === substr_count( $html, 'arv-podcasts__show-card' ) );
+t( 'an episode row per episode',          3 === substr_count( $html, 'arv-podcasts__episode"' ) );
+t( 'a real audio player, not an embed',   3 === substr_count( $html, '<audio class="arv-podcasts__ep-player"' ) );
+t( 'no spotify iframe anywhere',          false === strpos( $html, 'open.spotify.com/embed' ) );
+t( 'nothing preloads uninvited',          3 === substr_count( $html, 'preload="none"' ) );
+t( 'a limit narrows the merged feed',     1 === substr_count( arv_podcasts_render( array( 'limit' => 1 ) ), 'arv-podcasts__episode"' ) );
+t( 'but never the show cards',            3 === substr_count( arv_podcasts_render( array( 'limit' => 1 ) ), 'arv-podcasts__show-card' ) );
 
 // No shows at all renders nothing, the same rule Watch and Films use.
-add_filter( 'arv_podcasts_shows', function () { return array(); } );
+$GLOBALS['_transients']['arv_podcasts'] = 'none';
 t( 'no shows renders nothing',            '' === arv_podcasts_render( array() ) );
-$GLOBALS['FILTERS']['arv_podcasts_shows'] = array();
+$GLOBALS['_transients']['arv_podcasts'] = $shows;
 
-t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_podcasts'] ) );
-t( 'and renders the same thing',          arv_podcasts_shortcode( array( 'heading' => 'Podcasts', 'intro' => 'Two shows.' ) ) === $html );
+t( 'the index shortcode is registered',   isset( $GLOBALS['SHORTCODES']['arv_podcasts'] ) );
+t( 'and renders the same thing',          arv_podcasts_shortcode( array( 'heading' => 'Podcasts', 'intro' => 'All four shows.' ) ) === $html );
+
+echo "\npodcasts, a show's own page:\n";
+$show_html = arv_podcasts_show_render( array( 'show' => 'inside-aravaipa' ) );
+t( 'the title renders',                   false !== strpos( $show_html, 'Inside Aravaipa' ) );
+t( "the show's description renders",      false !== strpos( $show_html, 'A show about testing.' ) );
+t( 'links back to the index',             false !== strpos( $show_html, home_url( '/podcasts/' ) ) );
+t( 'a spotify subscribe link',            false !== strpos( $show_html, 'open.spotify.com/show/0MvdUlDE9VwocRhrIl9Lwv' ) );
+t( 'an apple subscribe link',             false !== strpos( $show_html, 'podcasts.apple.com/podcast/id1797659741' ) );
+t( 'an rss link to the raw feed',         false !== strpos( $show_html, 'anchor.fm/s/1017c24d0/podcast/rss' ) );
+t( 'its one episode is listed',           false !== strpos( $show_html, 'Episode One' ) );
+t( 'no show badge on its own page',       false === strpos( $show_html, 'arv-podcasts__ep-show' ) );
+
+$missing = arv_podcasts_show_render( array( 'show' => 'not-a-real-show' ) );
+t( 'an unknown show says so',             false !== strpos( $missing, 'have that show' ) );
+t( 'and still links back to the index',   false !== strpos( $missing, home_url( '/podcasts/' ) ) );
+// The failed show from the fetch above: configured, but its feed 500'd.
+t( 'a show whose feed failed is unknown too', false !== strpos( arv_podcasts_show_render( array( 'show' => 'race-briefings' ) ), 'have that show' ) );
+
+t( 'the show shortcode is registered',    isset( $GLOBALS['SHORTCODES']['arv_podcast_show'] ) );
+t( 'and renders the same thing',          arv_podcast_show_shortcode( array( 'show' => 'inside-aravaipa' ) ) === $show_html );
+
+echo "\npodcasts, structured data:\n";
+$series = arv_podcasts_series_node( $shows['inside-aravaipa'] );
+t( 'a PodcastSeries node',                'PodcastSeries' === $series['@type'] );
+t( 'carrying the feed as its webFeed',    'https://anchor.fm/s/1017c24d0/podcast/rss' === $series['webFeed'] );
+t( 'no episodes unless asked for',        ! isset( $series['episode'] ) );
+
+$with_eps = arv_podcasts_series_node( $shows['inside-aravaipa'], true );
+t( 'episodes included when asked for',    1 === count( $with_eps['episode'] ) );
+$pe = $with_eps['episode'][0];
+t( 'each is a PodcastEpisode',            'PodcastEpisode' === $pe['@type'] );
+t( 'with a real publish date',            '2025-10-17T19:04:47+00:00' === $pe['datePublished'] );
+t( 'and the audio file as its media',     'https://example.com/ep1.mp3' === $pe['associatedMedia']['contentUrl'] );
+t( 'and an ISO 8601 duration',            'PT1H5M9S' === $pe['duration'] );
+
+// An episode with no publish date is not a partial win; dropped rather
+// than emitted invalid, the same rule the Watch page's VideoObject nodes
+// follow.
+$bad_show = $shows['inside-aravaipa'];
+$bad_show['episodes'][0]['published'] = '';
+$stripped = arv_podcasts_series_node( $bad_show, true );
+t( 'an episode with no date is dropped',  ! isset( $stripped['episode'] ) );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
 
 
 

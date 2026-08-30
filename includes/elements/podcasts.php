@@ -1,6 +1,6 @@
 <?php
 /**
- * Aravaipa Podcasts: two Spotify shows, embedded.
+ * Aravaipa Podcasts: a card per show, and every episode merged.
  *
  * The decisions live in includes/podcasts-store.php, which the
  * [arv_podcasts] shortcode also renders through, so placing this by hand in
@@ -19,6 +19,7 @@ cs_register_element(
 			array(
 				'heading' => cs_value( 'Podcasts', 'markup' ),
 				'intro'   => cs_value( '', 'markup' ),
+				'limit'   => cs_value( '0', 'markup' ),
 			),
 			'omega'
 		),
@@ -46,6 +47,12 @@ function arv_podcasts_element_builder() {
 					'type'  => 'text',
 					'label' => __( 'Intro (optional)', 'aravaipa-elements' ),
 				),
+				array(
+					'key'         => 'limit',
+					'type'        => 'text',
+					'label'       => __( 'Episodes to show', 'aravaipa-elements' ),
+					'description' => __( '0 for every one.', 'aravaipa-elements' ),
+				),
 			),
 		),
 		'omega'
@@ -61,6 +68,7 @@ function arv_podcasts_element_render( $data ) {
 		array(
 			'heading' => isset( $data['heading'] ) ? $data['heading'] : 'Podcasts',
 			'intro'   => isset( $data['intro'] ) ? $data['intro'] : '',
+			'limit'   => isset( $data['limit'] ) ? (int) $data['limit'] : 0,
 		)
 	);
 }

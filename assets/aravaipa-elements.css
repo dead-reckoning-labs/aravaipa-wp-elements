@@ -6353,106 +6353,6 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Podcasts: two Spotify shows, embedded.
-
-   Same dark family as Watch and Films. No player of its own to build: each
-   iframe is Spotify's own show widget, artwork, playback and episode list
-   included, so there is nothing here to keep in sync with an episode feed.
-   --------------------------------------------------------------------------- */
-.arv-podcasts {
-	box-sizing: border-box;
-	text-align: left;
-	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
-	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
-	background: #10201f;
-	color: #f4f4f4;
-	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-.arv-podcasts * {
-	box-sizing: inherit;
-}
-
-.arv-podcasts__inner {
-	max-width: 900px;
-	margin: 0 auto;
-	padding: 2rem 1.25rem 2.5rem;
-}
-
-.arv-podcasts__heading {
-	margin: 0;
-	text-align: center;
-	font-size: clamp(26px, 3.4vw, 34px);
-	font-weight: 700;
-	line-height: 1.15;
-	color: #fff;
-}
-
-.arv-podcasts__intro {
-	margin: 0.5rem auto 0;
-	max-width: 60ch;
-	text-align: center;
-	font-size: var(--arv-fs-body);
-	line-height: 1.55;
-	color: rgba(244, 244, 244, 0.72);
-}
-
-.arv-podcasts__grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-	gap: 1.5rem;
-	margin-top: 1.75rem;
-}
-
-.arv-podcasts__card {
-	display: flex;
-	flex-direction: column;
-	gap: 0.6rem;
-}
-
-.arv-podcasts__name {
-	margin: 0;
-	font-size: var(--arv-fs-lead);
-	font-weight: 700;
-	color: #fff;
-}
-
-/* Spotify's embed sets its own height per show (152px for the compact show
-   widget both of these use) and its own 12px corner radius inline, so
-   nothing here overrides either: the frame is exactly as tall as the
-   player it contains, not a fixed box it floats inside. */
-.arv-podcasts__frame {
-	display: block;
-	width: 100%;
-	border: 0;
-}
-
-.arv-podcasts__open,
-.arv-podcasts__open:link,
-.arv-podcasts__open:visited {
-	align-self: flex-start;
-	font-size: var(--arv-fs-meta);
-	font-weight: 700;
-	color: rgba(244, 244, 244, 0.72);
-	text-decoration: none;
-}
-
-.arv-podcasts__open:hover,
-.arv-podcasts__open:focus {
-	color: #fff;
-}
-
-@media (max-width: 767px) {
-	.arv-podcasts__inner {
-		padding: 1.5rem 1rem 2rem;
-	}
-
-	.arv-podcasts__grid {
-		grid-template-columns: 1fr;
-	}
-}
-
-/* ---------------------------------------------------------------------------
    Media hub: cards for Watch, Films, Podcasts, Photos and the blog.
 
    Same dark family as the three pages it links to, since this is the front
@@ -6578,5 +6478,310 @@
 @media (max-width: 480px) {
 	.arv-media-hub__grid {
 		grid-template-columns: 1fr;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Podcasts: a card per show, then every episode merged; and each show's
+   own page with its full list.
+
+   Same dark family as Watch and Films. Episode artwork and rows are shared
+   between the index and a show page via .arv-podcasts__episodes, since a
+   row means the same thing and should look the same in both places.
+   --------------------------------------------------------------------------- */
+.arv-podcasts,
+.arv-podcasts-show {
+	box-sizing: border-box;
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-podcasts *,
+.arv-podcasts-show * {
+	box-sizing: inherit;
+}
+
+.arv-podcasts__inner,
+.arv-podcasts-show__inner {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem 2.5rem;
+}
+
+.arv-podcasts__heading {
+	margin: 0;
+	text-align: center;
+	font-size: clamp(26px, 3.4vw, 34px);
+	font-weight: 700;
+	line-height: 1.15;
+	color: #fff;
+}
+
+.arv-podcasts__intro {
+	margin: 0.5rem auto 0;
+	max-width: 60ch;
+	text-align: center;
+	font-size: var(--arv-fs-body);
+	line-height: 1.55;
+	color: rgba(244, 244, 244, 0.72);
+}
+
+/* The four show cards. */
+.arv-podcasts__shows {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 1.25rem;
+	margin: 1.75rem 0 0;
+}
+
+.arv-podcasts__show-card,
+.arv-podcasts__show-card:link,
+.arv-podcasts__show-card:visited,
+.arv-podcasts__show-card:hover,
+.arv-podcasts__show-card:focus {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 1.1rem;
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--arv-radius-card);
+	color: #f4f4f4;
+	text-decoration: none;
+	text-align: center;
+}
+
+.arv-podcasts__show-card:hover,
+.arv-podcasts__show-card:focus {
+	border-color: rgba(255, 255, 255, 0.3);
+}
+
+.arv-podcasts__show-art {
+	width: 96px;
+	height: 96px;
+	border-radius: var(--arv-radius);
+	object-fit: cover;
+	background: #000;
+}
+
+.arv-podcasts__show-title {
+	font-size: var(--arv-fs-meta);
+	font-weight: 700;
+	color: #fff;
+	line-height: 1.3;
+}
+
+.arv-podcasts__show-count {
+	font-size: var(--arv-fs-label);
+	color: rgba(244, 244, 244, 0.6);
+}
+
+.arv-podcasts__section {
+	margin: 2.25rem 0 1rem;
+	font-size: var(--arv-fs-title);
+	font-weight: 700;
+	color: #fff;
+}
+
+/* Episode rows: shared by the index's merged feed and a show's full list. */
+.arv-podcasts__episodes {
+	display: flex;
+	flex-direction: column;
+	gap: 1.1rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-podcasts__episode {
+	display: flex;
+	gap: 1rem;
+	padding-bottom: 1.1rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.arv-podcasts__episode:last-child {
+	border-bottom: 0;
+}
+
+.arv-podcasts__ep-art {
+	flex: 0 0 auto;
+	width: 84px;
+	height: 84px;
+	border-radius: var(--arv-radius);
+	object-fit: cover;
+	background: #000;
+}
+
+.arv-podcasts__ep-body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.arv-podcasts__ep-show,
+.arv-podcasts__ep-show:link,
+.arv-podcasts__ep-show:visited {
+	display: inline-block;
+	margin-bottom: 0.2rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #4ade80;
+	text-decoration: none;
+}
+
+.arv-podcasts__ep-show:hover,
+.arv-podcasts__ep-show:focus {
+	text-decoration: underline;
+}
+
+.arv-podcasts__ep-title {
+	margin: 0;
+	font-size: var(--arv-fs-lead);
+	font-weight: 700;
+	line-height: 1.35;
+	color: #fff;
+}
+
+.arv-podcasts__ep-meta {
+	margin: 0.2rem 0 0;
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.62);
+}
+
+.arv-podcasts__ep-player {
+	display: block;
+	width: 100%;
+	max-width: 480px;
+	margin-top: 0.6rem;
+	height: 40px;
+}
+
+/* Safari and Chrome both draw the native <audio> control dark-on-dark
+   against this background unless told otherwise. */
+.arv-podcasts__ep-player {
+	color-scheme: dark;
+}
+
+/* --- One show's own page ------------------------------------------------ */
+
+.arv-podcasts-show__back {
+	margin: 0 0 1.25rem;
+}
+
+.arv-podcasts-show__back a,
+.arv-podcasts-show__back a:link,
+.arv-podcasts-show__back a:visited {
+	font-size: var(--arv-fs-meta);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.72);
+	text-decoration: none;
+}
+
+.arv-podcasts-show__back a:hover,
+.arv-podcasts-show__back a:focus {
+	color: #fff;
+}
+
+.arv-podcasts-show__head {
+	display: flex;
+	gap: 1.5rem;
+	margin: 0 0 2rem;
+}
+
+.arv-podcasts-show__art {
+	flex: 0 0 auto;
+	width: 160px;
+	height: 160px;
+	border-radius: var(--arv-radius-card);
+	object-fit: cover;
+	background: #000;
+}
+
+.arv-podcasts-show__head-body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.arv-podcasts-show__title {
+	margin: 0;
+	font-size: clamp(22px, 3vw, 30px);
+	font-weight: 700;
+	line-height: 1.2;
+	color: #fff;
+}
+
+.arv-podcasts-show__desc {
+	margin: 0.6rem 0 0;
+	font-size: var(--arv-fs-body);
+	line-height: 1.55;
+	color: rgba(244, 244, 244, 0.75);
+}
+
+.arv-podcasts-show__links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin: 1rem 0 0;
+}
+
+.arv-podcasts-show__link,
+.arv-podcasts-show__link:link,
+.arv-podcasts-show__link:visited {
+	padding: 0.5rem 0.9rem;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-btn);
+	font-weight: 700;
+	color: #f4f4f4;
+	text-decoration: none;
+}
+
+.arv-podcasts-show__link:hover,
+.arv-podcasts-show__link:focus {
+	border-color: rgba(255, 255, 255, 0.5);
+	color: #fff;
+}
+
+.arv-podcasts-show__back-missing {
+	margin: 0;
+	font-size: var(--arv-fs-body);
+	color: rgba(244, 244, 244, 0.78);
+}
+
+.arv-podcasts-show__back-missing a,
+.arv-podcasts-show__back-missing a:link,
+.arv-podcasts-show__back-missing a:visited {
+	color: #4ade80;
+}
+
+@media (max-width: 620px) {
+	.arv-podcasts-show__head {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.arv-podcasts__episode {
+		flex-direction: column;
+	}
+
+	.arv-podcasts__ep-art {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1 / 1;
+		max-width: 160px;
+	}
+}
+
+@media (max-width: 767px) {
+	.arv-podcasts__inner,
+	.arv-podcasts-show__inner {
+		padding: 1.5rem 1rem 2rem;
 	}
 }
