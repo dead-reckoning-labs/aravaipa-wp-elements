@@ -54,7 +54,7 @@ mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 cp "$NAME.php" "$STAGE/"
 cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -140,6 +140,18 @@ grep -q '\.arv-calendar__row\[hidden\]' assets/aravaipa-elements.css \
 # every card it means to hide and nothing would visibly happen.
 grep -q '\.arv-watch__race\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-watch__race[hidden] override is missing, the Watch search and year filter will silently do nothing" >&2; missing=1; }
+[ "$missing" -eq 0 ] || exit 1
+
+# The live board's touch shield is rendered hidden and revealed by
+# aravaipa-live.js, so a page whose JavaScript never runs has no
+# undismissable layer sitting over its results. That only holds while the
+# CSS actually honours the attribute: .arv-live__shield sets its own
+# unconditional `display: flex`, the same tie against the browser's
+# `[hidden] { display: none }` that the two checks above exist for, and
+# losing this one would cover the board on every device instead of fixing
+# scrolling on phones.
+grep -q '\.arv-live__shield\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-live__shield[hidden] override is missing, the touch shield would cover the live board permanently" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
 # A theme's own "a:hover { color: ... }" is one element plus one

@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.43.0
+ * Version:           0.43.1
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.43.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.43.1' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -194,6 +194,17 @@ function arv_elements_assets() {
 	wp_enqueue_script(
 		'aravaipa-watch',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-watch.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
+	// Lets a phone scroll past the live board, which is taller than the
+	// screen and does not hand its touches back. Touch devices only; see the
+	// file. No-ops everywhere the board is not present.
+	wp_enqueue_script(
+		'aravaipa-live',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-live.js',
 		array(),
 		ARV_ELEMENTS_VERSION,
 		true

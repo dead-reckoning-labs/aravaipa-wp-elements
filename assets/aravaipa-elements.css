@@ -5183,8 +5183,54 @@
    above is already a hard edge and a rule between them would draw a line
    through the middle of one component. */
 .arv-live__frame {
+	/* Positioned so the touch shield can sit over the iframe. See
+	   assets/aravaipa-live.js: the frame is sized to its whole content, which
+	   on a big race is several screens tall on a phone, and a cross-origin
+	   iframe does not hand that vertical drag back to the page. */
+	position: relative;
 	border-bottom: 1px solid var(--arv-results-rule, #e2e2e2);
 	background: #101314;
+}
+
+/* Transparent, and covering the whole frame, so a drag scrolls the page
+   instead of dying inside the iframe. A tap lifts it and the board
+   underneath becomes fully usable. Rendered with [hidden] and revealed by
+   script, so a page whose JavaScript never runs has no undismissable layer
+   over its results. */
+.arv-live__shield {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	/* Above the iframe, below the page's own sticky chrome. */
+	z-index: 2;
+}
+
+.arv-live__shield[hidden] {
+	display: none;
+}
+
+/* Says why the first tap does not reach the board. Pinned near the top of
+   the frame rather than centred, because the frame is thousands of pixels
+   tall and its centre is off screen. */
+.arv-live__shield-hint {
+	position: sticky;
+	top: 0.75rem;
+	padding: 0.4rem 0.85rem;
+	border-radius: var(--arv-radius, 8px);
+	background: rgba(16, 19, 20, 0.82);
+	font-size: var(--arv-fs-label, 12px);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #fff;
+	pointer-events: none;
 }
 
 .arv-live__iframe {
