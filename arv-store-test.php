@@ -3786,40 +3786,62 @@ $GLOBALS['ARV_OPTIONS'][ ARV_RESULTS_OPTION ] = array();
 
 
 
-echo "\nfilms, newest first without touching a control:\n";
+echo "\nfilms, each playlist in the order that playlist wants:\n";
 // The API hands films back in YouTube playlist order, which is whatever
 // order somebody dragged them into in Studio. On the real Documentaries
 // playlist that left The Cutoff, the newest film on the site,
-// fourteenth, under a sort control that said "Newest first" and meant
-// it only once a visitor changed something.
+// fourteenth.
+//
+// The two playlists then want different orders, and the live numbers are
+// what decide it rather than taste: Documentaries is seven years deep
+// with a 165x spread in views, so views rank it and dates barely do.
+// Originals is five months old and shipping monthly, so recency is the
+// entire point and views would bury last month under September.
 $unsorted = arv_films_clean(
 	array(
-		array( 'key' => 'docs', 'title' => 'Documentaries', 'films' => array(
-			array( 'id' => 'old00000001', 'title' => 'An Old One', 'description' => '', 'publishedAt' => '2019-03-14T00:00:00Z', 'thumbnail' => '' ),
-			array( 'id' => 'new00000001', 'title' => 'The Newest', 'description' => '', 'publishedAt' => '2026-04-23T00:00:00Z', 'thumbnail' => '' ),
-			array( 'id' => 'mid00000001', 'title' => 'A Middle One', 'description' => '', 'publishedAt' => '2024-04-26T00:00:00Z', 'thumbnail' => '' ),
+		array( 'key' => 'documentaries', 'title' => 'Documentaries', 'films' => array(
+			array( 'id' => 'old00000001', 'title' => 'Old But Huge', 'description' => '', 'publishedAt' => '2019-03-14T00:00:00Z', 'thumbnail' => '', 'views' => 800000 ),
+			array( 'id' => 'new00000001', 'title' => 'New And Quiet', 'description' => '', 'publishedAt' => '2026-04-23T00:00:00Z', 'thumbnail' => '', 'views' => 9000 ),
+			array( 'id' => 'mid00000001', 'title' => 'Middling', 'description' => '', 'publishedAt' => '2024-04-26T00:00:00Z', 'thumbnail' => '', 'views' => 300000 ),
 		) ),
 		array( 'key' => 'originals', 'title' => 'Aravaipa Originals', 'films' => array(
-			array( 'id' => 'org00000001', 'title' => 'Older Original', 'description' => '', 'publishedAt' => '2025-09-05T00:00:00Z', 'thumbnail' => '' ),
-			array( 'id' => 'org00000002', 'title' => 'Newer Original', 'description' => '', 'publishedAt' => '2026-02-09T00:00:00Z', 'thumbnail' => '' ),
+			array( 'id' => 'org00000001', 'title' => 'Older But Popular', 'description' => '', 'publishedAt' => '2025-09-05T00:00:00Z', 'thumbnail' => '', 'views' => 100000 ),
+			array( 'id' => 'org00000002', 'title' => 'Newest Episode', 'description' => '', 'publishedAt' => '2026-02-09T00:00:00Z', 'thumbnail' => '', 'views' => 12000 ),
 		) ),
 	)
 );
+
+// Documentaries: the biggest film leads even though it is the oldest.
 $doc_order = array_column( $unsorted[0]['films'], 'title' );
-t( 'the newest film leads its playlist',   'The Newest' === $doc_order[0] );
-t( 'then the next newest',                 'A Middle One' === $doc_order[1] );
-t( 'and the oldest is last',               'An Old One' === $doc_order[2] );
-// Within a playlist, not across: the sections are the two playlists.
+t( 'the back catalogue leads on views',    'Old But Huge' === $doc_order[0] );
+t( 'then the next most watched',           'Middling' === $doc_order[1] );
+t( 'the newest but quietest is last',      'New And Quiet' === $doc_order[2] );
+
+// Originals: the newest episode leads even though it is the smallest.
 $org_order = array_column( $unsorted[1]['films'], 'title' );
-t( 'the second playlist sorts too',        'Newer Original' === $org_order[0] );
-t( 'and stays its own section',            2 === count( $unsorted[1]['films'] ) );
+t( 'the running series leads on date',     'Newest Episode' === $org_order[0] );
+t( 'even though it is the less watched',   'Older But Popular' === $org_order[1] );
+
+t( 'and each stays its own section',       2 === count( $unsorted[1]['films'] ) );
 t( 'the sections keep their own order',    'Documentaries' === $unsorted[0]['title'] );
 
-// The HTML itself has to carry the order, since that is what the default
-// sort control claims and what a crawler is served.
+t( 'a documentaries playlist defaults to views', 'views' === arv_films_default_sort( 'documentaries' ) );
+t( 'originals defaults to date',                 'date' === arv_films_default_sort( 'originals' ) );
+// A playlist nobody has formed an opinion about should not inherit one.
+t( 'an unknown playlist defaults to date',       'date' === arv_films_default_sort( 'something-new' ) );
+
+// The HTML itself has to carry the order: it is what a crawler is served
+// and what the sort control has to agree with before anyone touches it.
 $GLOBALS['_transients']['arv_films'] = $unsorted;
 $sorted_html = arv_films_render( array() );
-t( 'the rendered shelf leads with it',     strpos( $sorted_html, 'The Newest' ) < strpos( $sorted_html, 'An Old One' ) );
+// Measured from the first shelf onward, not the whole document: the
+// newest film is also the one in the player at the top, so its title
+// appears before any card regardless of how the cards are ordered.
+$shelf = substr( $sorted_html, strpos( $sorted_html, 'data-arv-films-list' ) );
+t( 'the rendered shelf carries it',        strpos( $shelf, 'Old But Huge' ) < strpos( $shelf, 'New And Quiet' ) );
+// No single one of the two orders is true of the page as served, so the
+// control has to offer a third state rather than claiming one of them.
+t( 'the sort control offers a default',    false !== strpos( $sorted_html, '<option value="">' ) );
 $GLOBALS['_transients'] = array();
 
 
