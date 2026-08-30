@@ -685,6 +685,76 @@ t( 'and draws no empty table',        false === strpos( $y, 'arv-results__table'
 $limit = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'limit' => '1', 'layout' => 'date', 'upcoming' => 'false' ) );
 t( 'limit is honoured',               1 === substr_count( $limit, 'arv-results__row' ) );
 
+
+
+echo "\nultrarunning results map:\n";
+// Cannot be derived the way UltraSignup can: the slug is their editorial
+// name for the race ("black-canyon-trail" for Black Canyon Ultras) and the
+// id is theirs. Guessing it returns 403, and their site sits behind a bot
+// challenge a real browser bounces off. So it is entered once and kept.
+t( 'a full results url reduces to its path', 'black-canyon-trail/race/44116' === arv_results_ultrarunning_path( 'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results' ) );
+// The anchor comes along when it is copied out of the address bar.
+t( 'and drops a selected_year anchor',       'cocodona-250/race/44204' === arv_results_ultrarunning_path( 'https://ultrarunning.com/calendar/event/cocodona-250/race/44204/results#selected_year' ) );
+t( 'a bare path is accepted too',            'north-fork-50-mile-50k/race/46070' === arv_results_ultrarunning_path( 'north-fork-50-mile-50k/race/46070' ) );
+// A typo becomes a missing link, not a link to nowhere.
+t( 'a url with no race id is refused',       '' === arv_results_ultrarunning_path( 'https://ultrarunning.com/calendar/event/javelina-jundred' ) );
+t( 'another site is refused',                '' === arv_results_ultrarunning_path( 'https://example.com/black-canyon-trail/race/44116' ) );
+t( 'and an empty value is refused',          '' === arv_results_ultrarunning_path( '' ) );
+
+// Keyed by the archive's own race key, so one entry covers every spelling
+// across every year rather than needing a row per edition.
+arv_results_ultrarunning_store_set( array(
+	'Black Canyon Ultras' => 'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results',
+	'Cocodona 250'        => 'cocodona-250/race/44204',
+	'Typo Race'           => 'not a url',
+) );
+t( 'the typo was dropped',                   2 === count( arv_results_ultrarunning_store_get() ) );
+t( 'a race resolves to a full url',          'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results' === arv_results_ultrarunning_url( 'Black Canyon Ultras' ) );
+// The whole point of keying on the race key rather than the exact name.
+t( 'under a different spelling too',         'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results' === arv_results_ultrarunning_url( 'Black Canyon' ) );
+t( 'and with the distance dropped',          'https://ultrarunning.com/calendar/event/cocodona-250/race/44204/results' === arv_results_ultrarunning_url( 'Cocodona' ) );
+t( 'a race not on file resolves to nothing', '' === arv_results_ultrarunning_url( 'Not A Real Race' ) );
+
+// Filled in at render for any row the scraper left blank, which is most of
+// the archive: the scraper only ever found these where a human had already
+// linked one.
+arv_results_store_set( array(
+	// A live link but no UltraRunning one, which is the common real case:
+	// the store refuses a row with no links at all, so the rows this fills
+	// in are always ones that have something else already.
+	array( 'name' => 'Black Canyon Ultras', 'iso' => '2025-02-14', 'display' => 'February 14',
+	       'live' => 'https://live.aravaiparunning.com/#/black_canyon-2025',
+	       'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'Cocodona 250', 'iso' => '2025-05-05', 'display' => 'May 5',
+	       'live' => 'https://live.aravaiparunning.com/#/cocodona-2025', 'ultrasignup' => '',
+	       'ultrarunning' => 'https://ultrarunning.com/calendar/event/already/race/999/results' ),
+) );
+$GLOBALS['NOW'] = '2026-08-30';
+$ur = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false', 'year' => '2025' ) );
+t( 'a blank row gains its link',             false !== strpos( $ur, 'black-canyon-trail/race/44116' ) );
+// A scraped link came off the page itself and is the more specific answer.
+t( 'a row that already had one keeps it',    false !== strpos( $ur, 'already/race/999' ) );
+t( 'and is not overwritten by the map',      false === strpos( $ur, 'cocodona-250/race/44204' ) );
+
+arv_results_ultrarunning_store_set( array() );
+arv_results_store_set( array() );
+
+echo "\nultrasignup results link, derived from the register url:\n";
+// 2026 uses "dtid", every row before it used "did". The regex only ever
+// matched "did", so this returned '' for every current race and the one
+// call site that reaches it with nothing else to fall back on
+// (arv_upcoming_races_action(), for a race with no live board) never had
+// anything to show. Confirmed live: UltraSignup redirects
+// results_event.aspx?dtid=N straight to the canonical ?did=N for four
+// different races, so passing the id through under whichever name it
+// arrived as needs no second request to resolve it.
+t( 'derives from a dtid registration link', 'https://ultrasignup.com/results_event.aspx?dtid=63630' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx?dtid=63630' ) );
+t( 'and from the older did shape too',      'https://ultrasignup.com/results_event.aspx?did=131056' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx?did=131056' ) );
+t( 'ignoring other query params after it',  'https://ultrasignup.com/results_event.aspx?dtid=63630' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx?dtid=63630&sid=1' ) );
+t( 'not a different site',                  '' === arv_upcoming_races_results_url( 'https://example.com/register.aspx?dtid=63630' ) );
+t( 'not a bare url',                        '' === arv_upcoming_races_results_url( 'https://ultrasignup.com/register.aspx' ) );
+t( 'not an empty one',                      '' === arv_upcoming_races_results_url( '' ) );
+
 echo "\nresults: a race that has just run:\n";
 // The scraper lags the calendar. A race that ran on Saturday has results on
 // the live board on Sunday and no scraped row until the next run, so the
@@ -696,6 +766,9 @@ arv_results_store_set( array(
 $GLOBALS['NOW'] = '2026-08-30';   // Rock Hawk ran on the 29th
 $now = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'a race that just ran appears',    false !== strpos( arv_test_archive_only( $now ), 'Rock Hawk' ) );
+// Its UltraSignup link too, derived from the calendar's own registration
+// link rather than left blank until the scraper's next run.
+t( 'with an ultrasignup link already on it', false !== strpos( arv_test_archive_only( $now ), 'ultrasignup.com/results_event.aspx?dtid=63630' ) );
 // It appears, because the scraper has not caught up, but it is not
 // "Happening now": it finished yesterday. This asserted the opposite until
 // Jamil saw Black Bear and Rock Hawk both still claiming to be happening

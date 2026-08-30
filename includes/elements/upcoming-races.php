@@ -287,23 +287,39 @@ function arv_upcoming_races_builder() {
 /**
  * UltraSignup's results page for a race, worked out from its register URL.
  *
- * Both carry the same "did". Deriving the results link means a row does not
+ * Both carry the same id. Deriving the results link means a row does not
  * have to carry a second URL that would only ever be the first one with a
  * different filename, and it cannot fall out of sync with it.
  *
- * Before a race has results, UltraSignup redirects this to the entrants list,
- * which during the race is the live field. That is what a runner's family
- * wants on race day, so one URL serves both the live and results phases.
+ * The id comes in two shapes and this had only ever matched one of them.
+ * "did" identifies one specific edition of a race and is what an older
+ * registration link carries; "dtid" identifies the race's current edition
+ * and is what every 2026 row in the calendar carries, because UltraSignup
+ * changed which id it hands out for a new registration link some time after
+ * this was written and never checked again. The regex only ever matched
+ * "did", so this returned '' for every race on the calendar and the one
+ * call site that reaches it with no other results link to fall back on
+ * (arv_upcoming_races_action(), for a race with no live timing board) never
+ * had anything to show. Confirmed live rather than assumed: UltraSignup
+ * redirects results_event.aspx?dtid=N straight to the canonical
+ * ?did=N for four different current races, so passing the id straight
+ * through under whichever name it arrived as needs no second request to
+ * resolve it.
+ *
+ * Before a race has results, UltraSignup redirects this to the entrants
+ * list, which during the race is the live field. That is what a runner's
+ * family wants on race day, so one URL serves both the live and results
+ * phases.
  *
  * @param string $register_url
  * @return string '' when the URL is not an UltraSignup registration link.
  */
 function arv_upcoming_races_results_url( $register_url ) {
-	if ( ! preg_match( '#^https?://(?:www\.)?ultrasignup\.com/register\.aspx\?did=(\d+)#i', $register_url, $m ) ) {
+	if ( ! preg_match( '#^https?://(?:www\.)?ultrasignup\.com/register\.aspx\?(did|dtid)=(\d+)#i', $register_url, $m ) ) {
 		return '';
 	}
 
-	return 'https://ultrasignup.com/results_event.aspx?did=' . $m[1];
+	return 'https://ultrasignup.com/results_event.aspx?' . strtolower( $m[1] ) . '=' . $m[2];
 }
 
 /**

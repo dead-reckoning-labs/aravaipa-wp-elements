@@ -199,12 +199,21 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 			? ( 'live' === arv_races_live_state( $race, $board, $start_ts ) )
 			: ( $race['iso'] === $today || ( '' !== $race['end'] && $race['iso'] <= $today && $today <= $race['end'] ) );
 
+		// Derived from the calendar's own registration link rather than left
+		// blank until the scraper's next run. UltraSignup's results page for
+		// a race is the same id as its registration page under a different
+		// filename, so a race that has never been scraped can still carry an
+		// UltraSignup link the moment it finishes, not up to ten days later.
+		$ultrasignup = function_exists( 'arv_upcoming_races_results_url' )
+			? arv_upcoming_races_results_url( $race['register'] )
+			: '';
+
 		$rows[] = array(
 			'name'         => $race['name'],
 			'iso'          => $race['iso'],
 			'display'      => $race['display'],
 			'live'         => $race['live'],
-			'ultrasignup'  => '',
+			'ultrasignup'  => $ultrasignup,
 			'ultrarunning' => '',
 			'current'      => $current,
 		);
@@ -335,6 +344,21 @@ function arv_results_render( $data ) {
 					return ( $a['iso'] < $b['iso'] ) ? 1 : -1;
 				}
 			);
+		}
+	}
+
+	// Fill in the UltraRunning link from the map for any row that does not
+	// already carry one. The scraper only ever finds these where a human had
+	// already put one on a results page, so the archive is full of races
+	// that have an UltraRunning page nobody ever linked. Their id identifies
+	// the race rather than the edition, so one entry lights up every year of
+	// that race at once. A row that already has a link keeps it: the scraped
+	// one came off the page itself and is the more specific answer.
+	if ( function_exists( 'arv_results_ultrarunning_url' ) ) {
+		foreach ( $rows as $i => $row ) {
+			if ( '' === trim( (string) $row['ultrarunning'] ) ) {
+				$rows[ $i ]['ultrarunning'] = arv_results_ultrarunning_url( $row['name'] );
+			}
 		}
 	}
 
