@@ -2910,6 +2910,33 @@ $ctx4['edition']['streams'] = array(
 $ctx4['edition']['start'] = '';
 t( 'an unusable segment is dropped',      array() === arv_watch_seo_videos( $ctx4 ) );
 
+// A stream shaped by the plugin version before this one: no 'aired', no
+// 'desc', no 'minutes', no 'views' at all, because arv_watch_events() caches
+// for fifteen minutes and the first request after a deploy that adds a
+// field can still be reading a value the old code cleaned. Reproduced live
+// the day this shipped: every VideoObject silently disappeared, because
+// $stream['aired'] on a missing key is null, and null !== '' is true, so
+// the fallback to the event date never ran.
+$ctx5 = $ctx;
+$ctx5['edition']['streams'] = array(
+	array( 'id' => 'ddddddddddd', 'title' => 'Old Shape Segment', 'url' => 'https://youtu.be/ddddddddddd', 'thumbnail' => 'https://i.ytimg.com/vi/ddddddddddd/hqdefault.jpg', 'live' => false, 'type' => 'race', 'start' => '2025-05-05T13:00:00Z' ),
+);
+$old_shape = arv_watch_seo_videos( $ctx5 );
+t( 'a stream from an older cached shape still produces a node', 1 === $old_shape['numberOfItems'] );
+$old_item = $old_shape['itemListElement'][0]['item'];
+t( 'falling back to the event date for uploadDate', '2025-05-05T13:00:00+00:00' === $old_item['uploadDate'] );
+t( 'and to the title for a description',  'Old Shape Segment' === $old_item['description'] );
+t( 'with no duration invented',           ! isset( $old_item['duration'] ) );
+t( 'and no view counter invented',        ! isset( $old_item['interactionStatistic'] ) );
+
+// Same staleness, at the event level this time: no 'desc', no 'place'.
+$ctx6 = $ctx;
+unset( $ctx6['edition']['desc'], $ctx6['edition']['place'] );
+$old_desc = arv_watch_seo_description( $ctx6 );
+t( 'a stale edition still produces a description', '' !== $old_desc );
+t( 'without a stray empty place in it',   false === strpos( $old_desc, ', .' ) );
+
+
 
 
 // -------------------------------------------------------------------------

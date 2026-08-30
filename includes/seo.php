@@ -513,9 +513,16 @@ function arv_watch_seo_head() {
 
 	// The broadcast's own thumbnail, not the site logo: a link to a race
 	// broadcast should preview as that race. Prefers the segment actually on
-	// screen, falls back to the event's hero.
+	// screen, falls back to the event's hero. isset() rather than direct
+	// access for the same reason arv_watch_seo_videos() reads its own
+	// stream fields defensively: $ctx comes from a fifteen-minute
+	// transient, and the request right after a deploy that adds a field can
+	// still be holding a value the previous version cleaned, missing the
+	// key entirely.
 	$streams = $ctx['edition']['streams'];
-	$image   = ! empty( $streams ) ? $streams[0]['thumbnail'] : $ctx['edition']['hero'];
+	$image   = ! empty( $streams ) && isset( $streams[0]['thumbnail'] )
+		? $streams[0]['thumbnail']
+		: ( isset( $ctx['edition']['hero'] ) ? $ctx['edition']['hero'] : '' );
 
 	if ( '' !== $image ) {
 		echo '<meta property="og:image" content="' . esc_url( $image ) . '" />' . "\n";
