@@ -213,6 +213,7 @@ require_once __DIR__ . '/includes/stats-store.php';
 require_once __DIR__ . '/includes/watch-store.php';
 require_once __DIR__ . '/includes/films-store.php';
 require_once __DIR__ . '/includes/podcasts-store.php';
+require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
@@ -3107,6 +3108,53 @@ $GLOBALS['FILTERS']['arv_podcasts_shows'] = array();
 
 t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_podcasts'] ) );
 t( 'and renders the same thing',          arv_podcasts_shortcode( array( 'heading' => 'Podcasts', 'intro' => 'Two shows.' ) ) === $html );
+
+
+
+// -------------------------------------------------------------------------
+// Media hub: a card per section.
+// -------------------------------------------------------------------------
+echo "\nmedia hub:\n";
+$cards = arv_media_hub_cards();
+t( 'five cards, in a fixed order',        array( 'Watch', 'Films', 'Podcasts', 'Photos', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
+t( 'each links to its real page',         home_url( '/watch/' ) === $cards[0]['url'] );
+t( 'photos points at the current year',   home_url( '/photos-2026/' ) === $cards[3]['url'] );
+
+// A live thumbnail for Watch, from the same store the Watch page itself
+// reads, so this card is never showing something a click into Watch would
+// immediately contradict.
+$GLOBALS['_transients']['arv_watch_events'] = array(
+	array( 'slug' => 'black-canyon-2026', 'name' => 'Black Canyon Ultras 2026', 'live' => true, 'start' => '2026-02-14', 'place' => '', 'desc' => '', 'hero' => '',
+	       'streams' => array( array( 'id' => 'aaaaaaaaaaa', 'title' => 'A', 'url' => 'https://youtu.be/aaaaaaaaaaa', 'thumbnail' => 'https://example.com/live.jpg', 'live' => true, 'type' => '', 'start' => '', 'desc' => '', 'aired' => '', 'minutes' => 0, 'views' => 0 ) ) ),
+);
+t( "a live broadcast's own thumbnail wins", 'https://example.com/live.jpg' === arv_media_hub_watch_thumb() );
+
+$GLOBALS['_transients']['arv_films'] = array(
+	array( 'key' => 'documentaries', 'title' => 'Documentaries', 'films' => array(
+		array( 'id' => 'bbbbbbbbbbb', 'title' => 'A Film', 'desc' => '', 'thumbnail' => 'https://example.com/film.jpg', 'published' => '2026-01-01T00:00:00Z', 'url' => 'https://youtu.be/bbbbbbbbbbb', 'lead' => 'A FILM', 'trailer' => null ),
+	) ),
+);
+t( "the newest film's thumbnail is used", 'https://example.com/film.jpg' === arv_media_hub_films_thumb() );
+
+$html = arv_media_hub_render( array( 'heading' => 'Media', 'intro' => 'Everything Aravaipa makes.' ) );
+t( 'the heading renders',                 false !== strpos( $html, 'Media</h2>' ) );
+t( 'the intro too',                       false !== strpos( $html, 'Everything Aravaipa makes.' ) );
+t( 'five cards on the page',              5 === substr_count( $html, 'arv-media-hub__card' ) - substr_count( $html, 'arv-media-hub__card--plain' ) );
+t( 'watch carries its live thumbnail',    false !== strpos( $html, 'example.com/live.jpg' ) );
+t( 'films carries its thumbnail too',     false !== strpos( $html, 'example.com/film.jpg' ) );
+// Podcasts, Photos and Articles have no thumbnail to show and get the flat
+// panel treatment rather than an empty image standing in for one.
+t( 'podcasts gets the plain treatment',   3 === substr_count( $html, 'arv-media-hub__card--plain' ) );
+
+$GLOBALS['_transients']['arv_watch_events'] = 'none';
+$GLOBALS['_transients']['arv_films'] = 'none';
+t( 'no broadcast means no thumbnail, not a broken one', '' === arv_media_hub_watch_thumb() );
+t( 'no film means no thumbnail either',   '' === arv_media_hub_films_thumb() );
+
+t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_media_hub'] ) );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
 
 
 echo "\n$pass passed, $fail failed\n";
