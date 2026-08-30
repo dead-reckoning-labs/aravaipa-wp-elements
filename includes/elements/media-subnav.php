@@ -42,7 +42,7 @@ function arv_media_subnav_element_builder() {
 					'value'   => '',
 					'options' => array(
 						''         => __( '(none)', 'aravaipa-elements' ),
-						'watch'    => __( 'Watch', 'aravaipa-elements' ),
+						'watch'    => __( 'Broadcasts', 'aravaipa-elements' ),
 						'films'    => __( 'Films', 'aravaipa-elements' ),
 						'podcasts' => __( 'Podcasts', 'aravaipa-elements' ),
 						'photos'   => __( 'Photos', 'aravaipa-elements' ),

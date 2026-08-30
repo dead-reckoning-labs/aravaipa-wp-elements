@@ -18,7 +18,7 @@ cs_register_element(
 		'title'   => __( 'Aravaipa Watch', 'aravaipa-elements' ),
 		'values'  => cs_compose_values(
 			array(
-				'heading' => cs_value( 'Watch', 'markup' ),
+				'heading' => cs_value( 'Broadcasts', 'markup' ),
 				'intro'   => cs_value( '', 'markup' ),
 				'limit'   => cs_value( '0', 'markup' ),
 			),
@@ -67,7 +67,7 @@ function arv_watch_element_builder() {
 function arv_watch_element_render( $data ) {
 	return arv_watch_render(
 		array(
-			'heading' => isset( $data['heading'] ) ? $data['heading'] : 'Watch',
+			'heading' => isset( $data['heading'] ) ? $data['heading'] : 'Broadcasts',
 			'intro'   => isset( $data['intro'] ) ? $data['intro'] : '',
 			'limit'   => isset( $data['limit'] ) ? (int) $data['limit'] : 0,
 		)
