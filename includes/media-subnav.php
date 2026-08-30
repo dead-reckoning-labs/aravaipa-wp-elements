@@ -55,6 +55,16 @@ function arv_media_subnav_render( $current = '' ) {
 	$out = '<nav class="arv-media-subnav" aria-label="' . esc_attr__( 'Media', 'aravaipa-elements' ) . '">';
 	$out .= '<div class="arv-media-subnav__inner">';
 
+	// The parent link. Jamil's own read on it: not "Media Hub", which is
+	// this plugin's internal name for the element and not a runner's word
+	// for anything, especially sitting directly under a breadcrumb that
+	// already says MEDIA. One word, reused, is the point: the nav says
+	// Media, the breadcrumb says Media, this says Media, and it is the one
+	// link on a Films or Podcasts page that goes back to the section
+	// itself, which nothing else here did before.
+	$out .= '<a class="arv-media-subnav__parent" href="' . esc_url( home_url( '/media/' ) ) . '">'
+		. esc_html__( 'Media', 'aravaipa-elements' ) . '</a>';
+
 	foreach ( $items as $item ) {
 		$is = ( $current === $item['key'] );
 		$out .= '<a class="arv-media-subnav__link' . ( $is ? ' is-current' : '' ) . '"'

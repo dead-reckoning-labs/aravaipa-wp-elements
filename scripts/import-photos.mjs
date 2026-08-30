@@ -18,10 +18,19 @@
  *   node scripts/import-photos.mjs                 # print what it found
  *   node scripts/import-photos.mjs --post          # write it
  *   node scripts/import-photos.mjs --post --dry-run
+ *   node scripts/import-photos.mjs --from merged.json --post
+ *
+ * --from skips scraping the pages entirely and posts a rows array read
+ * from a file instead: the output of scripts/discover-smugmug.mjs --merge
+ * is meant to reach production this way, so discovery's own read-only
+ * output still passes through this script's normal 20%-drop guard rather
+ * than posting straight from a script that only ever reads.
  *
  * --post requires ARAVAIPA_WP_URL, ARAVAIPA_WP_USER and
  * ARAVAIPA_WP_APP_PASSWORD, an Application Password on an Editor-role user.
  */
+
+import { readFileSync } from 'node:fs';
 
 const YEARS = [2023, 2024, 2025, 2026];
 const BASE = process.env.ARAVAIPA_WP_URL || 'https://www.aravaiparunning.com';
@@ -30,8 +39,15 @@ const BASE = process.env.ARAVAIPA_WP_URL || 'https://www.aravaiparunning.com';
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36';
 
+// Same shape as scripts/discover-smugmug.mjs's parser: a flag followed by
+// a bare value takes that value, otherwise it is a boolean. Needed once
+// --from stopped being a boolean flag; the plain
+// `a.startsWith('--') ? true : ...` version this replaced had no way to
+// tell "--from" (wants a path) apart from "--post" (does not).
 const args = Object.fromEntries(
-  process.argv.slice(2).map(a => (a.startsWith('--') ? [a.slice(2), true] : [a, true]))
+  process.argv.slice(2).flatMap((a, i, all) =>
+    a.startsWith('--') ? [[a.slice(2), all[i + 1]?.startsWith('--') === false ? all[i + 1] : true]] : []
+  )
 );
 
 // Aravaipa's own site furniture, which sits in the header and footer of
@@ -72,7 +88,12 @@ const strip = s =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const rows = [];
+let rows = [];
+
+if (args.from) {
+  rows = JSON.parse(readFileSync(args.from, 'utf8'));
+  console.error(`read ${rows.length} rows from ${args.from}, scraping skipped`);
+} else {
 
 for (const year of YEARS) {
   const res = await fetch(`${BASE}/photos-${year}/`, { headers: { 'User-Agent': UA } });
@@ -119,6 +140,8 @@ for (const year of YEARS) {
   }
 
   console.error(`photos-${year}: ${found} galleries`);
+}
+
 }
 
 // Pick one spelling per photographer: the one they are written as most
