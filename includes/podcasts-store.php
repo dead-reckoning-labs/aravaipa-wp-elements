@@ -58,12 +58,10 @@ function arv_podcasts_shows_config() {
 				'spotify' => '',
 				'apple'   => '1800268722',
 			),
-			'aravaipa-rides'   => array(
-				'title'   => 'Aravaipa Rides Podcast',
-				'feed'    => 'https://anchor.fm/s/b78c48/podcast/rss',
-				'spotify' => '',
-				'apple'   => '1691934660',
-			),
+			// Aravaipa Rides is deliberately not here. It is on the same
+			// Apple Podcasts channel, but it is a distinct brand with its
+			// own site (aravaiparides.com) and belongs on that site's own
+			// podcasts page, not folded into aravaiparunning.com's.
 		)
 	);
 }

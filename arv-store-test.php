@@ -3231,7 +3231,9 @@ $GLOBALS['_http_queue'] = array();
 
 
 // -------------------------------------------------------------------------
-// Podcasts: four shows, read from their own RSS feeds.
+// Podcasts: three shows, read from their own RSS feeds. A fourth, Aravaipa
+// Rides, is on the same Apple Podcasts channel but is a distinct brand
+// with its own site and does not belong on this one.
 // -------------------------------------------------------------------------
 echo "\npodcasts, parsing a feed:\n";
 
@@ -3293,38 +3295,38 @@ t( 'a garbage duration is empty',         '' === arv_podcasts_iso_duration( 'not
 t( 'H:MM:SS for display keeps its shape', '1:05:09' === arv_podcasts_display_duration( '01:05:09' ) );
 t( 'a bare second count displays as M:SS', '51:05' === arv_podcasts_display_duration( '3065' ) );
 
-echo "\npodcasts, fetching all four shows:\n";
+echo "\npodcasts, fetching:\n";
 $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
-// Config order: inside-aravaipa, white-mountain, race-briefings, aravaipa-rides.
+// Config order: inside-aravaipa, white-mountain, race-briefings.
 arv_test_queue_response( array( 'code' => 200, 'body' => arv_test_podcast_rss( $one_item ) ) );
 arv_test_queue_response( array( 'code' => 200, 'body' => arv_test_podcast_rss( $one_item ) ) );
-// White Mountain's feed 500s: dropped, not fatal to the other three.
+// Race Briefings' feed 500s: dropped, not fatal to the other two.
 arv_test_queue_response( array( 'code' => 500, 'body' => '' ) );
-arv_test_queue_response( array( 'code' => 200, 'body' => arv_test_podcast_rss( $one_item ) ) );
 $shows = arv_podcasts_fetch();
-t( 'three of four shows survive a failure', 3 === count( $shows ) );
+t( 'two of three shows survive a failure', 2 === count( $shows ) );
 t( 'the failed show is the one missing',  ! isset( $shows['race-briefings'] ) );
 t( 'a surviving show keeps its config title', 'Inside Aravaipa' === $shows['inside-aravaipa']['title'] );
 t( 'and its platform ids',                '0MvdUlDE9VwocRhrIl9Lwv' === $shows['inside-aravaipa']['spotify'] );
+t( 'aravaipa rides is not configured at all', ! isset( $shows['aravaipa-rides'] ) );
 
 echo "\npodcasts, merging episodes:\n";
 $all = arv_podcasts_all( $shows );
-t( 'one episode per surviving show',      3 === count( $all ) );
+t( 'one episode per surviving show',      2 === count( $all ) );
 t( 'each carries its show',               'inside-aravaipa' === $all[0]['show_key'] );
 t( 'find an episode falls back to the show art when the episode has none', '' !== $all[0]['artwork'] );
 
 echo "\npodcasts, rendering the index:\n";
-$html = arv_podcasts_render( array( 'heading' => 'Podcasts', 'intro' => 'All four shows.' ) );
+$html = arv_podcasts_render( array( 'heading' => 'Podcasts', 'intro' => 'Every show.' ) );
 t( 'the heading renders',                 false !== strpos( $html, 'Podcasts</h2>' ) );
-t( 'the intro too',                       false !== strpos( $html, 'All four shows.' ) );
-t( 'a card per surviving show',           3 === substr_count( $html, 'arv-podcasts__show-card' ) );
-t( 'an episode row per episode',          3 === substr_count( $html, 'arv-podcasts__episode"' ) );
-t( 'a real audio player, not an embed',   3 === substr_count( $html, '<audio class="arv-podcasts__ep-player"' ) );
+t( 'the intro too',                       false !== strpos( $html, 'Every show.' ) );
+t( 'a card per surviving show',           2 === substr_count( $html, 'arv-podcasts__show-card' ) );
+t( 'an episode row per episode',          2 === substr_count( $html, 'arv-podcasts__episode"' ) );
+t( 'a real audio player, not an embed',   2 === substr_count( $html, '<audio class="arv-podcasts__ep-player"' ) );
 t( 'no spotify iframe anywhere',          false === strpos( $html, 'open.spotify.com/embed' ) );
-t( 'nothing preloads uninvited',          3 === substr_count( $html, 'preload="none"' ) );
+t( 'nothing preloads uninvited',          2 === substr_count( $html, 'preload="none"' ) );
 t( 'a limit narrows the merged feed',     1 === substr_count( arv_podcasts_render( array( 'limit' => 1 ) ), 'arv-podcasts__episode"' ) );
-t( 'but never the show cards',            3 === substr_count( arv_podcasts_render( array( 'limit' => 1 ) ), 'arv-podcasts__show-card' ) );
+t( 'but never the show cards',            2 === substr_count( arv_podcasts_render( array( 'limit' => 1 ) ), 'arv-podcasts__show-card' ) );
 
 // No shows at all renders nothing, the same rule Watch and Films use.
 $GLOBALS['_transients']['arv_podcasts'] = 'none';
@@ -3332,7 +3334,7 @@ t( 'no shows renders nothing',            '' === arv_podcasts_render( array() ) 
 $GLOBALS['_transients']['arv_podcasts'] = $shows;
 
 t( 'the index shortcode is registered',   isset( $GLOBALS['SHORTCODES']['arv_podcasts'] ) );
-t( 'and renders the same thing',          arv_podcasts_shortcode( array( 'heading' => 'Podcasts', 'intro' => 'All four shows.' ) ) === $html );
+t( 'and renders the same thing',          arv_podcasts_shortcode( array( 'heading' => 'Podcasts', 'intro' => 'Every show.' ) ) === $html );
 
 echo "\npodcasts, a show's own page:\n";
 $show_html = arv_podcasts_show_render( array( 'show' => 'inside-aravaipa' ) );
