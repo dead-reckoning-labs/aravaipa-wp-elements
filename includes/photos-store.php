@@ -563,12 +563,13 @@ function arv_photos_controls( $years, $current, $photographers ) {
  * @return string
  */
 function arv_photos_card( $card ) {
-	$first = $card['galleries'][0];
-	$cover = arv_photos_cover( $first['url'] );
+	$galleries = arv_photos_ordered_galleries( $card['galleries'] );
+	$primary   = $galleries[0];
+	$cover     = arv_photos_cover( $primary['url'] );
 
 	$by = array();
 
-	foreach ( $card['galleries'] as $gallery ) {
+	foreach ( $galleries as $gallery ) {
 		if ( '' !== $gallery['by'] ) {
 			$by[] = strtolower( $gallery['by'] );
 		}
@@ -578,7 +579,7 @@ function arv_photos_card( $card ) {
 		. ' data-arv-photos-race="' . esc_attr( strtolower( $card['race'] ) ) . '"'
 		. ' data-arv-photos-by="' . esc_attr( implode( '|', $by ) ) . '">';
 
-	$out .= '<a class="arv-photos__link" href="' . esc_url( $first['url'] ) . '"'
+	$out .= '<a class="arv-photos__link" href="' . esc_url( $primary['url'] ) . '"'
 		. ' target="_blank" rel="noopener">';
 
 	if ( '' !== $cover ) {
@@ -606,28 +607,70 @@ function arv_photos_card( $card ) {
 		$out .= '<span class="arv-photos__year-tag">' . esc_html( $card['year'] ) . '</span>';
 	}
 
-	if ( '' !== $first['by'] ) {
-		$out .= '<span class="arv-photos__by-name">' . esc_html( $first['by'] ) . '</span>';
-	}
-
 	$out .= '</span></a>';
 
-	// Everyone after the first. Outside the card's own link for the same
-	// reason the Films race badge is: an <a> inside an <a> is invalid and
-	// browsers resolve it by silently closing the outer one.
-	if ( count( $card['galleries'] ) > 1 ) {
-		$out .= '<span class="arv-photos__more">';
+	// Every photographer is the same badge, including the primary one.
+	// Rendering the first as plain text inside the card's own link and
+	// everyone after as an outlined badge was two treatments of the same
+	// fact, with nothing on the card explaining the difference: one race
+	// looked like it had a name and a link, the next looked like it had a
+	// name and two unrelated buttons. Outside the card's own link for the
+	// same reason the Films race badge is: an <a> inside an <a> is invalid
+	// and browsers resolve it by silently closing the outer one.
+	$out .= '<span class="arv-photos__photographers">';
 
-		foreach ( array_slice( $card['galleries'], 1 ) as $gallery ) {
-			$label = ( '' !== $gallery['by'] ) ? $gallery['by'] : __( 'Gallery', 'aravaipa-elements' );
-			$out  .= '<a class="arv-photos__more-link" href="' . esc_url( $gallery['url'] ) . '"'
-				. ' target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
-		}
-
-		$out .= '</span>';
+	foreach ( $galleries as $gallery ) {
+		$label = ( '' !== $gallery['by'] ) ? $gallery['by'] : __( 'Gallery', 'aravaipa-elements' );
+		$out  .= '<a class="arv-photos__by-badge" href="' . esc_url( $gallery['url'] ) . '"'
+			. ' target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
 	}
 
+	$out .= '</span>';
+
 	return $out . '</li>';
+}
+
+/**
+ * A card's galleries, Aravaipa's own first.
+ *
+ * "First" used to just be whatever order the import happened to produce,
+ * which made the cover photo and the un-badged name a coin flip between
+ * Aravaipa's own gallery and whichever outside photographer's row landed
+ * first. Putting Aravaipa's own gallery first when there is one is a real
+ * rule instead: it is the gallery this site can vouch for, so it is the
+ * one the cover image and the primary link point at.
+ *
+ * @param array $galleries
+ * @return array
+ */
+function arv_photos_ordered_galleries( $galleries ) {
+	// Index carried through as the tiebreaker rather than trusting usort()
+	// to be stable: PHP only guarantees that from 8.0, and this plugin's
+	// own header supports 7.4. Without it, two outside photographers on
+	// the same card could swap places between one render and the next for
+	// no reason a visitor could see, which is a worse bug than the one
+	// this function exists to fix.
+	$indexed = array();
+
+	foreach ( $galleries as $i => $gallery ) {
+		$indexed[] = array( $gallery, $i );
+	}
+
+	usort(
+		$indexed,
+		function ( $a, $b ) {
+			$a_own = ( false !== stripos( $a[0]['by'], 'aravaipa' ) );
+			$b_own = ( false !== stripos( $b[0]['by'], 'aravaipa' ) );
+
+			if ( $a_own !== $b_own ) {
+				return $a_own ? -1 : 1;
+			}
+
+			return $a[1] - $b[1];
+		}
+	);
+
+	return array_column( $indexed, 0 );
 }
 
 /**

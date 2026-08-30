@@ -7181,22 +7181,21 @@
 	color: rgba(244, 244, 244, 0.6);
 }
 
-.arv-photos__by-name {
-	font-size: var(--arv-fs-label);
-	font-weight: 700;
-	color: #4ade80;
-}
-
-.arv-photos__more {
+/* Every photographer on a card is this one badge, including the first.
+   Two treatments of the same fact (plain text for the first, an outlined
+   badge for the rest) read as two different kinds of thing when a card
+   had more than one, which is what made the multi-photographer cards
+   confusing rather than just informative. */
+.arv-photos__photographers {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.4rem;
 	padding: 0 0.9rem 0.85rem;
 }
 
-.arv-photos__more-link,
-.arv-photos__more-link:link,
-.arv-photos__more-link:visited {
+.arv-photos__by-badge,
+.arv-photos__by-badge:link,
+.arv-photos__by-badge:visited {
 	padding: 0.15rem 0.45rem;
 	border: 1px solid rgba(74, 222, 128, 0.45);
 	border-radius: var(--arv-radius-chip);
@@ -7206,8 +7205,8 @@
 	text-decoration: none;
 }
 
-.arv-photos__more-link:hover,
-.arv-photos__more-link:focus {
+.arv-photos__by-badge:hover,
+.arv-photos__by-badge:focus {
 	background: rgba(74, 222, 128, 0.12);
 }
 

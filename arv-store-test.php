@@ -3612,11 +3612,58 @@ t( 'the photographer filter renders',         false !== strpos( $photos_html, 'd
 t( 'the year links render',                   false !== strpos( $photos_html, 'arv-photos__years' ) );
 t( 'a card carries its race for filtering',   false !== strpos( $photos_html, 'data-arv-photos-race=' ) );
 t( 'and every photographer on it',            false !== strpos( $photos_html, "let&#039;s wander photography" ) );
-// The second photographer is a link outside the card's own link: an <a>
-// inside an <a> is invalid and browsers close the outer one.
-t( 'the second photographer is its own link', 1 === substr_count( $photos_html, 'arv-photos__more-link' ) );
+// Every photographer, including the first, is the same badge outside the
+// card's own link: an <a> inside an <a> is invalid and browsers close the
+// outer one. Two on the Coldwater card, one on the Javelina card.
+t( 'every photographer is an equal badge',    3 === substr_count( $photos_html, 'class="arv-photos__by-badge"' ) );
+t( 'no plain-text photographer remains',      false === strpos( $photos_html, 'arv-photos__by-name' ) );
 t( 'a gallery with no cover gets the panel',  false !== strpos( $photos_html, 'arv-photos__cover--none' ) );
 t( 'and never a broken image',                0 === substr_count( $photos_html, 'src=""' ) );
+
+echo "\nphotos, Aravaipa's own gallery leads the card:\n";
+// "First" used to be whatever order the import produced, which made the
+// cover photo and the primary link a coin flip between Aravaipa's own
+// gallery and an outside photographer's. Reordered here on purpose:
+// Aravaipa's own galleries are the ones this site can vouch for.
+$mixed = arv_photos_ordered_galleries(
+	array(
+		array( 'by' => "Let's Wander Photography", 'url' => 'https://lwp.smugmug.com/x' ),
+		array( 'by' => 'Aravaipa Photo Gallery', 'url' => 'https://aravaipa.smugmug.com/x' ),
+		array( 'by' => 'Goat Factory Media', 'url' => 'https://galleries.goatfactorymedia.com/x' ),
+	)
+);
+t( "Aravaipa's own gallery moves to the front", 'Aravaipa Photo Gallery' === $mixed[0]['by'] );
+t( 'the rest keep their relative order',        "Let's Wander Photography" === $mixed[1]['by'] );
+t( 'and the last stays last',                   'Goat Factory Media' === $mixed[2]['by'] );
+
+$no_own = arv_photos_ordered_galleries(
+	array(
+		array( 'by' => 'Goat Factory Media', 'url' => 'https://a.test' ),
+		array( 'by' => "Let's Wander Photography", 'url' => 'https://b.test' ),
+	)
+);
+t( 'with no Aravaipa gallery, order is untouched', 'Goat Factory Media' === $no_own[0]['by'] );
+
+// Rendered: the card's cover and primary link follow Aravaipa's gallery
+// even though it was second in the stored data.
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => "Let's Wander Photography", 'url' => 'https://lwp.smugmug.com/first' ),
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => 'Aravaipa Photo Gallery', 'url' => 'https://aravaipa.smugmug.com/second' ),
+);
+$GLOBALS['_transients'] = array();
+$reordered = arv_photos_render( array() );
+// Specifically the card's own link (the cover), not just that the URL
+// appears somewhere: the badge for it would too, regardless of order.
+t( "the primary link is Aravaipa's, not the stored order",
+	false !== strpos( $reordered, 'class="arv-photos__link" href="https://aravaipa.smugmug.com/second"' ) );
+
+// Back to the three-row fixture the rest of this section relies on.
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => 'Aravaipa Photo Gallery', 'url' => 'https://aravaipa.smugmug.com/a' ),
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => "Let's Wander Photography", 'url' => 'https://lwp.smugmug.com/b' ),
+	array( 'race' => 'Javelina Jundred', 'year' => 2025, 'by' => 'Goat Factory Media', 'url' => 'https://galleries.goatfactorymedia.com/c' ),
+);
+$GLOBALS['_transients'] = array();
 
 // A year page pins itself and must not offer to contradict its own URL.
 $pinned = arv_photos_render( array( 'year' => 2025 ) );
