@@ -41,7 +41,10 @@ cs_register_element(
 		'title'   => __( 'Aravaipa Race Map', 'aravaipa-elements' ),
 		'values'  => cs_compose_values(
 			array(
-				'eyebrow'   => cs_value( 'Every race', 'markup' ),
+				// Empty by default. "Every race" over "Find a race near you"
+				// said the same thing twice and Jamil asked for it gone; the
+				// control stays for anyone who wants an eyebrow here.
+				'eyebrow'   => cs_value( '', 'markup' ),
 				'heading'   => cs_value( 'Find a race near you', 'markup' ),
 				'height'    => cs_value( '520', 'markup' ),
 				'collapsible' => cs_value( 'true', 'markup' ),
