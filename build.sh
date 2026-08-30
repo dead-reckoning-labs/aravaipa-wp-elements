@@ -142,6 +142,13 @@ grep -q '\.arv-watch__race\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-watch__race[hidden] override is missing, the Watch search and year filter will silently do nothing" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
+# Third time for the same trap, on the Films shelf's own cards: without
+# this the search, sort and race filter would set the hidden attribute on
+# every card they mean to hide and nothing would visibly happen.
+grep -q '\.arv-films__card\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-films__card[hidden] override is missing, the Films search and filters will silently do nothing" >&2; missing=1; }
+[ "$missing" -eq 0 ] || exit 1
+
 # The live board's touch shield is rendered hidden and revealed by
 # aravaipa-live.js, so a page whose JavaScript never runs has no
 # undismissable layer sitting over its results. That only holds while the
