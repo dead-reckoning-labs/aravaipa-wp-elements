@@ -347,6 +347,21 @@ function arv_results_render( $data ) {
 		}
 	}
 
+	// Fill in the UltraRunning link from the map for any row that does not
+	// already carry one. The scraper only ever finds these where a human had
+	// already put one on a results page, so the archive is full of races
+	// that have an UltraRunning page nobody ever linked. Their id identifies
+	// the race rather than the edition, so one entry lights up every year of
+	// that race at once. A row that already has a link keeps it: the scraped
+	// one came off the page itself and is the more specific answer.
+	if ( function_exists( 'arv_results_ultrarunning_url' ) ) {
+		foreach ( $rows as $i => $row ) {
+			if ( '' === trim( (string) $row['ultrarunning'] ) ) {
+				$rows[ $i ]['ultrarunning'] = arv_results_ultrarunning_url( $row['name'] );
+			}
+		}
+	}
+
 	$year = isset( $data['year'] ) ? trim( (string) $data['year'] ) : '';
 
 	if ( '' === $year ) {
