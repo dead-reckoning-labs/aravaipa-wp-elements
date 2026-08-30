@@ -7342,3 +7342,20 @@
 		margin: 0.5rem 0 0;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   The theme's own breadcrumb and the media sub-nav below it said the same
+   thing twice: "Home > Media > Films" immediately followed by a strip
+   that opens with "Media" and underlines "Films". The sub-nav already
+   carries the "you are under Media" signal the breadcrumb exists to give,
+   plus the things a breadcrumb cannot: real links to the four sibling
+   sections. Hidden by page rather than removed at the theme level, so
+   every page the sub-nav is not on keeps its breadcrumb exactly as it was.
+
+   Its BreadcrumbList schema.org markup is untouched: display: none does
+   not remove it from the DOM, and Google does not require structured
+   data to be visible to a visitor.
+   --------------------------------------------------------------------------- */
+body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
+	display: none;
+}

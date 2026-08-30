@@ -3034,8 +3034,13 @@ t( 'and url is our page, on that segment', false !== strpos( $v1['url'], 'watch/
 
 $crumbs = arv_watch_seo_breadcrumbs( $ctx );
 t( 'breadcrumbs are a BreadcrumbList',    'BreadcrumbList' === $crumbs['@type'] );
-t( 'three deep, home to race',            3 === count( $crumbs['itemListElement'] ) );
-t( 'via Watch',                           home_url( '/watch/' ) === $crumbs['itemListElement'][1]['item'] );
+// Four deep, not three: Watch moved under Media in the page hierarchy and
+// this schema silently kept describing the old three-level path until it
+// was caught matching against the visible breadcrumb.
+t( 'four deep, home to race',             4 === count( $crumbs['itemListElement'] ) );
+t( 'via Media',                           home_url( '/media/' ) === $crumbs['itemListElement'][1]['item'] );
+t( 'then Broadcasts',                     home_url( '/watch/' ) === $crumbs['itemListElement'][2]['item'] );
+t( 'and the race is last',                $ctx['url'] === $crumbs['itemListElement'][3]['item'] );
 
 // A segment with nothing usable is dropped rather than emitted invalid.
 $ctx4 = $ctx;
@@ -3396,7 +3401,7 @@ $GLOBALS['_http_queue'] = array();
 // -------------------------------------------------------------------------
 echo "\nmedia hub:\n";
 $cards = arv_media_hub_cards();
-t( 'five cards, in a fixed order',        array( 'Watch', 'Films', 'Podcasts', 'Photos', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
+t( 'five cards, in a fixed order',        array( 'Broadcasts', 'Films', 'Podcasts', 'Photos', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
 t( 'each links to its real page',         home_url( '/watch/' ) === $cards[0]['url'] );
 t( 'photos points at the current year',   home_url( '/photos-2026/' ) === $cards[3]['url'] );
 
@@ -3694,6 +3699,12 @@ echo "\nmedia sub-nav:\n";
 $subnav_items = arv_media_subnav_items();
 t( 'five sections',                   5 === count( $subnav_items ) );
 t( 'in the right order',              array( 'watch', 'films', 'podcasts', 'photos', 'articles' ) === array_column( $subnav_items, 'key' ) );
+// The label reads "Broadcasts", but the key, slug and URL all stay
+// "watch": renaming what a visitor reads is not the same decision as
+// moving the URL, which would mean a redirect and the ranking the
+// existing path has already built.
+t( 'the watch key labels itself Broadcasts', 'Broadcasts' === $subnav_items[0]['label'] );
+t( 'and still links to /watch/',             home_url( '/watch/' ) === $subnav_items[0]['url'] );
 t( 'the Media parent link renders',   false !== strpos( arv_media_subnav_render( 'films' ), 'arv-media-subnav__parent" href="https://www.aravaiparunning.com/media/"' ) );
 // Never the active section: the strip lives on Media's own children, not
 // on /media/ itself, so nothing should ever mark this one current.

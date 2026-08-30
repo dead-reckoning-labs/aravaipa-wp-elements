@@ -252,7 +252,7 @@ function arv_watch_render( $args = array() ) {
 		return '';
 	}
 
-	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Watch';
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Broadcasts';
 	$intro   = isset( $args['intro'] ) ? trim( (string) $args['intro'] ) : '';
 	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 0;
 
@@ -562,7 +562,7 @@ function arv_watch_event( $event ) {
 function arv_watch_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		array(
-			'heading' => 'Watch',
+			'heading' => 'Broadcasts',
 			'intro'   => '',
 			'limit'   => 0,
 		),
@@ -1406,8 +1406,13 @@ function arv_watch_seo_videos( $ctx ) {
 }
 
 /**
- * Home > Watch > this race, so a result shows a real path rather than a
- * bare URL.
+ * Home > Media > Broadcasts > this race, so a result shows a real path
+ * rather than a bare URL.
+ *
+ * Four levels, not three: Watch moved under Media in the page hierarchy
+ * (see the breadcrumb-parent fix that shipped with the media sub-nav),
+ * and this stayed at three, so the schema quietly disagreed with the
+ * visible breadcrumb on every one of these pages until now.
  *
  * @param array $ctx
  * @return array
@@ -1425,12 +1430,18 @@ function arv_watch_seo_breadcrumbs( $ctx ) {
 			array(
 				'@type'    => 'ListItem',
 				'position' => 2,
-				'name'     => __( 'Watch', 'aravaipa-elements' ),
-				'item'     => home_url( '/watch/' ),
+				'name'     => __( 'Media', 'aravaipa-elements' ),
+				'item'     => home_url( '/media/' ),
 			),
 			array(
 				'@type'    => 'ListItem',
 				'position' => 3,
+				'name'     => __( 'Broadcasts', 'aravaipa-elements' ),
+				'item'     => home_url( '/watch/' ),
+			),
+			array(
+				'@type'    => 'ListItem',
+				'position' => 4,
 				'name'     => $ctx['name'],
 				'item'     => $ctx['url'],
 			),

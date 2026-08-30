@@ -30,7 +30,7 @@ function arv_media_subnav_items() {
 	return apply_filters(
 		'arv_media_subnav_items',
 		array(
-			array( 'key' => 'watch', 'label' => __( 'Watch', 'aravaipa-elements' ), 'url' => home_url( '/watch/' ) ),
+			array( 'key' => 'watch', 'label' => __( 'Broadcasts', 'aravaipa-elements' ), 'url' => home_url( '/watch/' ) ),
 			array( 'key' => 'films', 'label' => __( 'Films', 'aravaipa-elements' ), 'url' => home_url( '/films/' ) ),
 			array( 'key' => 'podcasts', 'label' => __( 'Podcasts', 'aravaipa-elements' ), 'url' => home_url( '/podcasts/' ) ),
 			array( 'key' => 'photos', 'label' => __( 'Photos', 'aravaipa-elements' ), 'url' => home_url( '/photos/' ) ),

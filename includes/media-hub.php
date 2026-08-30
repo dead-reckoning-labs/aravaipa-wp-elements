@@ -82,7 +82,7 @@ function arv_media_hub_films_thumb() {
 function arv_media_hub_cards() {
 	return array(
 		array(
-			'title' => __( 'Watch', 'aravaipa-elements' ),
+			'title' => __( 'Broadcasts', 'aravaipa-elements' ),
 			'desc'  => __( 'Every Aravaipa Running broadcast, live and on demand.', 'aravaipa-elements' ),
 			'url'   => home_url( '/watch/' ),
 			'thumb' => arv_media_hub_watch_thumb(),
