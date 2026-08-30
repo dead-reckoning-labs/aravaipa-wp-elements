@@ -184,23 +184,31 @@ function arv_films_clean( $raw ) {
 }
 
 /**
- * Newest film first, inside each playlist.
+ * Each playlist in the order that playlist actually wants.
  *
  * The API hands these back in YouTube playlist order, which is whatever
  * order somebody dragged them into in Studio: on the Documentaries
- * playlist that put a 2019 film above a 2024 one and left The Cutoff,
- * the newest film on the site, fourteenth.
+ * playlist that left The Cutoff, the newest film on the site,
+ * fourteenth.
  *
- * Sorted here rather than left to aravaipa-films.js because the sort
- * control on the page says "Newest first" and is selected by default, so
- * that is a claim the HTML has to be able to make on its own. The script
- * only ever ran its sort in response to a change event, so until a
- * visitor touched a control the page and the control disagreed, and a
- * crawler never saw the order at all.
+ * The two playlists want different orders, which the numbers make plain
+ * rather than being a matter of taste:
  *
- * Within a playlist only, for the same reason the script sorts that way:
- * the sections are the two playlists, and merging them would answer a
- * question nobody asked.
+ * Documentaries is a back catalogue. Seven years deep, and the view
+ * counts run from five thousand to nearly eight hundred thousand, a
+ * 165x spread. A 2019 film is not worse than a 2024 one, so date ranks
+ * almost nothing, while views are a real answer to "which of these is
+ * worth my time". Most watched first.
+ *
+ * Aravaipa Originals is a running series, five months old and shipping
+ * about monthly. Recency is the entire point of a series, and sorting it
+ * by views would bury last month's film under one from September. Newest
+ * first.
+ *
+ * Sorted here rather than left to aravaipa-films.js because this is the
+ * order the page is served in, which is what a crawler sees and what the
+ * sort control has to agree with before anyone touches it. The script
+ * still applies an explicit choice on top.
  *
  * @param array $playlists
  * @return array
@@ -209,24 +217,68 @@ function arv_films_sort( $playlists ) {
 	foreach ( $playlists as $i => $playlist ) {
 		$films = $playlist['films'];
 
-		usort(
-			$films,
-			function ( $a, $b ) {
-				$ta = $a['published'] ? strtotime( $a['published'] ) : 0;
-				$tb = $b['published'] ? strtotime( $b['published'] ) : 0;
-
-				if ( $ta === $tb ) {
-					return strcasecmp( $a['title'], $b['title'] );
-				}
-
-				return $tb - $ta;
-			}
-		);
+		usort( $films, arv_films_sorter( arv_films_default_sort( $playlist['key'] ) ) );
 
 		$playlists[ $i ]['films'] = $films;
 	}
 
 	return $playlists;
+}
+
+/**
+ * Which order a playlist is served in when nobody has asked for one.
+ *
+ * Keyed on the playlist rather than hardcoded per position, and
+ * filterable, so a third playlist does not have to inherit an opinion
+ * formed about these two.
+ *
+ * @param string $key
+ * @return string 'views' or 'date'.
+ */
+function arv_films_default_sort( $key ) {
+	$defaults = apply_filters(
+		'arv_films_default_sort',
+		array(
+			'documentaries' => 'views',
+			'originals'     => 'date',
+		)
+	);
+
+	return isset( $defaults[ $key ] ) ? $defaults[ $key ] : 'date';
+}
+
+/**
+ * The comparator for one sort order.
+ *
+ * Ties broken by the other field rather than by title: two films with the
+ * same view count are almost always both new and both low, so the newer
+ * one is the more useful answer, and two films published the same day
+ * are better separated by which one people actually watched.
+ *
+ * @param string $by 'views' or 'date'.
+ * @return callable
+ */
+function arv_films_sorter( $by ) {
+	if ( 'views' === $by ) {
+		return function ( $a, $b ) {
+			if ( (int) $a['views'] === (int) $b['views'] ) {
+				return strtotime( $b['published'] ) - strtotime( $a['published'] );
+			}
+
+			return (int) $b['views'] - (int) $a['views'];
+		};
+	}
+
+	return function ( $a, $b ) {
+		$ta = $a['published'] ? strtotime( $a['published'] ) : 0;
+		$tb = $b['published'] ? strtotime( $b['published'] ) : 0;
+
+		if ( $ta === $tb ) {
+			return (int) $b['views'] - (int) $a['views'];
+		}
+
+		return $tb - $ta;
+	};
 }
 
 /**
@@ -741,8 +793,13 @@ function arv_films_controls( $all ) {
 		. '</svg></button>';
 	$out .= '</span>';
 
+	// The first option is a real state, not a placeholder: the two
+	// sections are served in different orders on purpose (see
+	// arv_films_sort), so no single one of the two below is true of the
+	// page as it arrives. Picking either applies it to both sections.
 	$out .= '<select class="arv-films__sort" data-arv-films-sort aria-label="'
 		. esc_attr__( 'Sort films', 'aravaipa-elements' ) . '">';
+	$out .= '<option value="">' . esc_html__( 'Default order', 'aravaipa-elements' ) . '</option>';
 	$out .= '<option value="date">' . esc_html__( 'Newest first', 'aravaipa-elements' ) . '</option>';
 	$out .= '<option value="views">' . esc_html__( 'Most watched', 'aravaipa-elements' ) . '</option>';
 	$out .= '</select>';

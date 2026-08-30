@@ -102,14 +102,23 @@
 		return;
 	}
 
+	// The order the server sent, kept so "Default order" can be returned
+	// to rather than being a one-way door out of it.
+	var originals = [];
+
+	for ( var n = 0; n < lists.length; n++ ) {
+		originals.push( Array.prototype.slice.call( lists[ n ].children ) );
+	}
+
 	function apply() {
 		var q = search ? search.value.trim().toLowerCase() : '';
 		var wantRace = race ? race.value : '';
-		var by = sort ? sort.value : 'date';
+		var by = sort ? sort.value : '';
 		var shown = 0;
 
 		for ( var i = 0; i < lists.length; i++ ) {
 			var list = lists[ i ];
+			var original = originals[ i ];
 			var cards = Array.prototype.slice.call( list.children );
 
 			for ( var j = 0; j < cards.length; j++ ) {
@@ -129,13 +138,26 @@
 				}
 			}
 
-			cards.sort( function ( a, b ) {
-				var key = ( 'views' === by ) ? 'data-arv-films-views' : 'data-arv-films-date';
-				return Number( b.getAttribute( key ) || 0 ) - Number( a.getAttribute( key ) || 0 );
-			} );
+			// '' is "default order", which is the order the server sent:
+			// the two sections are deliberately sorted differently there
+			// (most watched for the back catalogue, newest for the
+			// running series), so there is nothing for this to compute.
+			// Restored from the original order rather than left alone, so
+			// switching back to it after picking a sort actually goes
+			// back.
+			if ( '' === by ) {
+				for ( var d = 0; d < original.length; d++ ) {
+					list.appendChild( original[ d ] );
+				}
+			} else {
+				cards.sort( function ( a, b ) {
+					var key = ( 'views' === by ) ? 'data-arv-films-views' : 'data-arv-films-date';
+					return Number( b.getAttribute( key ) || 0 ) - Number( a.getAttribute( key ) || 0 );
+				} );
 
-			for ( var k = 0; k < cards.length; k++ ) {
-				list.appendChild( cards[ k ] );
+				for ( var k = 0; k < cards.length; k++ ) {
+					list.appendChild( cards[ k ] );
+				}
 			}
 		}
 
