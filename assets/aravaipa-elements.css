@@ -2018,6 +2018,12 @@
 	flex: 0 0 auto;
 	padding: 0.3rem 0.6rem;
 	border: 1px solid var(--arv-teal-deep);
+	/* The one button v0.21.36's rounding pass missed. Every other CTA in the
+	   plugin already takes --arv-radius: the race cards, the featured block,
+	   the map's popup buttons, the hero, the Watch pages. These stayed sharp
+	   rectangles on the races and results pages, which between them are most
+	   of the buttons a visitor actually sees. */
+	border-radius: var(--arv-radius);
 	color: var(--arv-teal-deep);
 	font-size: var(--arv-fs-btn);
 	font-weight: 700;
@@ -2482,9 +2488,25 @@
 .arv-map__canvas .leaflet-bar.arv-map__nearme--inline {
 	border: 1px solid rgba(0, 0, 0, 0.2);
 	box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+	/* Stated rather than left to stretch. With the input's stray margin gone
+	   the row is 44px either way, but an explicit height means a future
+	   margin appearing anywhere in this row cannot silently make this box
+	   taller than the input again. */
+	height: 44px;
+	/* Leaflet's own 4px, against the input's 8px, read as two different
+	   controls sitting next to each other. */
+	border-radius: var(--arv-radius);
 }
 
 .arv-map__search .arv-map__search-input {
+	/* The theme puts a 9px bottom margin under every input. On a flex row
+	   that margin is part of the item's outer size, so the line grew to 53px
+	   while the input's own box stayed 44px, and Near me beside it stretched
+	   to fill all 53. That is the whole reason the two looked like different
+	   controls: not the button being tall, the input carrying an invisible
+	   9px of margin under it. Measured in the live page rather than guessed
+	   at, after the CSS here already said both were 44px. */
+	margin: 0;
 	padding: 0.55rem 0.7rem;
 	border: 1px solid rgba(0, 0, 0, 0.2);
 	border-radius: var(--arv-radius);
@@ -2804,8 +2826,12 @@
 	   button was a 30px box holding a hairline glyph. Height matches the
 	   search input beside it so the pair reads as one control. */
 	min-width: 44px;
-	height: 44px;
+	/* Fills the wrapper rather than setting its own 44px, which with the
+	   wrapper's 1px border would overflow it by 2px and square off the
+	   corners the wrapper just rounded. */
+	height: 100%;
 	padding: 0 0.6rem;
+	border-radius: inherit;
 	color: var(--arv-ink, #272727);
 }
 

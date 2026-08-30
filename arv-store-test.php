@@ -205,6 +205,7 @@ require_once __DIR__ . '/includes/elements/upcoming-races.php';
 require_once __DIR__ . '/includes/elements/season-calendar.php';
 require_once __DIR__ . '/includes/elements/race-status.php';
 require_once __DIR__ . '/includes/elements/featured-race.php';
+require_once __DIR__ . '/includes/elements/race-map.php';
 require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
@@ -2924,6 +2925,52 @@ t( 'rendered hidden, not visible',            false !== strpos( $frame, 'hidden 
 // bare div that only a pointer can dismiss.
 t( 'and is a real button',                    false !== strpos( $frame, '<button class="arv-live__shield"' ) );
 t( 'saying what the first tap does',          false !== strpos( $frame, 'Tap to use the board' ) );
+
+
+
+// -------------------------------------------------------------------------
+// Race map: the search row's two controls.
+// -------------------------------------------------------------------------
+echo "\nrace map controls:\n";
+$css = file_get_contents( __DIR__ . '/assets/aravaipa-elements.css' );
+
+// The theme puts a 9px bottom margin under every input. On a flex row that
+// margin is part of the item's outer size, so the line grew to 53px while
+// the input's own box stayed 44px and Near me stretched to fill all 53.
+// Measured in the live page; the CSS already claimed both were 44.
+t( 'the search input clears its margin',  1 === preg_match( '/\.arv-map__search \.arv-map__search-input \{\s*(?:\/\*.*?\*\/\s*)?margin: 0;/s', $css ) );
+t( 'and Near me states its own height',   1 === preg_match( '/\.leaflet-bar\.arv-map__nearme--inline \{[^}]*height: 44px;/s', $css ) );
+t( 'and matches the input radius',        1 === preg_match( '/\.leaflet-bar\.arv-map__nearme--inline \{[^}]*border-radius: var\(--arv-radius\);/s', $css ) );
+// height:100%, not a second 44px: with the wrapper's 1px border that would
+// overflow by 2px and square off the corners the wrapper just rounded.
+t( 'the link fills the wrapper',          1 === preg_match( '/\.arv-map__nearme a,[^{]*\{[^}]*height: 100%;/s', $css ) );
+t( 'and inherits its rounded corners',    1 === preg_match( '/\.arv-map__nearme a,[^{]*\{[^}]*border-radius: inherit;/s', $css ) );
+
+// Every button in the plugin takes the shared radius scale. This is a set
+// rather than one assertion because the last rounding pass missed
+// .arv-calendar__action, and the races and results pages, which is where
+// most of the buttons a visitor sees actually live, kept sharp rectangles
+// for fifteen releases without anyone noticing.
+foreach ( array(
+	'arv-hero__cta',
+	'arv-distance__cta',
+	'arv-races__cta',
+	'arv-featured__cta',
+	'arv-calendar__action',
+	'arv-map__popup-cta',
+	'arv-watch-race__cta',
+) as $button ) {
+	t(
+		"$button is rounded",
+		1 === preg_match( '/\.' . preg_quote( $button, '/' ) . '[^{}]*\{[^}]*border-radius: var\(--arv-radius\);/s', $css )
+	);
+}
+
+// "Every race" over "Find a race near you" said the same thing twice.
+$el = $GLOBALS['EL']['aravaipa-race-map'] ?? null;
+t( 'the map element is registered',       null !== $el );
+t( 'and its eyebrow defaults to empty',   '' === ( $el['values']['eyebrow'] ?? 'unset' ) );
+t( 'while the heading is unchanged',      'Find a race near you' === ( $el['values']['heading'] ?? '' ) );
 
 
 echo "\n$pass passed, $fail failed\n";
