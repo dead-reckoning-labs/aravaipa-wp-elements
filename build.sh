@@ -52,9 +52,9 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/media-hub.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
+cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/photos-store.php includes/media-hub.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -147,6 +147,13 @@ grep -q '\.arv-watch__race\[hidden\]' assets/aravaipa-elements.css \
 # every card they mean to hide and nothing would visibly happen.
 grep -q '\.arv-films__card\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-films__card[hidden] override is missing, the Films search and filters will silently do nothing" >&2; missing=1; }
+[ "$missing" -eq 0 ] || exit 1
+
+# Fourth time, on the Photos grid. Same specificity tie, same silent
+# failure: the search and photographer filter would set the attribute on
+# every card and the grid would not change.
+grep -q '\.arv-photos__card\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-photos__card[hidden] override is missing, the Photos search and filter will silently do nothing" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
 # The live board's touch shield is rendered hidden and revealed by

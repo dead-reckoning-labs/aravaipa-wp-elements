@@ -16,6 +16,7 @@ define( 'ARV_ELEMENTS_URL', './' );
 define( 'DAY_IN_SECONDS', 86400 );
 define( 'MINUTE_IN_SECONDS', 60 );
 define( 'HOUR_IN_SECONDS', 3600 );
+define( 'WEEK_IN_SECONDS', 604800 );
 define( 'PHP_URL_PATH_STUB', true );
 
 $GLOBALS['posts'] = array();
@@ -85,6 +86,9 @@ function esc_attr__( $s, $d = '' ) { return $s; }
 // Modelled rather than stubbed to one, because the SEO code calls the second
 // form, the live page's season switcher calls the third, and the weather
 // lookup calls the first.
+function remove_query_arg( $key, $url = null ) {
+	return null !== $url ? $url : ( $GLOBALS['CURRENT_PATH'] ?? '/' );
+}
 function add_query_arg( $a, $v = null, $url = null ) {
 	if ( is_array( $a ) ) {
 		$url  = null !== $v ? $v : ( $GLOBALS['CURRENT_PATH'] ?? '/' );
@@ -148,6 +152,7 @@ $GLOBALS['ARV_OPTIONS'] = array();
 function get_option($k,$d=false){ return array_key_exists($k,$GLOBALS['ARV_OPTIONS']) ? $GLOBALS['ARV_OPTIONS'][$k] : $d; }
 function update_option($k,$v,$a=null){ $GLOBALS['ARV_OPTIONS'][$k]=$v; return true; }
 function esc_url_raw($u){ return $u; }
+function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 
 function get_posts( $args ) {
 	$out = array();
@@ -214,6 +219,7 @@ require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/stats-store.php';
 require_once __DIR__ . '/includes/watch-store.php';
 require_once __DIR__ . '/includes/films-store.php';
+require_once __DIR__ . '/includes/photos-store.php';
 require_once __DIR__ . '/includes/podcasts-store.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/weather.php';
@@ -3508,6 +3514,126 @@ t( 'with a search box',                     false !== strpos( $carded, 'data-arv
 unset( $GLOBALS['posts'][9101], $GLOBALS['posts'][9102], $GLOBALS['posts'][9103], $GLOBALS['posts'][9104] );
 unset( $GLOBALS['meta'][9101], $GLOBALS['meta'][9102], $GLOBALS['meta'][9103], $GLOBALS['meta'][9104] );
 arv_race_store_flush_cache();
+$GLOBALS['_transients'] = array();
+
+
+
+echo "\nphotos, the store:\n";
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => 'Aravaipa Photo Gallery', 'url' => 'https://aravaipa.smugmug.com/2026-Events/Coldwater-Rumble' ),
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => "Let's Wander Photography", 'url' => 'https://lwp.smugmug.com/2026/Coldwater' ),
+	array( 'race' => 'Baldface Scramble', 'year' => 2026, 'by' => 'Goat Factory Media', 'url' => 'https://galleries.goatfactorymedia.com/baldface' ),
+	array( 'race' => 'Javelina Jundred', 'year' => 2025, 'by' => 'Aravaipa Photo Gallery', 'url' => 'https://aravaipa.smugmug.com/2025-Events/Javelina' ),
+	// Junk, to prove the read coerces rather than trusting the option.
+	array( 'race' => '', 'year' => 2025, 'by' => 'Nobody', 'url' => 'https://example.com/x' ),
+	array( 'race' => 'No Link', 'year' => 2025, 'by' => 'Nobody', 'url' => '' ),
+);
+$photos = arv_photos_store_get();
+t( 'rows with no race or no url are dropped', 4 === count( $photos ) );
+t( 'newest year first',                       2026 === $photos[0]['year'] );
+t( 'and alphabetical within a year',          'Baldface Scramble' === $photos[0]['race'] );
+t( 'the years present',                       array( 2026, 2025 ) === arv_photos_years( $photos ) );
+t( 'distinct photographers, sorted',          3 === count( arv_photos_photographers( $photos ) ) );
+
+// A race shot by three photographers is one card, not three near-identical
+// cards in a row.
+$grouped = arv_photos_group( $photos );
+t( 'one card per race per year',              3 === count( $grouped ) );
+$coldwater = null;
+foreach ( $grouped as $g ) {
+	if ( 'Coldwater Rumble' === $g['race'] ) { $coldwater = $g; }
+}
+t( 'both photographers on the one card',      null !== $coldwater && 2 === count( $coldwater['galleries'] ) );
+// The same race in two different years stays two cards: they are different
+// sets of pictures.
+t( 'the same race in two years is two cards', 2 === count( array_filter( $grouped, function ( $g ) { return 2026 === $g['year']; } ) ) );
+
+echo "\nphotos, writing:\n";
+$stored = arv_photos_store_set(
+	array(
+		array( 'race' => 'Cocodona 250', 'year' => 2026, 'by' => 'Run 200 Photos', 'url' => 'https://www.run200photos.com/cocodona' ),
+		// Neither of these should ever reach an href.
+		array( 'race' => 'Bad', 'year' => 2026, 'by' => 'x', 'url' => 'javascript:alert(1)' ),
+		array( 'race' => 'Bad', 'year' => 2026, 'by' => 'x', 'url' => 'data:text/html,<script>' ),
+		array( 'race' => 'Relative', 'year' => 2026, 'by' => 'x', 'url' => '/local/path' ),
+	)
+);
+t( 'only absolute http(s) urls are stored',   1 === $stored );
+t( 'and that is the real one',                'Cocodona 250' === arv_photos_store_get()[0]['race'] );
+
+echo "\nphotos, reading a cover out of a gallery page:\n";
+// Open Graph is the whole reason an outside photographer's gallery can sit
+// beside Aravaipa's own and look like it belongs, so the read of it is
+// worth testing in both attribute orders.
+t( 'property then content',                   'https://x.test/a.jpg' === arv_photos_og_image( '<head><meta property="og:image" content="https://x.test/a.jpg"></head>' ) );
+t( 'content then property',                   'https://x.test/b.jpg' === arv_photos_og_image( '<head><meta content="https://x.test/b.jpg" property="og:image"></head>' ) );
+t( 'single quotes',                           'https://x.test/c.jpg' === arv_photos_og_image( "<head><meta property='og:image' content='https://x.test/c.jpg'></head>" ) );
+t( 'entities are decoded',                    'https://x.test/d.jpg?a=1&b=2' === arv_photos_og_image( '<head><meta property="og:image" content="https://x.test/d.jpg?a=1&amp;b=2"></head>' ) );
+t( 'no tag at all',                           '' === arv_photos_og_image( '<head><title>nothing</title></head>' ) );
+// A gallery page's body is full of <img> and the odd share widget, and the
+// first match in the whole document is not reliably the page's own cover.
+t( 'only the head is searched',               '' === arv_photos_og_image( '<head></head><body><meta property="og:image" content="https://x.test/body.jpg"></body>' ) );
+// A relative or javascript: value has no business reaching an src.
+t( 'a relative url is refused',               '' === arv_photos_og_image( '<head><meta property="og:image" content="/relative.jpg"></head>' ) );
+t( 'a javascript url is refused',             '' === arv_photos_og_image( '<head><meta property="og:image" content="javascript:alert(1)"></head>' ) );
+
+echo "\nphotos, fetching a cover:\n";
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 200, 'body' => '<head><meta property="og:image" content="https://cdn.test/cover.jpg"></head>' ) );
+t( 'a cover is read from the gallery',        'https://cdn.test/cover.jpg' === arv_photos_cover( 'https://gallery.test/a' ) );
+// Cached, so a grid of a hundred cards is a hundred reads once and none
+// after: these are other people's servers.
+t( 'and cached, not re-fetched',              'https://cdn.test/cover.jpg' === arv_photos_cover( 'https://gallery.test/a' ) );
+// Two of the hosts already linked give nothing up. That has to be a card
+// with no picture, never a broken image.
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 403, 'body' => '' ) );
+t( 'a host that refuses gives no cover',      '' === arv_photos_cover( 'https://blocked.test/a' ) );
+$GLOBALS['_transients'] = array();
+arv_test_queue_response( array( 'code' => 200, 'body' => '<head><title>no og tag here</title></head>' ) );
+t( 'a page with no tag gives no cover',       '' === arv_photos_cover( 'https://bare.test/a' ) );
+t( 'an empty url is not fetched at all',      '' === arv_photos_cover( '' ) );
+
+echo "\nphotos, rendering:\n";
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => 'Aravaipa Photo Gallery', 'url' => 'https://aravaipa.smugmug.com/a' ),
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => "Let's Wander Photography", 'url' => 'https://lwp.smugmug.com/b' ),
+	array( 'race' => 'Javelina Jundred', 'year' => 2025, 'by' => 'Goat Factory Media', 'url' => 'https://galleries.goatfactorymedia.com/c' ),
+);
+$GLOBALS['_transients'] = array();
+$photos_html = arv_photos_render( array( 'heading' => 'Photos', 'intro' => 'Every race.' ) );
+t( 'the heading renders',                     false !== strpos( $photos_html, 'Photos' ) );
+t( 'the intro renders',                       false !== strpos( $photos_html, 'Every race.' ) );
+t( 'one card per race per year',              2 === substr_count( $photos_html, 'class="arv-photos__card"' ) );
+t( 'the search box renders',                  false !== strpos( $photos_html, 'data-arv-photos-search' ) );
+t( 'the photographer filter renders',         false !== strpos( $photos_html, 'data-arv-photos-by' ) );
+t( 'the year links render',                   false !== strpos( $photos_html, 'arv-photos__years' ) );
+t( 'a card carries its race for filtering',   false !== strpos( $photos_html, 'data-arv-photos-race=' ) );
+t( 'and every photographer on it',            false !== strpos( $photos_html, "let&#039;s wander photography" ) );
+// The second photographer is a link outside the card's own link: an <a>
+// inside an <a> is invalid and browsers close the outer one.
+t( 'the second photographer is its own link', 1 === substr_count( $photos_html, 'arv-photos__more-link' ) );
+t( 'a gallery with no cover gets the panel',  false !== strpos( $photos_html, 'arv-photos__cover--none' ) );
+t( 'and never a broken image',                0 === substr_count( $photos_html, 'src=""' ) );
+
+// A year page pins itself and must not offer to contradict its own URL.
+$pinned = arv_photos_render( array( 'year' => 2025 ) );
+t( 'a pinned year shows only that year',      1 === substr_count( $pinned, 'class="arv-photos__card"' ) );
+t( 'and hides the year switcher',             false === strpos( $pinned, 'arv-photos__years' ) );
+t( 'the right year survived',                 false !== strpos( $pinned, 'Javelina Jundred' ) );
+
+// ?year= is how the year links work, and a nonsense one falls back to
+// everything rather than an empty page.
+$_GET['year'] = '2026';
+t( 'a requested year filters',                1 === substr_count( arv_photos_render( array() ), 'class="arv-photos__card"' ) );
+$_GET['year'] = '1999';
+t( 'an unknown year shows everything',        2 === substr_count( arv_photos_render( array() ), 'class="arv-photos__card"' ) );
+$_GET['year'] = 'nonsense';
+t( 'a non-numeric year shows everything',     2 === substr_count( arv_photos_render( array() ), 'class="arv-photos__card"' ) );
+unset( $_GET['year'] );
+
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array();
+t( 'no galleries renders nothing at all',     '' === arv_photos_render( array() ) );
 $GLOBALS['_transients'] = array();
 
 
