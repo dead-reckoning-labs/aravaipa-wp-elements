@@ -2320,6 +2320,35 @@ $without = arv_upcoming_races_action(
 );
 t( 'a race with no page keeps the board', 'https://live.aravaiparunning.com/#/javelina-2026' === $without['url'] );
 
+// A published close date beats the lead window. Oli Kai sat five days out
+// with entries open until the Tuesday and led the home page with a Live
+// Results button on an empty board, because the lead window applied to every
+// race rather than only to races with no close date to go by.
+$oli = array(
+	'name' => 'Oli Kai', 'iso' => '2026-09-05', 'end' => '', 'closes' => '2026-09-01',
+	'live' => '', 'page' => '',
+	'register' => 'https://ultrasignup.com/register.aspx?did=134059',
+);
+$open   = arv_upcoming_races_action( $oli, '2026-08-31' );
+$eve    = arv_upcoming_races_action( $oli, '2026-09-01' );
+$closed = arv_upcoming_races_action( $oli, '2026-09-02' );
+
+t( 'entries open still says Register',  'Register' === $open['label'] );
+t( 'the last day of entries too',       'Register' === $eve['label'] );
+t( 'and it sells the entry',            'https://ultrasignup.com/register.aspx?did=134059' === $open['url'] );
+t( 'the day after, live results',       'Live Results' === $closed['label'] );
+t( 'on the board for that race',        'https://ultrasignup.com/results_event.aspx?did=134059' === $closed['url'] );
+
+// The window itself is untouched for a race that published no close date,
+// which is most of them: that is the case it was written for.
+$nodate = array(
+	'name' => 'No Close Date', 'iso' => '2026-09-05', 'end' => '', 'closes' => '',
+	'live' => '', 'page' => '',
+	'register' => 'https://ultrasignup.com/register.aspx?did=999999',
+);
+t( 'no close date still flips on lead', 'Live Results' === arv_upcoming_races_action( $nodate, '2026-08-31' )['label'] );
+t( 'and sells before the window opens', 'Register' === arv_upcoming_races_action( $nodate, '2026-08-30' )['label'] );
+
 // An internal destination should not open a new tab. Everything this element
 // linked to used to be off-site, so the attribute was unconditional.
 t( 'the site\'s own page opens in place', '' === arv_races_link_target( 'https://www.aravaiparunning.com/live-results/rock-hawk/' ) );
