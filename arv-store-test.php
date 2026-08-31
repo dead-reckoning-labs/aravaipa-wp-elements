@@ -3415,11 +3415,12 @@ $GLOBALS['_http_queue'] = array();
 // -------------------------------------------------------------------------
 echo "\nmedia hub:\n";
 $cards = arv_media_hub_cards();
-t( 'five cards, in a fixed order',        array( 'Broadcasts', 'Films', 'Podcasts', 'Photos', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
+// Four, not five: Photos is a runner-facing page, not audience-facing
+// media, so it keeps its top-level nav item and leaves this grid.
+t( 'four cards, in a fixed order',        array( 'Broadcasts', 'Films', 'Podcasts', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
 t( 'each links to its real page',         home_url( '/watch/' ) === $cards[0]['url'] );
-// Was /photos-2026/, a year that goes stale every January. Points at the
-// real, filterable index now that one exists (see the Photos rebuild).
-t( 'photos points at the real index',     home_url( '/photos/' ) === $cards[3]['url'] );
+t( 'photos is not one of the cards',      ! in_array( home_url( '/photos/' ), array_column( $cards, 'url' ), true ) );
+t( 'articles is last',                    home_url( '/blog/' ) === $cards[3]['url'] );
 
 // A live thumbnail for Watch, from the same store the Watch page itself
 // reads, so this card is never showing something a click into Watch would
@@ -3437,20 +3438,55 @@ $GLOBALS['_transients']['arv_films'] = array(
 );
 t( "the newest film's thumbnail is used", 'https://example.com/film.jpg' === arv_media_hub_films_thumb() );
 
+// Podcasts and Articles both carry real artwork now. Both reasons they
+// did not are gone: Podcasts no longer needs a Spotify call (the RSS
+// rebuild put artwork in the store) and the blog's "no single newest
+// post to pick" objection is moot now the Latest feed picks one anyway.
+$podcast_fixture = array(
+	array( 'key' => 'inside-aravaipa', 'title' => 'Inside Aravaipa', 'feed' => '', 'spotify' => '', 'apple' => '',
+	       'artwork' => 'https://example.com/show.jpg', 'summary' => '',
+	       'episodes' => array( array( 'title' => 'An Episode', 'audio' => 'https://x.test/a.mp3', 'link' => '',
+	                                   'artwork' => '', 'guid' => 'g1', 'duration' => '', 'published' => '2026-05-05T00:00:00Z' ) ) ),
+);
+$GLOBALS['_transients']['arv_podcasts'] = $podcast_fixture;
+t( "the newest episode's artwork is used", 'https://example.com/show.jpg' === arv_media_hub_podcasts_thumb() );
+
+$hub_posts_backup   = $GLOBALS['posts'];
+$GLOBALS['posts']   = array( 9401 => array( 'title' => 'A Post', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-07T00:00:00Z', 'thumb' => 'https://example.com/post.jpg' ) );
+delete_transient( 'arv_media_latest_posts' );
+t( "the newest post's featured image is used", 'https://example.com/post.jpg' === arv_media_hub_articles_thumb() );
+
 $html = arv_media_hub_render( array( 'heading' => 'Media', 'intro' => 'Everything Aravaipa makes.' ) );
 t( 'the heading renders',                 false !== strpos( $html, 'Media</h2>' ) );
 t( 'the intro too',                       false !== strpos( $html, 'Everything Aravaipa makes.' ) );
-t( 'five cards on the page',              5 === substr_count( $html, 'arv-media-hub__card' ) - substr_count( $html, 'arv-media-hub__card--plain' ) );
+t( 'four cards on the page',              4 === substr_count( $html, 'arv-media-hub__card' ) - substr_count( $html, 'arv-media-hub__card--plain' ) );
 t( 'watch carries its live thumbnail',    false !== strpos( $html, 'example.com/live.jpg' ) );
 t( 'films carries its thumbnail too',     false !== strpos( $html, 'example.com/film.jpg' ) );
-// Podcasts, Photos and Articles have no thumbnail to show and get the flat
-// panel treatment rather than an empty image standing in for one.
-t( 'podcasts gets the plain treatment',   3 === substr_count( $html, 'arv-media-hub__card--plain' ) );
+t( 'podcasts carries its artwork',        false !== strpos( $html, 'example.com/show.jpg' ) );
+t( 'articles carries its featured image', false !== strpos( $html, 'example.com/post.jpg' ) );
+// Every card has real artwork now, so nothing should be falling back to
+// the flat no-image panel: one that did would be the odd one out in a row
+// of four, which is the whole reason this changed.
+t( 'no card falls back to the flat panel', 0 === substr_count( $html, 'arv-media-hub__card--plain' ) );
+
+// The fallback itself still has to work: a store that is down should give
+// a plain card, not a broken image.
+$GLOBALS['_transients']['arv_podcasts'] = 'none';
+t( 'a dead store gives a plain card, not a broken image',
+	0 === substr_count( arv_media_hub_render( array() ), 'src=""' ) );
+$GLOBALS['_transients']['arv_podcasts'] = $podcast_fixture;
 
 $GLOBALS['_transients']['arv_watch_events'] = 'none';
 $GLOBALS['_transients']['arv_films'] = 'none';
+$GLOBALS['_transients']['arv_podcasts'] = 'none';
 t( 'no broadcast means no thumbnail, not a broken one', '' === arv_media_hub_watch_thumb() );
 t( 'no film means no thumbnail either',   '' === arv_media_hub_films_thumb() );
+t( 'nor a podcast',                       '' === arv_media_hub_podcasts_thumb() );
+$GLOBALS['posts'] = array();
+delete_transient( 'arv_media_latest_posts' );
+t( 'nor an article',                      '' === arv_media_hub_articles_thumb() );
+$GLOBALS['posts'] = $hub_posts_backup;
+delete_transient( 'arv_media_latest_posts' );
 
 t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_media_hub'] ) );
 

@@ -15,14 +15,23 @@
  * Cornerstone active. The element wrapper is
  * includes/elements/media-hub.php.
  *
- * Two of the five cards carry a live thumbnail, read from the same stores
- * Watch and Films already load on every page: the newest broadcast and the
- * newest film, so this page is never showing something stale that a visit
- * to either section would immediately contradict. Photos, the blog and
- * Podcasts do not, on purpose. There is no single "newest photo" or
- * "newest post" this page has any business picking over the page built to
- * show them, and Podcasts would need a network call to Spotify at render
- * time for art this page can live without.
+ * Every card carries a live thumbnail, read from the same stores each
+ * section already loads: the newest broadcast, film, podcast episode and
+ * blog post. Nothing here is a stored image that a visit to the section
+ * itself would immediately contradict.
+ *
+ * That was not always true. Two of these deliberately had no artwork,
+ * for two reasons that have both since stopped being reasons: Podcasts
+ * would have needed a network call to Spotify at render time, which the
+ * RSS rebuild removed by putting real artwork in the store, and the blog
+ * had "no single newest post this page has any business picking", which
+ * the Latest feed directly below now picks anyway. A card with no image
+ * beside three that have one reads as broken rather than as restraint,
+ * so the restraint is gone.
+ *
+ * Photos is not one of the cards, per Jamil, 2026-08-30: it is a
+ * runner-facing page, the same intent as Results, not audience-facing
+ * media. It keeps its own top-level nav item. See includes/media-subnav.php.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -74,8 +83,48 @@ function arv_media_hub_films_thumb() {
 }
 
 /**
- * The five cards, in a fixed order: what is live and changing first
- * (Watch, Films), then what is stable (Podcasts, Photos, Articles).
+ * The newest podcast episode's artwork, or '' if none of the shows have
+ * anything to show.
+ *
+ * Episode artwork where the episode has its own, the show's where it does
+ * not, which arv_podcasts_all() already resolves. No network call beyond
+ * the one the Podcasts store already makes and caches for an hour.
+ *
+ * @return string
+ */
+function arv_media_hub_podcasts_thumb() {
+	if ( ! function_exists( 'arv_podcasts_fetch' ) || ! function_exists( 'arv_podcasts_all' ) ) {
+		return '';
+	}
+
+	$all = arv_podcasts_all( arv_podcasts_fetch() );
+
+	return ! empty( $all ) ? $all[0]['artwork'] : '';
+}
+
+/**
+ * The newest blog post's featured image, or '' if none of the recent
+ * posts have one.
+ *
+ * Reuses the Latest feed's own post reader rather than running a second
+ * query: it already asks for exactly this, already drops posts with no
+ * featured image, and is already cached for the hour.
+ *
+ * @return string
+ */
+function arv_media_hub_articles_thumb() {
+	if ( ! function_exists( 'arv_media_latest_from_posts' ) ) {
+		return '';
+	}
+
+	$posts = arv_media_latest_from_posts();
+
+	return ! empty( $posts ) ? $posts[0]['thumb'] : '';
+}
+
+/**
+ * The four cards, in a fixed order: what is live and changing first
+ * (Broadcasts, Films), then what is steadier (Podcasts, Articles).
  *
  * @return array<int, array>
  */
@@ -95,21 +144,15 @@ function arv_media_hub_cards() {
 		),
 		array(
 			'title' => __( 'Podcasts', 'aravaipa-elements' ),
-			'desc'  => __( 'Inside Aravaipa and the White Mountain Endurance Podcast.', 'aravaipa-elements' ),
+			'desc'  => __( 'Inside Aravaipa, White Mountain Endurance and Race Briefings.', 'aravaipa-elements' ),
 			'url'   => home_url( '/podcasts/' ),
-			'thumb' => '',
-		),
-		array(
-			'title' => __( 'Photos', 'aravaipa-elements' ),
-			'desc'  => __( 'Race photos from every Aravaipa event.', 'aravaipa-elements' ),
-			'url'   => home_url( '/photos/' ),
-			'thumb' => '',
+			'thumb' => arv_media_hub_podcasts_thumb(),
 		),
 		array(
 			'title' => __( 'Articles', 'aravaipa-elements' ),
 			'desc'  => __( 'News, race updates and announcements.', 'aravaipa-elements' ),
 			'url'   => home_url( '/blog/' ),
-			'thumb' => '',
+			'thumb' => arv_media_hub_articles_thumb(),
 		),
 	);
 }
