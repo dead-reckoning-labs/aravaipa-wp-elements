@@ -7946,3 +7946,233 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	font-size: var(--arv-fs-meta);
 	color: rgba(244, 244, 244, 0.62);
 }
+
+/* Film Tours: the campaign pages, gathered somewhere permanent.
+   ---------------------------------------------------------------------------
+   Every card states where its tour is in its own life, and that state is
+   computed from the tour's dates rather than typed in. Both existing tour
+   pages went stale the day their last screening happened, one of them
+   still offering "Book Tickets" sixteen months later, which is the exact
+   failure a hand-written status guarantees eventually.
+   --------------------------------------------------------------------------- */
+.arv-tours {
+	box-sizing: border-box;
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-tours * {
+	box-sizing: inherit;
+}
+
+.arv-tours__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2.5rem 1.25rem 3rem;
+}
+
+.arv-tours__heading {
+	margin: 0;
+	font-size: var(--arv-fs-h2);
+	font-weight: 900;
+	letter-spacing: -0.5px;
+	text-align: center;
+	color: #fff;
+}
+
+.arv-tours__intro {
+	margin: 0.5rem 0 0;
+	font-size: var(--arv-fs-body);
+	text-align: center;
+	color: rgba(244, 244, 244, 0.75);
+}
+
+/* Wider than the Photos and Articles grids on purpose: there are two of
+   these, not two hundred, and a film poster earns the room. */
+.arv-tours__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+	gap: 1.25rem;
+	margin: 1.75rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-tours__card {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--arv-radius-card);
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.arv-tours__link,
+.arv-tours__link:link,
+.arv-tours__link:visited,
+.arv-tours__link:hover,
+.arv-tours__link:focus {
+	display: flex;
+	flex-direction: column;
+	color: #f4f4f4;
+	text-decoration: none;
+}
+
+.arv-tours__art {
+	display: block;
+	width: 100%;
+	/* height: auto beside the width/height attributes, or the attribute wins
+	   and aspect-ratio never applies. Measured once on the Latest feed; not
+	   being rediscovered here. */
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.arv-tours__body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+	padding: 1rem 1rem 0.4rem;
+}
+
+.arv-tours__badge {
+	align-self: flex-start;
+	padding: 0.2rem 0.55rem;
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	background: rgba(255, 255, 255, 0.1);
+	color: rgba(244, 244, 244, 0.75);
+}
+
+/* A tour actually running is the one thing on this page worth interrupting
+   for, so it is the one badge that is not grey. */
+.arv-tours__card--touring .arv-tours__badge,
+.arv-tours__card--upcoming .arv-tours__badge {
+	background: #4ade80;
+	color: #10201f;
+}
+
+.arv-tours__title {
+	font-size: var(--arv-fs-name);
+	font-weight: 900;
+	line-height: 1.15;
+	color: #fff;
+}
+
+.arv-tours__link:hover .arv-tours__title,
+.arv-tours__link:focus-visible .arv-tours__title {
+	color: #4ade80;
+}
+
+.arv-tours__sub {
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.72);
+}
+
+.arv-tours__meta {
+	font-size: var(--arv-fs-label);
+	color: rgba(244, 244, 244, 0.55);
+}
+
+/* Outside the card's own link, because a link inside a link is not a thing
+   a browser can render. Same rule the Photos card follows. */
+.arv-tours__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0.35rem 1rem 1rem;
+}
+
+.arv-tours__action,
+.arv-tours__action:link,
+.arv-tours__action:visited {
+	padding: 0.4rem 0.75rem;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-btn);
+	font-weight: 700;
+	color: #f4f4f4;
+	text-decoration: none;
+}
+
+.arv-tours__action:hover,
+.arv-tours__action:focus {
+	border-color: rgba(255, 255, 255, 0.5);
+	color: #fff;
+}
+
+/* The cross-link on the Films page. Films is a grid of the whole YouTube
+   channel; a tour page is a campaign with venues, tickets and merch. They
+   do different jobs and should not be merged, but someone on Films has no
+   way to know the tour pages exist at all, which is what this closes. */
+.arv-tours-strip {
+	box-sizing: border-box;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #16302d;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-tours-strip * {
+	box-sizing: inherit;
+}
+
+.arv-tours-strip__inner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 1.1rem 1.25rem;
+}
+
+.arv-tours-strip__body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+.arv-tours-strip__title {
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: #4ade80;
+}
+
+.arv-tours-strip__line {
+	font-size: var(--arv-fs-body);
+	font-weight: 700;
+	color: #fff;
+}
+
+.arv-tours-strip__cta,
+.arv-tours-strip__cta:link,
+.arv-tours-strip__cta:visited {
+	padding: 0.55rem 1rem;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-btn);
+	font-weight: 700;
+	color: #fff;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.arv-tours-strip__cta:hover,
+.arv-tours-strip__cta:focus {
+	border-color: #4ade80;
+	color: #4ade80;
+}
