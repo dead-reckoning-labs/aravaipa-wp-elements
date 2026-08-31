@@ -194,13 +194,28 @@ for (const item of items) {
 
 	for (const id of ids) counts.set(id, (counts.get(id) || 0) + 1);
 
+	// One size, one colour, whatever Square calls the only variation an item
+	// has, is not worth showing as a chip: it is the same information the
+	// price already carries. Only items with more than one are worth an
+	// option list, and "Regular" alone would just read as a second price.
+	const options =
+		variations.length > 1
+			? variations.map((v) => ({
+					name: v.item_variation_data?.name || '',
+					price: v.item_variation_data?.price_money?.amount || 0,
+					sold_out: out.has(v.id),
+				}))
+			: [];
+
 	products.push({
 		id: item.id,
 		name: item.item_data.name,
 		url,
 		image: images.get((item.item_data.image_ids || [])[0]) || item.item_data.ecom_image_uris?.[0] || '',
+		desc: item.item_data.description_plaintext || '',
 		price: priced.length ? Math.min(...priced) : 0,
 		sold_out: variations.length > 0 && variations.every((v) => out.has(v.id)),
+		options,
 		collections: ids,
 	});
 }

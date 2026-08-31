@@ -208,6 +208,84 @@ function arv_shop_price( $cents ) {
 }
 
 /**
+ * What the detail drawer needs about one product, as the array
+ * wp_json_encode() turns into the card's data attribute.
+ *
+ * Prices are already in cents, the same unit arv_shop_price() expects, so
+ * the drawer can format them the same way the card did without a second
+ * round trip through the store.
+ *
+ * @param array $product
+ * @return array
+ */
+function arv_shop_detail_payload( $product ) {
+	$options = array();
+
+	foreach ( $product['options'] as $opt ) {
+		$options[] = array(
+			'name'    => $opt['name'],
+			'price'   => arv_shop_price( $opt['price'] ? $opt['price'] : $product['price'] ),
+			'soldOut' => $opt['sold_out'],
+		);
+	}
+
+	return array(
+		'name'    => $product['name'],
+		'desc'    => $product['desc'],
+		'image'   => $product['image'],
+		'price'   => arv_shop_price( $product['price'] ),
+		'soldOut' => $product['sold_out'],
+		'options' => $options,
+		'url'     => arv_shop_url( $product['url'] ),
+	);
+}
+
+/**
+ * The shared detail drawer, once per page no matter how many shop grids
+ * are on it.
+ *
+ * One drawer rather than one per product: 166 copies of the same markup,
+ * mostly hidden, is a heavier page for no reason a shopper would notice.
+ * A static guard rather than a global, since this can be reached from
+ * arv_shop_render(), arv_shop_race_merch_render(), or both on one page,
+ * e.g. a shop page carrying a featured race strip above the full catalogue.
+ *
+ * Sizes and colours are shown as information here, not as a working
+ * selector: nothing this drawer picks can travel with the click through to
+ * Square, which has no way to receive it. A selector that looked
+ * functional and silently discarded the choice would be worse than a
+ * plain list, so this is a plain list.
+ *
+ * @return string
+ */
+function arv_shop_detail_drawer() {
+	static $done = false;
+
+	if ( $done ) {
+		return '';
+	}
+
+	$done = true;
+
+	$out  = '<div class="arv-shop__detail" hidden data-arv-shop-detail>';
+	$out .= '<div class="arv-shop__detail-scrim" data-arv-shop-detail-close></div>';
+	$out .= '<div class="arv-shop__detail-panel" role="dialog" aria-modal="true">';
+	$out .= '<button class="arv-shop__detail-close" type="button" data-arv-shop-detail-close>'
+		. '<span class="screen-reader-text">' . esc_html__( 'Close', 'aravaipa-elements' ) . '</span>&times;</button>';
+	$out .= '<img class="arv-shop__detail-img" data-arv-shop-detail-img src="" alt="" />';
+	$out .= '<div class="arv-shop__detail-body">';
+	$out .= '<h3 class="arv-shop__detail-name" data-arv-shop-detail-name></h3>';
+	$out .= '<p class="arv-shop__detail-price" data-arv-shop-detail-price></p>';
+	$out .= '<p class="arv-shop__detail-desc" data-arv-shop-detail-desc hidden></p>';
+	$out .= '<ul class="arv-shop__detail-options" data-arv-shop-detail-options hidden></ul>';
+	$out .= '<a class="arv-shop__detail-buy" data-arv-shop-detail-buy target="_blank" rel="noopener">'
+		. esc_html__( 'View on Square', 'aravaipa-elements' ) . '</a>';
+	$out .= '</div></div></div>';
+
+	return $out;
+}
+
+/**
  * One product card.
  *
  * @param array $product
@@ -216,7 +294,13 @@ function arv_shop_price( $cents ) {
 function arv_shop_card( $product ) {
 	$out = '<li class="arv-shop__card' . ( $product['sold_out'] ? ' arv-shop__card--out' : '' ) . '">';
 	$out .= '<a class="arv-shop__link" href="' . esc_url( arv_shop_url( $product['url'] ) ) . '"'
-		. ' target="_blank" rel="noopener">';
+		// A real link to Square first: without the script below, or with it
+		// failed to load, this is the whole feature, and it still works.
+		// data-arv-shop-item is what upgrades the click into the in-page
+		// detail drawer instead, so a shopper can see sizes and a
+		// description before ever leaving the site.
+		. ' target="_blank" rel="noopener"'
+		. ' data-arv-shop-item="' . esc_attr( wp_json_encode( arv_shop_detail_payload( $product ) ) ) . '">';
 
 	if ( '' !== $product['image'] ) {
 		$out .= '<span class="arv-shop__shot">';
@@ -268,6 +352,9 @@ function arv_shop_race_merch_render( $args = array() ) {
 		return '';
 	}
 
+	// A drawer of its own: a race page carries [arv_race_merch] on its own,
+	// with no [arv_shop] anywhere on the page to have already added one.
+	$drawer  = arv_shop_detail_drawer();
 	$heading = isset( $args['heading'] ) && '' !== trim( (string) $args['heading'] )
 		? (string) $args['heading']
 		/* translators: %s: a race name. */
@@ -287,7 +374,7 @@ function arv_shop_race_merch_render( $args = array() ) {
 		$out .= arv_shop_card( $product );
 	}
 
-	return $out . '</ul></div></section>';
+	return $out . '</ul></div></section>' . $drawer;
 }
 
 /**
@@ -338,7 +425,7 @@ function arv_shop_render( $args = array() ) {
 	$out .= arv_shop_collection_row( $depts, __( 'Browse', 'aravaipa-elements' ), 'dept' );
 	$out .= arv_shop_collection_row( $races, __( 'By race', 'aravaipa-elements' ), 'race' );
 
-	return $out . '</div></section>';
+	return $out . '</div></section>' . arv_shop_detail_drawer();
 }
 
 /**
@@ -359,8 +446,13 @@ function arv_shop_collection_row( $collections, $label, $kind ) {
 
 	foreach ( $collections as $collection ) {
 		$out .= '<li class="arv-shop__collection">';
-		$out .= '<a class="arv-shop__collection-link" href="' . esc_url( arv_shop_url( $collection['url'] ) ) . '"'
-			. ' target="_blank" rel="noopener">';
+		// <details>, not a click handler: opening the tile in place needs no
+		// script to work at all, and a screen reader or a keyboard already
+		// knows what a <summary> does. Closed by default, the same choice
+		// the Watch archive's own segment list makes for the same reason,
+		// there being no shortage of them to open.
+		$out .= '<details class="arv-shop__collection-details">';
+		$out .= '<summary class="arv-shop__collection-link">';
 
 		if ( '' !== $collection['image'] ) {
 			$out .= '<img class="arv-shop__collection-art" src="' . esc_url( $collection['image'] ) . '" alt=""'
@@ -377,7 +469,19 @@ function arv_shop_collection_row( $collections, $label, $kind ) {
 				)
 			)
 			. '</span>';
-		$out .= '</a></li>';
+		$out .= '</summary>';
+
+		$out .= '<div class="arv-shop__collection-body">';
+		$out .= '<ul class="arv-shop__grid">';
+
+		foreach ( arv_shop_products_in( $collection['id'] ) as $product ) {
+			$out .= arv_shop_card( $product );
+		}
+
+		$out .= '</ul>';
+		$out .= '<a class="arv-shop__all" href="' . esc_url( arv_shop_url( $collection['url'] ) ) . '"'
+			. ' target="_blank" rel="noopener">' . esc_html__( 'View the full collection on Square', 'aravaipa-elements' ) . '</a>';
+		$out .= '</div></details></li>';
 	}
 
 	return $out . '</ul>';
@@ -486,13 +590,29 @@ function arv_shop_set( $payload ) {
 			}
 		}
 
+		$options = array();
+
+		foreach ( (array) ( isset( $row['options'] ) ? $row['options'] : array() ) as $opt ) {
+			if ( ! is_array( $opt ) || empty( $opt['name'] ) ) {
+				continue;
+			}
+
+			$options[] = array(
+				'name'     => sanitize_text_field( (string) $opt['name'] ),
+				'price'    => isset( $opt['price'] ) ? (int) $opt['price'] : 0,
+				'sold_out' => ! empty( $opt['sold_out'] ),
+			);
+		}
+
 		$products[] = array(
 			'id'          => sanitize_text_field( (string) $row['id'] ),
 			'name'        => sanitize_text_field( (string) $row['name'] ),
 			'url'         => $url,
 			'image'       => arv_shop_clean_url( isset( $row['image'] ) ? $row['image'] : '' ),
+			'desc'        => sanitize_text_field( isset( $row['desc'] ) ? (string) $row['desc'] : '' ),
 			'price'       => isset( $row['price'] ) ? (int) $row['price'] : 0,
 			'sold_out'    => ! empty( $row['sold_out'] ),
+			'options'     => $options,
 			'collections' => $in,
 			'ord'         => $ord++,
 		);
