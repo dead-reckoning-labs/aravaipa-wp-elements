@@ -31,14 +31,20 @@ cs_register_element(
 				'rows'    => cs_value(
 					// Name | X% | Y% | URL | detail | flags | full name | logo URL
 					//
-					// Every detail reads the same way: the ground, then the
-					// races. It used to be four different shapes at once. Some
-					// rows named terrain, some named races, two were the same
-					// boilerplate sentence about "trail and ultra events", and
-					// Bad Beard was a bare "Chattanooga, Tennessee.", so nine
-					// pins on one map answered nine different questions.
-					// Where and what to run there is the pair a visitor is
-					// actually asking, so every row answers both.
+					// Every detail is just the races, nothing scenic. A first
+					// pass wrote a line of terrain for each pin and invented
+					// one: Nevada is not branded around the Spring Mountains,
+					// that was scenery reached for rather than anything
+					// Aravaipa says about itself. The pin label already says
+					// where a region is; the detail only needs to say what to
+					// run there.
+					//
+					// It used to be four different shapes at once besides.
+					// Some rows named terrain, some named races, two were the
+					// same boilerplate sentence about "trail and ultra
+					// events", and Bad Beard was a bare "Chattanooga,
+					// Tennessee." Nine pins on one map answered nine different
+					// questions.
 					//
 					// Races named here are on the current calendar, checked
 					// against it rather than remembered. The old Ultra
@@ -55,20 +61,20 @@ cs_register_element(
 					// Coordinates are percentages of assets/us-outline.svg's
 					// viewBox, checked against that file's own path geometry rather
 					// than eyeballed, so a pin lands inside the state it names.
-					"Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Southwest desert and high country. Cocodona 250, Javelina Jundred, Black Canyon Ultras. | primary | | ARV_LOGO:aravaipa.png\n" .
-					"Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Saguaro country under the Santa Catalinas. Catalina State Park 50-Year, Run Around Tucson. | | | ARV_LOGO:aravaipa.png\n" .
+					"Arizona | 20.9 | 61.9 | https://www.aravaiparunning.com/arizona/ | Cocodona 250, Javelina Jundred, Black Canyon Ultras. | primary | | ARV_LOGO:aravaipa.png\n" .
+					"Tucson | 23 | 68.9 | https://www.aravaiparunning.com/tucson-runs/ | Catalina State Park 50-Year, Run Around Tucson. | | | ARV_LOGO:aravaipa.png\n" .
 					// On Orange County and Las Vegas rather than the state centres:
 					// that is where the races are, and it keeps the two labels from
 					// stacking on each other the way the centres did.
-					"California | 9.4 | 59.7 | https://www.aravaiparunning.com/california-races/ | Coastal ranges and Sierra foothills. Sonoma Fall Classic, Harding Hustle, Live Oak Odyssey. | | | ARV_LOGO:aravaipa.png\n" .
-					"Nevada | 15.6 | 52.7 | https://www.aravaiparunning.com/nevada/ | High desert and the Spring Mountains. Jackpot Ultras, Running With The Devil, ET Full Moon. | | | ARV_LOGO:aravaipa.png\n" .
-					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | Front Range and high country. The Bear Chase, North Fork 50, Silverton Alpine Marathon. | | | ARV_LOGO:colorado.png\n" .
-					"Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Canyon country in southern Utah. Zion Ultras, Bryce Canyon Ultras. | | | ARV_LOGO:ultra-adventures.png\n" .
+					"California | 9.4 | 59.7 | https://www.aravaiparunning.com/california-races/ | Sonoma Fall Classic, Harding Hustle, Live Oak Odyssey. | | | ARV_LOGO:aravaipa.png\n" .
+					"Nevada | 15.6 | 52.7 | https://www.aravaiparunning.com/nevada/ | Jackpot Ultras, Running With The Devil, ET Full Moon. | | | ARV_LOGO:aravaipa.png\n" .
+					"Colorado | 33.8 | 46.7 | https://www.aravaiparunning.com/colorado/ | The Bear Chase, North Fork 50, Silverton Alpine Marathon. | | | ARV_LOGO:colorado.png\n" .
+					"Ultra Adventures | 23.2 | 49.1 | https://www.aravaiparunning.com/ultra-adventures/ | Zion Ultras, Bryce Canyon Ultras. | | | ARV_LOGO:ultra-adventures.png\n" .
 					// On the Upper Peninsula rather than the state's centre, which
 					// is where the events actually are.
-					"Great Lakes Endurance | 64.3 | 18.2 | https://www.aravaiparunning.com/great-lakes-endurance/ | Upper Peninsula forest and shoreline. Grand Island, Tahqua Trail Runs, Two Hearted. | | | ARV_LOGO:great-lakes-endurance.png\n" .
-					"White Mountain Endurance | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | New Hampshire White Mountains. Kilkenny Ridge, Race The Cog, Black Bear. | | | ARV_LOGO:white-mountain-endurance.png\n" .
-					'Bad Beard Events | 71.2 | 61.1 | https://www.aravaiparunning.com/bad-beard/ | River gorges around Chattanooga. Stump Jump 50K, Rabid Raccoon, Stillhouse 100K. | | | ARV_LOGO:bad-beard.png',
+					"Great Lakes Endurance | 64.3 | 18.2 | https://www.aravaiparunning.com/great-lakes-endurance/ | Grand Island, Tahqua Trail Runs, Two Hearted. | | | ARV_LOGO:great-lakes-endurance.png\n" .
+					"White Mountain Endurance | 91.9 | 22 | https://www.aravaiparunning.com/white-mountain-endurance/ | Kilkenny Ridge, Race The Cog, Black Bear. | | | ARV_LOGO:white-mountain-endurance.png\n" .
+					'Bad Beard Events | 71.2 | 61.1 | https://www.aravaiparunning.com/bad-beard/ | Stump Jump 50K, Rabid Raccoon, Stillhouse 100K. | | | ARV_LOGO:bad-beard.png',
 					'markup'
 				),
 			),

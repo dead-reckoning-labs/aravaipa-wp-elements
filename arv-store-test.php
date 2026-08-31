@@ -3753,15 +3753,16 @@ foreach ( $region_rows as $row ) {
 
 $shaped = 0;
 foreach ( $details as $detail ) {
-	// Ground, then races: two sentences, both closed. This is the whole
-	// rule, and asserting it is what stops a tenth pin arriving with a
-	// tenth shape.
-	if ( preg_match( '/^[^.]+\.\s[^.]+\.$/u', $detail ) ) {
+	// Just the races, one closed sentence. A first pass wrote a line of
+	// terrain for each pin first, ground then races, and it read as
+	// exactly that: written to a formula rather than said plainly. The
+	// pin label already says where a region is.
+	if ( preg_match( '/^[^.]+\.$/u', $detail ) ) {
 		$shaped++;
 	}
 }
 
-t( 'every blurb is ground then races',  9 === $shaped );
+t( 'every blurb is races, one sentence', 9 === $shaped );
 t( 'and none is left empty',            ! in_array( '', $details, true ) );
 
 // The two that used to share one sentence, and the one that had no
@@ -3769,6 +3770,12 @@ t( 'and none is left empty',            ! in_array( '', $details, true ) );
 $joined = implode( ' ', $details );
 t( 'the boilerplate sentence is gone',  false === strpos( $joined, 'Trail and ultra events across' ) );
 t( 'Bad Beard says more than a town',   false === strpos( $joined, 'Chattanooga, Tennessee.' ) );
+
+// No invented scenery. Nevada is not branded around the Spring Mountains;
+// that was reached for rather than anything Aravaipa says about itself,
+// and it read as written by something that had never heard of the place.
+t( 'no scenery invented for a region',  false === stripos( $joined, 'Spring Mountains' ) );
+t( 'nothing is called "country"',       false === stripos( $joined, 'country' ) );
 
 // Named races have to be on the calendar. The old Ultra Adventures row
 // named the Tushars, which is not on it, and Antelope Canyon, which runs
