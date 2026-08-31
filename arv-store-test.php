@@ -3498,6 +3498,27 @@ t( 'a film about no one race is untagged', '' === arv_films_race_for( 'THE RACE 
 // A generic landscape word must never identify a race on its own.
 t( 'a bare generic word tags nothing',    '' === arv_films_race_for( 'A Film About A Mountain' ) );
 
+echo "\nfilms, a sponsor credit trimmed off the badge, not the match:\n";
+// "Javelina Jundred Presented by: HOKA" is the race's real name and earns
+// its place on the calendar and the race's own page. On a small green
+// chip on a film card it crowded out the one word, "Javelina", that
+// actually says which race this is.
+t( 'the sponsor clause is trimmed',       'Javelina Jundred' === arv_films_race_label( 'Javelina Jundred Presented by: HOKA' ) );
+t( 'case and punctuation do not matter',  'Coldwater Rumble' === arv_films_race_label( 'Coldwater Rumble - presented by Salomon' ) );
+t( 'a race with no sponsor is untouched', 'Cocodona 250' === arv_films_race_label( 'Cocodona 250' ) );
+// Only the label, not the value the badge filters and links on: a
+// sponsor rename should not have to touch this to keep matching.
+$labelled = arv_films_card(
+	array(
+		'id' => 'aaaaaaaaaaa', 'title' => 'x', 'thumbnail' => '', 'published' => '', 'views' => 0,
+		'duration' => '', 'url' => 'https://x.test', 'trailer' => null,
+		'race' => 'Javelina Jundred Presented by: HOKA',
+	),
+	''
+);
+t( 'the badge reads the short name',      false !== strpos( $labelled, '>Javelina Jundred</a>' ) );
+t( 'but still filters on the full one',   false !== strpos( $labelled, 'race=javelina%20jundred%20presented%20by%20hoka' ) );
+
 echo "\nfilms, durations and view counts:\n";
 t( 'an hour-long duration',               '1:50:55' === arv_films_duration( 'PT1H50M55S' ) );
 t( 'a minutes-only duration',             '8:49' === arv_films_duration( 'PT8M49S' ) );
