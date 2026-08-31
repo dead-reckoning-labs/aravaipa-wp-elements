@@ -176,6 +176,8 @@ function wp_set_object_terms( $id, $terms, $tax, $append = false ) { $GLOBALS['t
 function wp_count_posts( $t ) { $o = new stdClass(); $o->publish = 0; foreach ( $GLOBALS['posts'] as $p ) { if ( 'publish' === $p['status'] ) { $o->publish++; } } return $o; }
 function has_category( $name, $id = null ) { $id = is_object( $id ) ? $id->ID : $id; return in_array( $name, (array) ( $GLOBALS['posts'][ $id ]['cats'] ?? array() ), true ); }
 function get_the_excerpt( $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['excerpt'] ?? ''; }
+function has_excerpt( $post = null ) { $id = is_object( $post ) ? $post->ID : $post; return '' !== trim( (string) ( $GLOBALS['posts'][ $id ]['excerpt'] ?? '' ) ); }
+function get_the_modified_date( $fmt, $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['modified'] ?? ( $GLOBALS['posts'][ $id ]['date'] ?? '' ); }
 // Self-hosted attachments: a URL maps to an attachment id, which maps to a
 // real path on disk, exactly like WordPress's own pair of functions. Set
 // up per test via $GLOBALS['ATTACHMENTS'] / $GLOBALS['ATTACHMENT_FILES'].
@@ -5027,6 +5029,49 @@ $GLOBALS['ARV_OPTIONS'][ ARV_SHOP_OPTION ] = array(
 );
 $shop_meta = arv_media_seo_meta( 'shop' );
 t( 'the shop description counts products', false !== strpos( $shop_meta['description'], '1 piece' ) || false !== strpos( $shop_meta['description'], '1 pieces' ) );
+
+echo "\npost SEO, the 296 articles that had none:\n";
+// Individual posts got nothing: no description, no Open Graph, no schema.
+// They are the pages that answer a real search, and the snippet was being
+// left to whatever text Google found first.
+$GLOBALS['posts'][9903] = array(
+	'title' => 'Black Canyon Preview', 'status' => 'publish', 'type' => 'post',
+	'date' => '2026-02-01T08:00:00Z', 'modified' => '2026-02-03T08:00:00Z',
+	'excerpt' => '', 'thumb' => false, 'cats' => array(),
+	'body' => '<p>' . str_repeat( 'The course drops through desert and it will lie to you. ', 8 ) . '</p><img src="https://x.test/body.jpg">',
+);
+$long_post = get_post( 9903 );
+
+// Cut at a word boundary: a description ending mid-word reads as broken
+// and Google will usually rewrite the whole snippet rather than show it.
+$desc = arv_post_seo_description( $long_post );
+t( 'a long post is trimmed',              strlen( $desc ) <= 170 );
+// A real check rather than a tautology: the kept text has to be a prefix
+// of the post's own words and has to stop where the source has a space,
+// which is what "cut at a word boundary" actually means.
+$seo_source = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $GLOBALS['posts'][9903]['body'] ) ) );
+$seo_kept   = substr( $desc, 0, -3 );
+t( 'the kept text really is from the post', 0 === strpos( $seo_source, $seo_kept ) );
+t( 'and stops on a word boundary',        ' ' === substr( $seo_source, strlen( $seo_kept ), 1 ) );
+t( 'ending in an ellipsis',               '...' === substr( $desc, -3 ) );
+
+// A hand-written excerpt wins, because a person chose it.
+$GLOBALS['posts'][9903]['excerpt'] = 'A hand written summary.';
+t( 'an excerpt beats the body text',      'A hand written summary.' === arv_post_seo_description( get_post( 9903 ) ) );
+$GLOBALS['posts'][9903]['excerpt'] = '';
+
+// Short posts are left whole rather than padded or truncated.
+$GLOBALS['posts'][9904] = array( 'title' => 'Short', 'status' => 'publish', 'type' => 'post', 'date' => '2026-02-01T00:00:00Z', 'excerpt' => '', 'thumb' => false, 'cats' => array(), 'body' => '<p>Short and complete.</p>' );
+t( 'a short post is left alone',          'Short and complete.' === arv_post_seo_description( get_post( 9904 ) ) );
+
+// The same body-image fallback the archive uses: 58 of these posts have a
+// good photograph and never had one set as featured.
+t( 'the body image stands in for a featured one', 'https://x.test/body.jpg' === arv_post_seo_image( get_post( 9903 ) ) );
+$GLOBALS['posts'][9903]['thumb'] = 'https://x.test/featured.jpg';
+t( 'a featured image still wins',         'https://x.test/featured.jpg' === arv_post_seo_image( get_post( 9903 ) ) );
+
+// A post with neither says nothing rather than inventing an image.
+t( 'no image anywhere yields none',       '' === arv_post_seo_image( get_post( 9904 ) ) );
 
 // The nodes themselves, tested directly. Emission cannot be asserted from
 // this file: WPSEO_VERSION is defined far above for the front-page SEO

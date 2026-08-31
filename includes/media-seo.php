@@ -249,6 +249,147 @@ function arv_media_seo_nodes( $key, $meta ) {
 }
 
 /**
+ * A description for a single post, from its own words.
+ *
+ * The hand-written excerpt when there is one, since a person chose it.
+ * Otherwise the opening of the post, cut at a word boundary rather than
+ * mid-word: a description that ends "the runners were appro" reads as
+ * broken in a search result, and Google will often rewrite the whole
+ * snippet rather than show it.
+ *
+ * @param WP_Post $post
+ * @return string
+ */
+function arv_post_seo_description( $post ) {
+	$excerpt = has_excerpt( $post ) ? get_the_excerpt( $post ) : '';
+	$text    = '' !== trim( (string) $excerpt )
+		? (string) $excerpt
+		: wp_strip_all_tags( (string) $post->post_content );
+
+	$text = trim( preg_replace( '/\s+/', ' ', html_entity_decode( $text, ENT_QUOTES, 'UTF-8' ) ) );
+
+	if ( '' === $text ) {
+		return '';
+	}
+
+	if ( strlen( $text ) <= 160 ) {
+		return $text;
+	}
+
+	$cut   = substr( $text, 0, 160 );
+	$space = strrpos( $cut, ' ' );
+
+	return rtrim( false !== $space ? substr( $cut, 0, $space ) : $cut, " ,.;:-" ) . '...';
+}
+
+/**
+ * The image to represent a post when it is shared or listed.
+ *
+ * The featured image where one is set, and otherwise the first picture in
+ * the body, which is the same fallback the Articles archive uses and for
+ * the same reason: 58 of these 296 posts have a perfectly good photograph
+ * in them and never had one set as featured.
+ *
+ * @param WP_Post $post
+ * @return string
+ */
+function arv_post_seo_image( $post ) {
+	if ( function_exists( 'get_the_post_thumbnail_url' ) ) {
+		$url = get_the_post_thumbnail_url( $post->ID, 'large' );
+
+		if ( $url ) {
+			return (string) $url;
+		}
+	}
+
+	if ( function_exists( 'arv_articles_body_image' ) ) {
+		return arv_articles_body_image( (string) $post->post_content );
+	}
+
+	return '';
+}
+
+/**
+ * Description, Open Graph and BlogPosting for a single post.
+ *
+ * 296 posts had none of this. They are the pages that answer a real
+ * search, "black canyon 100k course preview", "how to train for a 250
+ * mile race", and they were going out with no description at all, which
+ * leaves the snippet to whatever text Google finds first.
+ *
+ * Only posts. A race page is a page and already gets its own SportsEvent
+ * from arv_seo_race_schema(); marking one up as a blog post as well would
+ * be two competing claims about the same URL.
+ */
+function arv_post_seo_head() {
+	if ( ! function_exists( 'arv_seo_handled_elsewhere' ) || arv_seo_handled_elsewhere() ) {
+		return;
+	}
+
+	if ( ! function_exists( 'is_singular' ) || ! is_singular( 'post' ) ) {
+		return;
+	}
+
+	$id = get_queried_object_id();
+
+	if ( ! $id ) {
+		return;
+	}
+
+	$post = get_post( $id );
+
+	if ( ! $post ) {
+		return;
+	}
+
+	$title       = get_the_title( $post );
+	$description = arv_post_seo_description( $post );
+	$image       = arv_post_seo_image( $post );
+	$url         = get_permalink( $id );
+	$published   = get_the_date( 'c', $post );
+	$modified    = function_exists( 'get_the_modified_date' ) ? get_the_modified_date( 'c', $post ) : $published;
+
+	if ( '' !== $description ) {
+		echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
+		echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	}
+
+	echo '<meta property="og:title" content="' . esc_attr( $title ) . '" />' . "\n";
+	echo '<meta property="og:type" content="article" />' . "\n";
+	echo '<meta property="og:url" content="' . esc_url( $url ) . '" />' . "\n";
+
+	if ( '' !== $image ) {
+		echo '<meta property="og:image" content="' . esc_url( $image ) . '" />' . "\n";
+		echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
+	}
+
+	$node = array(
+		'@type'            => 'BlogPosting',
+		'headline'         => $title,
+		'url'              => $url,
+		'datePublished'    => $published,
+		'dateModified'     => $modified ? $modified : $published,
+		'mainEntityOfPage' => array( '@type' => 'WebPage', '@id' => $url ),
+		'publisher'        => array(
+			'@type' => 'Organization',
+			'name'  => 'Aravaipa Running',
+			'url'   => home_url( '/' ),
+		),
+	);
+
+	if ( '' !== $description ) {
+		$node['description'] = $description;
+	}
+
+	if ( '' !== $image ) {
+		$node['image'] = $image;
+	}
+
+	echo arv_seo_schema_script( array( $node ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+add_action( 'wp_head', 'arv_post_seo_head', 4 );
+
+/**
  * Emit it.
  */
 function arv_media_seo_head() {
