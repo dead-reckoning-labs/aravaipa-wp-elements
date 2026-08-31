@@ -8643,3 +8643,91 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-shop__detail-buy:focus-visible {
 	background: #6ee79b;
 }
+
+/* Upcoming broadcasts, above the archive.
+   ---------------------------------------------------------------------------
+   Mountain Outpost's feed only carries an event once a stream exists for
+   it, so a race three months out is invisible there and the page had
+   nothing to say about the races people are actually waiting for. These
+   are configured, and each one expires by its own end date rather than
+   waiting for someone to remember to remove it.
+   --------------------------------------------------------------------------- */
+.arv-watch__upcoming {
+	margin: 0 0 2rem;
+	padding: 1.1rem 1.25rem 1.25rem;
+	border: 1px solid rgba(74, 222, 128, 0.35);
+	border-radius: var(--arv-radius-card);
+	background: rgba(74, 222, 128, 0.06);
+}
+
+.arv-watch__upcoming-heading {
+	margin: 0 0 0.75rem;
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: #4ade80;
+}
+
+.arv-watch__upcoming-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.55rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-watch__upcoming-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding-bottom: 0.55rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.arv-watch__upcoming-item:last-child {
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.arv-watch__upcoming-link,
+.arv-watch__upcoming-link:link,
+.arv-watch__upcoming-link:visited {
+	text-decoration: none;
+}
+
+.arv-watch__upcoming-name {
+	font-size: var(--arv-fs-name);
+	font-weight: 700;
+	color: #fff;
+}
+
+.arv-watch__upcoming-link:hover .arv-watch__upcoming-name,
+.arv-watch__upcoming-link:focus-visible .arv-watch__upcoming-name {
+	color: #4ade80;
+}
+
+.arv-watch__upcoming-when {
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.7);
+}
+
+/* WordPress's own convention, defined here rather than assumed: the theme
+   may or may not provide it, and two things in this plugin now depend on
+   it (the shop drawer's close button and the Media sub-nav's page title).
+   Hidden from the page, still read by a screen reader and a crawler. */
+.arv-media-subnav .screen-reader-text,
+.arv-shop .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}

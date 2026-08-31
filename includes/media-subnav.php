@@ -89,7 +89,28 @@ function arv_media_subnav_render( $current = '' ) {
 			. esc_html( $item['label'] ) . '</a>';
 	}
 
-	return $out . '</div></nav>';
+	$out .= '</div>';
+
+	// The page's real heading, carried by the one element that already
+	// knows which section it is on.
+	//
+	// Every one of these pages used to print its own name as a large
+	// centred h2 directly beneath a strip that had just highlighted that
+	// same name, so "Broadcasts" or "Films" appeared twice within an inch
+	// of each other. Deleting the h2 outright would have left the page with
+	// no heading element at all, which costs a real SEO and screen-reader
+	// signal to fix a purely visual problem. This keeps the signal and
+	// drops the duplicate: an h1 that a crawler and a screen reader both
+	// read, and a sighted visitor never sees twice.
+	foreach ( $items as $item ) {
+		if ( $current === $item['key'] ) {
+			$out .= '<h1 class="arv-media-subnav__title screen-reader-text">'
+				. esc_html( $item['label'] ) . '</h1>';
+			break;
+		}
+	}
+
+	return $out . '</nav>';
 }
 
 /**
