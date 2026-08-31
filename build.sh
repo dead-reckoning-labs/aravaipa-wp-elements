@@ -54,7 +54,7 @@ mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 cp "$NAME.php" "$STAGE/"
 cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/photos-store.php includes/articles-store.php includes/tours-store.php includes/shop-store.php includes/media-follow.php includes/media-subnav.php includes/media-hub.php includes/media-latest.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -202,6 +202,9 @@ grep -q '\.arv-live__shield\[hidden\]' assets/aravaipa-elements.css \
 # quietly renders at body size. --arv-fs-h2 shipped that way and three
 # headings, Photos, the Latest feed and the Media hero's title, were all
 # 15px because of it.
+grep -q '\.arv-shop__detail\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-shop__detail[hidden] override is missing, the item detail drawer would stay on screen permanently" >&2; missing=1; }
+
 python3 scripts/check-css-vars.py || missing=1
 
 grep -q '\.arv-featured__cta:link' assets/aravaipa-elements.css \

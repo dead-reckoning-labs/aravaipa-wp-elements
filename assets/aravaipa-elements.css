@@ -8383,11 +8383,12 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	display: flex;
 }
 
-.arv-shop__collection-link,
-.arv-shop__collection-link:link,
-.arv-shop__collection-link:visited,
-.arv-shop__collection-link:hover,
-.arv-shop__collection-link:focus {
+/* The tile is now a <summary>, not a link: opening it in place needs no
+   script, and a keyboard or a screen reader already knows what a <summary>
+   does. Firefox and Safari both draw a default disclosure triangle on it,
+   which none of the other chip-and-card shapes on this site carry, so it
+   is turned off and the tile supplies its own affordance instead. */
+.arv-shop__collection-link {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
@@ -8397,11 +8398,31 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	background: rgba(255, 255, 255, 0.04);
 	color: #f4f4f4;
 	text-decoration: none;
+	cursor: pointer;
+	list-style: none;
+}
+
+.arv-shop__collection-link::-webkit-details-marker {
+	display: none;
 }
 
 .arv-shop__collection-link:hover,
 .arv-shop__collection-link:focus-visible {
 	border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* A tag on the tile itself, not just a colour change, since a summary has
+   no :visited state to lean on the way a link's own colour does. */
+.arv-shop__collection-details[open] .arv-shop__collection-link {
+	border-color: #4ade80;
+}
+
+.arv-shop__collection-body {
+	padding: 1rem 0.1rem 0.4rem;
+}
+
+.arv-shop__collection-body .arv-shop__grid {
+	margin-bottom: 0.85rem;
 }
 
 .arv-shop__collection-art {
@@ -8458,4 +8479,167 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	border-color: #6ee79b;
 	background: #6ee79b;
 	color: #10201f;
+}
+
+/* The item detail drawer.
+   ---------------------------------------------------------------------------
+   One per page no matter how many shop grids are on it: 166 copies of the
+   same markup, mostly hidden, would be a heavier page for nothing a
+   shopper would ever notice.
+
+   Sizes and colours are shown as information here, not as a working
+   selector. Nothing picked in this drawer can travel with the click
+   through to Square, which has no way to receive it, so a selector that
+   looked functional and silently discarded the choice would be worse than
+   the plain list this renders instead.
+   --------------------------------------------------------------------------- */
+.arv-shop__detail[hidden] {
+	display: none;
+}
+
+.arv-shop__detail {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1.25rem;
+}
+
+.arv-shop__detail-scrim {
+	position: absolute;
+	inset: 0;
+	background: rgba(8, 16, 15, 0.78);
+}
+
+.arv-shop__detail-panel {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 420px;
+	max-height: 88vh;
+	overflow-y: auto;
+	border-radius: var(--arv-radius-card);
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-shop__detail-close {
+	position: absolute;
+	top: 0.6rem;
+	right: 0.6rem;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	border: none;
+	border-radius: 50%;
+	background: rgba(8, 16, 15, 0.7);
+	color: #fff;
+	font-size: 22px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.arv-shop__detail-close:hover,
+.arv-shop__detail-close:focus-visible {
+	background: rgba(8, 16, 15, 0.9);
+}
+
+.arv-shop__detail-img {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	background: #fff;
+}
+
+.arv-shop__detail-img[hidden] {
+	display: none;
+}
+
+.arv-shop__detail-body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 1.1rem 1.2rem 1.4rem;
+}
+
+.arv-shop__detail-name {
+	margin: 0;
+	font-size: var(--arv-fs-title);
+	font-weight: 900;
+	line-height: 1.2;
+	color: #fff;
+}
+
+.arv-shop__detail-price {
+	margin: 0;
+	font-size: var(--arv-fs-lead);
+	font-weight: 900;
+	color: rgba(244, 244, 244, 0.9);
+}
+
+.arv-shop__detail-desc {
+	margin: 0;
+	font-size: var(--arv-fs-meta);
+	line-height: 1.5;
+	color: rgba(244, 244, 244, 0.75);
+}
+
+.arv-shop__detail-desc[hidden],
+.arv-shop__detail-options[hidden] {
+	display: none;
+}
+
+.arv-shop__detail-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 0.15rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-shop__detail-option {
+	padding: 0.3rem 0.65rem;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.85);
+}
+
+/* Struck through rather than removed: a sold-out size is still an answer
+   to "does this come in my size", and dropping it silently would read as
+   though the size never existed. */
+.arv-shop__detail-option--out {
+	border-color: rgba(255, 255, 255, 0.1);
+	color: rgba(244, 244, 244, 0.4);
+	text-decoration: line-through;
+}
+
+.arv-shop__detail-buy,
+.arv-shop__detail-buy:link,
+.arv-shop__detail-buy:visited {
+	display: block;
+	margin-top: 0.4rem;
+	padding: 0.75rem 1rem;
+	border-radius: var(--arv-radius);
+	background: #4ade80;
+	color: #10201f;
+	font-weight: 700;
+	text-align: center;
+	text-decoration: none;
+}
+
+.arv-shop__detail-buy:hover,
+.arv-shop__detail-buy:focus-visible {
+	background: #6ee79b;
 }

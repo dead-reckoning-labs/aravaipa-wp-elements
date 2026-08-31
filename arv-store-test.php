@@ -4485,7 +4485,7 @@ $saved = arv_shop_set( array(
 		array( 'id' => 'CJS', 'name' => 'Javascript', 'url' => 'javascript:alert(1)', 'count' => 5, 'race' => true ),
 	),
 	'products' => array(
-		array( 'id' => 'P1', 'name' => 'Black Canyon Hoodie', 'url' => 'https://aravaipa-shop.square.site/product/bc-hoodie/P1', 'image' => 'https://x.test/1.png', 'price' => 6500, 'sold_out' => false, 'collections' => array( 'CBC' ) ),
+		array( 'id' => 'P1', 'name' => 'Black Canyon Hoodie', 'url' => 'https://aravaipa-shop.square.site/product/bc-hoodie/P1', 'image' => 'https://x.test/1.png', 'desc' => 'Warm.', 'price' => 6500, 'sold_out' => false, 'options' => array( array( 'name' => 'Small', 'price' => 6500, 'sold_out' => false ), array( 'name' => 'Large', 'price' => 6500, 'sold_out' => true ) ), 'collections' => array( 'CBC' ) ),
 		array( 'id' => 'P2', 'name' => 'Black Canyon Tee', 'url' => 'https://aravaipa-shop.square.site/product/bc-tee/P2', 'image' => 'https://x.test/2.png', 'price' => 3000, 'sold_out' => true, 'collections' => array( 'CBC', 'CMEN' ) ),
 		array( 'id' => 'P3', 'name' => 'No Page', 'url' => '', 'price' => 1000, 'collections' => array( 'CBC' ) ),
 		array( 'id' => 'P4', 'name' => 'Ghost Collection', 'url' => 'https://aravaipa-shop.square.site/product/ghost/P4', 'price' => 1000, 'collections' => array( 'CBAD', 'CNOPE' ) ),
@@ -4535,6 +4535,40 @@ t( 'sold out is stated, not implied',      false !== strpos( $strip, 'Sold out' 
 t( 'and shop all points at the collection', false !== strpos( $strip, '/shop/black-canyon-ultras/CBC' ) );
 // Off-site, so it says so to the browser.
 t( 'external links are safe',              2 < substr_count( $strip, 'rel="noopener"' ) );
+
+echo "\nshop, the item detail drawer:\n";
+// Sizes and colours are shown as information, not as a working selector:
+// nothing picked here can travel with the click through to Square, which
+// has no way to receive it.
+t( 'the strip carries a detail payload',   false !== strpos( $strip, 'data-arv-shop-item=' ) );
+t( 'and the shared drawer once',           1 === substr_count( $strip, 'data-arv-shop-detail>' ) );
+
+$payload = arv_shop_detail_payload( arv_shop_get()['products'][0] );
+t( 'the name travels',                     'Black Canyon Hoodie' === $payload['name'] );
+t( 'the description too',                  'Warm.' === $payload['desc'] );
+t( 'a formatted price, not raw cents',     '$65' === $payload['price'] );
+t( 'options carry a formatted price too',  '$65' === $payload['options'][0]['price'] );
+t( 'and their own sold-out state',         true === $payload['options'][1]['soldOut'] );
+// The link the drawer's "View on Square" button uses has to be the same
+// rewrite everything else on the page goes through.
+add_filter( 'arv_shop_storefront_host', function () { return 'shop.aravaiparunning.com'; } );
+$rewritten = arv_shop_detail_payload( arv_shop_get()['products'][0] );
+t( 'the buy link honours the custom domain', 'https://shop.aravaiparunning.com/product/bc-hoodie/P1' === $rewritten['url'] );
+$GLOBALS['FILTERS']['arv_shop_storefront_host'] = array();
+
+// One drawer even when the page carries both a strip and the full index,
+// e.g. a shop page with a featured race above the catalogue.
+$combo = $strip . arv_shop_render( array() );
+t( 'still exactly one drawer between them', 1 === substr_count( $combo, 'data-arv-shop-detail>' ) );
+
+echo "\nshop, the collection accordion:\n";
+$page = arv_shop_render( array( 'heading' => 'Shop' ) );
+// <details>, not a click handler: opening a tile in place needs no script
+// to work at all, the same reason the Watch archive's segment list is a
+// native <details> rather than a script-driven toggle.
+t( 'a collection opens as a details element', false !== strpos( $page, '<details class="arv-shop__collection-details">' ) );
+t( 'its products are inside, not linked out', false !== strpos( $page, 'arv-shop__collection-body' ) );
+t( 'a way to leave for the full collection remains', false !== strpos( $page, 'View the full collection on Square' ) );
 
 // Silence, not an empty shelf, which is the common case for most races.
 t( 'a race with no collection is silent',  '' === arv_shop_race_merch_render( array( 'race' => 'Not A Race' ) ) );
