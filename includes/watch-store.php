@@ -599,12 +599,6 @@ function arv_watch_schedule( $fresh = false ) {
 /**
  * Where Mountain Outpost puts an event's own page.
  *
- * Verified against the real site rather than assumed, including that a
- * slug it does not know returns a genuine 404 rather than quietly serving
- * the homepage, which is the failure mode that would make a link like this
- * lie. Upcoming events read "Watch <race> Live" there and finished ones
- * read "<race> Replay", so the destination is right in both states.
- *
  * @param string $slug
  * @return string
  */
@@ -612,6 +606,63 @@ function arv_watch_outpost_url( $slug ) {
 	$slug = trim( (string) $slug );
 
 	return ( '' === $slug ) ? '' : 'https://mountainoutpost.com/events/' . rawurlencode( $slug );
+}
+
+/**
+ * Whether that page actually exists yet.
+ *
+ * Checked live rather than assumed from the slug alone, because the
+ * schedule and the page are two different systems on Mountain Outpost's
+ * side: the BPN Go One More Ultra 2027 slug sits in /api/broadcast/events
+ * nine months out with no page built for it yet, and that combination
+ * would otherwise put a 404 on this site's own Watch page for something
+ * that, from here, looked exactly like every other row. A slug this check
+ * has never heard of gets the same "false" a genuinely missing page does;
+ * the two are indistinguishable from outside Mountain Outpost, and both
+ * mean this site should not link to it.
+ *
+ * Cached per slug rather than once for the whole schedule, since a page
+ * that does not exist yet does not fail the same way an outage does: it
+ * will exist eventually, this only has to notice within a reasonable
+ * window, not every 15 minutes forever.
+ *
+ * @param string $slug
+ * @return bool
+ */
+function arv_watch_outpost_exists( $slug ) {
+	$slug = trim( (string) $slug );
+
+	if ( '' === $slug ) {
+		return false;
+	}
+
+	$key    = 'arv_watch_outpost_' . md5( $slug );
+	$cached = get_transient( $key );
+
+	// A cached "does not exist" is stored as the string 'no', not the
+	// boolean false: the transient API's own not-found return is also
+	// false, and storing the real answer in the same shape as "nothing
+	// stored here" would make a cached negative indistinguishable from a
+	// cache miss, defeating the cache on exactly the outcome (a page that
+	// is not built yet) this function exists to remember.
+	if ( false !== $cached ) {
+		return 'yes' === $cached;
+	}
+
+	$response = wp_remote_get(
+		arv_watch_outpost_url( $slug ),
+		array(
+			'method'  => 'HEAD',
+			'headers' => array( 'User-Agent' => 'aravaipa-elements-watch' ),
+			'timeout' => 5,
+		)
+	);
+
+	$exists = ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response );
+
+	set_transient( $key, $exists ? 'yes' : 'no', 6 * HOUR_IN_SECONDS );
+
+	return $exists;
 }
 
 /**
@@ -640,10 +691,16 @@ function arv_watch_upcoming() {
 			continue;
 		}
 
+		// Linked only once its own page is confirmed live: a slug that is
+		// merely scheduled, not yet built on Mountain Outpost's side, is
+		// still worth telling someone about, just not worth a link that
+		// 404s the moment they click it.
+		$has_page = arv_watch_outpost_exists( $event['slug'] );
+
 		$out[] = array(
 			'name' => $event['name'],
 			'from' => gmdate( 'Y-m-d', $stamp ),
-			'url'  => arv_watch_outpost_url( $event['slug'] ),
+			'url'  => $has_page ? arv_watch_outpost_url( $event['slug'] ) : '',
 			'live' => $event['live'],
 		);
 	}

@@ -2783,6 +2783,11 @@ $GLOBALS['_transients']['arv_watch_schedule'] = array(
 	array( 'slug' => 'finished-2020',    'name' => 'Finished',    'start' => '2020-01-01T13:00:00.000Z', 'live' => false ),
 	array( 'slug' => 'on-air-now',       'name' => 'On Air',      'start' => '2999-11-05T13:00:00.000Z', 'live' => true ),
 );
+// One HEAD check per surviving row (Finished is dropped by date before
+// any check runs), each confirming its Mountain Outpost page is real.
+arv_test_queue_response( array( 'code' => 200 ) );
+arv_test_queue_response( array( 'code' => 200 ) );
+arv_test_queue_response( array( 'code' => 200 ) );
 
 $up = arv_watch_upcoming();
 t( 'a finished broadcast drops off',      ! in_array( 'Finished', array_column( $up, 'name' ), true ) );
@@ -2792,11 +2797,53 @@ t( 'then the next',                       'On Air' === $up[1]['name'] );
 t( 'and the furthest last',               'Later Race' === $up[2]['name'] );
 
 // Every row links to Mountain Outpost's own page for the event, which is
-// where the stream actually plays. Verified against the real site that a
-// slug it does not know 404s rather than quietly serving the homepage,
-// which is the failure that would make this link lie.
+// where the stream actually plays, but only once that page is confirmed
+// to exist: the schedule and the page are two different systems there,
+// and a slug can sit in the schedule nine months before its page is
+// built. Checked against the real site and found exactly that gap in
+// production (BPN Go One More Ultra 2027), which is what this guards.
 t( 'each row links to mountain outpost',  'https://mountainoutpost.com/events/sooner-race-2999' === $up[0]['url'] );
 t( 'and a missing slug yields no link',   '' === arv_watch_outpost_url( '' ) );
+
+echo "\nwatch, a scheduled race with no page yet:\n";
+// The real case this exists for: a slug the schedule knows about that
+// Mountain Outpost has not built a page for yet. Linking anyway would put
+// a 404 on this site's own Watch page for something that otherwise looks
+// exactly like every other row.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_transients']['arv_watch_schedule'] = array(
+	array( 'slug' => 'not-built-yet', 'name' => 'Future Race', 'start' => '2999-05-21T13:00:00.000Z', 'live' => false ),
+);
+arv_test_queue_response( array( 'code' => 404 ) );
+$nolink = arv_watch_upcoming();
+t( 'the race still appears',              1 === count( $nolink ) );
+t( 'but with no link to a 404',           '' === $nolink[0]['url'] );
+
+// A transport failure is treated the same as a 404: from this site's side
+// they are indistinguishable, and both mean do not link to it.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_transients']['arv_watch_schedule'] = array(
+	array( 'slug' => 'unreachable', 'name' => 'Unreachable Race', 'start' => '2999-05-21T13:00:00.000Z', 'live' => false ),
+);
+arv_test_queue_response( new WP_Error( 'down' ) );
+$unreach = arv_watch_upcoming();
+t( 'a check that fails outright also yields no link', '' === $unreach[0]['url'] );
+
+// Cached per slug, not refetched on every call: the second read of the
+// same schedule must not make a second HTTP request.
+$calls = $GLOBALS['_http_calls'];
+arv_watch_upcoming();
+t( 'the page check is cached',            $calls === $GLOBALS['_http_calls'] );
+// The trap this guards: get_transient()'s own "nothing stored" return is
+// also false, so a cached "does not exist" stored as raw false would be
+// indistinguishable from a cache miss and refetch every time, defeating
+// the cache specifically on the outcome (a page not built yet) it exists
+// to remember. Confirmed directly against the stored value, not just the
+// call count above.
+t( 'a negative is cached as a string, not raw false', 'no' === get_transient( 'arv_watch_outpost_' . md5( 'unreachable' ) ) );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
 
 // A day's grace past the start, because these are ultras: a race that
 // began yesterday afternoon and is still running must not vanish from the
@@ -2815,10 +2862,13 @@ t( 'a race under way still counts',       1 === count( $mid ) );
 t( 'and it is the one still running',     'Mid Race' === $mid[0]['name'] );
 
 echo "\nwatch, upcoming rendered:\n";
+$GLOBALS['_transients'] = array();
 $GLOBALS['_transients']['arv_watch_schedule'] = array(
 	array( 'slug' => 'javelina-jundred-2026', 'name' => 'Javelina Jundred', 'start' => '2999-10-31T13:00:00.000Z', 'live' => false ),
 	array( 'slug' => 'on-air-now', 'name' => 'On Air Race', 'start' => '2999-10-01T13:00:00.000Z', 'live' => true ),
 );
+arv_test_queue_response( array( 'code' => 200 ) );
+arv_test_queue_response( array( 'code' => 200 ) );
 $uhtml = arv_watch_upcoming_render();
 t( 'the list renders',                    false !== strpos( $uhtml, 'arv-watch__upcoming' ) );
 t( 'linking out to mountain outpost',     false !== strpos( $uhtml, 'https://mountainoutpost.com/events/javelina-jundred-2026' ) );
