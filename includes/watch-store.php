@@ -28,6 +28,15 @@ if ( ! defined( 'ARV_WATCH_API' ) ) {
 	define( 'ARV_WATCH_API', 'https://mountainoutpost.com/api/broadcast/streams' );
 }
 
+// The events endpoint, which is a different list to the streams one above.
+// /streams only carries an event once a stream object exists for it, so it
+// is blind to everything not yet produced; /events carries the schedule,
+// including races months out. That difference is the whole reason the
+// upcoming list below exists.
+if ( ! defined( 'ARV_WATCH_EVENTS_API' ) ) {
+	define( 'ARV_WATCH_EVENTS_API', 'https://mountainoutpost.com/api/broadcast/events' );
+}
+
 /**
  * Every Aravaipa broadcast, newest first, live ones first of all.
  *
@@ -520,75 +529,240 @@ function arv_watch_event_href( $event ) {
 }
 
 /**
- * Broadcasts that are scheduled but have not happened yet.
+ * Mountain Outpost's broadcast schedule, including events with no stream
+ * yet.
  *
- * Mountain Outpost's feed only carries an event once a stream exists for
- * it, so a race three months out is invisible there: checked, and the feed
- * has zero future-dated events today. That makes the Broadcasts page
- * silent about the three races people are actually waiting for, which is
- * the opposite of what a broadcast page is for.
+ * A different endpoint to arv_watch_events(). That one reads /streams,
+ * which only carries an event once a stream object exists for it, so it is
+ * blind to a race three months out: checked, and it reports zero
+ * future-dated events while eight are in fact scheduled. This reads the
+ * schedule itself.
  *
- * Configured here rather than fetched, for the same reason the film tours
- * are: a handful of races a year get a broadcast, and a human decides
- * which. Dates are the race's own, read off its page on this site.
+ * Cached and failure-cached on the same terms as the streams feed, since
+ * it is the same service behind it and an outage should not be retried on
+ * every page view.
  *
- * Each entry expires on its own the day after it runs. That is the whole
- * point of storing an end date rather than a flag: the two film tour pages
- * went stale precisely because nothing about them knew the date had
- * passed, and this list would rot the same way within a month.
- *
+ * @param bool $fresh
  * @return array<int, array>
  */
-function arv_watch_upcoming_config() {
-	return apply_filters(
-		'arv_watch_upcoming_config',
+function arv_watch_schedule( $fresh = false ) {
+	$key = 'arv_watch_schedule';
+
+	if ( ! $fresh ) {
+		$cached = get_transient( $key );
+
+		if ( false !== $cached ) {
+			return ( 'none' === $cached ) ? array() : $cached;
+		}
+	}
+
+	$response = wp_remote_get(
+		ARV_WATCH_EVENTS_API,
 		array(
-			array(
-				'name' => 'Sonoma Fall Classic',
-				'from' => '2026-10-17',
-				'to'   => '2026-10-18',
-				'page' => '/california-races/sonoma/',
-			),
-			array(
-				'name' => 'Javelina Jundred',
-				'from' => '2026-10-31',
-				'to'   => '2026-11-01',
-				'page' => '/javelina/',
-			),
-			array(
-				'name' => 'Desert Solstice',
-				'from' => '2026-12-19',
-				'to'   => '2026-12-20',
-				'page' => '/desert-solstice/',
-			),
+			'headers' => array( 'User-Agent' => 'aravaipa-elements-watch' ),
+			'timeout' => 5,
 		)
 	);
+
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		set_transient( $key, 'none', MINUTE_IN_SECONDS );
+		return array();
+	}
+
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( ! is_array( $body ) || ! isset( $body['events'] ) || ! is_array( $body['events'] ) ) {
+		set_transient( $key, 'none', MINUTE_IN_SECONDS );
+		return array();
+	}
+
+	$events = array();
+
+	foreach ( $body['events'] as $event ) {
+		if ( ! is_array( $event ) || empty( $event['slug'] ) || empty( $event['name'] ) || empty( $event['startDate'] ) ) {
+			continue;
+		}
+
+		$events[] = array(
+			'slug'  => (string) $event['slug'],
+			'name'  => (string) $event['name'],
+			'start' => (string) $event['startDate'],
+			'live'  => ! empty( $event['live'] ),
+		);
+	}
+
+	set_transient( $key, empty( $events ) ? 'none' : $events, 15 * MINUTE_IN_SECONDS );
+
+	return $events;
 }
 
 /**
- * Those of them that have not finished yet, soonest first.
+ * Where Mountain Outpost puts an event's own page.
  *
- * Judged on the end date, not the start: a broadcast is still worth
- * announcing on the morning of day two of a race that runs overnight.
+ * @param string $slug
+ * @return string
+ */
+function arv_watch_outpost_url( $slug ) {
+	$slug = trim( (string) $slug );
+
+	return ( '' === $slug ) ? '' : 'https://mountainoutpost.com/events/' . rawurlencode( $slug );
+}
+
+/**
+ * Whether that page actually exists yet.
+ *
+ * Checked live rather than assumed from the slug alone, because the
+ * schedule and the page are two different systems on Mountain Outpost's
+ * side: the BPN Go One More Ultra 2027 slug sits in /api/broadcast/events
+ * nine months out with no page built for it yet, and that combination
+ * would otherwise put a 404 on this site's own Watch page for something
+ * that, from here, looked exactly like every other row. A slug this check
+ * has never heard of gets the same "false" a genuinely missing page does;
+ * the two are indistinguishable from outside Mountain Outpost, and both
+ * mean this site should not link to it.
+ *
+ * Cached per slug rather than once for the whole schedule, since a page
+ * that does not exist yet does not fail the same way an outage does: it
+ * will exist eventually, this only has to notice within a reasonable
+ * window, not every 15 minutes forever.
+ *
+ * @param string $slug
+ * @return bool
+ */
+function arv_watch_outpost_exists( $slug ) {
+	$slug = trim( (string) $slug );
+
+	if ( '' === $slug ) {
+		return false;
+	}
+
+	$key    = 'arv_watch_outpost_' . md5( $slug );
+	$cached = get_transient( $key );
+
+	// A cached "does not exist" is stored as the string 'no', not the
+	// boolean false: the transient API's own not-found return is also
+	// false, and storing the real answer in the same shape as "nothing
+	// stored here" would make a cached negative indistinguishable from a
+	// cache miss, defeating the cache on exactly the outcome (a page that
+	// is not built yet) this function exists to remember.
+	if ( false !== $cached ) {
+		return 'yes' === $cached;
+	}
+
+	$response = wp_remote_get(
+		arv_watch_outpost_url( $slug ),
+		array(
+			'method'  => 'HEAD',
+			'headers' => array( 'User-Agent' => 'aravaipa-elements-watch' ),
+			'timeout' => 5,
+		)
+	);
+
+	$exists = ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response );
+
+	set_transient( $key, $exists ? 'yes' : 'no', 6 * HOUR_IN_SECONDS );
+
+	return $exists;
+}
+
+/**
+ * Whether a scheduled broadcast is one of Aravaipa's own races.
+ *
+ * Mountain Outpost broadcasts races Aravaipa does not put on. Its schedule
+ * currently carries JFK 50 Mile, Run Rabbit Run 100 and two Mammoth
+ * events alongside Javelina, Sonoma and Desert Solstice, and under this
+ * site's masthead a reader has no way to tell which is which. Per Jamil,
+ * only Aravaipa's own belong on this page for now.
+ *
+ * Answered from the race store rather than a list of slugs. A hardcoded
+ * allow-list would be correct until December and wrong every January,
+ * when javelina-jundred-2026 becomes javelina-jundred-2027, which is the
+ * same annual-decay problem the schedule feed itself was brought in to
+ * solve. The race store already knows every race Aravaipa runs, and
+ * arv_results_race_key() already normalises a name well enough to match
+ * "Javelina Jundred" against the store's own entry, the same join the
+ * results archive, the Watch index and the shop's race strips all use.
+ *
+ * @param string $name Event name from the schedule.
+ * @return bool
+ */
+function arv_watch_is_aravaipa_race( $name ) {
+	if ( ! function_exists( 'arv_race_store_get' ) || ! function_exists( 'arv_results_race_key' ) ) {
+		// No race store to ask: show it rather than hide it. A missing
+		// filter should not silently empty a list of real broadcasts.
+		return true;
+	}
+
+	$key = arv_results_race_key( (string) $name );
+
+	if ( '' === $key ) {
+		return false;
+	}
+
+	foreach ( arv_race_store_get() as $race ) {
+		if ( empty( $race['name'] ) ) {
+			continue;
+		}
+
+		if ( arv_results_race_key( (string) $race['name'] ) === $key ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Scheduled broadcasts that have not happened yet, soonest first.
+ *
+ * Judged on the start date plus a day, so a race that runs overnight is
+ * still announced on the morning of day two rather than disappearing at
+ * midnight while it is still being broadcast.
  *
  * @return array<int, array>
  */
 function arv_watch_upcoming() {
-	$today = function_exists( 'current_time' ) ? current_time( 'Y-m-d' ) : gmdate( 'Y-m-d' );
-	$out   = array();
+	$now = function_exists( 'current_time' ) ? current_time( 'timestamp', true ) : time();
+	$out = array();
 
-	foreach ( arv_watch_upcoming_config() as $row ) {
-		$ends = ! empty( $row['to'] ) ? (string) $row['to'] : (string) $row['from'];
+	foreach ( arv_watch_schedule() as $event ) {
+		$stamp = strtotime( $event['start'] );
 
-		if ( $ends >= $today ) {
-			$out[] = $row;
+		if ( ! $stamp ) {
+			continue;
 		}
+
+		// A day's grace past the start: these are ultras, and several run
+		// well past midnight into a second calendar day.
+		if ( ( $stamp + DAY_IN_SECONDS ) < $now ) {
+			continue;
+		}
+
+		// Aravaipa's own races only, per Jamil: Mountain Outpost also
+		// broadcasts races this company does not put on, and under this
+		// masthead there is nothing to tell a reader which is which.
+		if ( ! arv_watch_is_aravaipa_race( $event['name'] ) ) {
+			continue;
+		}
+
+		// Linked only once its own page is confirmed live: a slug that is
+		// merely scheduled, not yet built on Mountain Outpost's side, is
+		// still worth telling someone about, just not worth a link that
+		// 404s the moment they click it.
+		$has_page = arv_watch_outpost_exists( $event['slug'] );
+
+		$out[] = array(
+			'name' => $event['name'],
+			'from' => gmdate( 'Y-m-d', $stamp ),
+			'url'  => $has_page ? arv_watch_outpost_url( $event['slug'] ) : '',
+			'live' => $event['live'],
+		);
 	}
 
 	usort(
 		$out,
 		function ( $a, $b ) {
-			return strcmp( (string) $a['from'], (string) $b['from'] );
+			return strcmp( $a['from'], $b['from'] );
 		}
 	);
 
@@ -643,21 +817,39 @@ function arv_watch_upcoming_render() {
 	$out .= '<ul class="arv-watch__upcoming-list">';
 
 	foreach ( $rows as $row ) {
-		$out .= '<li class="arv-watch__upcoming-item">';
+		$out .= '<li class="arv-watch__upcoming-item'
+			. ( $row['live'] ? ' arv-watch__upcoming-item--live' : '' ) . '">';
 
-		$name = '<span class="arv-watch__upcoming-name">' . esc_html( $row['name'] ) . '</span>';
+		$name = '';
 
-		if ( ! empty( $row['page'] ) ) {
-			$out .= '<a class="arv-watch__upcoming-link" href="'
-				. esc_url( home_url( $row['page'] ) ) . '">' . $name . '</a>';
+		// On air right now outranks the date entirely: a scheduled race
+		// that has actually started is the one thing this list exists to
+		// catch, and "October 17" beside it would read as though it had
+		// not begun.
+		if ( $row['live'] ) {
+			$name .= '<span class="arv-watch__upcoming-flag">'
+				. esc_html__( 'Live now', 'aravaipa-elements' ) . '</span>';
+		}
+
+		$name .= '<span class="arv-watch__upcoming-name">' . esc_html( $row['name'] ) . '</span>';
+
+		// Mountain Outpost's own page for the event, which is where the
+		// stream actually plays. Its title reads "Watch <race> Live" before
+		// the race and "<race> Replay" afterwards, so one link is correct
+		// on both sides of the date without this page having to know which.
+		if ( '' !== $row['url'] ) {
+			$out .= '<a class="arv-watch__upcoming-link" href="' . esc_url( $row['url'] ) . '"'
+				. ' target="_blank" rel="noopener">' . $name . '</a>';
 		} else {
 			$out .= $name;
 		}
 
-		$when = arv_watch_upcoming_when( $row );
+		$when = $row['live']
+			? esc_html__( 'Watch on Mountain Outpost', 'aravaipa-elements' )
+			: esc_html( arv_watch_upcoming_when( $row ) );
 
 		if ( '' !== $when ) {
-			$out .= '<span class="arv-watch__upcoming-when">' . esc_html( $when ) . '</span>';
+			$out .= '<span class="arv-watch__upcoming-when">' . $when . '</span>';
 		}
 
 		$out .= '</li>';
