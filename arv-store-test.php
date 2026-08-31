@@ -151,6 +151,19 @@ function wp_trash_post( $id ) { $GLOBALS['posts'][ $id ]['status'] = 'trash'; }
 function get_the_title( $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['title'] ?? ( is_object( $post ) ? $post->post_title : '' ); }
 function get_the_date( $fmt, $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['date'] ?? ''; }
 function get_the_post_thumbnail_url( $id, $size = 'medium' ) { $id = is_object( $id ) ? $id->ID : $id; return $GLOBALS['posts'][ $id ]['thumb'] ?? false; }
+// A featured image's id is the post's own id here: the fixtures carry the
+// image inline rather than modelling a separate attachments table, so one
+// id is enough to find it again.
+function get_post_thumbnail_id( $id ) { $id = is_object( $id ) ? $id->ID : $id; return ! empty( $GLOBALS['posts'][ $id ]['thumb'] ) ? $id : 0; }
+// Returns WordPress's own [url, width, height] shape. 'tw'/'th' let a
+// fixture declare a portrait image, which is what the hero reads to decide
+// between cropping and letterboxing; a fixture that sets neither reads as
+// landscape, the common case.
+function wp_get_attachment_image_src( $id, $size = 'large' ) {
+	$p = $GLOBALS['posts'][ $id ] ?? null;
+	if ( ! $p || empty( $p['thumb'] ) ) { return false; }
+	return array( $p['thumb'], $p['tw'] ?? 1200, $p['th'] ?? 675 );
+}
 function get_post_type( $id ) { $id = is_object( $id ) ? $id->ID : $id; return $GLOBALS['posts'][ $id ]['type'] ?? 'post'; }
 function get_the_category( $id ) { $id = is_object( $id ) ? $id->ID : $id; $out = array(); foreach ( (array) ( $GLOBALS['posts'][ $id ]['cats'] ?? array() ) as $name ) { $c = new stdClass(); $c->name = $name; $out[] = $c; } return $out; }
 function update_post_meta( $id, $k, $v ) { $GLOBALS['meta'][ $id ][ $k ] = $v; }
@@ -4970,6 +4983,50 @@ $hero = arv_media_hero_render();
 t( 'the hero is the newest item',         false !== strpos( $hero, 'P1' ) );
 t( 'it carries its type badge',           false !== strpos( $hero, 'arv-media-hero__badge">Article' ) );
 t( 'and its date',                        false !== strpos( $hero, 'June 1, 2026' ) );
+echo "\nmedia hero, image sizing and shape:\n";
+// Two real bugs on the live /media/ hero, both mine. The Mount to Coast
+// announcement is a 1568x1920 portrait poster: it was being served at the
+// 'medium' size (245px on this site) and stretched across a ~740px hero,
+// and then cropped to 16:9, which removed the faces along its top and the
+// sponsor logos along its bottom and kept the middle.
+// Snapshot rather than clear: the surrounding block seeds watch, films
+// and podcast transients that its later assertions still depend on, and
+// wiping them here quietly broke the feed count two tests further down.
+$hero_posts_backup      = $GLOBALS['posts'];
+$hero_transients_backup = $GLOBALS['_transients'];
+$GLOBALS['posts'] = array();
+$GLOBALS['posts'][9701] = array(
+	'title' => 'Portrait Poster', 'status' => 'publish', 'type' => 'post',
+	'date' => '2026-08-21T00:00:00Z', 'thumb' => 'https://x.test/poster.png',
+	'tw' => 1568, 'th' => 1920,
+);
+$GLOBALS['PERMALINK'][9701] = 'https://www.aravaiparunning.com/poster/';
+delete_transient( 'arv_media_latest_posts' );
+
+$shot = arv_media_latest_thumb( 9701 );
+t( 'the real dimensions travel with the url', 1568 === $shot['width'] && 1920 === $shot['height'] );
+
+$tall_hero = arv_media_hero_render( array() );
+t( 'a portrait image is not cropped to 16:9', false !== strpos( $tall_hero, 'arv-media-hero__img--tall' ) );
+
+// A landscape photograph still fills the box: contain on one of those
+// would letterbox a picture that had nothing wrong with it.
+$GLOBALS['posts'][9701]['tw'] = 1600;
+$GLOBALS['posts'][9701]['th'] = 900;
+delete_transient( 'arv_media_latest_posts' );
+t( 'a landscape image still fills the box',   false === strpos( arv_media_hero_render( array() ), 'arv-media-hero__img--tall' ) );
+
+// A source with no dimensions at all, which is every YouTube and podcast
+// thumbnail in this feed, keeps the old behaviour rather than guessing.
+$GLOBALS['posts'][9701]['tw'] = 0;
+$GLOBALS['posts'][9701]['th'] = 0;
+delete_transient( 'arv_media_latest_posts' );
+t( 'unknown dimensions crop as before',       false === strpos( arv_media_hero_render( array() ), 'arv-media-hero__img--tall' ) );
+
+$GLOBALS['posts']       = $hero_posts_backup;
+$GLOBALS['_transients'] = $hero_transients_backup;
+delete_transient( 'arv_media_latest_posts' );
+
 t( 'the whole hero is one link',          1 === substr_count( $hero, 'arv-media-hero__link' ) );
 
 // The feed under a hero must not open with the item the hero just showed.

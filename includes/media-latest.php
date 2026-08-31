@@ -176,25 +176,81 @@ function arv_media_latest_from_posts() {
 	);
 
 	foreach ( $posts as $post ) {
-		$thumb = get_the_post_thumbnail_url( $post->ID, 'medium' );
+		// 'large', not 'medium'. The hero displays this at around 740px
+		// wide, and 'medium' on this site is 245px: the Mount to Coast
+		// announcement was being upscaled more than three times its own
+		// width and looked exactly as bad as that sounds. The feed cards
+		// below it are ~280px, so one size covers both rather than the
+		// hero and the cards each reading the store differently.
+		$src = arv_media_latest_thumb( $post->ID );
 
-		if ( ! $thumb ) {
+		if ( '' === $src['url'] ) {
 			continue;
 		}
 
 		$items[] = array(
-			'type'  => 'article',
-			'badge' => __( 'Article', 'aravaipa-elements' ),
-			'title' => get_the_title( $post ),
-			'date'  => get_the_date( 'c', $post ),
-			'thumb' => $thumb,
-			'url'   => get_permalink( $post ),
+			'type'   => 'article',
+			'badge'  => __( 'Article', 'aravaipa-elements' ),
+			'title'  => get_the_title( $post ),
+			'date'   => get_the_date( 'c', $post ),
+			'thumb'  => $src['url'],
+			// Carried so the hero can tell a landscape photograph from a
+			// portrait poster and stop cropping the second kind to death.
+			'width'  => $src['width'],
+			'height' => $src['height'],
+			'url'    => get_permalink( $post ),
 		);
 	}
 
 	set_transient( $key, $items, HOUR_IN_SECONDS );
 
 	return $items;
+}
+
+/**
+ * A post's featured image at a size the hero can actually use, with the
+ * shape it happens to be.
+ *
+ * The dimensions matter as much as the URL here. A 16:9 crop is right for
+ * a landscape photograph and wrong for a portrait poster: the Sonoma
+ * partnership announcement is a 1568x1920 graphic with faces along the top
+ * and sponsor logos along the bottom, and cropping that to 16:9 removes
+ * both and leaves the middle. Knowing the shape is what lets the hero
+ * decide rather than guess.
+ *
+ * @param int $post_id
+ * @return array{url: string, width: int, height: int}
+ */
+function arv_media_latest_thumb( $post_id ) {
+	$none = array( 'url' => '', 'width' => 0, 'height' => 0 );
+
+	if ( ! function_exists( 'get_post_thumbnail_id' ) ) {
+		return $none;
+	}
+
+	$id = (int) get_post_thumbnail_id( $post_id );
+
+	if ( ! $id ) {
+		return $none;
+	}
+
+	if ( ! function_exists( 'wp_get_attachment_image_src' ) ) {
+		$url = get_the_post_thumbnail_url( $post_id, 'large' );
+
+		return $url ? array( 'url' => $url, 'width' => 0, 'height' => 0 ) : $none;
+	}
+
+	$src = wp_get_attachment_image_src( $id, 'large' );
+
+	if ( ! is_array( $src ) || empty( $src[0] ) ) {
+		return $none;
+	}
+
+	return array(
+		'url'    => (string) $src[0],
+		'width'  => isset( $src[1] ) ? (int) $src[1] : 0,
+		'height' => isset( $src[2] ) ? (int) $src[2] : 0,
+	);
 }
 
 /**
@@ -273,8 +329,18 @@ function arv_media_hero_render( $args = array() ) {
 	$out .= '<a class="arv-media-hero__link" href="' . esc_url( $item['url'] ) . '">';
 
 	if ( '' !== $item['thumb'] ) {
+		// A landscape photograph fills the 16:9 box correctly. A portrait
+		// poster does not: cropping one to 16:9 keeps its middle and throws
+		// away the parts that carry the meaning, which on the Sonoma
+		// partnership graphic were the faces along the top and the sponsor
+		// logos along the bottom. Anything taller than it is wide is shown
+		// whole instead, letterboxed against the section's own background.
+		$tall = ! empty( $item['height'] ) && ! empty( $item['width'] )
+			&& $item['height'] > $item['width'];
+
 		$out .= '<span class="arv-media-hero__art">';
-		$out .= '<img class="arv-media-hero__img" src="' . esc_url( $item['thumb'] ) . '" alt=""'
+		$out .= '<img class="arv-media-hero__img' . ( $tall ? ' arv-media-hero__img--tall' : '' ) . '"'
+			. ' src="' . esc_url( $item['thumb'] ) . '" alt=""'
 			. ' loading="eager" decoding="async" width="960" height="540" />';
 		$out .= '</span>';
 	}
