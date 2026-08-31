@@ -5744,6 +5744,35 @@
 	overflow: hidden;
 }
 
+/* The featured broadcast at the top of the archive, which is the Media
+   hero's own component: same classes, same stylesheet block, so the two
+   pages cannot drift apart. Only the spacing under it is local, since here
+   it sits inside .arv-watch__inner's padding rather than alone on a page. */
+.arv-watch__hero {
+	margin-bottom: 2rem;
+}
+
+/* The [hidden] guard, for the same reason .arv-watch__race[hidden] exists
+   below: aravaipa-watch.js hides this whenever a filter is set, and
+   .arv-media-hero__link sets `display: grid`. That rule is on the child
+   rather than on this element, so the browser default would in fact hold
+   here, which is precisely why it is worth stating: the next person to give
+   .arv-media-hero a display of its own would silently break the filter and
+   have no way to know this depended on it. */
+.arv-watch__hero[hidden] {
+	display: none;
+}
+
+/* Reads as a section label over the grid, not as a second page title: the
+   hero above it is what the page leads with now. */
+.arv-watch__replays {
+	margin: 0 0 1rem;
+	font-size: clamp(18px, 2.2vw, 22px);
+	font-weight: 700;
+	line-height: 1.2;
+	color: #fff;
+}
+
 /* Same trap .arv-calendar__row[hidden] exists for: an unconditional
    "display: flex" above is equal specificity to the browser's own
    "[hidden] { display: none }" and, being an author rule, always wins the

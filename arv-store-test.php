@@ -2741,12 +2741,68 @@ t( 'and its segment count',              false !== strpos( $html, '2 videos' ) )
 t( 'two segments get a toggle',          false !== strpos( $html, 'All 2 segments' ) );
 
 // One video needs no "all 1 segments" toggle over the video already linked.
-$single = array( array( 'slug' => 'solo-2026', 'name' => 'Solo', 'live' => false, 'start' => '', 'streams' => array( array( 'id' => 'ddddddddddd', 'title' => 'Only', 'url' => 'https://youtu.be/ddddddddddd', 'thumbnail' => 'https://i.ytimg.com/vi/ddddddddddd/hqdefault.jpg', 'live' => false, 'type' => '', 'start' => '' ) ) ) );
+// Two events, not one: the newest is promoted into the hero above the
+// archive, so the event under test here has to be the second.
+$lead   = array( 'slug' => 'lead-2026', 'name' => 'Lead', 'live' => false, 'start' => '', 'hero' => '', 'place' => '', 'streams' => array( array( 'id' => 'fffffffffff', 'title' => 'Lead', 'url' => 'https://youtu.be/fffffffffff', 'thumbnail' => 'https://i.ytimg.com/vi/fffffffffff/hqdefault.jpg', 'live' => false, 'type' => '', 'start' => '' ) ) );
+$solo_e = array( 'slug' => 'solo-2026', 'name' => 'Solo', 'live' => false, 'start' => '', 'hero' => '', 'place' => '', 'streams' => array( array( 'id' => 'ddddddddddd', 'title' => 'Only', 'url' => 'https://youtu.be/ddddddddddd', 'thumbnail' => 'https://i.ytimg.com/vi/ddddddddddd/hqdefault.jpg', 'live' => false, 'type' => '', 'start' => '' ) ) );
+$single = array( $lead, $solo_e );
 $GLOBALS['_transients']['arv_watch_events'] = $single;
 $solo = arv_watch_render( array() );
 t( 'one video gets no toggle',           false === strpos( $solo, '<details' ) );
 t( 'and reads as one video',             false !== strpos( $solo, '1 video' ) );
 t( 'and not as one videos',              false === strpos( $solo, '1 videos' ) );
+
+echo "\nwatch, the featured broadcast:\n";
+// The page leads with one broadcast instead of a centred heading, and what
+// that broadcast is depends on what there is to say. Three states, and the
+// slot is never empty in any of them.
+
+// Nothing live and nothing scheduled, which is most of the calendar:
+// the newest replay, said plainly rather than left as the first card of a
+// grid.
+$GLOBALS['_transients']['arv_watch_events'] = $single;
+$featured = arv_watch_render( array() );
+t( 'the archive gets a hero',            false !== strpos( $featured, 'arv-watch__hero' ) );
+t( 'labelled as the latest',             false !== strpos( $featured, 'Latest broadcast' ) );
+t( 'and it is the newest event',         false !== strpos( $featured, '>Lead</span>' ) );
+// Not printed twice, a hero and then the same card directly beneath it.
+t( 'the hero leaves the archive',        1 === substr_count( $featured, 'Lead' ) );
+t( 'the rest of the archive stays',      false !== strpos( $featured, 'Solo' ) );
+t( 'and it is headed as replays',        false !== strpos( $featured, 'Replays</h2>' ) );
+// The JS hook the filter uses to hide it, since one broadcast stranded over
+// an empty grid is what a search for anything else would otherwise leave.
+t( 'the filter can find the hero',       false !== strpos( $featured, 'data-arv-watch-hero' ) );
+
+// Something scheduled: Mountain Outpost creates the event and posts its
+// trailer weeks out, so a future start date in this feed is a real state
+// and not a hypothetical one.
+$soon = $single;
+$soon[0]['start'] = gmdate( 'c', time() + ( 30 * DAY_IN_SECONDS ) );
+$soon[0]['place'] = 'Black Canyon City, AZ';
+$soon[0]['hero']  = 'https://example.com/hero.jpg';
+$GLOBALS['_transients']['arv_watch_events'] = $soon;
+$upcoming = arv_watch_render( array() );
+t( 'a future event leads instead',       false !== strpos( $upcoming, 'Up next' ) );
+t( 'not as the latest replay',           false === strpos( $upcoming, 'Latest broadcast' ) );
+t( 'with its location',                  false !== strpos( $upcoming, 'Black Canyon City, AZ' ) );
+// Full bleed, so the event's own artwork beats a 480px YouTube thumbnail
+// stretched across it.
+t( 'and the event artwork',              false !== strpos( $upcoming, 'example.com/hero.jpg' ) );
+
+// The nearest one, not the furthest: the feed is newest first, so a walk
+// through it has to keep taking the later match.
+$two = $soon;
+$two[1]['start'] = gmdate( 'c', time() + ( 5 * DAY_IN_SECONDS ) );
+$GLOBALS['_transients']['arv_watch_events'] = $two;
+$nearest = arv_watch_render( array() );
+t( 'the nearest future event wins',      false !== strpos( $nearest, '>Solo</span>' ) );
+
+// On air beats both. The embed above has already said the only thing a hero
+// could say, and louder.
+$GLOBALS['_transients']['arv_watch_events'] = $clean;
+$onair = arv_watch_render( array() );
+t( 'a live broadcast suppresses it',     false === strpos( $onair, 'arv-watch__hero' ) );
+t( 'the player is what leads',           1 === substr_count( $onair, '<iframe' ) );
 
 // The limit keeps a homepage block short, but "we are on air right now" is
 // the one thing that block exists to say, so it is never what gets cut.
