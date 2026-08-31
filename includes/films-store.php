@@ -499,6 +499,26 @@ function arv_films_self_url() {
 }
 
 /**
+ * A race's name, trimmed for a badge rather than a results page.
+ *
+ * "Javelina Jundred Presented by: HOKA" is the race's real name and
+ * belongs on its own page and in the calendar, where the sponsor credit
+ * is doing real work. On a small green chip on a film card it is mostly
+ * "Presented by: HOKA" crowding out the one word, "Javelina", that
+ * actually tells a visitor which race this is.
+ *
+ * Only the label changes. The badge still filters and links on the full
+ * race name underneath, so a sponsor rename does not have to touch
+ * anything here to keep matching.
+ *
+ * @param string $race
+ * @return string
+ */
+function arv_films_race_label( $race ) {
+	return trim( preg_replace( '/\s*[|:\x{2013}\x{2014}-]?\s*presented\s+by\b.*$/iu', '', (string) $race ) );
+}
+
+/**
  * An ISO 8601 duration from YouTube ("PT1H50M55S") as "1:50:55".
  *
  * @param string $iso
@@ -889,7 +909,7 @@ function arv_films_card( $film, $active_id ) {
 		$out .= '<span class="arv-films__race">';
 		$out .= '<a class="arv-films__race-tag" href="'
 			. esc_url( add_query_arg( 'race', arv_films_normalise( $film['race'] ), arv_films_self_url() ) ) . '">'
-			. esc_html( $film['race'] ) . '</a>';
+			. esc_html( arv_films_race_label( $film['race'] ) ) . '</a>';
 
 		$race_page = function_exists( 'arv_watch_race_page_link' )
 			? arv_watch_race_page_link( $film['race'] )
