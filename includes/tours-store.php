@@ -232,6 +232,20 @@ function arv_tours_recap( $tour ) {
 }
 
 /**
+ * One labelled line on a card.
+ *
+ * @param string $label
+ * @param string $value
+ * @return string
+ */
+function arv_tours_line( $label, $value ) {
+	return '<span class="arv-tours__line">'
+		. '<span class="arv-tours__line-label">' . esc_html( $label ) . '</span>'
+		. '<span class="arv-tours__line-value">' . esc_html( $value ) . '</span>'
+		. '</span>';
+}
+
+/**
  * One tour's card.
  *
  * @param array $tour
@@ -257,29 +271,34 @@ function arv_tours_card( $tour ) {
 		$out .= '<span class="arv-tours__sub">' . esc_html( $tour['sub'] ) . '</span>';
 	}
 
-	$bits   = array();
+	// Each line gets a label. Three stacked grey lines of numbers under a
+	// title read as one undifferentiated block, and a reader has to parse
+	// "February 20 to May 14, 2026 · 258,537 views" to work out which
+	// number is which. The labels do that work for them, and they are the
+	// same labels a sponsor deck would use.
 	$window = arv_tours_window( $tour );
 
 	if ( '' !== $window ) {
-		$bits[] = ( 'toured' === $state )
-			/* translators: %s: a date range, e.g. "February 20 to March 31, 2026". */
-			? sprintf( __( 'Toured %s', 'aravaipa-elements' ), $window )
-			: $window;
-	}
-
-	if ( $film['views'] ) {
-		/* translators: %s: a count of YouTube views. */
-		$bits[] = sprintf( __( '%s views', 'aravaipa-elements' ), number_format_i18n( $film['views'] ) );
-	}
-
-	if ( ! empty( $bits ) ) {
-		$out .= '<span class="arv-tours__meta">' . esc_html( implode( ' · ', $bits ) ) . '</span>';
+		$out .= arv_tours_line(
+			( 'toured' === $state )
+				? __( 'Toured', 'aravaipa-elements' )
+				: __( 'Tour dates', 'aravaipa-elements' ),
+			$window
+		);
 	}
 
 	$recap = arv_tours_recap( $tour );
 
 	if ( '' !== $recap ) {
-		$out .= '<span class="arv-tours__recap">' . esc_html( $recap ) . '</span>';
+		$out .= arv_tours_line( __( 'Reach', 'aravaipa-elements' ), $recap );
+	}
+
+	if ( $film['views'] ) {
+		$out .= arv_tours_line(
+			__( 'Watched', 'aravaipa-elements' ),
+			/* translators: %s: a count of YouTube views. */
+			sprintf( __( '%s views', 'aravaipa-elements' ), number_format_i18n( $film['views'] ) )
+		);
 	}
 
 	$out .= '</span></a>';

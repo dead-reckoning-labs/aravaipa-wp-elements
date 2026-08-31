@@ -4476,7 +4476,12 @@ t( 'they invite a watch instead',         2 === substr_count( $html, 'Watch it n
 // The real span, off the tour page's own eighteen listed stops, not the
 // "February 20 - March 31" its heading advertises. Both tours kept going
 // weeks past the date they told everyone they ended.
-t( 'the window reads as past',            false !== strpos( $html, 'Toured February 20 to May 14, 2026' ) );
+// Label and value are separate spans now, so the card can put a small
+// header over each line rather than running them into one grey string.
+t( 'the window reads as past',            false !== strpos( $html, '>Toured</span><span class="arv-tours__line-value">February 20 to May 14, 2026<' ) );
+t( 'each line is labelled',               false !== strpos( $html, 'arv-tours__line-label' ) );
+t( 'the reach line has its own label',    false !== strpos( $html, '>Reach</span>' ) );
+t( 'and the view count its own',          false !== strpos( $html, '>Watched</span>' ) );
 // "18 stops in 4 countries" is the sentence a sponsor or venue wants off
 // this page, and it was nowhere on the site before this.
 t( 'the recap counts the stops',          false !== strpos( $html, '18 stops' ) );
