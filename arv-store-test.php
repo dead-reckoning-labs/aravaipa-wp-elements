@@ -238,6 +238,7 @@ require_once __DIR__ . '/includes/podcasts-store.php';
 require_once __DIR__ . '/includes/media-follow.php';
 require_once __DIR__ . '/includes/media-subnav.php';
 require_once __DIR__ . '/includes/articles-store.php';
+require_once __DIR__ . '/includes/tours-store.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
@@ -4327,6 +4328,100 @@ foreach ( array( 9401, 9402, 9403, 9406, 9407 ) as $id ) {
 	unset( $GLOBALS['PERMALINK'][ $id ] );
 }
 $GLOBALS['posts']       = $articles_backup;
+$GLOBALS['_transients'] = array();
+
+echo "\nfilm tours, a state that cannot go stale:\n";
+// The whole reason this is computed rather than typed: both tour pages went
+// stale the day their last screening happened, and The Chase was still
+// offering "Book Tickets" sixteen months later.
+$past    = array( 'key' => 'p', 'title' => 'Past',    'page' => '/p/', 'film' => 'aaaaaaaaaaa', 'from' => '2020-01-01', 'to' => '2020-02-01' );
+$now     = array( 'key' => 'n', 'title' => 'Now',     'page' => '/n/', 'film' => 'bbbbbbbbbbb', 'from' => '2020-01-01', 'to' => '2999-01-01' );
+$soon    = array( 'key' => 's', 'title' => 'Soon',    'page' => '/s/', 'film' => 'ccccccccccc', 'from' => '2999-01-01', 'to' => '2999-02-01' );
+$openrun = array( 'key' => 'o', 'title' => 'Open',    'page' => '/o/', 'film' => 'ddddddddddd', 'from' => '2020-01-01', 'to' => '' );
+
+t( 'a finished tour reads as finished',   'toured'   === arv_tours_state( $past ) );
+t( 'a running one as running',            'touring'  === arv_tours_state( $now ) );
+t( 'an announced one as announced',       'upcoming' === arv_tours_state( $soon ) );
+// Announced but unscheduled is a real state: the weeks between a trailer
+// and the first venue confirming. It reads as running, not as over.
+t( 'no end date is not the same as over', 'touring'  === arv_tours_state( $openrun ) );
+
+// The year said once, or a same-year window reads like two different years.
+t( 'a same-year window says the year once', 'February 20 to March 31, 2026' === arv_tours_window( array( 'from' => '2026-02-20', 'to' => '2026-03-31' ) ) );
+t( 'a window across years says both',       'December 1, 2025 to January 5, 2026' === arv_tours_window( array( 'from' => '2025-12-01', 'to' => '2026-01-05' ) ) );
+t( 'no end date falls back to the month',   'March 2026' === arv_tours_window( array( 'from' => '2026-03-01' ) ) );
+t( 'no dates at all says nothing',          '' === arv_tours_window( array() ) );
+
+t( 'a finished tour invites a watch',     'Watch it now' === arv_tours_badge( 'toured' ) );
+t( 'a running one says so',               'On tour now'  === arv_tours_badge( 'touring' ) );
+
+// Falls back to YouTube's own thumbnail URL, which is derived from the id
+// and so cannot 404 while the video exists. This page has to still look
+// right when the Films feed is down, which is when someone is most likely
+// looking at it.
+$GLOBALS['_transients']['arv_films'] = 'none';
+$dead = arv_tours_film( 'k0HkYULFVvA' );
+t( 'a dead films feed still has artwork', false !== strpos( $dead['thumb'], 'i.ytimg.com/vi/k0HkYULFVvA' ) );
+t( 'and simply has no view count',        0 === $dead['views'] );
+
+$GLOBALS['_transients']['arv_films'] = array(
+	array( 'key' => 'documentaries', 'title' => 'Documentaries', 'films' => array(
+		array( 'id' => 'k0HkYULFVvA', 'title' => 'THE CHASE', 'desc' => '', 'thumbnail' => 'https://x.test/chase.jpg',
+		       'published' => '2025-04-25T00:00:00Z', 'views' => 793207, 'duration' => '', 'url' => 'https://youtu.be/k0HkYULFVvA',
+		       'lead' => 'THE CHASE', 'race' => '', 'division' => null, 'trailer' => null ),
+	) ),
+);
+$live = arv_tours_film( 'k0HkYULFVvA' );
+t( 'a live feed wins on artwork',         'https://x.test/chase.jpg' === $live['thumb'] );
+t( 'and carries the view count',          793207 === $live['views'] );
+
+echo "\nfilm tours, rendered:\n";
+$html = arv_tours_render( array( 'heading' => 'Film Tours', 'intro' => 'Every one of them.' ) );
+t( 'the heading renders',                 false !== strpos( $html, 'Film Tours</h2>' ) );
+t( 'a card per configured tour',          2 === substr_count( $html, 'class="arv-tours__card' ) );
+t( 'both films are there',                false !== strpos( $html, 'The Cutoff' ) && false !== strpos( $html, 'The Chase' ) );
+t( 'newest tour first',                   strpos( $html, 'The Cutoff' ) < strpos( $html, 'The Chase' ) );
+// Both real tours have finished, so neither should be inviting a ticket
+// purchase. This is the assertion that would have caught the live bug.
+t( 'no finished tour sells a ticket',     false === stripos( $html, 'ticket' ) );
+t( 'they invite a watch instead',         2 === substr_count( $html, 'Watch it now' ) );
+t( 'the window reads as past',            false !== strpos( $html, 'Toured February 20 to March 31, 2026' ) );
+
+// The Chase moved out from under a draft parent named "Cocodona 250 OLD".
+// Nothing here may point at the old path again.
+t( 'the chase links to its real page',    false !== strpos( $html, home_url( '/the-chase-film/' ) ) );
+t( 'and never to the retired parent',     false === strpos( $html, 'cocodona-old' ) );
+
+// Each tour's merch has to be its own. The Cutoff's page shipped pointing
+// at The Chase's collection, which is the second live bug this guards.
+t( 'the cutoff has its own merch',        false !== strpos( $html, 'the-cutoff-film-merch' ) );
+t( 'the chase has its own merch',         false !== strpos( $html, 'the-chase-film-merch' ) );
+$cutoff_card = substr( $html, strpos( $html, 'The Cutoff' ), strpos( $html, 'The Chase' ) - strpos( $html, 'The Cutoff' ) );
+t( 'and neither borrows the other s',     false === strpos( $cutoff_card, 'the-chase-film-merch' ) );
+
+// A link inside a link is not a thing a browser can render, so the actions
+// sit outside the card's own anchor.
+t( 'the actions are outside the card link', strpos( $html, 'arv-tours__actions' ) > strpos( $html, '</a>' ) );
+
+echo "\nfilm tours, the strip on the films page:\n";
+$strip = arv_tours_strip_render();
+t( 'the strip renders',                   false !== strpos( $strip, 'arv-tours-strip' ) );
+t( 'and points at the index',             false !== strpos( $strip, home_url( '/film-tours/' ) ) );
+// Nothing is running today, so it is a quiet cross-link rather than a shout.
+t( 'a quiet line when nothing is on',     false !== strpos( $strip, 'where it played' ) );
+
+// With something actually on the road, it says that instead.
+add_filter( 'arv_tours_config', function () {
+	return array( array( 'key' => 'n', 'title' => 'Now', 'page' => '/n/', 'film' => 'bbbbbbbbbbb', 'from' => '2020-01-01', 'to' => '2999-01-01' ) );
+} );
+$loud = arv_tours_strip_render();
+t( 'a live tour changes the line',        false !== strpos( $loud, '1 tour on the road right now' ) );
+t( 'and the card badge with it',          false !== strpos( arv_tours_render( array() ), 'On tour now' ) );
+$GLOBALS['FILTERS']['arv_tours_config'] = array();
+
+t( 'the index shortcode is registered',   isset( $GLOBALS['SHORTCODES']['arv_film_tours'] ) );
+t( 'the strip shortcode too',             isset( $GLOBALS['SHORTCODES']['arv_film_tours_strip'] ) );
+
 $GLOBALS['_transients'] = array();
 
 echo "\nmedia hub counts, what the sub-nav strip cannot say:\n";
