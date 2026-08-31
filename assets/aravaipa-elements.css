@@ -7359,3 +7359,156 @@
 body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	display: none;
 }
+
+/* ---------------------------------------------------------------------------
+   Media Latest: broadcasts, films, podcast episodes and articles, merged
+   into one reverse-chronological feed with a type filter.
+
+   Same dark family as the Media hub above it. Deliberately a plain grid
+   of equal-weight cards rather than the hub's five hero cards: this feed
+   is about what just came out, not about which section it belongs to,
+   and the badge on each card is enough to say that.
+   --------------------------------------------------------------------------- */
+.arv-media-latest {
+	box-sizing: border-box;
+	text-align: left;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #0c1a19;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-media-latest * {
+	box-sizing: inherit;
+}
+
+.arv-media-latest__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2.5rem 1.25rem 3rem;
+}
+
+.arv-media-latest__heading {
+	margin: 0;
+	font-size: var(--arv-fs-h2);
+	font-weight: 900;
+	letter-spacing: -0.5px;
+	text-align: center;
+	color: #fff;
+}
+
+.arv-media-latest__intro {
+	margin: 0.5rem 0 0;
+	font-size: var(--arv-fs-body);
+	text-align: center;
+	color: rgba(244, 244, 244, 0.75);
+}
+
+.arv-media-latest__filters {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.5rem;
+	margin: 1.75rem 0 0;
+}
+
+.arv-media-latest__filter {
+	padding: 0.4rem 0.9rem;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: var(--arv-radius-chip);
+	background: transparent;
+	font-family: inherit;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.3px;
+	text-transform: uppercase;
+	color: rgba(244, 244, 244, 0.75);
+	cursor: pointer;
+}
+
+.arv-media-latest__filter:hover,
+.arv-media-latest__filter:focus-visible {
+	border-color: rgba(255, 255, 255, 0.5);
+	color: #fff;
+}
+
+.arv-media-latest__filter.is-current {
+	background: #4ade80;
+	border-color: #4ade80;
+	color: #10201f;
+}
+
+.arv-media-latest__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	gap: 1.1rem;
+	margin: 1.75rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* Same specificity tie the calendar, Watch, Films and Photos grids all
+   hit: without this the type filter would set the attribute on every
+   card it means to hide and nothing would visibly happen. */
+.arv-media-latest__card[hidden] {
+	display: none;
+}
+
+.arv-media-latest__link {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--arv-radius);
+	background: rgba(255, 255, 255, 0.04);
+	text-decoration: none;
+	color: inherit;
+}
+
+.arv-media-latest__thumb {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 10;
+	object-fit: cover;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.arv-media-latest__badge {
+	position: absolute;
+	top: 0.6rem;
+	left: 0.6rem;
+	padding: 0.15rem 0.5rem;
+	border-radius: var(--arv-radius-chip);
+	background: rgba(0, 0, 0, 0.75);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.3px;
+	text-transform: uppercase;
+	color: #4ade80;
+}
+
+.arv-media-latest__title {
+	padding: 0.75rem 0.9rem 0.15rem;
+	font-size: var(--arv-fs-body);
+	font-weight: 700;
+	color: #fff;
+}
+
+.arv-media-latest__date {
+	padding: 0 0.9rem 0.85rem;
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.6);
+}
+
+@media (max-width: 767px) {
+	.arv-media-latest__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
+
+	.arv-media-latest__grid {
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	}
+}

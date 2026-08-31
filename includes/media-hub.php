@@ -102,7 +102,7 @@ function arv_media_hub_cards() {
 		array(
 			'title' => __( 'Photos', 'aravaipa-elements' ),
 			'desc'  => __( 'Race photos from every Aravaipa event.', 'aravaipa-elements' ),
-			'url'   => home_url( '/photos-2026/' ),
+			'url'   => home_url( '/photos/' ),
 			'thumb' => '',
 		),
 		array(
