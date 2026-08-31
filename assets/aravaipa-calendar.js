@@ -32,8 +32,12 @@
 		} );
 	}
 
-	function matches( row, query, state, month, series, openOnly ) {
+	function matches( row, query, state, month, series, openOnly, roadOnly ) {
 		if ( openOnly && row.getAttribute( 'data-open' ) !== '1' ) {
+			return false;
+		}
+
+		if ( roadOnly && row.getAttribute( 'data-terrain' ) !== 'road' ) {
 			return false;
 		}
 
@@ -85,6 +89,7 @@
 		var monthSel = bar.querySelector( '[data-arv-month]' );
 		var seriesSel = bar.querySelector( '[data-arv-series]' );
 		var openBox = bar.querySelector( '[data-arv-open]' );
+		var roadBox = bar.querySelector( '[data-arv-road]' );
 		var count = bar.querySelector( '[data-arv-count]' );
 		var total = rows.length;
 		// The hiatus list sits outside the filtered list on purpose: those
@@ -101,10 +106,11 @@
 			var month = monthSel ? monthSel.value : '';
 			var series = seriesSel ? seriesSel.value : '';
 			var openOnly = openBox ? openBox.checked : false;
+			var roadOnly = roadBox ? roadBox.checked : false;
 			var shown = 0;
 
 			Array.prototype.forEach.call( rows, function ( row ) {
-				var ok = matches( row, query, state, month, series, openOnly );
+				var ok = matches( row, query, state, month, series, openOnly, roadOnly );
 				row.hidden = ! ok;
 				if ( ok ) {
 					shown++;
@@ -114,7 +120,7 @@
 			syncMonthHeadings( calendar );
 
 			if ( hiatus ) {
-				hiatus.hidden = !! ( query || state || month || series || openOnly );
+				hiatus.hidden = !! ( query || state || month || series || openOnly || roadOnly );
 			}
 
 			if ( count ) {
@@ -146,6 +152,9 @@
 		}
 		if ( openBox ) {
 			openBox.addEventListener( 'change', apply );
+		}
+		if ( roadBox ) {
+			roadBox.addEventListener( 'change', apply );
 		}
 
 		// The bar is hidden until this runs. A search box that does nothing

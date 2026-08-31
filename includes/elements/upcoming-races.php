@@ -432,6 +432,7 @@ function arv_upcoming_races_parse_row( $row ) {
 			'guessed'   => ( '1' === trim( $tail[9] ) ),
 			'lat'       => arv_upcoming_races_coord( $tail[10], 90 ),
 			'lng'       => arv_upcoming_races_coord( $tail[11], 180 ),
+			'terrain'   => arv_race_terrain( $name ),
 		);
 	}
 
@@ -452,6 +453,7 @@ function arv_upcoming_races_parse_row( $row ) {
 		'guessed'   => ( '1' === trim( arv_cell( $row, 13 ) ) ),
 		'lat'       => arv_upcoming_races_coord( arv_cell( $row, 14 ), 90 ),
 		'lng'       => arv_upcoming_races_coord( arv_cell( $row, 15 ), 180 ),
+		'terrain'   => arv_race_terrain( $name ),
 	);
 }
 

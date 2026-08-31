@@ -766,3 +766,72 @@ function arv_race_display_name( $name ) {
 
 	return isset( $names[ $key ] ) ? $names[ $key ] : $name;
 }
+
+/**
+ * Road or trail, for a race name.
+ *
+ * Nothing in the calendar's own data says this. UltraSignup's event feed
+ * carries no surface field, and the closest thing on the site, the free
+ * text in a race's distances ("4 Mile Road Race"), is present on 2 of 87
+ * races and would have called the Tucson Marathon a trail race by its
+ * absence. So this is Jamil's own list, by name, the same way
+ * arv_race_display_names() above is: not derived, because nothing to
+ * derive it from exists, and not guessed, because a guess here is a race
+ * badged wrong on its own page.
+ *
+ * Trail is the default for anything not listed, which the numbers back:
+ * 75 of the 87 races on the live calendar are trail. Aravaipa is a trail
+ * company first; an unrecognised race is far more likely a new trail
+ * race than a new road one.
+ *
+ * @param string $name
+ * @return string 'road' or 'trail'.
+ */
+function arv_race_terrain( $name ) {
+	$name = (string) $name;
+
+	if ( '' === $name || ! function_exists( 'arv_results_race_key' ) ) {
+		return 'trail';
+	}
+
+	/**
+	 * Filters which races are road races, by their real name. Everything
+	 * not listed here is trail.
+	 *
+	 * Names, not pre-computed keys: arv_results_race_key() strips "run",
+	 * "race", "the", "ultra" and a trailing distance as whole words, so
+	 * "Purple Run" keys as "purple" and "Run with the Roosters" keys as
+	 * "with rooster". A list of those stems would be correct but
+	 * unreadable and would silently break the moment the stemming rule
+	 * changes; running every name through the same function this reads
+	 * with keeps the two in step by construction.
+	 *
+	 * @param array $road_names
+	 */
+	$road_names = apply_filters(
+		'arv_race_terrain_road_names',
+		array(
+			'Tucson Marathon',
+			'Mountain to Fountain',
+			'ET Full Moon',
+			'Labor of Love',
+			'Purple Run',
+			'Running with the Devil',
+			'Vegas Golden Night & Day',
+			'Jackpot Ultras',
+			'Fat Ox',
+			'Run Around Tucson (RAT)',
+			'Run with the Roosters',
+			'Across the Years',
+		)
+	);
+
+	// Not memoised in a static: a test that adds to the filter mid-run, or
+	// a page that only decides its own copy of the filter after this has
+	// already been called once, would otherwise get the first answer for
+	// the rest of the request. Twelve names through a regex is string
+	// work, not a query, so there is nothing here worth caching against.
+	$road = array_fill_keys( array_map( 'arv_results_race_key', $road_names ), true );
+
+	return isset( $road[ arv_results_race_key( $name ) ] ) ? 'road' : 'trail';
+}
