@@ -84,12 +84,18 @@ function arv_upcoming_races_action( $race, $today, $lead = 5 ) {
 	if ( $today < $race['iso'] ) {
 		// The live board is populated well before the gun: it carries the
 		// start list, with bib numbers, for anyone wanting to see who is
-		// running. So the switch happens either once entries close, which is
-		// the natural moment because there is nothing left to sell, or a few
-		// days out for a race that never published a close date, whichever
-		// comes first.
+		// running. So the switch happens once entries close, which is the
+		// natural moment because there is nothing left to sell.
+		//
+		// The lead window is the fallback for a race that never published a
+		// close date, and only for those. It used to apply to every race,
+		// which meant a race whose entries were demonstrably still open lost
+		// its Register button days before the gun: Oli Kai, five days out
+		// with entries open until the Tuesday, led the home page with a Live
+		// Results button pointing at an empty board. While there is still an
+		// entry to sell, sell it.
 		$entries_closed = ( '' !== $race['closes'] && $today > $race['closes'] );
-		$within_lead    = ( $lead > 0 && $today >= gmdate( 'Y-m-d', strtotime( $race['iso'] . ' 00:00:00 UTC' ) - ( $lead * DAY_IN_SECONDS ) ) );
+		$within_lead    = ( '' === $race['closes'] && $lead > 0 && $today >= gmdate( 'Y-m-d', strtotime( $race['iso'] . ' 00:00:00 UTC' ) - ( $lead * DAY_IN_SECONDS ) ) );
 
 		if ( '' !== $results && ( $entries_closed || $within_lead ) ) {
 			return array(
