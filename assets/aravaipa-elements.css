@@ -7969,10 +7969,13 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	box-sizing: inherit;
 }
 
+/* Tighter on top than the 2.5rem the other sections use. Those were spaced
+   for a large centred heading that no longer prints, so the old padding
+   left the cards floating well below the sub-nav with nothing in the gap. */
 .arv-tours__inner {
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 2.5rem 1.25rem 3rem;
+	padding: 1.4rem 1.25rem 3rem;
 }
 
 .arv-tours__heading {
@@ -8081,6 +8084,28 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-tours__meta {
 	font-size: var(--arv-fs-label);
 	color: rgba(244, 244, 244, 0.55);
+}
+
+/* A label per line. Three stacked grey lines of numbers under a title read
+   as one block, and a reader has to parse the string to work out which
+   number is which. The label does that for them. */
+.arv-tours__line {
+	display: flex;
+	flex-direction: column;
+	gap: 0.05rem;
+}
+
+.arv-tours__line-label {
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	color: rgba(244, 244, 244, 0.45);
+}
+
+.arv-tours__line-value {
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.85);
 }
 
 /* Outside the card's own link, because a link inside a link is not a thing
