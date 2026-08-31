@@ -231,6 +231,10 @@ function arv_photos_group( $rows ) {
 				'race'      => $row['race'],
 				'year'      => $row['year'],
 				'key'       => $key,
+				// The real race date, joined from results first and the
+				// calendar second, so a card can say "March 14, 2026"
+				// rather than just the year it happened in.
+				'iso'       => isset( $row['iso'] ) ? (string) $row['iso'] : arv_photos_race_date( $row['race'], $row['year'] ),
 				'galleries' => array(),
 			);
 		}
@@ -418,7 +422,11 @@ function arv_photos_render( $args = array() ) {
 		return '';
 	}
 
-	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Photos';
+	// "2026 Photo Galleries", per Jamil, and the same shape for every year.
+	// A page that pins its own year gets the year in front of it; the
+	// all-years index keeps the plain noun.
+	$default = 'Photo Galleries';
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : $default;
 	$intro   = isset( $args['intro'] ) ? trim( (string) $args['intro'] ) : '';
 
 	// A year can be pinned by the element, which is what a per-year page
@@ -457,11 +465,23 @@ function arv_photos_render( $args = array() ) {
 
 	$cards = arv_photos_group( $rows );
 
+	// A race still to come has a gallery row the moment its photographer is
+	// booked, and nothing to show until the day. Those were rendering as a
+	// wall of empty placeholders at the top of the current year's page.
+	$cards = array_values( array_filter( $cards, 'arv_photos_has_happened' ) );
+
 	$out  = '<section class="arv-photos">';
 	$out .= '<div class="arv-photos__inner">';
 
 	if ( '' !== $heading ) {
-		$out .= '<h2 class="arv-photos__heading">' . esc_html( $heading ) . '</h2>';
+		// The year leads the heading rather than trailing it behind a
+		// colon: "2026 Photo Galleries" reads as a thing, "Photos: 2026"
+		// reads as a database field.
+		$shown = ( $wanted && $default === $heading )
+			? $wanted . ' ' . $heading
+			: $heading;
+
+		$out .= '<h2 class="arv-photos__heading">' . esc_html( $shown ) . '</h2>';
 	}
 
 	if ( '' !== $intro ) {
@@ -552,6 +572,60 @@ function arv_photos_controls( $years, $current, $photographers ) {
 }
 
 /**
+ * Whether a race has actually happened yet.
+ *
+ * A gallery row exists for a race the moment its photographer is booked,
+ * which for a December race can be most of a year before anyone takes a
+ * picture. Those rendered as a grid of empty grey placeholders on the
+ * current year's page: eight of them at the top of /photos-2026/, one per
+ * race still to come, each promising photographs that do not exist.
+ *
+ * Judged on the race's own date plus a day, the same grace the upcoming
+ * broadcast list uses and for the same reason: a race that finished last
+ * night should be able to have its galleries up this morning.
+ *
+ * A race with no date recorded is treated as past. It is almost always an
+ * older gallery whose race predates the calendar, and hiding a real
+ * archive because a date is missing would be the worse of the two errors.
+ *
+ * @param array $card
+ * @return bool
+ */
+function arv_photos_has_happened( $card ) {
+	if ( empty( $card['iso'] ) ) {
+		return true;
+	}
+
+	$stamp = strtotime( (string) $card['iso'] );
+
+	if ( ! $stamp ) {
+		return true;
+	}
+
+	$now = function_exists( 'current_time' ) ? current_time( 'timestamp', true ) : time();
+
+	return ( $stamp + DAY_IN_SECONDS ) <= $now;
+}
+
+/**
+ * The race date as a person would read it, or the bare year.
+ *
+ * @param array $card
+ * @return string
+ */
+function arv_photos_card_when( $card ) {
+	if ( ! empty( $card['iso'] ) ) {
+		$stamp = strtotime( (string) $card['iso'] );
+
+		if ( $stamp ) {
+			return gmdate( 'F j, Y', $stamp );
+		}
+	}
+
+	return $card['year'] ? (string) $card['year'] : '';
+}
+
+/**
  * One race's card: the cover, the race, the year, and who shot it.
  *
  * The card links to the first gallery, and every photographer beyond the
@@ -603,8 +677,10 @@ function arv_photos_card( $card ) {
 	$out .= '<span class="arv-photos__body">';
 	$out .= '<span class="arv-photos__race">' . esc_html( $card['race'] ) . '</span>';
 
-	if ( $card['year'] ) {
-		$out .= '<span class="arv-photos__year-tag">' . esc_html( $card['year'] ) . '</span>';
+	$when = arv_photos_card_when( $card );
+
+	if ( '' !== $when ) {
+		$out .= '<span class="arv-photos__year-tag">' . esc_html( $when ) . '</span>';
 	}
 
 	$out .= '</span></a>';

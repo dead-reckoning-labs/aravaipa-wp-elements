@@ -3998,6 +3998,56 @@ arv_test_queue_response( array( 'code' => 200, 'body' => '<head><title>no og tag
 t( 'a page with no tag gives no cover',       '' === arv_photos_cover( 'https://bare.test/a' ) );
 t( 'an empty url is not fetched at all',      '' === arv_photos_cover( '' ) );
 
+echo "\nphotos, dates and races still to come:\n";
+// A gallery row exists the moment a photographer is booked, which for a
+// December race can be most of a year before a single picture is taken.
+// Those rendered as a wall of empty grey placeholders at the top of the
+// current year's page, one per race still to come, each promising photos
+// that do not exist.
+$photos_posts_backup = $GLOBALS['posts'];
+$GLOBALS['posts'] = array();
+$GLOBALS['posts'][9801] = array( 'title' => 'Already Run', 'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9801]['_arv_iso'] = '2026-03-14';
+$GLOBALS['posts'][9802] = array( 'title' => 'Still To Come', 'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9802]['_arv_iso'] = '2026-12-31';
+arv_race_store_flush_cache();
+
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Already Run',   'year' => 2026, 'by' => 'Someone', 'url' => 'https://x.test/ran' ),
+	array( 'race' => 'Still To Come', 'year' => 2026, 'by' => 'Someone', 'url' => 'https://x.test/soon' ),
+	array( 'race' => 'No Date Known', 'year' => 2019, 'by' => 'Someone', 'url' => 'https://x.test/old' ),
+);
+$GLOBALS['_transients'] = array();
+$future_html = arv_photos_render( array() );
+t( 'a race that has run is shown',            false !== strpos( $future_html, 'Already Run' ) );
+t( 'a race still to come is not',             false === strpos( $future_html, 'Still To Come' ) );
+// A race with no date is almost always an older gallery predating the
+// calendar. Hiding a real archive over a missing date is the worse error.
+t( 'a race with no date is still shown',      false !== strpos( $future_html, 'No Date Known' ) );
+
+// The exact date, not the bare year.
+t( 'the card carries a full date',            false !== strpos( $future_html, 'March 14, 2026' ) );
+t( 'and not just the year on its own',        false === strpos( $future_html, '>2026</span>' ) );
+t( 'a dateless race falls back to its year',  false !== strpos( $future_html, '>2019</span>' ) );
+
+// The naming convention, applied to every year rather than just this one.
+$named = arv_photos_render( array( 'year' => 2026 ) );
+t( 'the year leads the heading',              false !== strpos( $named, '2026 Photo Galleries' ) );
+t( 'and the colon form is gone',              false === strpos( $named, 'Photos: 2026' ) );
+// The all-years index keeps the plain noun rather than inventing a year.
+t( 'the index heading has no year',           false !== strpos( arv_photos_render( array() ), '>Photo Galleries<' ) );
+// An explicit heading still wins, since the per-year pages set their own.
+t( 'an explicit heading is respected',        false !== strpos( arv_photos_render( array( 'year' => 2026, 'heading' => 'Race Photos' ) ), '>Race Photos<' ) );
+
+// The boundary: a race that finished last night should be able to have
+// galleries up this morning, so the cutoff is the race date plus a day.
+t( 'yesterday counts as run',                 arv_photos_has_happened( array( 'iso' => gmdate( 'Y-m-d', current_time( 'timestamp', true ) - ( 2 * DAY_IN_SECONDS ) ), 'year' => 2026 ) ) );
+t( 'next week does not',                      ! arv_photos_has_happened( array( 'iso' => gmdate( 'Y-m-d', current_time( 'timestamp', true ) + ( 7 * DAY_IN_SECONDS ) ), 'year' => 2026 ) ) );
+
+$GLOBALS['posts'] = $photos_posts_backup;
+arv_race_store_flush_cache();
+$GLOBALS['_transients'] = array();
+
 echo "\nphotos, rendering:\n";
 $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
 	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => 'Aravaipa Photo Gallery', 'url' => 'https://aravaipa.smugmug.com/a' ),
