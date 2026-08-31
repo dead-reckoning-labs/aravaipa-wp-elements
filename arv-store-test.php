@@ -3771,8 +3771,13 @@ $GLOBALS['_transients'] = array();
 
 echo "\nmedia sub-nav:\n";
 $subnav_items = arv_media_subnav_items();
-t( 'five sections',                   5 === count( $subnav_items ) );
-t( 'in the right order',              array( 'watch', 'films', 'podcasts', 'photos', 'articles' ) === array_column( $subnav_items, 'key' ) );
+// Four, not five. Photos dropped per Jamil, 2026-08-30: someone on a
+// Photos page just ran the race and is looking for themselves, the same
+// intent as Results and mostly a purchase flow on top of it, not the
+// same visitor reading a broadcast, film, episode or article.
+t( 'four sections, photos is not one',  4 === count( $subnav_items ) );
+t( 'in the right order',              array( 'watch', 'films', 'podcasts', 'articles' ) === array_column( $subnav_items, 'key' ) );
+t( 'photos is not among them',        ! in_array( 'photos', array_column( $subnav_items, 'key' ), true ) );
 // The label reads "Broadcasts", but the key, slug and URL all stay
 // "watch": renaming what a visitor reads is not the same decision as
 // moving the URL, which would mean a redirect and the ranking the
@@ -3785,7 +3790,8 @@ t( 'the Media parent link renders',   false !== strpos( arv_media_subnav_render(
 t( 'the parent link is never current', false === strpos( arv_media_subnav_render( 'films' ), 'arv-media-subnav__parent is-current' ) );
 
 $on_films = arv_media_subnav_render( 'films' );
-t( 'every section links out',         5 === substr_count( $on_films, 'arv-media-subnav__link' ) );
+t( 'every section links out',         4 === substr_count( $on_films, 'arv-media-subnav__link' ) );
+t( 'and photos is not one of them',   false === strpos( $on_films, 'href="https://www.aravaiparunning.com/photos/"' ) );
 t( 'the current one is marked',       1 === substr_count( $on_films, 'is-current' ) );
 t( 'and it is the right one',         false !== strpos( $on_films, 'is-current" href="https://www.aravaiparunning.com/films/"' ) );
 t( 'aria-current is set once',        1 === substr_count( $on_films, 'aria-current="page"' ) );

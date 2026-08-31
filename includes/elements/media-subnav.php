@@ -1,7 +1,7 @@
 <?php
 /**
- * Aravaipa Media Sub-nav: the Watch / Films / Podcasts / Photos / Articles
- * strip that goes at the top of each of those pages.
+ * Aravaipa Media Sub-nav: the Watch / Films / Podcasts / Articles strip
+ * that goes at the top of each of those pages.
  *
  * The decisions live in includes/media-subnav.php, which the
  * [arv_media_subnav] shortcode also renders through, so placing this by
@@ -45,7 +45,6 @@ function arv_media_subnav_element_builder() {
 						'watch'    => __( 'Broadcasts', 'aravaipa-elements' ),
 						'films'    => __( 'Films', 'aravaipa-elements' ),
 						'podcasts' => __( 'Podcasts', 'aravaipa-elements' ),
-						'photos'   => __( 'Photos', 'aravaipa-elements' ),
 						'articles' => __( 'Articles', 'aravaipa-elements' ),
 					),
 				),
