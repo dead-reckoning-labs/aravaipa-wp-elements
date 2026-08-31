@@ -235,6 +235,10 @@ function get_posts( $args ) {
 			if ( ! array_intersect( $want, $GLOBALS['terms'][ $id ] ?? array() ) ) { continue; }
 		}
 		if ( isset( $args['category_name'] ) && ! in_array( $args['category_name'], (array) ( $p['cats'] ?? array() ), true ) ) { continue; }
+		// WP_Query's 'title' is an exact match, not a search, and the remove
+		// route leans on that: trashing "Oli Kai" must not take "Oli Kai
+		// Trail Races" with it.
+		if ( isset( $args['title'] ) && ( $p['title'] ?? '' ) !== $args['title'] ) { continue; }
 		$out[] = ( ( $args['fields'] ?? '' ) === 'ids' ) ? $id : new ARV_Post( $id, $p['title'] );
 	}
 	if ( ( $args['orderby'] ?? '' ) === 'meta_value' && ( $args['fields'] ?? '' ) !== 'ids' ) {
@@ -2348,6 +2352,46 @@ $nodate = array(
 );
 t( 'no close date still flips on lead', 'Live Results' === arv_upcoming_races_action( $nodate, '2026-08-31' )['label'] );
 t( 'and sells before the window opens', 'Register' === arv_upcoming_races_action( $nodate, '2026-08-30' )['label'] );
+
+// ------------------------------------------------ Removing a stale race --
+// The import writes but never unwrites. Its key is register-url plus name,
+// so renaming a race in a row leaves the old record published rather than
+// renaming it, which is how the home page ended up carrying both "Oli Kai"
+// and "Oli Kai Trail Races" on the same September Saturday.
+$saved_posts = $GLOBALS['posts'];
+$saved_meta  = $GLOBALS['meta'];
+
+$GLOBALS['posts'] = array(
+	701 => array( 'title' => 'Oli Kai',             'status' => 'publish', 'type' => ARV_RACE_POST_TYPE ),
+	702 => array( 'title' => 'Oli Kai Trail Races', 'status' => 'publish', 'type' => ARV_RACE_POST_TYPE ),
+	703 => array( 'title' => 'Javelina Jundred',    'status' => 'publish', 'type' => ARV_RACE_POST_TYPE ),
+);
+
+$dry = arv_race_store_remove( array( 'Oli Kai' ), true );
+t( 'a dry run finds the record',        1 === count( $dry['matched'] ) );
+t( 'and names it before touching it',   701 === $dry['matched'][0]['id'] );
+t( 'a dry run trashes nothing',         0 === $dry['trashed'] );
+t( 'the record is still published',     'publish' === $GLOBALS['posts'][701]['status'] );
+
+$gone = arv_race_store_remove( array( 'Oli Kai' ) );
+t( 'the stale record is trashed',       1 === $gone['trashed'] );
+t( 'and is out of the store',           'trash' === $GLOBALS['posts'][701]['status'] );
+
+// The reason this matches on an exact title rather than a search. One name
+// is a prefix of the other, and a search would have taken the keeper too.
+t( 'the renamed race survives',         'publish' === $GLOBALS['posts'][702]['status'] );
+t( 'and so does everything else',       'publish' === $GLOBALS['posts'][703]['status'] );
+
+$none = arv_race_store_remove( array( 'No Such Race' ) );
+t( 'an unknown name trashes nothing',   0 === $none['trashed'] );
+t( 'and is reported back, not silent',  array( 'No Such Race' ) === $none['missing'] );
+
+// A blank line in a pasted list is not a race with no name.
+$blank = arv_race_store_remove( array( '', '  ' ) );
+t( 'blank names are skipped',           0 === $blank['trashed'] && array() === $blank['missing'] );
+
+$GLOBALS['posts'] = $saved_posts;
+$GLOBALS['meta']  = $saved_meta;
 
 // An internal destination should not open a new tab. Everything this element
 // linked to used to be off-site, so the attribute was unconditional.
