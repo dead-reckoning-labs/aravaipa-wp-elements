@@ -6396,11 +6396,21 @@
 	color: rgba(244, 244, 244, 0.72);
 }
 
+/* Four cards, so four columns, not auto-fill. auto-fill picked three at
+   the widths a laptop actually uses and left Articles alone on a second
+   row, which reads as a layout failure rather than as four sections. Two
+   by two below that, and never three-plus-one. */
 .arv-media-hub__grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	grid-template-columns: repeat(4, 1fr);
 	gap: 1.25rem;
 	margin-top: 1.75rem;
+}
+
+@media (max-width: 900px) {
+	.arv-media-hub__grid {
+		grid-template-columns: 1fr 1fr;
+	}
 }
 
 .arv-media-hub__card,
@@ -7510,5 +7520,115 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 
 	.arv-media-latest__grid {
 		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	}
+}
+
+/* --- Media hub: the count line that earns each card its space --------- */
+.arv-media-hub__count {
+	margin-top: 0.4rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.3px;
+	text-transform: uppercase;
+	color: #4ade80;
+}
+
+/* ---------------------------------------------------------------------------
+   Media hero: the single newest thing, at full width, above the feed.
+
+   Art beside the words rather than behind them: a headline over a
+   photograph needs a scrim to stay readable, and a scrim over somebody's
+   race photo is a worse version of both. Side by side lets the picture be
+   the picture.
+   --------------------------------------------------------------------------- */
+.arv-media-hero {
+	box-sizing: border-box;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-media-hero * {
+	box-sizing: inherit;
+}
+
+.arv-media-hero__link,
+.arv-media-hero__link:link,
+.arv-media-hero__link:visited {
+	display: grid;
+	grid-template-columns: 1.4fr 1fr;
+	align-items: center;
+	gap: 1.75rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem 1.25rem;
+	text-decoration: none;
+	color: #f4f4f4;
+}
+
+.arv-media-hero__art {
+	display: block;
+	overflow: hidden;
+	border-radius: var(--arv-radius);
+	background: rgba(255, 255, 255, 0.06);
+}
+
+/* Whatever shape the source gave us. A podcast's square artwork and a
+   YouTube 16:9 both crop to the same box rather than one of them
+   deciding the height of this section. */
+.arv-media-hero__img {
+	display: block;
+	width: 100%;
+	/* Capped rather than left to the aspect ratio alone: on a wide screen
+	   16:9 of a 740px column is over 400px tall, which pushes the feed and
+	   everything under it off the fold for one item. */
+	height: auto;
+	max-height: 340px;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+}
+
+.arv-media-hero__body {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+
+.arv-media-hero__badge {
+	padding: 0.2rem 0.6rem;
+	border-radius: var(--arv-radius-chip);
+	background: #4ade80;
+	font-size: var(--arv-fs-label);
+	font-weight: 900;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	color: #10201f;
+}
+
+.arv-media-hero__title {
+	font-size: var(--arv-fs-h2);
+	font-weight: 900;
+	line-height: 1.15;
+	letter-spacing: -0.5px;
+	color: #fff;
+}
+
+.arv-media-hero__date {
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.6);
+}
+
+.arv-media-hero__link:hover .arv-media-hero__title,
+.arv-media-hero__link:focus-visible .arv-media-hero__title {
+	color: #4ade80;
+}
+
+@media (max-width: 767px) {
+	.arv-media-hero__link {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+		padding: 1.5rem 1rem;
 	}
 }
