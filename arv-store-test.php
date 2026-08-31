@@ -147,6 +147,7 @@ function get_the_title( $post ) { $id = is_object( $post ) ? $post->ID : $post; 
 function get_the_date( $fmt, $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['date'] ?? ''; }
 function get_the_post_thumbnail_url( $id, $size = 'medium' ) { $id = is_object( $id ) ? $id->ID : $id; return $GLOBALS['posts'][ $id ]['thumb'] ?? false; }
 function get_post_type( $id ) { $id = is_object( $id ) ? $id->ID : $id; return $GLOBALS['posts'][ $id ]['type'] ?? 'post'; }
+function get_the_category( $id ) { $id = is_object( $id ) ? $id->ID : $id; $out = array(); foreach ( (array) ( $GLOBALS['posts'][ $id ]['cats'] ?? array() ) as $name ) { $c = new stdClass(); $c->name = $name; $out[] = $c; } return $out; }
 function update_post_meta( $id, $k, $v ) { $GLOBALS['meta'][ $id ][ $k ] = $v; }
 function get_post_meta( $id, $k, $single = false ) { return $GLOBALS['meta'][ $id ][ $k ] ?? ''; }
 function wp_set_object_terms( $id, $terms, $tax, $append = false ) { $GLOBALS['terms'][ $id ] = (array) $terms; }
@@ -236,6 +237,7 @@ require_once __DIR__ . '/includes/photos-store.php';
 require_once __DIR__ . '/includes/podcasts-store.php';
 require_once __DIR__ . '/includes/media-follow.php';
 require_once __DIR__ . '/includes/media-subnav.php';
+require_once __DIR__ . '/includes/articles-store.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
@@ -3503,7 +3505,11 @@ $cards = arv_media_hub_cards();
 t( 'four cards, in a fixed order',        array( 'Broadcasts', 'Films', 'Podcasts', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
 t( 'each links to its real page',         home_url( '/watch/' ) === $cards[0]['url'] );
 t( 'photos is not one of the cards',      ! in_array( home_url( '/photos/' ), array_column( $cards, 'url' ), true ) );
-t( 'articles is last',                    home_url( '/blog/' ) === $cards[3]['url'] );
+// /articles/, not /blog/. /blog/ is WordPress's own posts page: it renders
+// through the theme and so looks like nothing else in Media, which is the
+// whole reason includes/articles-store.php exists.
+t( 'articles is last',                    home_url( '/articles/' ) === $cards[3]['url'] );
+t( 'and never points at /blog/',          ! in_array( home_url( '/blog/' ), array_column( $cards, 'url' ), true ) );
 
 // A live thumbnail for Watch, from the same store the Watch page itself
 // reads, so this card is never showing something a click into Watch would
@@ -4219,6 +4225,109 @@ unset( $GLOBALS['PERMALINK'][9301] );
 $GLOBALS['posts']       = $real_posts;
 $GLOBALS['_transients'] = array();
 
+
+echo "\narticles, the archive /blog/ could not be:\n";
+// Same clean slate the Latest feed's block takes, and for the same reason:
+// every untyped fixture above this point answers a post_type=post query,
+// and this store asks for every post there is rather than the first forty.
+$articles_backup  = $GLOBALS['posts'];
+$GLOBALS['posts'] = array();
+$GLOBALS['_transients'] = array();
+
+$GLOBALS['posts'][9401] = array( 'title' => 'Cocodona Race Report', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-07T00:00:00Z', 'thumb' => 'https://x.test/a.jpg', 'cats' => array( 'Race Report', 'News' ) );
+$GLOBALS['posts'][9402] = array( 'title' => 'A Press Release',     'status' => 'publish', 'type' => 'post', 'date' => '2025-03-02T00:00:00Z', 'thumb' => false,                'cats' => array( 'Press Release' ) );
+$GLOBALS['posts'][9403] = array( 'title' => 'Filed Under Nothing', 'status' => 'publish', 'type' => 'post', 'date' => '2024-01-04T00:00:00Z', 'thumb' => 'https://x.test/c.jpg', 'cats' => array( 'Uncategorized' ) );
+$GLOBALS['posts'][9404] = array( 'title' => 'A Draft',             'status' => 'draft',   'type' => 'post', 'date' => '2026-06-01T00:00:00Z', 'thumb' => false,                'cats' => array() );
+$GLOBALS['posts'][9405] = array( 'title' => 'Not A Post',          'status' => 'publish', 'type' => 'arv_race', 'date' => '2026-06-02T00:00:00Z', 'thumb' => false,             'cats' => array() );
+foreach ( array( 9401, 9402, 9403 ) as $id ) {
+	$GLOBALS['PERMALINK'][ $id ] = 'https://www.aravaiparunning.com/post-' . $id . '/';
+}
+
+$items = arv_articles_items();
+t( 'every published post is here',        3 === count( $items ) );
+t( 'a draft is not',                      ! in_array( 'A Draft', array_column( $items, 'title' ), true ) );
+t( 'nor a race',                          ! in_array( 'Not A Post', array_column( $items, 'title' ), true ) );
+// The one deliberate difference from the Latest feed, which drops these.
+// This is the archive: it holds every article or the count on /media/ is a
+// lie, so a post with no picture gets a placeholder instead of the axe.
+t( 'a post with no image is kept',        in_array( 'A Press Release', array_column( $items, 'title' ), true ) );
+t( 'and carries no thumbnail',            '' === $items[1]['thumb'] );
+t( 'each carries its year',               2026 === $items[0]['year'] );
+
+// Nobody chose "Uncategorized"; it is what WordPress does when nobody
+// chose anything, so it is not a filter worth offering.
+t( 'uncategorized is not a category',     array() === $items[2]['cats'] );
+t( 'real categories survive',             array( 'Race Report', 'News' ) === $items[0]['cats'] );
+
+$years = arv_articles_years( $items );
+t( 'a year per year, newest first',       array( 2026, 2025, 2024 ) === $years );
+
+// Ordered by how many articles carry it, not alphabetically: the list is
+// there to be picked from, and a category with eighty behind it should not
+// sit under one with a single post.
+$GLOBALS['posts'][9406] = array( 'title' => 'Another Report', 'status' => 'publish', 'type' => 'post', 'date' => '2026-04-01T00:00:00Z', 'thumb' => false, 'cats' => array( 'Race Report' ) );
+$GLOBALS['PERMALINK'][9406] = 'https://www.aravaiparunning.com/post-9406/';
+delete_transient( ARV_ARTICLES_CACHE );
+$cats = arv_articles_categories( arv_articles_items() );
+t( 'the busiest category leads',          'Race Report' === $cats[0] );
+t( 'and the rest follow it',              3 === count( $cats ) );
+
+echo "\narticles, rendered:\n";
+$html = arv_articles_render( array( 'heading' => 'Articles', 'intro' => 'Every one of them.' ) );
+t( 'the heading renders',                 false !== strpos( $html, 'Articles</h2>' ) );
+t( 'the intro too',                       false !== strpos( $html, 'Every one of them.' ) );
+t( 'one card per article',                4 === substr_count( $html, 'class="arv-articles__card"' ) );
+t( 'newest first',                        strpos( $html, 'Cocodona Race Report' ) < strpos( $html, 'A Press Release' ) );
+t( 'a real date, not an ISO string',      false !== strpos( $html, 'May 7, 2026' ) );
+t( 'the first category is the badge',     false !== strpos( $html, '>Race Report</span>' ) );
+// The hooks the filters read. Split on the separator in the JS, so every
+// category a post carries is filterable, not just the one on the badge.
+t( 'each card carries its title',         false !== strpos( $html, 'data-arv-articles-title="cocodona race report"' ) );
+t( 'and every category it has',           false !== strpos( $html, 'data-arv-articles-cat="race report|news"' ) );
+t( 'and its year',                        false !== strpos( $html, 'data-arv-articles-year="2026"' ) );
+t( 'a search box',                        false !== strpos( $html, 'data-arv-articles-search' ) );
+t( 'a category filter',                   false !== strpos( $html, 'data-arv-articles-cat aria-label' ) );
+t( 'a year filter',                       false !== strpos( $html, 'data-arv-articles-year aria-label' ) );
+// A post with no featured image gets a panel rather than a hole: a card
+// with a gap where its picture should be reads as broken beside the ones
+// that have one.
+t( 'the image-less post gets a panel',    false !== strpos( $html, 'arv-articles__thumb--none' ) );
+t( 'and the others a real image',         2 === substr_count( $html, '<img class="arv-articles__thumb"' ) );
+
+// A limited block is a homepage embed, not the archive: three controls
+// over six cards is furniture, the same gate Watch puts on its search box.
+$short = arv_articles_render( array( 'limit' => 2 ) );
+t( 'a limit narrows the grid',            2 === substr_count( $short, 'class="arv-articles__card"' ) );
+t( 'and takes the controls with it',      false === strpos( $short, 'data-arv-articles-search' ) );
+
+t( 'no articles renders nothing',         '' === arv_articles_render( array() ) || 0 < count( $items ) );
+$GLOBALS['posts'] = array();
+delete_transient( ARV_ARTICLES_CACHE );
+t( 'an empty blog renders nothing',       '' === arv_articles_render( array() ) );
+
+echo "\narticles, the cache busts on save:\n";
+$GLOBALS['posts'][9407] = array( 'title' => 'Fresh', 'status' => 'publish', 'type' => 'post', 'date' => '2026-07-01T00:00:00Z', 'thumb' => false, 'cats' => array() );
+$GLOBALS['PERMALINK'][9407] = 'https://www.aravaiparunning.com/post-9407/';
+delete_transient( ARV_ARTICLES_CACHE );
+arv_articles_items();
+t( 'the archive is cached',               false !== get_transient( ARV_ARTICLES_CACHE ) );
+arv_articles_flush_on_save( 9407 );
+t( 'saving a post drops it',              false === get_transient( ARV_ARTICLES_CACHE ) );
+arv_articles_items();
+// A race saving must not touch this cache: different post type, nothing to
+// do with the blog. Re-seeded because the empty-blog test above cleared it,
+// and an id the harness has never heard of defaults to 'post'.
+$GLOBALS['posts'][9408] = array( 'title' => 'Some Race', 'status' => 'publish', 'type' => 'arv_race', 'date' => '', 'thumb' => false, 'cats' => array() );
+arv_articles_flush_on_save( 9408 );
+t( 'a non-post save leaves it alone',     false !== get_transient( ARV_ARTICLES_CACHE ) );
+
+t( 'the shortcode is registered',         isset( $GLOBALS['SHORTCODES']['arv_articles'] ) );
+
+foreach ( array( 9401, 9402, 9403, 9406, 9407 ) as $id ) {
+	unset( $GLOBALS['PERMALINK'][ $id ] );
+}
+$GLOBALS['posts']       = $articles_backup;
+$GLOBALS['_transients'] = array();
 
 echo "\nmedia hub counts, what the sub-nav strip cannot say:\n";
 $GLOBALS['_transients']['arv_watch_events'] = array(

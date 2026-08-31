@@ -52,9 +52,9 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/photos-store.php includes/media-follow.php includes/media-subnav.php includes/media-hub.php includes/media-latest.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
+cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/photos-store.php includes/articles-store.php includes/media-follow.php includes/media-subnav.php includes/media-hub.php includes/media-latest.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -165,6 +165,9 @@ grep -q '\.arv-photos__card\[hidden\]' assets/aravaipa-elements.css \
 # Fifth time, on the Latest feed. Same specificity tie, same silent
 # failure: the type filter would set the attribute on every card it
 # means to hide and the feed would not visibly change.
+grep -q '\.arv-articles__card\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-articles__card[hidden] override is missing, the Articles search, category and year filters will silently do nothing" >&2; missing=1; }
+
 grep -q '\.arv-media-latest__card\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-media-latest__card[hidden] override is missing, the Latest feed's type filter will silently do nothing" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
@@ -190,6 +193,17 @@ grep -q '\.arv-live__shield\[hidden\]' assets/aravaipa-elements.css \
 # sat on either, which is the one moment someone is deciding whether to
 # click. Cheap to check that the :link/:visited reinforcement fixing it
 # is still there for both.
+# Every --arv-* custom property a rule reads without a fallback has to be
+# set somewhere: in the stylesheet, inline from PHP, or from JS. An
+# undefined one with no fallback is invalid at computed-value time, and
+# the property then resolves to `unset`, which for an inherited property
+# like font-size means `inherit` rather than the browser's own rule. That
+# is silent: no console warning, nothing in a diff, the heading just
+# quietly renders at body size. --arv-fs-h2 shipped that way and three
+# headings, Photos, the Latest feed and the Media hero's title, were all
+# 15px because of it.
+python3 scripts/check-css-vars.py || missing=1
+
 grep -q '\.arv-featured__cta:link' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-featured__cta:link is missing, the button will lose its colour to the theme's a:hover on hover" >&2; missing=1; }
 grep -q '\.arv-featured__card-cta:link' assets/aravaipa-elements.css \

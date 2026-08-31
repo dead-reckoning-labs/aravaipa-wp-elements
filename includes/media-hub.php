@@ -219,7 +219,7 @@ function arv_media_hub_cards() {
 		array(
 			'title' => __( 'Articles', 'aravaipa-elements' ),
 			'desc'  => __( 'News, race updates and announcements.', 'aravaipa-elements' ),
-			'url'   => home_url( '/blog/' ),
+			'url'   => home_url( '/articles/' ),
 			'thumb' => arv_media_hub_articles_thumb(),
 			'count' => $counts['articles'],
 		),

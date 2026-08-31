@@ -65,6 +65,12 @@ require_once ARV_ELEMENTS_PATH . 'includes/podcasts-store.php';
 // Loaded unconditionally for the same reason as the three stores above it.
 require_once ARV_ELEMENTS_PATH . 'includes/photos-store.php';
 
+// Every blog post, as the same grid Watch, Films and Photos use. /blog/ is
+// WordPress's own posts page and renders through the theme, which is
+// exactly why it needed one of these. Loaded unconditionally, like the
+// four stores above it.
+require_once ARV_ELEMENTS_PATH . 'includes/articles-store.php';
+
 // "Subscribe on YouTube", placed inside Watch and Films rather than as a
 // button anywhere on its own. Loaded before both of them since each calls
 // into it directly rather than through a shortcode.
@@ -143,6 +149,7 @@ function arv_elements_register() {
 		'podcasts',
 		'podcast-show',
 		'photos',
+		'articles',
 		'media-subnav',
 		'media-hub',
 		'media-latest',
@@ -252,6 +259,16 @@ function arv_elements_assets() {
 	wp_enqueue_script(
 		'aravaipa-photos',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-photos.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
+	// The Articles archive's search, category and year filters. No-ops
+	// anywhere that markup is not present, same as every other script here.
+	wp_enqueue_script(
+		'aravaipa-articles',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-articles.js',
 		array(),
 		ARV_ELEMENTS_VERSION,
 		true
