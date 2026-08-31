@@ -626,6 +626,122 @@ function arv_race_store_register_rest_route() {
 add_action( 'rest_api_init', 'arv_race_store_register_rest_route' );
 
 /**
+ * Trash stored races by name.
+ *
+ * The import cannot do this. Its key is the register URL and the name
+ * together, so renaming a race in a row does not rename the record: it
+ * writes a second one and leaves the first behind, live on the site. That is
+ * exactly how the home page came to carry both "Oli Kai" and "Oli Kai Trail
+ * Races" on the same September Saturday, and the only way out was for
+ * someone to open wp-admin and trash one by hand.
+ *
+ * Trash rather than delete, and the same edit_posts scope as the import,
+ * because this is the destructive half of the same job and a mistake here
+ * should be one click to undo rather than gone. Prune already works this way
+ * for the same reason.
+ *
+ * @param string[] $names Race names, matched against the record title.
+ * @param bool     $dry_run Report what would go, change nothing.
+ * @return array {trashed, missing, names}
+ */
+function arv_race_store_remove( $names, $dry_run = false ) {
+	$result = array(
+		'trashed' => 0,
+		'missing' => array(),
+		'matched' => array(),
+		'dry_run' => (bool) $dry_run,
+	);
+
+	foreach ( $names as $name ) {
+		$name = trim( (string) $name );
+
+		if ( '' === $name ) {
+			continue;
+		}
+
+		$found = get_posts(
+			array(
+				'post_type'      => ARV_RACE_POST_TYPE,
+				'post_status'    => array( 'publish', 'draft' ),
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				// An exact title match, not a search: "Oli Kai" must not
+				// take "Oli Kai Trail Races" with it, which is the whole
+				// reason this exists.
+				'title'          => $name,
+			)
+		);
+
+		if ( empty( $found ) ) {
+			$result['missing'][] = $name;
+			continue;
+		}
+
+		foreach ( $found as $post_id ) {
+			$result['matched'][] = array(
+				'id'    => (int) $post_id,
+				'name'  => $name,
+			);
+
+			if ( ! $dry_run ) {
+				wp_trash_post( (int) $post_id );
+				$result['trashed']++;
+			}
+		}
+	}
+
+	if ( ! $dry_run && $result['trashed'] > 0 ) {
+		arv_race_store_flush_cache();
+	}
+
+	return $result;
+}
+
+/**
+ * REST handler for the remove route.
+ *
+ * @param WP_REST_Request $request
+ * @return WP_REST_Response
+ */
+function arv_race_store_rest_remove( $request ) {
+	$names = $request->get_param( 'names' );
+
+	if ( ! is_array( $names ) ) {
+		$names = preg_split( '/\r\n|\r|\n/', (string) $names );
+	}
+
+	return new WP_REST_Response( arv_race_store_remove( $names, (bool) $request->get_param( 'dry_run' ) ), 200 );
+}
+
+/**
+ * Register the remove route.
+ */
+function arv_race_store_register_remove_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/races/remove',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_race_store_rest_remove',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'names'   => array(
+					'required' => true,
+				),
+				'dry_run' => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_race_store_register_remove_route' );
+
+/**
  * The importer's guardrails and dry-run reporting, independent of REST.
  *
  * A scraper that fails partway through (a timeout, a changed page structure,
