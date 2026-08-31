@@ -55,7 +55,13 @@ function arv_podcasts_shows_config() {
 			'race-briefings'   => array(
 				'title'   => 'Aravaipa Race Briefings',
 				'feed'    => 'https://anchor.fm/s/10208075c/podcast/rss',
-				'spotify' => '',
+				// This one shipped blank, so Race Briefings was the one show
+				// of three that looked like it was not on Spotify. It is.
+				// The id came off the creator dashboard rather than a guess,
+				// and was confirmed through Spotify's oEmbed endpoint, which
+				// answered with "Tushars Mountain Runs 2025 Course Updates!",
+				// an episode in this feed and no other.
+				'spotify' => '2y3z9DBdx59UcQQPyVss1u',
 				'apple'   => '1800268722',
 			),
 			// Aravaipa Rides is deliberately not here. It is on the same
@@ -431,6 +437,12 @@ function arv_podcasts_render( $args = array() ) {
 				)
 			)
 			. '</span>';
+		$line = arv_podcasts_platform_line( $show );
+
+		if ( '' !== $line ) {
+			$out .= '<span class="arv-podcasts__show-where">' . esc_html( $line ) . '</span>';
+		}
+
 		$out .= '</a>';
 	}
 
@@ -454,6 +466,108 @@ function arv_podcasts_render( $args = array() ) {
 	}
 
 	return $out . '</div></section>';
+}
+
+/**
+ * Where a show can be listened to, in the order a listener picks from.
+ *
+ * Spotify and Apple Podcasts first, because between them they are almost
+ * everyone, and RSS last because the people who want it know what it is.
+ * A platform with no id configured is left out rather than linked to a
+ * search page: a "Spotify" button that lands on Spotify's front door is
+ * worse than no button, since the reader cannot tell whether the show is
+ * there at all.
+ *
+ * @param array $show
+ * @return array<int, array{key: string, label: string, url: string}>
+ */
+function arv_podcasts_platforms( $show ) {
+	$out = array();
+
+	if ( '' !== $show['spotify'] ) {
+		$out[] = array(
+			'key'   => 'spotify',
+			'label' => __( 'Spotify', 'aravaipa-elements' ),
+			'url'   => 'https://open.spotify.com/show/' . $show['spotify'],
+		);
+	}
+
+	if ( '' !== $show['apple'] ) {
+		$out[] = array(
+			'key'   => 'apple',
+			'label' => __( 'Apple Podcasts', 'aravaipa-elements' ),
+			'url'   => 'https://podcasts.apple.com/podcast/id' . $show['apple'],
+		);
+	}
+
+	if ( '' !== $show['feed'] ) {
+		$out[] = array(
+			'key'   => 'rss',
+			'label' => __( 'RSS', 'aravaipa-elements' ),
+			'url'   => $show['feed'],
+		);
+	}
+
+	return $out;
+}
+
+/**
+ * The subscribe row: where to listen, said in each platform's own colour.
+ *
+ * These were three identical grey outlines, which is the same amount of
+ * information as no buttons at all: a reader scanning the page could not
+ * tell at a glance that the show is on the two apps they actually use.
+ * Spotify green and Apple Podcasts purple are recognised before the words
+ * under them are read, which is the entire job this row has.
+ *
+ * RSS keeps the grey outline on purpose. It is a real option and it stays,
+ * but giving it the same weight as the two apps would be advertising the
+ * least used of the three as hard as the most used.
+ *
+ * @param array $show
+ * @return string
+ */
+function arv_podcasts_subscribe( $show ) {
+	$platforms = arv_podcasts_platforms( $show );
+
+	if ( empty( $platforms ) ) {
+		return '';
+	}
+
+	$out = '<div class="arv-podcasts-show__subscribe">';
+	$out .= '<span class="arv-podcasts-show__listen">' . esc_html__( 'Listen on', 'aravaipa-elements' ) . '</span>';
+	$out .= '<span class="arv-podcasts-show__links">';
+
+	foreach ( $platforms as $platform ) {
+		$out .= '<a class="arv-podcasts-show__link arv-podcasts-show__link--' . esc_attr( $platform['key'] ) . '"'
+			. ' href="' . esc_url( $platform['url'] ) . '" target="_blank" rel="noopener">'
+			. esc_html( $platform['label'] ) . '</a>';
+	}
+
+	return $out . '</span></div>';
+}
+
+/**
+ * The same availability, as a line of text rather than buttons.
+ *
+ * For the index, where each show is one big link and a button inside it
+ * would be a link inside a link. The words carry it there: the card is a
+ * step on the way to the show page, and the show page is where someone
+ * actually leaves for an app.
+ *
+ * @param array $show
+ * @return string
+ */
+function arv_podcasts_platform_line( $show ) {
+	$names = array();
+
+	foreach ( arv_podcasts_platforms( $show ) as $platform ) {
+		if ( 'rss' !== $platform['key'] ) {
+			$names[] = $platform['label'];
+		}
+	}
+
+	return empty( $names ) ? '' : implode( ' · ', $names );
 }
 
 /**
@@ -493,21 +607,7 @@ function arv_podcasts_show_render( $args = array() ) {
 		$out .= '<p class="arv-podcasts-show__desc">' . esc_html( $show['desc'] ) . '</p>';
 	}
 
-	$out .= '<p class="arv-podcasts-show__links">';
-
-	if ( '' !== $show['spotify'] ) {
-		$out .= '<a class="arv-podcasts-show__link" href="https://open.spotify.com/show/' . esc_attr( $show['spotify'] ) . '"'
-			. ' target="_blank" rel="noopener">' . esc_html__( 'Spotify', 'aravaipa-elements' ) . '</a>';
-	}
-
-	if ( '' !== $show['apple'] ) {
-		$out .= '<a class="arv-podcasts-show__link" href="https://podcasts.apple.com/podcast/id' . esc_attr( $show['apple'] ) . '"'
-			. ' target="_blank" rel="noopener">' . esc_html__( 'Apple Podcasts', 'aravaipa-elements' ) . '</a>';
-	}
-
-	$out .= '<a class="arv-podcasts-show__link" href="' . esc_url( $show['feed'] ) . '"'
-		. ' target="_blank" rel="noopener">' . esc_html__( 'RSS', 'aravaipa-elements' ) . '</a>';
-	$out .= '</p>';
+	$out .= arv_podcasts_subscribe( $show );
 
 	$out .= '</div></div>';
 
