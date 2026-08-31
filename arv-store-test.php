@@ -79,6 +79,10 @@ function is_wp_error( $t ) { return $t instanceof WP_Error; }
 function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
 function is_singular( $t = '' ) { return $GLOBALS['IS_SINGULAR'] ?? false; }
 function is_page( $p = '' ) { return $GLOBALS['IS_PAGE'] ?? false; }
+// Pages are recognised by the shortcode they carry, so the harness needs a
+// post object with content and WP's own shortcode detector.
+function get_post( $id = 0 ) { $id = is_object( $id ) ? $id->ID : $id; return isset( $GLOBALS['posts'][ $id ] ) ? new ARV_Post( $id, $GLOBALS['posts'][ $id ]['title'] ?? '' ) : null; }
+function has_shortcode( $content, $tag ) { return (bool) preg_match( '/\[' . preg_quote( $tag, '/' ) . '[\s\]]/', (string) $content ); }
 function is_front_page() { return $GLOBALS['IS_FRONT'] ?? false; }
 function esc_attr__( $s, $d = '' ) { return $s; }
 // WordPress accepts add_query_arg( array, url ), add_query_arg( array ) with
@@ -267,6 +271,7 @@ require_once __DIR__ . '/includes/articles-store.php';
 require_once __DIR__ . '/includes/tours-store.php';
 require_once __DIR__ . '/includes/shop-store.php';
 require_once __DIR__ . '/includes/trailtalk-feed.php';
+require_once __DIR__ . '/includes/media-seo.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
@@ -4979,6 +4984,93 @@ $GLOBALS['posts'] = array();
 $GLOBALS['ATTACHMENTS'] = array();
 $GLOBALS['ATTACHMENT_FILES'] = array();
 delete_transient( ARV_TRAILTALK_CACHE );
+
+echo "\nmedia SEO, the five pages that had none:\n";
+// Watch, Films, Podcasts and race pages each grew their own head output.
+// /media/, /film-tours/, /articles/, /photos/ and /shop/ shipped with no
+// description and no structured data, so Google wrote its own snippet
+// from whatever text it found first, which on these pages is the nav.
+$seo_posts_backup = $GLOBALS['posts'];
+$GLOBALS['posts'] = array();
+$GLOBALS['IS_PAGE']    = true;
+$GLOBALS['QUERIED_ID'] = 9901;
+$GLOBALS['PERMALINK'][9901] = 'https://www.aravaiparunning.com/media/';
+
+// Recognised by the shortcode the page carries, not by path or stored id,
+// so renaming or moving a page cannot silently switch its SEO off.
+$GLOBALS['posts'][9901] = array( 'title' => 'Media', 'status' => 'publish', 'body' => '[arv_media_subnav][arv_media_hub heading="Browse"]' );
+t( 'the media hub page is recognised',    'media' === arv_media_seo_page() );
+
+$GLOBALS['posts'][9901]['body'] = '[arv_film_tours]';
+t( 'film tours too',                      'film-tours' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['body'] = '[arv_articles heading=""]';
+t( 'articles too',                        'articles' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['body'] = '[arv_photos year="2026"]';
+t( 'photos too',                          'photos' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['body'] = '[arv_shop]';
+t( 'and the shop',                        'shop' === arv_media_seo_page() );
+
+// A page carrying none of them claims nothing, rather than emitting a
+// description for a page it guessed at.
+$GLOBALS['posts'][9901]['body'] = '<p>An ordinary page.</p>';
+t( 'an unrelated page is left alone',     '' === arv_media_seo_page() );
+$GLOBALS['IS_PAGE'] = false;
+$GLOBALS['posts'][9901]['body'] = '[arv_shop]';
+t( 'and so is anything not a page',       '' === arv_media_seo_page() );
+$GLOBALS['IS_PAGE'] = true;
+
+// Counts come from the same stores the pages render from, so a
+// description cannot claim a number the page does not show.
+$GLOBALS['ARV_OPTIONS'][ ARV_SHOP_OPTION ] = array(
+	'collections' => array( array( 'id' => 'C1', 'name' => 'Black Canyon Ultras', 'url' => 'https://aravaipa-shop.square.site/shop/bc/C1', 'count' => 1, 'race' => true ) ),
+	'products'    => array( array( 'id' => 'P1', 'name' => 'Hoodie', 'url' => 'https://aravaipa-shop.square.site/product/h/P1', 'price' => 6500, 'collections' => array( 'C1' ), 'ord' => 0, 'image' => '', 'desc' => '', 'sold_out' => false, 'options' => array() ) ),
+);
+$shop_meta = arv_media_seo_meta( 'shop' );
+t( 'the shop description counts products', false !== strpos( $shop_meta['description'], '1 piece' ) || false !== strpos( $shop_meta['description'], '1 pieces' ) );
+
+// The nodes themselves, tested directly. Emission cannot be asserted from
+// this file: WPSEO_VERSION is defined far above for the front-page SEO
+// tests, constants cannot be undefined, and arv_media_seo_head() therefore
+// correctly stays silent for the rest of the run. That silence is itself
+// the behaviour that makes reactivating Yoast safe, so it is asserted
+// rather than worked around.
+$GLOBALS['posts'][9901]['body'] = '[arv_shop]';
+ob_start(); arv_media_seo_head(); $silenced = ob_get_clean();
+t( 'an active SEO plugin silences all of it', '' === $silenced );
+
+$shop_nodes = arv_media_seo_nodes( 'shop', $shop_meta );
+t( 'the page is a collection page',       'CollectionPage' === $shop_nodes[0]['@type'] );
+t( 'carrying its own description',        $shop_meta['description'] === $shop_nodes[0]['description'] );
+// The shop does not claim an Offer. This site is not where those are
+// bought, Square is, and an offer a page cannot complete is the kind of
+// mismatch that earns a manual action rather than a rich result.
+$shop_json = wp_json_encode( $shop_nodes );
+t( 'the shop claims no offer it cannot honour', false === strpos( $shop_json, '"Offer"' ) && false === strpos( $shop_json, '"Product"' ) );
+
+// Articles carries a list, capped: a head blob of all 296 would be a
+// slower page for every visitor in exchange for links Google already
+// follows.
+$GLOBALS['posts'][9902] = array( 'title' => 'A Post', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-01T00:00:00Z', 'thumb' => 'https://x.test/a.jpg', 'cats' => array() );
+$GLOBALS['PERMALINK'][9902] = 'https://www.aravaiparunning.com/a-post/';
+delete_transient( ARV_ARTICLES_CACHE );
+$art_meta  = arv_media_seo_meta( 'articles' );
+$art_nodes = arv_media_seo_nodes( 'articles', $art_meta );
+t( 'articles gets an item list',          2 === count( $art_nodes ) && 'ItemList' === $art_nodes[1]['@type'] );
+t( 'the list is capped at twenty',        20 >= count( $art_nodes[1]['itemListElement'] ) );
+t( 'and the description counts them',     false !== strpos( $art_meta['description'], '1 race report' ) || false !== strpos( $art_meta['description'], 'race reports' ) );
+
+// Film tours list their films rather than the tours, since the film is
+// the thing a person is searching for.
+$tour_meta  = arv_media_seo_meta( 'film-tours' );
+$tour_nodes = arv_media_seo_nodes( 'film-tours', $tour_meta );
+t( 'film tours gets an item list',        2 === count( $tour_nodes ) );
+t( 'typed as films',                      'Movie' === $tour_nodes[1]['itemListElement'][0]['item']['@type'] );
+t( 'and the description counts stops',    false !== strpos( $tour_meta['description'], '39' ) );
+
+$GLOBALS['posts']       = $seo_posts_backup;
+$GLOBALS['IS_PAGE']     = false;
+$GLOBALS['QUERIED_ID']  = 0;
+unset( $GLOBALS['PERMALINK'][9901] );
 
 echo "\nmedia hub counts, what the sub-nav strip cannot say:\n";
 $GLOBALS['_transients']['arv_watch_events'] = array(
