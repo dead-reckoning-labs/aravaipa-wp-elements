@@ -2761,6 +2761,52 @@ t( 'one video gets no toggle',           false === strpos( $solo, '<details' ) )
 t( 'and reads as one video',             false !== strpos( $solo, '1 video' ) );
 t( 'and not as one videos',              false === strpos( $solo, '1 videos' ) );
 
+echo "\nwatch, upcoming broadcasts:\n";
+// Mountain Outpost only carries an event once a stream exists for it, so a
+// race months out is invisible in the feed: verified, zero future-dated
+// events there today. These are configured instead, and each expires by
+// its own end date rather than waiting for someone to remember it.
+add_filter( 'arv_watch_upcoming_config', function () {
+	return array(
+		array( 'name' => 'Later Race',   'from' => '2999-12-19', 'to' => '2999-12-20', 'page' => '/later/' ),
+		array( 'name' => 'Sooner Race',  'from' => '2999-10-17', 'to' => '2999-10-18', 'page' => '/sooner/' ),
+		array( 'name' => 'Finished',     'from' => '2020-01-01', 'to' => '2020-01-02', 'page' => '/done/' ),
+		array( 'name' => 'One Day Only', 'from' => '2999-11-05' ),
+	);
+} );
+
+$up = arv_watch_upcoming();
+t( 'a finished broadcast drops off',      ! in_array( 'Finished', array_column( $up, 'name' ), true ) );
+t( 'the rest survive',                    3 === count( $up ) );
+t( 'soonest first',                       'Sooner Race' === $up[0]['name'] );
+t( 'then the next',                       'One Day Only' === $up[1]['name'] );
+t( 'and the furthest last',               'Later Race' === $up[2]['name'] );
+
+// Judged on the end date: a broadcast is still worth announcing on the
+// morning of day two of a race that ran overnight.
+add_filter( 'arv_watch_upcoming_config', function () {
+	return array( array( 'name' => 'Mid Race', 'from' => '2020-01-01', 'to' => '2999-01-01' ) );
+} );
+t( 'a race already under way still counts', 1 === count( arv_watch_upcoming() ) );
+$GLOBALS['FILTERS']['arv_watch_upcoming_config'] = array();
+
+// The year said once, the same rule the film tour windows follow.
+t( 'a two-day window reads as one',       'October 31 to November 1, 2026' === arv_watch_upcoming_when( array( 'from' => '2026-10-31', 'to' => '2026-11-01' ) ) );
+t( 'a single day says one date',          'December 19, 2026' === arv_watch_upcoming_when( array( 'from' => '2026-12-19' ) ) );
+t( 'and matching dates collapse',         'December 19, 2026' === arv_watch_upcoming_when( array( 'from' => '2026-12-19', 'to' => '2026-12-19' ) ) );
+
+// The three real ones, as configured.
+$real = array_column( arv_watch_upcoming_config(), 'name' );
+t( 'javelina is configured',              in_array( 'Javelina Jundred', $real, true ) );
+t( 'sonoma too',                          in_array( 'Sonoma Fall Classic', $real, true ) );
+t( 'and desert solstice',                 in_array( 'Desert Solstice', $real, true ) );
+
+// Nothing scheduled renders nothing, rather than a heading over an empty
+// shelf, which between seasons would be the normal state.
+add_filter( 'arv_watch_upcoming_config', function () { return array(); } );
+t( 'nothing scheduled renders nothing',   '' === arv_watch_upcoming_render() );
+$GLOBALS['FILTERS']['arv_watch_upcoming_config'] = array();
+
 echo "\nwatch, the featured broadcast:\n";
 // The page leads with one broadcast instead of a centred heading, and what
 // that broadcast is depends on what there is to say. Three states, and the
@@ -3928,6 +3974,15 @@ $on_films = arv_media_subnav_render( 'films' );
 t( 'every section links out',         5 === substr_count( $on_films, 'arv-media-subnav__link' ) );
 t( 'and photos is not one of them',   false === strpos( $on_films, 'href="https://www.aravaiparunning.com/photos/"' ) );
 t( 'the current one is marked',       1 === substr_count( $on_films, 'is-current' ) );
+// Every media page used to print its own name as a large centred heading
+// directly under a strip that had just highlighted that same name. Deleting
+// the heading outright would leave the page with no heading element at all,
+// so the strip carries it: read by a crawler and a screen reader, never
+// seen twice by a sighted visitor.
+t( 'the strip carries the page heading', false !== strpos( $on_films, '<h1 class="arv-media-subnav__title screen-reader-text">Films</h1>' ) );
+t( 'and only one of them',            1 === substr_count( $on_films, 'arv-media-subnav__title' ) );
+// Nothing current, e.g. a single Watch race page, claims no heading.
+t( 'an unknown section claims none',  false === strpos( arv_media_subnav_render( '' ), 'arv-media-subnav__title' ) );
 t( 'and it is the right one',         false !== strpos( $on_films, 'is-current" href="https://www.aravaiparunning.com/films/"' ) );
 t( 'aria-current is set once',        1 === substr_count( $on_films, 'aria-current="page"' ) );
 

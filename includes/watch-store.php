@@ -297,6 +297,15 @@ function arv_watch_render( $args = array() ) {
 	// Skipped entirely while something is live, because the embed above has
 	// just said the only thing a hero could say, louder.
 	if ( 0 === $limit && empty( $live ) ) {
+		// A scheduled race outranks the newest replay: someone landing here
+		// in October wants to know Javelina is being broadcast, not to be
+		// shown last May's Cocodona as though it were the news.
+		$next = arv_watch_upcoming();
+
+		if ( ! empty( $next ) ) {
+			$out .= arv_watch_upcoming_render();
+		}
+
 		list( $featured, $state ) = arv_watch_featured( $past );
 
 		if ( null !== $featured ) {
@@ -508,6 +517,153 @@ function arv_watch_event_href( $event ) {
 	$page_hit = isset( $page[ $key ] );
 
 	return array( $page_hit ? $page[ $key ] : $event['streams'][0]['url'], $page_hit );
+}
+
+/**
+ * Broadcasts that are scheduled but have not happened yet.
+ *
+ * Mountain Outpost's feed only carries an event once a stream exists for
+ * it, so a race three months out is invisible there: checked, and the feed
+ * has zero future-dated events today. That makes the Broadcasts page
+ * silent about the three races people are actually waiting for, which is
+ * the opposite of what a broadcast page is for.
+ *
+ * Configured here rather than fetched, for the same reason the film tours
+ * are: a handful of races a year get a broadcast, and a human decides
+ * which. Dates are the race's own, read off its page on this site.
+ *
+ * Each entry expires on its own the day after it runs. That is the whole
+ * point of storing an end date rather than a flag: the two film tour pages
+ * went stale precisely because nothing about them knew the date had
+ * passed, and this list would rot the same way within a month.
+ *
+ * @return array<int, array>
+ */
+function arv_watch_upcoming_config() {
+	return apply_filters(
+		'arv_watch_upcoming_config',
+		array(
+			array(
+				'name' => 'Sonoma Fall Classic',
+				'from' => '2026-10-17',
+				'to'   => '2026-10-18',
+				'page' => '/california-races/sonoma/',
+			),
+			array(
+				'name' => 'Javelina Jundred',
+				'from' => '2026-10-31',
+				'to'   => '2026-11-01',
+				'page' => '/javelina/',
+			),
+			array(
+				'name' => 'Desert Solstice',
+				'from' => '2026-12-19',
+				'to'   => '2026-12-20',
+				'page' => '/desert-solstice/',
+			),
+		)
+	);
+}
+
+/**
+ * Those of them that have not finished yet, soonest first.
+ *
+ * Judged on the end date, not the start: a broadcast is still worth
+ * announcing on the morning of day two of a race that runs overnight.
+ *
+ * @return array<int, array>
+ */
+function arv_watch_upcoming() {
+	$today = function_exists( 'current_time' ) ? current_time( 'Y-m-d' ) : gmdate( 'Y-m-d' );
+	$out   = array();
+
+	foreach ( arv_watch_upcoming_config() as $row ) {
+		$ends = ! empty( $row['to'] ) ? (string) $row['to'] : (string) $row['from'];
+
+		if ( $ends >= $today ) {
+			$out[] = $row;
+		}
+	}
+
+	usort(
+		$out,
+		function ( $a, $b ) {
+			return strcmp( (string) $a['from'], (string) $b['from'] );
+		}
+	);
+
+	return $out;
+}
+
+/**
+ * One upcoming broadcast's dates, as a person would say them.
+ *
+ * "October 31 to November 1, 2026", with the year said once, the same rule
+ * the film tour windows follow.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_watch_upcoming_when( $row ) {
+	$from = strtotime( (string) $row['from'] );
+	$to   = ! empty( $row['to'] ) ? strtotime( (string) $row['to'] ) : false;
+
+	if ( ! $from ) {
+		return '';
+	}
+
+	if ( ! $to || gmdate( 'Y-m-d', $from ) === gmdate( 'Y-m-d', $to ) ) {
+		return gmdate( 'F j, Y', $from );
+	}
+
+	$same_year = gmdate( 'Y', $from ) === gmdate( 'Y', $to );
+
+	return gmdate( $same_year ? 'F j' : 'F j, Y', $from ) . ' to ' . gmdate( 'F j, Y', $to );
+}
+
+/**
+ * The upcoming broadcasts, listed above the archive.
+ *
+ * Renders nothing when there is nothing scheduled, rather than a heading
+ * over an empty space: an empty "Upcoming" shelf reads as a broken page,
+ * and between seasons that would be the normal state.
+ *
+ * @return string
+ */
+function arv_watch_upcoming_render() {
+	$rows = arv_watch_upcoming();
+
+	if ( empty( $rows ) ) {
+		return '';
+	}
+
+	$out  = '<section class="arv-watch__upcoming">';
+	$out .= '<h2 class="arv-watch__upcoming-heading">'
+		. esc_html__( 'Upcoming broadcasts', 'aravaipa-elements' ) . '</h2>';
+	$out .= '<ul class="arv-watch__upcoming-list">';
+
+	foreach ( $rows as $row ) {
+		$out .= '<li class="arv-watch__upcoming-item">';
+
+		$name = '<span class="arv-watch__upcoming-name">' . esc_html( $row['name'] ) . '</span>';
+
+		if ( ! empty( $row['page'] ) ) {
+			$out .= '<a class="arv-watch__upcoming-link" href="'
+				. esc_url( home_url( $row['page'] ) ) . '">' . $name . '</a>';
+		} else {
+			$out .= $name;
+		}
+
+		$when = arv_watch_upcoming_when( $row );
+
+		if ( '' !== $when ) {
+			$out .= '<span class="arv-watch__upcoming-when">' . esc_html( $when ) . '</span>';
+		}
+
+		$out .= '</li>';
+	}
+
+	return $out . '</ul></section>';
 }
 
 /**
