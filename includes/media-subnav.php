@@ -1,15 +1,24 @@
 <?php
 /**
- * The strip at the top of every media page: Watch, Films, Podcasts, Photos,
+ * The strip at the top of every media page: Watch, Films, Podcasts,
  * Articles, with the one a visitor is already on marked.
  *
  * Films, Podcasts and Watch all sit under /media/ in the nav now (see the
  * breadcrumb parent fix that shipped alongside this), but that only helps
  * someone who opens the Media dropdown. Someone who lands on Films from a
  * Google search, which is most of them, sees no sign Podcasts exists.
- * That is the actual leak this closes: one strip, reused on five pages,
- * cheap because the list of sections is not going to change often enough
- * to need to live anywhere but here.
+ * That is the actual leak this closes: one strip, reused across these
+ * pages, cheap because the list of sections is not going to change often
+ * enough to need to live anywhere but here.
+ *
+ * Photos is deliberately not one of them, per Jamil, 2026-08-30: someone
+ * on a Photos page just ran the race and is looking for themselves, the
+ * same intent as Results, and mostly a purchase flow on top of that
+ * (SmugMug, PassGallery and Pixieset all sell prints). That is a
+ * different visitor from someone reading a broadcast, film, episode or
+ * article, who almost certainly did not run it. Photos stays a top-level
+ * nav item on its own, grouped with the runner-facing pages instead of
+ * the audience-facing ones.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * The five sections, in the order they render.
+ * The four sections, in the order they render.
  *
  * A key rather than just a URL, so a page can be marked current without
  * string-matching a path: arv_media_subnav_render() is told which key is
@@ -33,7 +42,6 @@ function arv_media_subnav_items() {
 			array( 'key' => 'watch', 'label' => __( 'Broadcasts', 'aravaipa-elements' ), 'url' => home_url( '/watch/' ) ),
 			array( 'key' => 'films', 'label' => __( 'Films', 'aravaipa-elements' ), 'url' => home_url( '/films/' ) ),
 			array( 'key' => 'podcasts', 'label' => __( 'Podcasts', 'aravaipa-elements' ), 'url' => home_url( '/podcasts/' ) ),
-			array( 'key' => 'photos', 'label' => __( 'Photos', 'aravaipa-elements' ), 'url' => home_url( '/photos/' ) ),
 			array( 'key' => 'articles', 'label' => __( 'Articles', 'aravaipa-elements' ), 'url' => home_url( '/blog/' ) ),
 		)
 	);
