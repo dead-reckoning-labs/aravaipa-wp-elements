@@ -41,6 +41,10 @@ function arv_media_subnav_items() {
 		array(
 			array( 'key' => 'watch', 'label' => __( 'Broadcasts', 'aravaipa-elements' ), 'url' => home_url( '/watch/' ) ),
 			array( 'key' => 'films', 'label' => __( 'Films', 'aravaipa-elements' ), 'url' => home_url( '/films/' ) ),
+			// Directly after Films, because it is a child of Films rather
+			// than a peer of the other four: the tours are how those films
+			// were shown before they reached YouTube.
+			array( 'key' => 'film-tours', 'label' => __( 'Film Tours', 'aravaipa-elements' ), 'url' => home_url( '/film-tours/' ) ),
 			array( 'key' => 'podcasts', 'label' => __( 'Podcasts', 'aravaipa-elements' ), 'url' => home_url( '/podcasts/' ) ),
 			// /articles/, not /blog/. /blog/ is WordPress's own posts page:
 			// it renders through the theme, so it cannot carry this strip and

@@ -40,28 +40,40 @@ function arv_tours_config() {
 		'arv_tours_config',
 		array(
 			array(
-				'key'     => 'the-cutoff',
-				'title'   => 'The Cutoff',
-				'sub'     => 'A Film For The Rest Of Us',
-				'page'    => '/the-cutoff/',
-				'film'    => 'r7GGVbLGxU0',
-				'from'    => '2026-02-20',
-				'to'      => '2026-03-31',
-				'merch'   => 'https://aravaipa-shop.square.site/shop/the-cutoff-film-merch/K6AYTAFS3AOEA7F57OAIRMKQ',
+				'key'       => 'the-cutoff',
+				'title'     => 'The Cutoff',
+				'sub'       => 'A Film For The Rest Of Us',
+				'page'      => '/the-cutoff/',
+				'film'      => 'r7GGVbLGxU0',
+				// The real span, counted off the tour page's own eighteen
+				// listed stops, not the "February 20 - March 31" the page
+				// advertises in its heading. The tour kept going for six
+				// weeks after the date it told everyone it ended.
+				'from'      => '2026-02-20',
+				'to'        => '2026-05-14',
+				'stops'     => 18,
+				// US, Canada, Australia and Thailand.
+				'countries' => 4,
+				'merch'     => 'https://aravaipa-shop.square.site/shop/the-cutoff-film-merch/K6AYTAFS3AOEA7F57OAIRMKQ',
 			),
 			array(
-				'key'     => 'the-chase',
-				'title'   => 'The Chase',
-				'sub'     => 'A Cocodona 250 Story',
+				'key'       => 'the-chase',
+				'title'     => 'The Chase',
+				'sub'       => 'A Cocodona 250 Story',
 				// Was /cocodona-old/the-chase-film/ until the page was moved
 				// out from under a draft parent named "Cocodona 250 OLD",
 				// which is what its permalink had been advertising.
-				'page'    => '/the-chase-film/',
-				'film'    => 'k0HkYULFVvA',
-				'trailer' => 'YrSxAPy4FFE',
-				'from'    => '2025-03-15',
-				'to'      => '2025-04-15',
-				'merch'   => 'https://aravaipa-shop.square.site/shop/the-chase-film-merch/L2T3UMH5LXZO32272R7NQ256',
+				'page'      => '/the-chase-film/',
+				'film'      => 'k0HkYULFVvA',
+				'trailer'   => 'YrSxAPy4FFE',
+				// Same as The Cutoff: the heading advertised a window ending
+				// April 15 and the twenty-one listed stops run to May 2.
+				'from'      => '2025-03-15',
+				'to'        => '2025-05-02',
+				'stops'     => 21,
+				// US and Canada.
+				'countries' => 2,
+				'merch'     => 'https://aravaipa-shop.square.site/shop/the-chase-film-merch/L2T3UMH5LXZO32272R7NQ256',
 			),
 		)
 	);
@@ -176,15 +188,60 @@ function arv_tours_film( $id ) {
 }
 
 /**
+ * What the tour actually did, as opposed to when it ran.
+ *
+ * "18 stops in 4 countries" is the sentence a sponsor, a venue or a
+ * distributor wants from this page, and it was nowhere on the site: both
+ * tour pages list their venues one by one and neither ever adds them up.
+ *
+ * Counted off those lists rather than estimated. A tour with no stop count
+ * recorded says nothing here instead of guessing, which is the state an
+ * announced-but-unscheduled tour is genuinely in.
+ *
+ * @param array $tour
+ * @return string
+ */
+function arv_tours_recap( $tour ) {
+	$stops = isset( $tour['stops'] ) ? (int) $tour['stops'] : 0;
+
+	if ( $stops < 1 ) {
+		return '';
+	}
+
+	$bits = array(
+		sprintf(
+			/* translators: %s: a count of tour stops. */
+			_n( '%s stop', '%s stops', $stops, 'aravaipa-elements' ),
+			number_format_i18n( $stops )
+		),
+	);
+
+	$countries = isset( $tour['countries'] ) ? (int) $tour['countries'] : 0;
+
+	// One country is not worth saying: every tour happens somewhere. Two or
+	// more is the thing worth saying.
+	if ( $countries > 1 ) {
+		$bits[] = sprintf(
+			/* translators: %s: a count of countries. */
+			_n( '%s country', '%s countries', $countries, 'aravaipa-elements' ),
+			number_format_i18n( $countries )
+		);
+	}
+
+	return implode( ' · ', $bits );
+}
+
+/**
  * One tour's card.
  *
  * @param array $tour
  * @return string
  */
 function arv_tours_card( $tour ) {
-	$state = arv_tours_state( $tour );
-	$film  = arv_tours_film( isset( $tour['film'] ) ? (string) $tour['film'] : '' );
-	$href  = home_url( $tour['page'] );
+	$state      = arv_tours_state( $tour );
+	$film       = arv_tours_film( isset( $tour['film'] ) ? (string) $tour['film'] : '' );
+	$href       = home_url( $tour['page'] );
+	$tour_stops = isset( $tour['stops'] ) ? (int) $tour['stops'] : 0;
 
 	$out = '<li class="arv-tours__card arv-tours__card--' . esc_attr( $state ) . '">';
 	$out .= '<a class="arv-tours__link" href="' . esc_url( $href ) . '">';
@@ -219,12 +276,35 @@ function arv_tours_card( $tour ) {
 		$out .= '<span class="arv-tours__meta">' . esc_html( implode( ' · ', $bits ) ) . '</span>';
 	}
 
+	$recap = arv_tours_recap( $tour );
+
+	if ( '' !== $recap ) {
+		$out .= '<span class="arv-tours__recap">' . esc_html( $recap ) . '</span>';
+	}
+
 	$out .= '</span></a>';
 
 	// Below the card's own link rather than inside it, since a link inside
 	// a link is not a thing a browser can render. Same rule the Photos card
 	// follows for its extra photographers.
 	$more = array();
+
+	// The tour page itself, said out loud. The whole card already links
+	// there, but a card whose only visible buttons are "Watch the film"
+	// and "Merch" reads as though those are the only two places to go, and
+	// the tour page is where the venues, the sponsors and the stop list
+	// actually live.
+	$more[] = '<a class="arv-tours__action arv-tours__action--primary" href="' . esc_url( $href ) . '">'
+		. esc_html(
+			$tour_stops
+				? sprintf(
+					/* translators: %s: a count of tour stops. */
+					_n( 'Tour page: %s stop', 'Tour page: all %s stops', $tour_stops, 'aravaipa-elements' ),
+					number_format_i18n( $tour_stops )
+				)
+				: __( 'Tour page', 'aravaipa-elements' )
+		)
+		. '</a>';
 
 	if ( ! empty( $tour['film'] ) ) {
 		$more[] = '<a class="arv-tours__action" href="'

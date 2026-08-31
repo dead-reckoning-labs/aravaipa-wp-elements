@@ -8431,3 +8431,31 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	font-size: var(--arv-fs-micro);
 	color: rgba(244, 244, 244, 0.5);
 }
+
+/* What the tour actually did, as opposed to when it ran. "18 stops in 4
+   countries" is the sentence a sponsor or a venue wants off this page, and
+   it was nowhere on the site: both tour pages list their venues one by one
+   and neither ever adds them up. */
+.arv-tours__recap {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	color: rgba(244, 244, 244, 0.8);
+}
+
+/* The tour page itself, said out loud. The whole card already links there,
+   but a card whose only visible buttons are "Watch the film" and "Merch"
+   reads as though those are the only two places it goes. */
+.arv-tours__action--primary,
+.arv-tours__action--primary:link,
+.arv-tours__action--primary:visited {
+	border-color: #4ade80;
+	background: #4ade80;
+	color: #10201f;
+}
+
+.arv-tours__action--primary:hover,
+.arv-tours__action--primary:focus {
+	border-color: #6ee79b;
+	background: #6ee79b;
+	color: #10201f;
+}

@@ -3898,12 +3898,15 @@ $GLOBALS['_transients'] = array();
 
 echo "\nmedia sub-nav:\n";
 $subnav_items = arv_media_subnav_items();
-// Four, not five. Photos dropped per Jamil, 2026-08-30: someone on a
-// Photos page just ran the race and is looking for themselves, the same
-// intent as Results and mostly a purchase flow on top of it, not the
-// same visitor reading a broadcast, film, episode or article.
-t( 'four sections, photos is not one',  4 === count( $subnav_items ) );
-t( 'in the right order',              array( 'watch', 'films', 'podcasts', 'articles' ) === array_column( $subnav_items, 'key' ) );
+// Five. Photos is still not one of them, dropped per Jamil 2026-08-30:
+// someone on a Photos page just ran the race and is looking for
+// themselves, the same intent as Results and mostly a purchase flow on top
+// of it, not the same visitor reading a broadcast, film, episode or
+// article. Film Tours was added per Jamil 2026-08-30, directly after Films
+// because it is a child of Films rather than a peer of the other four.
+t( 'five sections, photos is not one',  5 === count( $subnav_items ) );
+t( 'in the right order',              array( 'watch', 'films', 'film-tours', 'podcasts', 'articles' ) === array_column( $subnav_items, 'key' ) );
+t( 'film tours is in the strip',      in_array( 'film-tours', array_column( $subnav_items, 'key' ), true ) );
 t( 'photos is not among them',        ! in_array( 'photos', array_column( $subnav_items, 'key' ), true ) );
 // The label reads "Broadcasts", but the key, slug and URL all stay
 // "watch": renaming what a visitor reads is not the same decision as
@@ -3917,7 +3920,7 @@ t( 'the Media parent link renders',   false !== strpos( arv_media_subnav_render(
 t( 'the parent link is never current', false === strpos( arv_media_subnav_render( 'films' ), 'arv-media-subnav__parent is-current' ) );
 
 $on_films = arv_media_subnav_render( 'films' );
-t( 'every section links out',         4 === substr_count( $on_films, 'arv-media-subnav__link' ) );
+t( 'every section links out',         5 === substr_count( $on_films, 'arv-media-subnav__link' ) );
 t( 'and photos is not one of them',   false === strpos( $on_films, 'href="https://www.aravaiparunning.com/photos/"' ) );
 t( 'the current one is marked',       1 === substr_count( $on_films, 'is-current' ) );
 t( 'and it is the right one',         false !== strpos( $on_films, 'is-current" href="https://www.aravaiparunning.com/films/"' ) );
@@ -4386,7 +4389,20 @@ t( 'newest tour first',                   strpos( $html, 'The Cutoff' ) < strpos
 // purchase. This is the assertion that would have caught the live bug.
 t( 'no finished tour sells a ticket',     false === stripos( $html, 'ticket' ) );
 t( 'they invite a watch instead',         2 === substr_count( $html, 'Watch it now' ) );
-t( 'the window reads as past',            false !== strpos( $html, 'Toured February 20 to March 31, 2026' ) );
+// The real span, off the tour page's own eighteen listed stops, not the
+// "February 20 - March 31" its heading advertises. Both tours kept going
+// weeks past the date they told everyone they ended.
+t( 'the window reads as past',            false !== strpos( $html, 'Toured February 20 to May 14, 2026' ) );
+// "18 stops in 4 countries" is the sentence a sponsor or venue wants off
+// this page, and it was nowhere on the site before this.
+t( 'the recap counts the stops',          false !== strpos( $html, '18 stops' ) );
+t( 'and the countries',                   false !== strpos( $html, '4 countries' ) );
+t( 'the other tour has its own count',    false !== strpos( $html, '21 stops' ) );
+// One country is not worth saying: every tour happens somewhere.
+t( 'a single country is not mentioned',   '5 stops' === arv_tours_recap( array( 'stops' => 5, 'countries' => 1 ) ) );
+t( 'and no stop count says nothing',      '' === arv_tours_recap( array() ) );
+// The tour page said out loud, not just as the card's own link.
+t( 'the tour page is an explicit action', false !== strpos( $html, 'Tour page: all 18 stops' ) );
 
 // The Chase moved out from under a draft parent named "Cocodona 250 OLD".
 // Nothing here may point at the old path again.
