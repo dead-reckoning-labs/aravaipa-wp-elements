@@ -157,6 +157,13 @@ function update_post_meta( $id, $k, $v ) { $GLOBALS['meta'][ $id ][ $k ] = $v; }
 function get_post_meta( $id, $k, $single = false ) { return $GLOBALS['meta'][ $id ][ $k ] ?? ''; }
 function wp_set_object_terms( $id, $terms, $tax, $append = false ) { $GLOBALS['terms'][ $id ] = (array) $terms; }
 function wp_count_posts( $t ) { $o = new stdClass(); $o->publish = 0; foreach ( $GLOBALS['posts'] as $p ) { if ( 'publish' === $p['status'] ) { $o->publish++; } } return $o; }
+function has_category( $name, $id = null ) { $id = is_object( $id ) ? $id->ID : $id; return in_array( $name, (array) ( $GLOBALS['posts'][ $id ]['cats'] ?? array() ), true ); }
+function get_the_excerpt( $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['excerpt'] ?? ''; }
+// Self-hosted attachments: a URL maps to an attachment id, which maps to a
+// real path on disk, exactly like WordPress's own pair of functions. Set
+// up per test via $GLOBALS['ATTACHMENTS'] / $GLOBALS['ATTACHMENT_FILES'].
+function attachment_url_to_postid( $url ) { return $GLOBALS['ATTACHMENTS'][ $url ] ?? 0; }
+function get_attached_file( $id ) { return $GLOBALS['ATTACHMENT_FILES'][ $id ] ?? ''; }
 
 $GLOBALS['ARV_OPTIONS'] = array();
 function get_option($k,$d=false){ return array_key_exists($k,$GLOBALS['ARV_OPTIONS']) ? $GLOBALS['ARV_OPTIONS'][$k] : $d; }
@@ -208,6 +215,7 @@ function get_posts( $args ) {
 			$want = (array) $args['tax_query'][0]['terms'];
 			if ( ! array_intersect( $want, $GLOBALS['terms'][ $id ] ?? array() ) ) { continue; }
 		}
+		if ( isset( $args['category_name'] ) && ! in_array( $args['category_name'], (array) ( $p['cats'] ?? array() ), true ) ) { continue; }
 		$out[] = ( ( $args['fields'] ?? '' ) === 'ids' ) ? $id : new ARV_Post( $id, $p['title'] );
 	}
 	if ( ( $args['orderby'] ?? '' ) === 'meta_value' && ( $args['fields'] ?? '' ) !== 'ids' ) {
@@ -245,6 +253,7 @@ require_once __DIR__ . '/includes/media-subnav.php';
 require_once __DIR__ . '/includes/articles-store.php';
 require_once __DIR__ . '/includes/tours-store.php';
 require_once __DIR__ . '/includes/shop-store.php';
+require_once __DIR__ . '/includes/trailtalk-feed.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
@@ -4671,6 +4680,119 @@ t( 'the shop shortcode is registered',     isset( $GLOBALS['SHORTCODES']['arv_sh
 t( 'the merch shortcode too',              isset( $GLOBALS['SHORTCODES']['arv_race_merch'] ) );
 
 $GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\ntrail talk, a real feed for a show that never had one:\n";
+// 44 episodes, self-hosted as WordPress posts with an <audio> tag rather
+// than through a podcast host, is why none of this ever reached Spotify
+// or Apple: neither reads a blog. Confirmed against the media library
+// that the files themselves are real audio/mpeg attachments before
+// building anything around them.
+$GLOBALS['posts']    = array();
+$GLOBALS['ATTACHMENTS'] = array();
+$GLOBALS['ATTACHMENT_FILES'] = array();
+delete_transient( ARV_TRAILTALK_CACHE );
+
+$GLOBALS['posts'][9501] = array(
+	'title' => 'Aravaipa Trail Talk – Episode #044: Huss Brewing', 'status' => 'publish', 'type' => 'post',
+	'date' => '2017-10-20T00:00:00Z', 'cats' => array( 'Aravaipa Trail Talk' ), 'excerpt' => 'Huss Brewing and JubeTube.',
+	'body' => '<p>Show notes.</p><audio controls><source src="https://x.test/ep44.mp3" type="audio/mpeg"></audio>',
+);
+$GLOBALS['posts'][9502] = array(
+	// The archive's other title shape: no "Episode", the number bare.
+	'title' => 'Trail Talk 39', 'status' => 'publish', 'type' => 'post',
+	'date' => '2017-09-07T00:00:00Z', 'cats' => array( 'Aravaipa Trail Talk' ), 'excerpt' => '',
+	'body' => '<audio src="https://x.test/ep39.mp3"></audio>',
+);
+$GLOBALS['posts'][9503] = array(
+	// A re-upload: the same episode 10 exists twice in the real archive.
+	// Neither carries a number recognisable enough to rank against the
+	// other, so this only has to not crash sorting against one that does.
+	'title' => 'Trail Talk Redux', 'status' => 'publish', 'type' => 'post',
+	'date' => '2016-05-01T00:00:00Z', 'cats' => array( 'Aravaipa Trail Talk' ), 'excerpt' => '',
+	'body' => '<p>No audio tag, just a bare link.</p><p>https://x.test/bare.mp3</p>',
+);
+$GLOBALS['posts'][9504] = array(
+	// No audio at all: the "Trail Talk Is Back!" 2018 post is words only.
+	'title' => 'Aravaipa Trail Talk Is Back!', 'status' => 'publish', 'type' => 'post',
+	'date' => '2018-08-18T00:00:00Z', 'cats' => array( 'Aravaipa Trail Talk' ), 'excerpt' => '',
+	'body' => '<p>Announcement text, no player.</p>',
+);
+$GLOBALS['posts'][9505] = array(
+	// A different show entirely. Must not leak into this feed.
+	'title' => 'Inside Aravaipa Episode 5', 'status' => 'publish', 'type' => 'post',
+	'date' => '2026-01-01T00:00:00Z', 'cats' => array( 'Podcasts' ), 'excerpt' => '',
+	'body' => '<audio src="https://x.test/other.mp3"></audio>',
+);
+$GLOBALS['PERMALINK'][9501] = 'https://www.aravaiparunning.com/trail-talk-44/';
+$GLOBALS['PERMALINK'][9502] = 'https://www.aravaiparunning.com/trail-talk-39/';
+$GLOBALS['PERMALINK'][9503] = 'https://www.aravaiparunning.com/trail-talk-redux/';
+
+// The byte length is read off the real file on disk, not fetched over
+// HTTP: these are self-hosted attachments, so the number is a filesystem
+// call away and 39 outbound requests to the plugin's own web server on
+// every feed build would be one for nothing this cheap.
+$GLOBALS['ATTACHMENTS']['https://x.test/ep44.mp3'] = 8801;
+$GLOBALS['ATTACHMENT_FILES'][8801] = '/tmp/tt_fixture/ep1.mp3';
+$GLOBALS['ATTACHMENTS']['https://x.test/ep39.mp3'] = 8802;
+$GLOBALS['ATTACHMENT_FILES'][8802] = '/tmp/tt_fixture/ep2.mp3';
+// ep bare.mp3 deliberately has no matching attachment: a length of 0 is
+// the honest answer for a file this store cannot find on disk.
+
+$items = arv_trailtalk_items();
+t( 'every episode with audio is kept',     3 === count( $items ) );
+t( 'a post with no player is dropped',     ! in_array( 'Aravaipa Trail Talk Is Back!', array_column( $items, 'title' ), true ) );
+t( 'a different show does not leak in',    ! in_array( 'Inside Aravaipa Episode 5', array_column( $items, 'title' ), true ) );
+
+// Two title shapes this archive actually uses, both recognised.
+t( 'Episode #044 parses to 44',            44 === arv_trailtalk_number( 'Aravaipa Trail Talk – Episode #044: Huss Brewing' ) );
+t( 'Trail Talk 39 parses to 39',           39 === arv_trailtalk_number( 'Trail Talk 39' ) );
+t( 'an untitled re-upload parses to 0',    0 === arv_trailtalk_number( 'Trail Talk Redux' ) );
+
+// Numbered episodes sort by their number, not by publish date, and rank
+// ahead of the one episode with no number recognised.
+$titles = array_column( $items, 'title' );
+t( 'the earlier-numbered episode leads',   array_search( 'Trail Talk 39', $titles ) < array_search( 'Aravaipa Trail Talk – Episode #044: Huss Brewing', $titles ) );
+t( 'an unnumbered one sorts last',         'Trail Talk Redux' === end( $titles ) );
+
+// The real byte length off disk, not a guess.
+$by_title = array();
+foreach ( $items as $i ) { $by_title[ $i['title'] ] = $i; }
+t( 'the enclosure length is the real file size', 10 === $by_title['Aravaipa Trail Talk – Episode #044: Huss Brewing']['bytes'] );
+t( 'a different file gets its own size',   40 === $by_title['Trail Talk 39']['bytes'] );
+t( 'an unmatched file honestly reads zero', 0 === $by_title['Trail Talk Redux']['bytes'] );
+
+echo "\ntrail talk, the feed itself:\n";
+$xml = arv_trailtalk_feed_xml();
+t( 'it parses as XML',                     false !== @simplexml_load_string( $xml ) );
+t( 'the itunes namespace is declared',     false !== strpos( $xml, 'xmlns:itunes=' ) );
+t( 'marked complete: this show is not coming back', false !== strpos( $xml, '<itunes:complete>Yes</itunes:complete>' ) );
+t( 'an item per kept episode',             3 === substr_count( $xml, '<item>' ) );
+t( 'the enclosure carries a real length',  false !== strpos( $xml, 'length="10"' ) );
+t( 'a title with an ampersand is escaped', false === strpos( $xml, ' & ' ) || false !== strpos( $xml, '&amp;' ) );
+
+// A show that has published nothing since 2018 must not silently vanish
+// the moment its one category is empty; verifies the drop-to-none branch
+// this store shares with every other "none" sentinel in the plugin.
+$GLOBALS['posts'] = array();
+delete_transient( ARV_TRAILTALK_CACHE );
+t( 'an empty archive still produces a valid, empty feed', 0 === substr_count( arv_trailtalk_feed_xml(), '<item>' ) );
+
+// The cache. A closed archive still deserves a cache flush on edit, since
+// a typo fix should not wait an hour to reach an app that may be polling.
+$GLOBALS['posts'][9506] = array( 'title' => 'Trail Talk 1', 'status' => 'publish', 'type' => 'post', 'date' => '2016-03-01T00:00:00Z', 'cats' => array( 'Aravaipa Trail Talk' ), 'excerpt' => '', 'body' => '<audio src="https://x.test/e1.mp3"></audio>' );
+arv_trailtalk_items();
+t( 'the archive is cached',                false !== get_transient( ARV_TRAILTALK_CACHE ) );
+arv_trailtalk_flush_on_save( 9506 );
+t( 'editing an episode drops the cache',   false === get_transient( ARV_TRAILTALK_CACHE ) );
+arv_trailtalk_items();
+$GLOBALS['posts'][9507] = array( 'title' => 'Some Race', 'status' => 'publish', 'type' => 'arv_race', 'date' => '', 'cats' => array(), 'excerpt' => '', 'body' => '' );
+arv_trailtalk_flush_on_save( 9507 );
+t( 'a non-post save leaves it alone',      false !== get_transient( ARV_TRAILTALK_CACHE ) );
+
+$GLOBALS['posts'] = array();
+$GLOBALS['ATTACHMENTS'] = array();
+$GLOBALS['ATTACHMENT_FILES'] = array();
+delete_transient( ARV_TRAILTALK_CACHE );
 
 echo "\nmedia hub counts, what the sub-nav strip cannot say:\n";
 $GLOBALS['_transients']['arv_watch_events'] = array(
