@@ -2777,11 +2777,32 @@ echo "\nwatch, upcoming broadcasts:\n";
 // hardcoded list of three until that endpoint turned up; it was both
 // stale-prone and, as it happens, already missing five races.
 $GLOBALS['_transients'] = array();
+// Mountain Outpost also broadcasts races Aravaipa does not put on, and
+// only Aravaipa's own belong on this page. The filter answers that from
+// the race store rather than a slug allow-list, so these fixtures have to
+// exist there to survive it. "Someone Else's Race" deliberately does not.
+//
+// Each needs an _arv_iso date: arv_race_store_to_race() returns null for a
+// record with no usable date, so a race seeded without one never reaches
+// the store and the filter would reject it for the wrong reason.
+$watch_races_backup = $GLOBALS['posts'];
+$GLOBALS['posts'] = array();
+$GLOBALS['posts'][9601] = array( 'title' => 'Later Race',  'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9601]['_arv_iso'] = '2026-10-17';
+$GLOBALS['posts'][9602] = array( 'title' => 'Sooner Race', 'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9602]['_arv_iso'] = '2026-10-17';
+$GLOBALS['posts'][9603] = array( 'title' => 'Finished',    'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9603]['_arv_iso'] = '2026-10-17';
+$GLOBALS['posts'][9604] = array( 'title' => 'On Air',      'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9604]['_arv_iso'] = '2026-10-17';
+arv_race_store_flush_cache();
+
 $GLOBALS['_transients']['arv_watch_schedule'] = array(
 	array( 'slug' => 'later-race-2999',  'name' => 'Later Race',  'start' => '2999-12-19T16:00:00.000Z', 'live' => false ),
 	array( 'slug' => 'sooner-race-2999', 'name' => 'Sooner Race', 'start' => '2999-10-17T13:00:00.000Z', 'live' => false ),
 	array( 'slug' => 'finished-2020',    'name' => 'Finished',    'start' => '2020-01-01T13:00:00.000Z', 'live' => false ),
 	array( 'slug' => 'on-air-now',       'name' => 'On Air',      'start' => '2999-11-05T13:00:00.000Z', 'live' => true ),
+	array( 'slug' => 'jfk-50-mile-2026', 'name' => "Someone Else's Race", 'start' => '2999-11-21T11:30:00.000Z', 'live' => false ),
 );
 // One HEAD check per surviving row (Finished is dropped by date before
 // any check runs), each confirming its Mountain Outpost page is real.
@@ -2805,12 +2826,22 @@ t( 'and the furthest last',               'Later Race' === $up[2]['name'] );
 t( 'each row links to mountain outpost',  'https://mountainoutpost.com/events/sooner-race-2999' === $up[0]['url'] );
 t( 'and a missing slug yields no link',   '' === arv_watch_outpost_url( '' ) );
 
+// The filter itself: a race Mountain Outpost broadcasts but Aravaipa does
+// not put on has no place under this masthead.
+t( 'a race we do not run is filtered out', ! in_array( "Someone Else's Race", array_column( $up, 'name' ), true ) );
+t( 'one we do run is kept',               arv_watch_is_aravaipa_race( 'Sooner Race' ) );
+t( 'the year in a name does not matter',  arv_watch_is_aravaipa_race( 'Sooner Race 2026' ) );
+t( 'and an unknown race is rejected',     ! arv_watch_is_aravaipa_race( 'JFK 50 Mile' ) );
+
 echo "\nwatch, a scheduled race with no page yet:\n";
 // The real case this exists for: a slug the schedule knows about that
 // Mountain Outpost has not built a page for yet. Linking anyway would put
 // a 404 on this site's own Watch page for something that otherwise looks
 // exactly like every other row.
 $GLOBALS['_transients'] = array();
+$GLOBALS['posts'][9607] = array( 'title' => 'Future Race', 'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9607]['_arv_iso'] = '2026-10-17';
+arv_race_store_flush_cache();
 $GLOBALS['_transients']['arv_watch_schedule'] = array(
 	array( 'slug' => 'not-built-yet', 'name' => 'Future Race', 'start' => '2999-05-21T13:00:00.000Z', 'live' => false ),
 );
@@ -2822,6 +2853,9 @@ t( 'but with no link to a 404',           '' === $nolink[0]['url'] );
 // A transport failure is treated the same as a 404: from this site's side
 // they are indistinguishable, and both mean do not link to it.
 $GLOBALS['_transients'] = array();
+$GLOBALS['posts'][9608] = array( 'title' => 'Unreachable Race', 'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9608]['_arv_iso'] = '2026-10-17';
+arv_race_store_flush_cache();
 $GLOBALS['_transients']['arv_watch_schedule'] = array(
 	array( 'slug' => 'unreachable', 'name' => 'Unreachable Race', 'start' => '2999-05-21T13:00:00.000Z', 'live' => false ),
 );
@@ -2853,6 +2887,11 @@ $GLOBALS['_http_queue'] = array();
 // fixture built from time() would drift into the future and stop testing
 // the boundary it was written for.
 $pinned = current_time( 'timestamp', true );
+$GLOBALS['posts'][9605] = array( 'title' => 'Mid Race',  'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9605]['_arv_iso'] = '2026-10-17';
+$GLOBALS['posts'][9606] = array( 'title' => 'Long Over', 'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9606]['_arv_iso'] = '2026-10-17';
+arv_race_store_flush_cache();
 $GLOBALS['_transients']['arv_watch_schedule'] = array(
 	array( 'slug' => 'mid-race', 'name' => 'Mid Race', 'start' => gmdate( 'c', $pinned - ( 12 * HOUR_IN_SECONDS ) ), 'live' => true ),
 	array( 'slug' => 'long-over', 'name' => 'Long Over', 'start' => gmdate( 'c', $pinned - ( 5 * DAY_IN_SECONDS ) ), 'live' => false ),
@@ -2863,6 +2902,11 @@ t( 'and it is the one still running',     'Mid Race' === $mid[0]['name'] );
 
 echo "\nwatch, upcoming rendered:\n";
 $GLOBALS['_transients'] = array();
+$GLOBALS['posts'][9609] = array( 'title' => 'Javelina Jundred', 'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9609]['_arv_iso'] = '2026-10-17';
+$GLOBALS['posts'][9610] = array( 'title' => 'On Air Race',      'status' => 'publish', 'type' => 'arv_race' );
+$GLOBALS['meta'][9610]['_arv_iso'] = '2026-10-17';
+arv_race_store_flush_cache();
 $GLOBALS['_transients']['arv_watch_schedule'] = array(
 	array( 'slug' => 'javelina-jundred-2026', 'name' => 'Javelina Jundred', 'start' => '2999-10-31T13:00:00.000Z', 'live' => false ),
 	array( 'slug' => 'on-air-now', 'name' => 'On Air Race', 'start' => '2999-10-01T13:00:00.000Z', 'live' => true ),
@@ -2892,6 +2936,8 @@ t( 'the failure is cached, not hammered', $calls === $GLOBALS['_http_calls'] );
 
 $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
+$GLOBALS['posts'] = $watch_races_backup;
+arv_race_store_flush_cache();
 
 echo "\nwatch, the featured broadcast:\n";
 // The page leads with one broadcast instead of a centred heading, and what

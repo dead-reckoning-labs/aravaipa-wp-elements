@@ -666,6 +666,53 @@ function arv_watch_outpost_exists( $slug ) {
 }
 
 /**
+ * Whether a scheduled broadcast is one of Aravaipa's own races.
+ *
+ * Mountain Outpost broadcasts races Aravaipa does not put on. Its schedule
+ * currently carries JFK 50 Mile, Run Rabbit Run 100 and two Mammoth
+ * events alongside Javelina, Sonoma and Desert Solstice, and under this
+ * site's masthead a reader has no way to tell which is which. Per Jamil,
+ * only Aravaipa's own belong on this page for now.
+ *
+ * Answered from the race store rather than a list of slugs. A hardcoded
+ * allow-list would be correct until December and wrong every January,
+ * when javelina-jundred-2026 becomes javelina-jundred-2027, which is the
+ * same annual-decay problem the schedule feed itself was brought in to
+ * solve. The race store already knows every race Aravaipa runs, and
+ * arv_results_race_key() already normalises a name well enough to match
+ * "Javelina Jundred" against the store's own entry, the same join the
+ * results archive, the Watch index and the shop's race strips all use.
+ *
+ * @param string $name Event name from the schedule.
+ * @return bool
+ */
+function arv_watch_is_aravaipa_race( $name ) {
+	if ( ! function_exists( 'arv_race_store_get' ) || ! function_exists( 'arv_results_race_key' ) ) {
+		// No race store to ask: show it rather than hide it. A missing
+		// filter should not silently empty a list of real broadcasts.
+		return true;
+	}
+
+	$key = arv_results_race_key( (string) $name );
+
+	if ( '' === $key ) {
+		return false;
+	}
+
+	foreach ( arv_race_store_get() as $race ) {
+		if ( empty( $race['name'] ) ) {
+			continue;
+		}
+
+		if ( arv_results_race_key( (string) $race['name'] ) === $key ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
  * Scheduled broadcasts that have not happened yet, soonest first.
  *
  * Judged on the start date plus a day, so a race that runs overnight is
@@ -688,6 +735,13 @@ function arv_watch_upcoming() {
 		// A day's grace past the start: these are ultras, and several run
 		// well past midnight into a second calendar day.
 		if ( ( $stamp + DAY_IN_SECONDS ) < $now ) {
+			continue;
+		}
+
+		// Aravaipa's own races only, per Jamil: Mountain Outpost also
+		// broadcasts races this company does not put on, and under this
+		// masthead there is nothing to tell a reader which is which.
+		if ( ! arv_watch_is_aravaipa_race( $event['name'] ) ) {
 			continue;
 		}
 
