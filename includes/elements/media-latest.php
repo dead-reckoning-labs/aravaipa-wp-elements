@@ -22,6 +22,7 @@ cs_register_element(
 				'heading' => cs_value( 'Latest', 'markup' ),
 				'intro'   => cs_value( '', 'markup' ),
 				'limit'   => cs_value( '12', 'markup' ),
+				'offset'  => cs_value( '0', 'markup' ),
 			),
 			'omega'
 		),
@@ -54,6 +55,11 @@ function arv_media_latest_element_builder() {
 					'type'    => 'text',
 					'label'   => __( 'How many to show (0 for everything)', 'aravaipa-elements' ),
 				),
+				array(
+					'key'     => 'offset',
+					'type'    => 'text',
+					'label'   => __( 'Skip the first N (1 when a hero sits above this)', 'aravaipa-elements' ),
+				),
 			),
 		),
 		'omega'
@@ -70,6 +76,7 @@ function arv_media_latest_element_render( $data ) {
 			'heading' => isset( $data['heading'] ) ? $data['heading'] : 'Latest',
 			'intro'   => isset( $data['intro'] ) ? $data['intro'] : '',
 			'limit'   => isset( $data['limit'] ) ? (int) $data['limit'] : 12,
+			'offset'  => isset( $data['offset'] ) ? (int) $data['offset'] : 0,
 		)
 	);
 }

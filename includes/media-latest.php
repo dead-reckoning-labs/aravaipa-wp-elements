@@ -216,7 +216,7 @@ add_action( 'save_post', 'arv_media_latest_flush_on_save' );
  * @param int $limit 0 for everything.
  * @return array<int, array>
  */
-function arv_media_latest_items( $limit = 0 ) {
+function arv_media_latest_items( $limit = 0, $offset = 0 ) {
 	$items = array_merge(
 		arv_media_latest_from_watch(),
 		arv_media_latest_from_films(),
@@ -231,8 +231,77 @@ function arv_media_latest_items( $limit = 0 ) {
 		}
 	);
 
+	// Offset before limit, so a feed sitting under the hero can skip the
+	// one item the hero already showed rather than repeating it as its own
+	// first card.
+	if ( $offset > 0 ) {
+		$items = array_slice( $items, $offset );
+	}
+
 	return $limit > 0 ? array_slice( $items, 0, $limit ) : $items;
 }
+
+/**
+ * The single newest thing Aravaipa has published, at full width.
+ *
+ * The same merged list the feed below it uses, taking one item. That is
+ * the point: the hero and the feed cannot disagree about what is newest,
+ * because they are the same sort of the same four sources, and the feed
+ * skips whatever the hero already showed rather than repeating it
+ * directly underneath itself.
+ *
+ * Deliberately not restricted to the types with landscape artwork. A
+ * podcast episode's square art crops to the hero box perfectly well
+ * through object-fit, and quietly skipping a whole content type because
+ * of its aspect ratio would mean the page's own "newest" claim is only
+ * sometimes true.
+ *
+ * @param array $args heading (optional eyebrow above the title).
+ * @return string
+ */
+function arv_media_hero_render( $args = array() ) {
+	$items = arv_media_latest_items( 1 );
+
+	if ( empty( $items ) ) {
+		return '';
+	}
+
+	$item  = $items[0];
+	$stamp = strtotime( $item['date'] );
+
+	$out  = '<section class="arv-media-hero">';
+	$out .= '<a class="arv-media-hero__link" href="' . esc_url( $item['url'] ) . '">';
+
+	if ( '' !== $item['thumb'] ) {
+		$out .= '<span class="arv-media-hero__art">';
+		$out .= '<img class="arv-media-hero__img" src="' . esc_url( $item['thumb'] ) . '" alt=""'
+			. ' loading="eager" decoding="async" width="960" height="540" />';
+		$out .= '</span>';
+	}
+
+	$out .= '<span class="arv-media-hero__body">';
+	$out .= '<span class="arv-media-hero__badge">' . esc_html( $item['badge'] ) . '</span>';
+	$out .= '<span class="arv-media-hero__title">' . esc_html( $item['title'] ) . '</span>';
+
+	if ( $stamp ) {
+		$out .= '<span class="arv-media-hero__date">' . esc_html( gmdate( 'F j, Y', $stamp ) ) . '</span>';
+	}
+
+	$out .= '</span></a></section>';
+
+	return $out;
+}
+
+/**
+ * [arv_media_hero] so a page can carry this without Cornerstone.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_media_hero_shortcode( $atts ) {
+	return arv_media_hero_render( (array) $atts );
+}
+add_shortcode( 'arv_media_hero', 'arv_media_hero_shortcode' );
 
 /**
  * The Latest feed: one merged stream, filterable by type.
@@ -241,7 +310,10 @@ function arv_media_latest_items( $limit = 0 ) {
  * @return string
  */
 function arv_media_latest_render( $args = array() ) {
-	$items = arv_media_latest_items( isset( $args['limit'] ) ? (int) $args['limit'] : 0 );
+	$items = arv_media_latest_items(
+		isset( $args['limit'] ) ? (int) $args['limit'] : 0,
+		isset( $args['offset'] ) ? (int) $args['offset'] : 0
+	);
 
 	if ( empty( $items ) ) {
 		return '';
@@ -332,6 +404,9 @@ function arv_media_latest_shortcode( $atts ) {
 			'heading' => 'Latest',
 			'intro'   => '',
 			'limit'   => 12,
+			// 1 where a hero sits directly above this, so the same item is
+			// not the hero and the first card at once.
+			'offset'  => 0,
 		),
 		$atts,
 		'arv_media_latest'

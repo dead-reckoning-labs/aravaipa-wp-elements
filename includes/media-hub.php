@@ -123,36 +123,105 @@ function arv_media_hub_articles_thumb() {
 }
 
 /**
+ * How much of each thing there is, as a phrase for the card.
+ *
+ * This is what stops the four cards being the sub-nav strip printed
+ * twice: the strip already carries the four destinations, so a card that
+ * only repeats the destination has no reason to take up the space. A
+ * count is the one thing the strip cannot say, and "33 broadcasts, 20
+ * films, 46 episodes" is the impression the page should be making on
+ * someone deciding whether Aravaipa is worth a broadcast conversation.
+ *
+ * Every number is read from the store that section already loads, so
+ * none of them can drift from what a click actually lands on. A source
+ * that is down returns '' and the card simply shows its description
+ * alone rather than a confident "0".
+ *
+ * @return array<string, string>
+ */
+function arv_media_hub_counts() {
+	$counts = array( 'watch' => '', 'films' => '', 'podcasts' => '', 'articles' => '' );
+
+	if ( function_exists( 'arv_watch_events' ) ) {
+		$events = count( arv_watch_events() );
+		if ( $events ) {
+			/* translators: %s: a count of broadcasts. */
+			$counts['watch'] = sprintf( _n( '%s broadcast', '%s broadcasts', $events, 'aravaipa-elements' ), number_format_i18n( $events ) );
+		}
+	}
+
+	if ( function_exists( 'arv_films_fetch' ) && function_exists( 'arv_films_all' ) ) {
+		$films = count( arv_films_all( arv_films_fetch() ) );
+		if ( $films ) {
+			/* translators: %s: a count of films. */
+			$counts['films'] = sprintf( _n( '%s film', '%s films', $films, 'aravaipa-elements' ), number_format_i18n( $films ) );
+		}
+	}
+
+	if ( function_exists( 'arv_podcasts_fetch' ) && function_exists( 'arv_podcasts_all' ) ) {
+		$shows    = arv_podcasts_fetch();
+		$episodes = count( arv_podcasts_all( $shows ) );
+		if ( $episodes ) {
+			$counts['podcasts'] = sprintf(
+				/* translators: 1: a count of episodes, 2: a count of shows. */
+				__( '%1$s episodes across %2$s shows', 'aravaipa-elements' ),
+				number_format_i18n( $episodes ),
+				number_format_i18n( count( $shows ) )
+			);
+		}
+	}
+
+	// The real total, not the forty the Latest feed reads: this is the
+	// size of the archive, and wp_count_posts answers it without loading
+	// a single post.
+	if ( function_exists( 'wp_count_posts' ) ) {
+		$published = (int) wp_count_posts( 'post' )->publish;
+		if ( $published ) {
+			/* translators: %s: a count of articles. */
+			$counts['articles'] = sprintf( _n( '%s article', '%s articles', $published, 'aravaipa-elements' ), number_format_i18n( $published ) );
+		}
+	}
+
+	return $counts;
+}
+
+/**
  * The four cards, in a fixed order: what is live and changing first
  * (Broadcasts, Films), then what is steadier (Podcasts, Articles).
  *
  * @return array<int, array>
  */
 function arv_media_hub_cards() {
+	$counts = arv_media_hub_counts();
+
 	return array(
 		array(
 			'title' => __( 'Broadcasts', 'aravaipa-elements' ),
 			'desc'  => __( 'Every Aravaipa Running broadcast, live and on demand.', 'aravaipa-elements' ),
 			'url'   => home_url( '/watch/' ),
 			'thumb' => arv_media_hub_watch_thumb(),
+			'count' => $counts['watch'],
 		),
 		array(
 			'title' => __( 'Films', 'aravaipa-elements' ),
 			'desc'  => __( 'Documentaries and original films.', 'aravaipa-elements' ),
 			'url'   => home_url( '/films/' ),
 			'thumb' => arv_media_hub_films_thumb(),
+			'count' => $counts['films'],
 		),
 		array(
 			'title' => __( 'Podcasts', 'aravaipa-elements' ),
 			'desc'  => __( 'Inside Aravaipa, White Mountain Endurance and Race Briefings.', 'aravaipa-elements' ),
 			'url'   => home_url( '/podcasts/' ),
 			'thumb' => arv_media_hub_podcasts_thumb(),
+			'count' => $counts['podcasts'],
 		),
 		array(
 			'title' => __( 'Articles', 'aravaipa-elements' ),
 			'desc'  => __( 'News, race updates and announcements.', 'aravaipa-elements' ),
 			'url'   => home_url( '/blog/' ),
 			'thumb' => arv_media_hub_articles_thumb(),
+			'count' => $counts['articles'],
 		),
 	);
 }
@@ -192,6 +261,11 @@ function arv_media_hub_render( $args = array() ) {
 		$out .= '<span class="arv-media-hub__body">';
 		$out .= '<span class="arv-media-hub__title">' . esc_html( $card['title'] ) . '</span>';
 		$out .= '<span class="arv-media-hub__desc">' . esc_html( $card['desc'] ) . '</span>';
+
+		if ( isset( $card['count'] ) && '' !== $card['count'] ) {
+			$out .= '<span class="arv-media-hub__count">' . esc_html( $card['count'] ) . '</span>';
+		}
+
 		$out .= '</span></a>';
 	}
 

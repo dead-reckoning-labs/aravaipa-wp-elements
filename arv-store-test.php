@@ -4136,5 +4136,74 @@ unset( $GLOBALS['PERMALINK'][9301] );
 $GLOBALS['posts']       = $real_posts;
 $GLOBALS['_transients'] = array();
 
+
+echo "\nmedia hub counts, what the sub-nav strip cannot say:\n";
+$GLOBALS['_transients']['arv_watch_events'] = array(
+	array( 'slug' => 'a', 'name' => 'Race A', 'live' => false, 'start' => '2026-05-04T00:00:00Z', 'place' => '', 'desc' => '',
+	       'streams' => array( array( 'id' => 'aaaaaaaaaaa', 'title' => 'x', 'url' => 'https://youtu.be/aaaaaaaaaaa', 'thumbnail' => 'https://x.test/a.jpg', 'live' => false, 'type' => '', 'start' => '', 'desc' => '', 'aired' => '2026-05-04T00:00:00Z', 'minutes' => 0, 'views' => 0 ) ) ),
+	array( 'slug' => 'b', 'name' => 'Race B', 'live' => false, 'start' => '2026-04-04T00:00:00Z', 'place' => '', 'desc' => '',
+	       'streams' => array( array( 'id' => 'bbbbbbbbbbb', 'title' => 'x', 'url' => 'https://youtu.be/bbbbbbbbbbb', 'thumbnail' => 'https://x.test/b.jpg', 'live' => false, 'type' => '', 'start' => '', 'desc' => '', 'aired' => '2026-04-04T00:00:00Z', 'minutes' => 0, 'views' => 0 ) ) ),
+);
+$GLOBALS['_transients']['arv_films'] = array(
+	array( 'key' => 'documentaries', 'title' => 'Documentaries', 'films' => array(
+		array( 'id' => 'ccccccccccc', 'title' => 'F1', 'desc' => '', 'thumbnail' => 'https://x.test/c.jpg', 'published' => '2026-03-01T00:00:00Z', 'views' => 1, 'duration' => '', 'url' => 'https://youtu.be/ccccccccccc', 'lead' => 'F1', 'race' => '', 'division' => null, 'trailer' => null ),
+	) ),
+);
+$GLOBALS['_transients']['arv_podcasts'] = array(
+	array( 'key' => 'inside-aravaipa', 'title' => 'Inside', 'feed' => '', 'spotify' => '', 'apple' => '', 'artwork' => 'https://x.test/s.jpg', 'summary' => '',
+	       'episodes' => array(
+	           array( 'title' => 'E1', 'audio' => 'a', 'link' => '', 'artwork' => '', 'guid' => '1', 'duration' => '', 'published' => '2026-02-01T00:00:00Z' ),
+	           array( 'title' => 'E2', 'audio' => 'a', 'link' => '', 'artwork' => '', 'guid' => '2', 'duration' => '', 'published' => '2026-01-01T00:00:00Z' ),
+	       ) ),
+	array( 'key' => 'wm', 'title' => 'WM', 'feed' => '', 'spotify' => '', 'apple' => '', 'artwork' => 'https://x.test/w.jpg', 'summary' => '',
+	       'episodes' => array(
+	           array( 'title' => 'E3', 'audio' => 'a', 'link' => '', 'artwork' => '', 'guid' => '3', 'duration' => '', 'published' => '2026-01-15T00:00:00Z' ),
+	       ) ),
+);
+$counts_backup    = $GLOBALS['posts'];
+$GLOBALS['posts'] = array(
+	9501 => array( 'title' => 'P1', 'status' => 'publish', 'type' => 'post', 'date' => '2026-06-01T00:00:00Z', 'thumb' => 'https://x.test/p.jpg' ),
+	9502 => array( 'title' => 'P2', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-01T00:00:00Z', 'thumb' => 'https://x.test/p2.jpg' ),
+);
+delete_transient( 'arv_media_latest_posts' );
+
+$counts = arv_media_hub_counts();
+t( 'broadcasts counted by event, not segment', '2 broadcasts' === $counts['watch'] );
+t( 'films counted',                       '1 film' === $counts['films'] );
+t( 'and singular reads right',            false === strpos( $counts['films'], 'films' ) );
+t( 'episodes counted across every show',  '3 episodes across 2 shows' === $counts['podcasts'] );
+// The whole archive, not the forty the feed reads.
+t( 'articles counted from the archive',   '2 articles' === $counts['articles'] );
+
+$hub = arv_media_hub_render( array() );
+t( 'the count reaches the card',          false !== strpos( $hub, '3 episodes across 2 shows' ) );
+
+// A source that is down says nothing rather than a confident zero.
+$GLOBALS['_transients']['arv_films'] = 'none';
+t( 'a dead source shows no count, not 0', '' === arv_media_hub_counts()['films'] );
+t( 'and no stray zero reaches the card',  false === strpos( arv_media_hub_render( array() ), '0 films' ) );
+
+echo "\nmedia hero, the newest thing at full width:\n";
+$GLOBALS['_transients']['arv_films'] = array();
+$hero = arv_media_hero_render();
+// The newest of everything seeded above is the 2026-06-01 post.
+t( 'the hero is the newest item',         false !== strpos( $hero, 'P1' ) );
+t( 'it carries its type badge',           false !== strpos( $hero, 'arv-media-hero__badge">Article' ) );
+t( 'and its date',                        false !== strpos( $hero, 'June 1, 2026' ) );
+t( 'the whole hero is one link',          1 === substr_count( $hero, 'arv-media-hero__link' ) );
+
+// The feed under a hero must not open with the item the hero just showed.
+$feed_no_offset = arv_media_latest_render( array( 'limit' => 3 ) );
+$feed_offset    = arv_media_latest_render( array( 'limit' => 3, 'offset' => 1 ) );
+t( 'without an offset the feed repeats it', false !== strpos( $feed_no_offset, 'P1' ) );
+t( 'with one, the hero item is skipped',    false === strpos( $feed_offset, '>P1<' ) );
+t( 'and the feed still has its full count', 3 === substr_count( $feed_offset, 'class="arv-media-latest__card"' ) );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['posts'] = $counts_backup;
+delete_transient( 'arv_media_latest_posts' );
+t( 'nothing anywhere renders no hero',    '' === arv_media_hero_render() );
+
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
