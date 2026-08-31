@@ -50,6 +50,49 @@ function arv_shop_get() {
 }
 
 /**
+ * The host the storefront is served from.
+ *
+ * Square Online supports a custom domain, and Run Steep Get High already
+ * uses one on this same Square account, so shop.aravaiparunning.com is a
+ * DNS record and a setting rather than a migration. Until that is live
+ * this returns '' and every URL is left exactly as Square gave it.
+ *
+ * Rewritten at render time rather than at import, so switching the domain
+ * on or off is one filter and does not require re-importing 166 products,
+ * and so a domain that turns out to be misconfigured can be reverted
+ * without the catalogue having been rewritten underneath it.
+ *
+ * @return string Bare host, or '' to leave URLs alone.
+ */
+function arv_shop_storefront_host() {
+	return (string) apply_filters( 'arv_shop_storefront_host', '' );
+}
+
+/**
+ * A storefront URL, moved onto the custom domain if there is one.
+ *
+ * Only ever rewrites the host of a URL already pointing at the Square
+ * storefront. Anything else is returned untouched: a filter that rewrote
+ * every host it was handed would happily point a YouTube link at the shop.
+ *
+ * @param string $url
+ * @return string
+ */
+function arv_shop_url( $url ) {
+	$host = arv_shop_storefront_host();
+
+	if ( '' === $host || '' === $url ) {
+		return $url;
+	}
+
+	return preg_replace(
+		'#^https?://aravaipa-shop\.square\.site#i',
+		'https://' . $host,
+		$url
+	);
+}
+
+/**
  * The collections that belong to a race, rather than to a department.
  *
  * Square's categories mix two different things: races (Black Canyon
@@ -172,7 +215,7 @@ function arv_shop_price( $cents ) {
  */
 function arv_shop_card( $product ) {
 	$out = '<li class="arv-shop__card' . ( $product['sold_out'] ? ' arv-shop__card--out' : '' ) . '">';
-	$out .= '<a class="arv-shop__link" href="' . esc_url( $product['url'] ) . '"'
+	$out .= '<a class="arv-shop__link" href="' . esc_url( arv_shop_url( $product['url'] ) ) . '"'
 		. ' target="_blank" rel="noopener">';
 
 	if ( '' !== $product['image'] ) {
@@ -234,7 +277,7 @@ function arv_shop_race_merch_render( $args = array() ) {
 	$out .= '<div class="arv-shop__inner">';
 	$out .= '<div class="arv-shop__head">';
 	$out .= '<h2 class="arv-shop__heading">' . esc_html( $heading ) . '</h2>';
-	$out .= '<a class="arv-shop__all" href="' . esc_url( $collection['url'] ) . '"'
+	$out .= '<a class="arv-shop__all" href="' . esc_url( arv_shop_url( $collection['url'] ) ) . '"'
 		. ' target="_blank" rel="noopener">' . esc_html__( 'Shop all', 'aravaipa-elements' ) . '</a>';
 	$out .= '</div>';
 
@@ -316,7 +359,7 @@ function arv_shop_collection_row( $collections, $label, $kind ) {
 
 	foreach ( $collections as $collection ) {
 		$out .= '<li class="arv-shop__collection">';
-		$out .= '<a class="arv-shop__collection-link" href="' . esc_url( $collection['url'] ) . '"'
+		$out .= '<a class="arv-shop__collection-link" href="' . esc_url( arv_shop_url( $collection['url'] ) ) . '"'
 			. ' target="_blank" rel="noopener">';
 
 		if ( '' !== $collection['image'] ) {
