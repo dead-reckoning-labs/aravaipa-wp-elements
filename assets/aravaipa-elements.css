@@ -6620,6 +6620,19 @@
 	color: rgba(244, 244, 244, 0.6);
 }
 
+/* Words, not buttons: the card is itself one link, and a Spotify button
+   inside it would be a link inside a link. The show page is where someone
+   actually leaves for an app; this only has to say the option exists. */
+/* Tucked under the episode count rather than given the card's full gap:
+   the two are one block of small print about the same show. */
+.arv-podcasts__show-where {
+	margin-top: -0.3rem;
+	font-size: var(--arv-fs-micro);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(244, 244, 244, 0.45);
+}
+
 .arv-podcasts__section {
 	margin: 2.25rem 0 1rem;
 	font-size: var(--arv-fs-title);
@@ -6763,11 +6776,38 @@
 	color: rgba(244, 244, 244, 0.75);
 }
 
+/* Where to listen, in each platform's own colour.
+   ---------------------------------------------------------------------------
+   These were three identical grey outlines, which carried the same
+   information as no buttons at all: nothing in a page scan said this show
+   is on the two apps a listener already has open. Green and purple are
+   recognised before the words on them are read, which is the whole job.
+
+   RSS deliberately keeps the grey outline. It is a real option and it
+   stays, but it is the least used of the three and should not be
+   advertised as hard as the other two.
+   --------------------------------------------------------------------------- */
+.arv-podcasts-show__subscribe {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 1.1rem 0 0;
+}
+
+.arv-podcasts-show__listen {
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgba(244, 244, 244, 0.6);
+}
+
 .arv-podcasts-show__links {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.6rem;
-	margin: 1rem 0 0;
+	margin: 0;
 }
 
 .arv-podcasts-show__link,
@@ -6785,6 +6825,38 @@
 .arv-podcasts-show__link:hover,
 .arv-podcasts-show__link:focus {
 	border-color: rgba(255, 255, 255, 0.5);
+	color: #fff;
+}
+
+/* Spotify green, with black on it rather than white: that is Spotify's own
+   pairing, and it is the readable one at this size. */
+.arv-podcasts-show__link--spotify,
+.arv-podcasts-show__link--spotify:link,
+.arv-podcasts-show__link--spotify:visited {
+	border-color: #1db954;
+	background: #1db954;
+	color: #0b1512;
+}
+
+.arv-podcasts-show__link--spotify:hover,
+.arv-podcasts-show__link--spotify:focus {
+	border-color: #1ed760;
+	background: #1ed760;
+	color: #0b1512;
+}
+
+.arv-podcasts-show__link--apple,
+.arv-podcasts-show__link--apple:link,
+.arv-podcasts-show__link--apple:visited {
+	border-color: #9933cc;
+	background: #9933cc;
+	color: #fff;
+}
+
+.arv-podcasts-show__link--apple:hover,
+.arv-podcasts-show__link--apple:focus {
+	border-color: #a94ad6;
+	background: #a94ad6;
 	color: #fff;
 }
 

@@ -3404,6 +3404,10 @@ $html = arv_podcasts_render( array( 'heading' => 'Podcasts', 'intro' => 'Every s
 t( 'the heading renders',                 false !== strpos( $html, 'Podcasts</h2>' ) );
 t( 'the intro too',                       false !== strpos( $html, 'Every show.' ) );
 t( 'a card per surviving show',           2 === substr_count( $html, 'arv-podcasts__show-card' ) );
+// Words on the index, not buttons: the card is already one link, and a
+// Spotify button inside it would be a link inside a link.
+t( 'the card says where the show is',     false !== strpos( $html, 'arv-podcasts__show-where' ) );
+t( 'without nesting a link in a link',    false === strpos( $html, 'open.spotify.com' ) );
 t( 'an episode row per episode',          2 === substr_count( $html, 'arv-podcasts__episode"' ) );
 t( 'a real audio player, not an embed',   2 === substr_count( $html, '<audio class="arv-podcasts__ep-player"' ) );
 t( 'no spotify iframe anywhere',          false === strpos( $html, 'open.spotify.com/embed' ) );
@@ -3427,6 +3431,29 @@ t( 'links back to the index',             false !== strpos( $show_html, home_url
 t( 'a spotify subscribe link',            false !== strpos( $show_html, 'open.spotify.com/show/0MvdUlDE9VwocRhrIl9Lwv' ) );
 t( 'an apple subscribe link',             false !== strpos( $show_html, 'podcasts.apple.com/podcast/id1797659741' ) );
 t( 'an rss link to the raw feed',         false !== strpos( $show_html, 'anchor.fm/s/1017c24d0/podcast/rss' ) );
+// Three identical grey outlines carried the same information as no buttons
+// at all. Each app gets its own colour, through its own class, because
+// "this show is on Spotify" has to survive a page scan.
+t( 'the row says what it is',             false !== strpos( $show_html, 'Listen on' ) );
+t( 'spotify is branded as spotify',       false !== strpos( $show_html, 'arv-podcasts-show__link--spotify' ) );
+t( 'apple as apple',                      false !== strpos( $show_html, 'arv-podcasts-show__link--apple' ) );
+// RSS is last on purpose: a real option, and the least used of the three,
+// so it is offered rather than advertised. Its class carries no colour in
+// the stylesheet, unlike the two above it.
+t( 'rss comes last',                      strpos( $show_html, '--apple' ) < strpos( $show_html, '--rss' ) );
+t( 'and is styled as plain',              false === strpos( file_get_contents( __DIR__ . '/assets/aravaipa-elements.css' ), '.arv-podcasts-show__link--rss' ) );
+// A platform with no id is left out rather than pointed at a search page: a
+// Spotify button landing on Spotify's front door cannot tell the reader
+// whether the show is there at all.
+$no_apple = $shows['inside-aravaipa'];
+$no_apple['apple'] = '';
+t( 'a show with no apple id omits it',    false === strpos( arv_podcasts_subscribe( $no_apple ), 'podcasts.apple.com' ) );
+t( 'and still offers spotify',            false !== strpos( arv_podcasts_subscribe( $no_apple ), 'open.spotify.com' ) );
+// Every show configured is on both. Race Briefings shipped with a blank
+// Spotify id and so read as the one show that was not, which was wrong.
+$config = arv_podcasts_shows_config();
+t( 'every configured show has spotify',   3 === count( array_filter( $config, function ( $c ) { return '' !== $c['spotify']; } ) ) );
+t( 'and apple',                           3 === count( array_filter( $config, function ( $c ) { return '' !== $c['apple']; } ) ) );
 t( 'its one episode is listed',           false !== strpos( $show_html, 'Episode One' ) );
 t( 'no show badge on its own page',       false === strpos( $show_html, 'arv-podcasts__ep-show' ) );
 
