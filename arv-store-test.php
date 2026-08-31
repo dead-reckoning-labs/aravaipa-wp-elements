@@ -239,6 +239,7 @@ require_once __DIR__ . '/includes/media-follow.php';
 require_once __DIR__ . '/includes/media-subnav.php';
 require_once __DIR__ . '/includes/articles-store.php';
 require_once __DIR__ . '/includes/tours-store.php';
+require_once __DIR__ . '/includes/shop-store.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
@@ -4423,6 +4424,93 @@ t( 'the index shortcode is registered',   isset( $GLOBALS['SHORTCODES']['arv_fil
 t( 'the strip shortcode too',             isset( $GLOBALS['SHORTCODES']['arv_film_tours_strip'] ) );
 
 $GLOBALS['_transients'] = array();
+
+echo "\nshop, only what the storefront actually publishes:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+
+// Square happily reports items as VISIBLE that have no storefront page at
+// all, and a URL built from the catalogue id returns HTTP 200 while showing
+// the shop's front door. The importer verifies against the sitemap, and
+// this store drops anything that arrives without a usable URL regardless.
+$saved = arv_shop_set( array(
+	'collections' => array(
+		array( 'id' => 'CBC', 'name' => 'Black Canyon Ultras', 'url' => 'https://aravaipa-shop.square.site/shop/black-canyon-ultras/CBC', 'image' => 'https://x.test/bc.png', 'count' => 2, 'race' => true ),
+		array( 'id' => 'CMEN', 'name' => "Men's", 'url' => 'https://aravaipa-shop.square.site/shop/mens/CMEN', 'image' => '', 'count' => 1, 'race' => false ),
+		array( 'id' => 'CBAD', 'name' => 'No URL', 'url' => '', 'count' => 5, 'race' => true ),
+		array( 'id' => 'CJS', 'name' => 'Javascript', 'url' => 'javascript:alert(1)', 'count' => 5, 'race' => true ),
+	),
+	'products' => array(
+		array( 'id' => 'P1', 'name' => 'Black Canyon Hoodie', 'url' => 'https://aravaipa-shop.square.site/product/bc-hoodie/P1', 'image' => 'https://x.test/1.png', 'price' => 6500, 'sold_out' => false, 'collections' => array( 'CBC' ) ),
+		array( 'id' => 'P2', 'name' => 'Black Canyon Tee', 'url' => 'https://aravaipa-shop.square.site/product/bc-tee/P2', 'image' => 'https://x.test/2.png', 'price' => 3000, 'sold_out' => true, 'collections' => array( 'CBC', 'CMEN' ) ),
+		array( 'id' => 'P3', 'name' => 'No Page', 'url' => '', 'price' => 1000, 'collections' => array( 'CBC' ) ),
+		array( 'id' => 'P4', 'name' => 'Ghost Collection', 'url' => 'https://aravaipa-shop.square.site/product/ghost/P4', 'price' => 1000, 'collections' => array( 'CBAD', 'CNOPE' ) ),
+	),
+) );
+t( 'a collection with no url is dropped',  2 === $saved['collections'] );
+t( 'and so is a javascript: one',          null === arv_shop_collection_for_race( 'Javascript' ) );
+t( 'a product with no url is dropped',     3 === $saved['products'] );
+
+// A product may not claim membership of a collection this store dropped:
+// it would be unreachable from the shop page and still show on a race page.
+$ghost = arv_shop_get()['products'][2];
+t( 'a dropped collection is unclaimed',    array() === $ghost['collections'] );
+t( 'and so is one that never existed',     ! in_array( 'CNOPE', $ghost['collections'], true ) );
+
+// Joined on arv_results_race_key(), the same normaliser Results, Watch and
+// the Films race tags use, so no hand-written mapping table is needed.
+t( 'a race finds its collection',          'CBC' === arv_shop_collection_for_race( 'Black Canyon Ultras' )['id'] );
+t( 'the year does not matter',             'CBC' === arv_shop_collection_for_race( 'Black Canyon Ultras 2026' )['id'] );
+t( 'nor the distance',                     'CBC' === arv_shop_collection_for_race( 'Black Canyon 100K' )['id'] );
+t( 'an unknown race finds nothing',        null === arv_shop_collection_for_race( 'Not A Race' ) );
+t( 'an empty race name finds nothing',     null === arv_shop_collection_for_race( '' ) );
+// Departments are not races. A strip saying "Men's gear" on a race page is
+// the exact failure the importer's explicit department list prevents.
+t( 'a department is not a race collection', 1 === count( arv_shop_race_collections() ) );
+
+// Sold out sinks rather than disappearing: a race whose gear has all sold
+// is a truer thing to show than an empty shelf.
+$in = arv_shop_products_in( 'CBC' );
+t( 'both products are in the collection',  2 === count( $in ) );
+t( 'in stock leads',                       'P1' === $in[0]['id'] );
+t( 'sold out sinks',                       'P2' === $in[1]['id'] );
+t( 'a limit is honoured',                  1 === count( arv_shop_products_in( 'CBC', 1 ) ) );
+
+// A price tag, not a spreadsheet.
+t( 'whole dollars lose the zeros',         '$65' === arv_shop_price( 6500 ) );
+t( 'and cents are kept when real',         '$29.99' === arv_shop_price( 2999 ) );
+t( 'no price says nothing',                '' === arv_shop_price( 0 ) );
+
+echo "\nshop, rendered:\n";
+$strip = arv_shop_race_merch_render( array( 'race' => 'Black Canyon Ultras 2026' ) );
+t( 'the strip renders',                    false !== strpos( $strip, 'arv-shop--strip' ) );
+t( 'headed with the real race name',       false !== strpos( $strip, 'Black Canyon Ultras gear' ) );
+t( 'a card per product',                   2 === substr_count( $strip, 'class="arv-shop__card' ) );
+t( 'with a real price',                    false !== strpos( $strip, '$65' ) );
+t( 'sold out is stated, not implied',      false !== strpos( $strip, 'Sold out' ) );
+t( 'and shop all points at the collection', false !== strpos( $strip, '/shop/black-canyon-ultras/CBC' ) );
+// Off-site, so it says so to the browser.
+t( 'external links are safe',              2 < substr_count( $strip, 'rel="noopener"' ) );
+
+// Silence, not an empty shelf, which is the common case for most races.
+t( 'a race with no collection is silent',  '' === arv_shop_race_merch_render( array( 'race' => 'Not A Race' ) ) );
+t( 'and one with no products too',         '' === arv_shop_race_merch_render( array( 'race' => "Men's" ) ) );
+
+$page = arv_shop_render( array( 'heading' => 'Shop', 'intro' => 'Everything.' ) );
+t( 'the shop page renders',                false !== strpos( $page, 'Shop</h2>' ) );
+t( 'departments come first',               strpos( $page, 'Browse' ) < strpos( $page, 'By race' ) );
+t( 'a tile per collection',                2 === substr_count( $page, 'arv-shop__collection-link' ) );
+t( 'each tile counts its items',           false !== strpos( $page, '2 items' ) );
+
+// An empty catalogue renders nothing rather than a heading over a gap, the
+// same rule Watch, Films and Articles all follow.
+$GLOBALS['ARV_OPTIONS'] = array();
+t( 'an empty catalogue renders nothing',   '' === arv_shop_render( array() ) );
+t( 'and no strip either',                  '' === arv_shop_race_merch_render( array( 'race' => 'Black Canyon Ultras' ) ) );
+
+t( 'the shop shortcode is registered',     isset( $GLOBALS['SHORTCODES']['arv_shop'] ) );
+t( 'the merch shortcode too',              isset( $GLOBALS['SHORTCODES']['arv_race_merch'] ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nmedia hub counts, what the sub-nav strip cannot say:\n";
 $GLOBALS['_transients']['arv_watch_events'] = array(
