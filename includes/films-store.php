@@ -1011,6 +1011,114 @@ function arv_films_shortcode( $atts ) {
 add_shortcode( 'arv_films', 'arv_films_shortcode' );
 
 /**
+ * A light, scrollable rail of films for the homepage.
+ *
+ * The homepage carried three hardcoded video embeds under a headline, so
+ * it showed whichever three films happened to be current the day someone
+ * built it and never changed again. This reads the same YouTube playlists
+ * the Films page does, so it cannot go stale, and scrolls sideways rather
+ * than committing the page to a fixed three.
+ *
+ * Light on purpose. Every other element in this plugin is a dark
+ * full-bleed section because it owns its whole page; this one is a guest
+ * in the middle of a white homepage and has to look like it belongs
+ * there, so it inherits the page's background instead of cutting a dark
+ * band across it.
+ *
+ * Cards link to /films/?v=<id>, the same destination the Latest feed
+ * uses, so a click lands on Aravaipa's own player rather than leaving for
+ * YouTube.
+ *
+ * @param array $args heading, limit, link_text.
+ * @return string
+ */
+function arv_films_rail_render( $args = array() ) {
+	$films = arv_films_all( arv_films_fetch() );
+
+	if ( empty( $films ) ) {
+		return '';
+	}
+
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Aravaipa Running Films';
+	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 12;
+
+	if ( $limit > 0 ) {
+		$films = array_slice( $films, 0, $limit );
+	}
+
+	$out  = '<section class="arv-rail">';
+	$out .= '<div class="arv-rail__inner">';
+	$out .= '<div class="arv-rail__head">';
+
+	if ( '' !== $heading ) {
+		$out .= '<h2 class="arv-rail__heading">' . esc_html( $heading ) . '</h2>';
+	}
+
+	$out .= '<a class="arv-rail__all" href="' . esc_url( home_url( '/films/' ) ) . '">'
+		. esc_html__( 'All films', 'aravaipa-elements' ) . '</a>';
+	$out .= '</div>';
+
+	// A plain overflow container, scrolled natively. No script: a touch
+	// screen already scrolls this, a trackpad already scrolls this, and a
+	// keyboard already reaches it because it is a focusable scroll region.
+	// A custom carousel would have to reimplement all three, worse.
+	$out .= '<ul class="arv-rail__track" tabindex="0" role="list"'
+		. ' aria-label="' . esc_attr__( 'Aravaipa Running films', 'aravaipa-elements' ) . '">';
+
+	foreach ( $films as $film ) {
+		$out .= '<li class="arv-rail__item">';
+		$out .= '<a class="arv-rail__link" href="' . esc_url( home_url( '/films/?v=' . $film['id'] ) ) . '">';
+
+		if ( '' !== $film['thumbnail'] ) {
+			$out .= '<img class="arv-rail__art" src="' . esc_url( $film['thumbnail'] ) . '" alt=""'
+				. ' loading="lazy" decoding="async" width="480" height="270" />';
+		}
+
+		$out .= '<span class="arv-rail__body">';
+		$out .= '<span class="arv-rail__title">' . esc_html( $film['title'] ) . '</span>';
+
+		$bits = array();
+
+		if ( '' !== $film['duration'] ) {
+			$bits[] = $film['duration'];
+		}
+
+		if ( $film['views'] ) {
+			/* translators: %s: a count of YouTube views. */
+			$bits[] = sprintf( __( '%s views', 'aravaipa-elements' ), number_format_i18n( $film['views'] ) );
+		}
+
+		if ( ! empty( $bits ) ) {
+			$out .= '<span class="arv-rail__meta">' . esc_html( implode( ' · ', $bits ) ) . '</span>';
+		}
+
+		$out .= '</span></a></li>';
+	}
+
+	return $out . '</ul></div></section>';
+}
+
+/**
+ * [arv_films_rail] so a page can carry this without Cornerstone.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_films_rail_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'heading' => 'Aravaipa Running Films',
+			'limit'   => 12,
+		),
+		$atts,
+		'arv_films_rail'
+	);
+
+	return arv_films_rail_render( $atts );
+}
+add_shortcode( 'arv_films_rail', 'arv_films_rail_shortcode' );
+
+/**
  * -----------------------------------------------------------------------
  * SEO. Same reasoning as includes/watch-store.php's block: every required
  * field present on every VideoObject node or the node is dropped, and

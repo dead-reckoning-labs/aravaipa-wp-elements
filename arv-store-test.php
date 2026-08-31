@@ -3525,6 +3525,42 @@ $GLOBALS['_http_queue'] = array();
 // Rides, is on the same Apple Podcasts channel but is a distinct brand
 // with its own site and does not belong on this one.
 // -------------------------------------------------------------------------
+echo "\nfilms rail, the homepage's live block:\n";
+// The homepage carried three hardcoded video embeds, so it showed whichever
+// three films were current the day it was built and never changed again.
+// This reads the same playlists the Films page does.
+// Seeded here rather than inherited: the films section above ends by
+// clearing every transient, so depending on its fixture surviving would
+// make this block's result depend on where it sits in the file.
+$GLOBALS['_transients']['arv_films'] = $clean;
+$rail = arv_films_rail_render( array( 'heading' => 'Aravaipa Running Films' ) );
+t( 'the rail renders',                    false !== strpos( $rail, 'arv-rail__track' ) );
+t( 'with the heading given',              false !== strpos( $rail, 'Aravaipa Running Films' ) );
+t( 'a card per film',                     count( arv_films_all( arv_films_fetch() ) ) === substr_count( $rail, 'class="arv-rail__item"' ) );
+// A click lands on Aravaipa's own player, not on YouTube.
+t( 'cards open the films page, not youtube', false !== strpos( $rail, home_url( '/films/?v=' ) ) );
+t( 'and never link straight out',         false === strpos( $rail, 'youtu.be' ) );
+t( 'a link to all films is offered',      false !== strpos( $rail, '>All films<' ) );
+
+// Light, not the dark full-bleed treatment every other element uses: this
+// one is a guest on a white homepage rather than the owner of its page.
+t( 'it is not the dark full-bleed shell', false === strpos( $rail, 'arv-films__inner' ) );
+
+// A limit keeps the homepage short without committing it to a fixed three.
+t( 'a limit is honoured',                 1 === substr_count( arv_films_rail_render( array( 'limit' => 1 ) ), 'class="arv-rail__item"' ) );
+
+// Scrolled natively, so it needs no script and stays keyboard reachable.
+t( 'the track is focusable',              false !== strpos( $rail, 'tabindex="0"' ) );
+t( 'and labelled for a screen reader',    false !== strpos( $rail, 'aria-label=' ) );
+
+// Nothing to show renders nothing rather than an empty scroller.
+$films_backup_rail = $GLOBALS['_transients']['arv_films'] ?? null;
+$GLOBALS['_transients']['arv_films'] = 'none';
+t( 'no films renders nothing',            '' === arv_films_rail_render( array() ) );
+if ( null !== $films_backup_rail ) { $GLOBALS['_transients']['arv_films'] = $films_backup_rail; }
+
+t( 'the rail shortcode is registered',    isset( $GLOBALS['SHORTCODES']['arv_films_rail'] ) );
+
 echo "\npodcasts, parsing a feed:\n";
 
 // A small but real RSS+iTunes document, the same shape Anchor's feeds use,
