@@ -374,6 +374,7 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 		. ' data-state="' . esc_attr( $state ) . '"'
 		. ' data-month="' . esc_attr( substr( $race['iso'], 5, 2 ) ) . '"'
 		. ' data-open="' . ( $race['confirmed'] ? '1' : '0' ) . '"'
+		. ' data-terrain="' . esc_attr( isset( $race['terrain'] ) ? $race['terrain'] : 'trail' ) . '"'
 		. '>';
 	$out .= '<a class="arv-calendar__main" href="' . esc_url( $href ) . '">';
 
@@ -638,6 +639,22 @@ function arv_season_calendar_filters( $races ) {
 	$out .= '<input type="checkbox" data-arv-open />';
 	$out .= '<span>' . esc_html( __( 'Open for registration', 'aravaipa-elements' ) ) . '</span>';
 	$out .= '</label>';
+
+	// Only worth a control when the page actually has both: a page with
+	// nothing but trail races would otherwise offer a checkbox that always
+	// does nothing, the same reason the Series dropdown only appears with
+	// more than one series to choose from.
+	$terrains = array();
+	foreach ( $races as $race ) {
+		$terrains[ isset( $race['terrain'] ) ? $race['terrain'] : 'trail' ] = true;
+	}
+
+	if ( count( $terrains ) > 1 ) {
+		$out .= '<label class="arv-calendar__toggle">';
+		$out .= '<input type="checkbox" data-arv-road />';
+		$out .= '<span>' . esc_html( __( 'Road races only', 'aravaipa-elements' ) ) . '</span>';
+		$out .= '</label>';
+	}
 
 	// Announced politely rather than assertively: a count that changes on
 	// every keystroke should not interrupt whatever a screen reader is

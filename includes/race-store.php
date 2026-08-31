@@ -296,6 +296,11 @@ function arv_race_store_to_race( $post ) {
 	$race['end']    = arv_upcoming_races_date( $race['end'] );
 	$race['closes'] = arv_upcoming_races_date( $race['closes'] );
 
+	// Not one of arv_race_store_fields(): terrain is a hand-curated,
+	// rarely-changing call, not something the scraper knows or should be
+	// able to overwrite on its next import. See arv_race_terrain().
+	$race['terrain'] = arv_race_terrain( $race['name'] );
+
 	return $race;
 }
 

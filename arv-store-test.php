@@ -3914,5 +3914,60 @@ t( 'the sort control offers a default',    false !== strpos( $sorted_html, '<opt
 $GLOBALS['_transients'] = array();
 
 
+echo "\nrace terrain, road or trail:\n";
+// Nothing in the calendar's own data says this: UltraSignup's feed has no
+// surface field, and the one place text hints at it, a race's distances
+// ("4 Mile Road Race"), is present on 2 of 87 races and would have called
+// the Tucson Marathon a trail race by its absence. This is Jamil's own
+// list, from 2026-08-30, not derived from anything.
+foreach (
+	array(
+		'Tucson Marathon', 'Mountain to Fountain', 'Mountain To Fountain', 'ET Full Moon',
+		'Labor of Love', 'Purple Run', 'Running with the Devil', 'Vegas Golden Night & Day',
+		'Jackpot Ultras', 'Fat Ox', 'Fat Ox Endurance Runs', 'Run Around Tucson (RAT)',
+		'Run with the Roosters', 'Across the Years', 'Across The Years',
+	) as $road_name
+) {
+	t( "'$road_name' is road", 'road' === arv_race_terrain( $road_name ) );
+}
+
+// arv_results_race_key() strips "run", "the" and "race" as whole words,
+// which is what turns "Purple Run" into "purple" and "Run with the
+// Roosters" into "with rooster". A regression here would mean the list
+// above stopped matching anything without a single test failing to say so.
+t( 'the stemming that makes this fragile is exercised', 'purple' === arv_results_race_key( 'Purple Run' ) );
+
+foreach (
+	array(
+		'Cocodona 250', 'Black Canyon Ultras', 'Coldwater Rumble', 'Rock Hawk Trail Races',
+		'Whiskey Basin Trail Runs', 'THE RACE DIRECTOR', '',
+	) as $trail_name
+) {
+	t( "'$trail_name' defaults to trail", 'trail' === arv_race_terrain( $trail_name ) );
+}
+
+// Wired into the store's own read, not into arv_race_store_fields(): a
+// scraper re-import must never be able to wipe a hand-curated call.
+$GLOBALS['posts'][9201] = array( 'title' => 'Tucson Marathon', 'status' => 'publish' );
+$GLOBALS['meta'][9201]  = array( '_arv_iso' => '2027-12-05' );
+arv_race_store_flush_cache();
+$store_races = arv_race_store_get();
+$tucson      = null;
+foreach ( $store_races as $r ) {
+	if ( 'Tucson Marathon' === $r['name'] ) {
+		$tucson = $r;
+	}
+}
+t( 'the race store carries terrain on every race', null !== $tucson && 'road' === $tucson['terrain'] );
+unset( $GLOBALS['posts'][9201], $GLOBALS['meta'][9201] );
+arv_race_store_flush_cache();
+
+// The pasted-row path (arv_upcoming_races_parse_row) is the other way a
+// race reaches the calendar, used when the store is empty, and it must
+// carry the same field or a fresh install's own pasted rows would render
+// with no data-terrain at all.
+$pasted = arv_upcoming_races_parse_row( array( 'Tucson Marathon', '2027-12-05' ) );
+t( 'a bare pasted row still carries terrain', 'road' === $pasted['terrain'] );
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
