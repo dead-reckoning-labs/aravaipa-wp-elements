@@ -263,6 +263,7 @@ require_once __DIR__ . '/includes/elements/season-calendar.php';
 require_once __DIR__ . '/includes/elements/race-status.php';
 require_once __DIR__ . '/includes/elements/featured-race.php';
 require_once __DIR__ . '/includes/elements/race-map.php';
+require_once __DIR__ . '/includes/elements/region-map.php';
 require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
@@ -3730,6 +3731,56 @@ t( 'and several years count up',          '3 years ago' === arv_films_age( '2023
 t( 'a future date does not go negative',  'today' === arv_films_age( '2026-09-30T00:00:00Z', $now ) );
 t( 'and no date says nothing at all',     '' === arv_films_age( '', $now ) );
 t( 'nor does an unparseable one',         '' === arv_films_age( 'not a date', $now ) );
+// ------------------------------------------------- Region map blurbs --
+// Nine pins used to answer nine different questions: some rows named
+// terrain, some named races, two shared one boilerplate sentence about
+// "trail and ultra events", and Bad Beard was a bare town and state. The
+// pair a visitor is asking is where it is and what they would run there,
+// so every row now answers both, in that order.
+echo "\nregion map, one shape for every pin:\n";
+$region_rows = array_values( array_filter( array_map(
+	'trim',
+	explode( "\n", $GLOBALS['EL']['aravaipa-region-map']['values']['rows'] )
+) ) );
+
+t( 'every pin on the map is present',   9 === count( $region_rows ) );
+
+$details = array();
+foreach ( $region_rows as $row ) {
+	$cells     = array_map( 'trim', explode( '|', $row ) );
+	$details[] = isset( $cells[4] ) ? $cells[4] : '';
+}
+
+$shaped = 0;
+foreach ( $details as $detail ) {
+	// Just the races, one closed sentence. A first pass wrote a line of
+	// terrain for each pin first, ground then races, and it read as
+	// exactly that: written to a formula rather than said plainly. The
+	// pin label already says where a region is.
+	if ( preg_match( '/^[^.]+\.$/u', $detail ) ) {
+		$shaped++;
+	}
+}
+
+t( 'every blurb is races, one sentence', 9 === $shaped );
+t( 'and none is left empty',            ! in_array( '', $details, true ) );
+
+// The two that used to share one sentence, and the one that had no
+// sentence at all.
+$joined = implode( ' ', $details );
+t( 'the boilerplate sentence is gone',  false === strpos( $joined, 'Trail and ultra events across' ) );
+t( 'Bad Beard says more than a town',   false === strpos( $joined, 'Chattanooga, Tennessee.' ) );
+
+// No invented scenery. Nevada is not branded around the Spring Mountains;
+// that was reached for rather than anything Aravaipa says about itself,
+// and it read as written by something that had never heard of the place.
+t( 'no scenery invented for a region',  false === stripos( $joined, 'Spring Mountains' ) );
+t( 'nothing is called "country"',       false === stripos( $joined, 'country' ) );
+
+// Named races have to be on the calendar. The old Ultra Adventures row
+// named the Tushars, which is not on it, and Antelope Canyon, which runs
+// under Arizona.
+t( 'no race that is not on the calendar', false === strpos( $joined, 'Tushars' ) );
 t( 'and labelled for a screen reader',    false !== strpos( $rail, 'aria-label=' ) );
 
 // Nothing to show renders nothing rather than an empty scroller.
