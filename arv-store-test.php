@@ -3495,6 +3495,43 @@ t( 'and a two-word prefix',               'Jigger Johnson Ultras' === arv_films_
 // A film that is not about one race gets no tag rather than the nearest
 // guess.
 t( 'a film about no one race is untagged', '' === arv_films_race_for( 'THE RACE DIRECTOR | Crafting Endurance in the Midwest' ) );
+
+echo "\nfilms, a film that is about a division rather than a race:\n";
+// THE RACE DIRECTOR is about Great Lakes Endurance, the division that
+// joined Aravaipa, not one of its races, so there is nothing in the race
+// store for it to match. Tagged literally, by video id, the same reason
+// the two YouTube playlist ids are literal.
+t( 'the tagged video carries its badge',  'Great Lakes Endurance' === arv_films_division_for( 'JFjNlB9g_pE' )['label'] );
+t( 'and links to the division page',      false !== strpos( arv_films_division_for( 'JFjNlB9g_pE' )['url'], '/great-lakes-endurance/' ) );
+t( 'an untagged video has no division',   null === arv_films_division_for( 'zzzzzzzzzzz' ) );
+
+$division_playlists = arv_films_clean(
+	array(
+		array( 'key' => 'originals', 'title' => 'Aravaipa Originals', 'films' => array(
+			array( 'id' => 'JFjNlB9g_pE', 'title' => 'THE RACE DIRECTOR | Crafting Endurance in the Midwest', 'description' => '', 'publishedAt' => '2025-09-05T00:00:00Z', 'thumbnail' => '' ),
+		) ),
+	)
+);
+$division_film = $division_playlists[0]['films'][0];
+t( 'the film carries no race',            '' === $division_film['race'] );
+t( 'but does carry its division',         'Great Lakes Endurance' === $division_film['division']['label'] );
+
+$division_card = arv_films_card( $division_film, '' );
+t( 'the card shows the division badge',   false !== strpos( $division_card, '>Great Lakes Endurance</a>' ) );
+t( 'linking to the division page',        false !== strpos( $division_card, '/great-lakes-endurance/' ) );
+// Not a self-page filter link: a division has no ?race= entry, so the
+// badge has to go straight to the division's own page.
+t( 'not a self-page race filter',         false === strpos( $division_card, 'race=great' ) );
+// Searchable the same way a race is, even though it is not one.
+t( 'searchable via the race attribute',   false !== strpos( $division_card, 'data-arv-films-race="great lakes endurance"' ) );
+
+// A transient cached before this key existed must not throw a notice: it
+// simply has no badge until the cache's own hour is up and refetches.
+$stale_film = $division_film;
+unset( $stale_film['division'] );
+$stale_card = arv_films_card( $stale_film, '' );
+t( 'a stale cache with no division key renders safely', is_string( $stale_card ) );
+t( 'just without the badge, until the cache refreshes', false === strpos( $stale_card, 'Great Lakes Endurance' ) );
 // A generic landscape word must never identify a race on its own.
 t( 'a bare generic word tags nothing',    '' === arv_films_race_for( 'A Film About A Mountain' ) );
 
