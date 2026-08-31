@@ -145,6 +145,12 @@ grep -q '\.arv-watch__race\[hidden\]' assets/aravaipa-elements.css \
 # Third time for the same trap, on the Films shelf's own cards: without
 # this the search, sort and race filter would set the hidden attribute on
 # every card they mean to hide and nothing would visibly happen.
+# The Watch hero is hidden by the same filter, and unlike the cards it has
+# no display rule of its own today, so nothing visibly breaks until someone
+# gives .arv-media-hero one. That is exactly the change this catches.
+grep -q '\.arv-watch__hero\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-watch__hero[hidden] override is missing, the featured broadcast will stay put while the archive filters under it" >&2; missing=1; }
+
 grep -q '\.arv-films__card\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-films__card[hidden] override is missing, the Films search and filters will silently do nothing" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1

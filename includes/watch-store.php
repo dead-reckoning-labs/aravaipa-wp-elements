@@ -289,11 +289,41 @@ function arv_watch_render( $args = array() ) {
 		$out .= arv_watch_live_block( $event );
 	}
 
+	// The full archive leads with one broadcast rather than with a heading,
+	// and everything under it is then plainly the archive. Only there: a
+	// homepage block that a $limit produces is already three cards, and
+	// promoting one of them to full bleed would make it four.
+	//
+	// Skipped entirely while something is live, because the embed above has
+	// just said the only thing a hero could say, louder.
+	if ( 0 === $limit && empty( $live ) ) {
+		list( $featured, $state ) = arv_watch_featured( $past );
+
+		if ( null !== $featured ) {
+			$out .= arv_watch_hero( $featured, $state );
+
+			// Dropped from the archive rather than printed twice, a hero and
+			// then the first card under it. aravaipa-watch.js hides the hero
+			// the moment either filter is set, so searching still sees a
+			// complete list rather than one broadcast stranded up top.
+			$rest = array();
+
+			foreach ( $past as $event ) {
+				if ( $event['slug'] !== $featured['slug'] ) {
+					$rest[] = $event;
+				}
+			}
+
+			$past = $rest;
+		}
+	}
+
 	if ( ! empty( $past ) ) {
 		// Only on the full archive, not the homepage block a $limit produces:
 		// a search box over three cards is furniture, the same reason the
 		// segment toggle does not appear over a single video.
 		if ( 0 === $limit ) {
+			$out .= '<h2 class="arv-watch__replays">' . esc_html__( 'Replays', 'aravaipa-elements' ) . '</h2>';
 			$out .= arv_watch_controls( $past );
 		}
 
@@ -455,6 +485,139 @@ function arv_watch_segment_url( $base, $on_site, $year, $stream = null ) {
 }
 
 /**
+ * Where a whole event's links should point, and whether that is a page on
+ * this site.
+ *
+ * A dedicated page once one exists for the race, which embeds every
+ * edition rather than sending the click to YouTube. Falls back to the lead
+ * segment's own URL for a race nobody has built a page for yet, exactly
+ * like arv_live_page_for_live_url() falls back to the board.
+ *
+ * The bare base, not a finished URL: callers put it through
+ * arv_watch_segment_url() to add the edition, and a segment link adds its
+ * video on top of that. Shared by the archive card, its segment list and
+ * the hero above them, so none of the three can disagree about where the
+ * same broadcast lives.
+ *
+ * @param array $event
+ * @return array{0: string, 1: bool} Base URL, and whether it is on this site.
+ */
+function arv_watch_event_href( $event ) {
+	$page     = arv_watch_page_map();
+	$key      = arv_watch_race_key( $event['name'] );
+	$page_hit = isset( $page[ $key ] );
+
+	return array( $page_hit ? $page[ $key ] : $event['streams'][0]['url'], $page_hit );
+}
+
+/**
+ * The one broadcast the page should lead with, and which of it it is.
+ *
+ * Three states, in the order a reader cares about them, of which the live
+ * one is handled before this is ever called:
+ *
+ *   live      an embed, on air right now. arv_watch_live_block().
+ *   upcoming  scheduled but not yet run.
+ *   latest    the most recent replay, so the slot is never empty.
+ *
+ * The upcoming state is real and not speculative: Mountain Outpost creates
+ * an event and posts its trailer well before race day, which is why the
+ * 2026 Cocodona trailer sat in this feed for months with a May start date.
+ * It is simply not the common case. Aravaipa broadcasts a handful of races
+ * a year, so for most of the calendar the honest answer to "what is on" is
+ * "nothing, here is the last one", and a hero that could only say
+ * "upcoming" would be an empty box for ten months.
+ *
+ * @param array $past Events that are not live, newest first.
+ * @return array{0: array|null, 1: string} The event and its state.
+ */
+function arv_watch_featured( $past ) {
+	if ( empty( $past ) ) {
+		return array( null, '' );
+	}
+
+	// current_time() rather than time(), so "upcoming" is judged against the
+	// site's own clock the way every other date on these pages is.
+	$now = function_exists( 'current_time' ) ? current_time( 'timestamp', true ) : time();
+
+	// Last match wins: the feed is newest first, so walking it through picks
+	// the nearest future event rather than the furthest one.
+	$next = null;
+
+	foreach ( $past as $event ) {
+		if ( '' === $event['start'] ) {
+			continue;
+		}
+
+		$stamp = strtotime( $event['start'] );
+
+		if ( $stamp && $stamp > $now ) {
+			$next = $event;
+		}
+	}
+
+	return ( null !== $next ) ? array( $next, 'upcoming' ) : array( $past[0], 'latest' );
+}
+
+/**
+ * The featured broadcast, full width, above the archive.
+ *
+ * Rendered with the Media hero's own classes rather than a second set that
+ * would drift from it. The two are the same object doing the same job one
+ * click apart, and /media/ leading with a hero while /watch/ led with a
+ * centred word was most of what made the pair look like different sites.
+ *
+ * The event's own artwork where Mountain Outpost has it, since this box is
+ * full bleed and a 480px YouTube thumbnail stretched across it looks like
+ * exactly what it is. The lead segment's thumbnail otherwise.
+ *
+ * @param array  $event
+ * @param string $state 'upcoming' or 'latest'.
+ * @return string
+ */
+function arv_watch_hero( $event, $state ) {
+	list( $base, $page_hit ) = arv_watch_event_href( $event );
+
+	$year  = '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '';
+	$href  = arv_watch_segment_url( $base, $page_hit, $year, null );
+	$art   = ! empty( $event['hero'] ) ? $event['hero'] : $event['streams'][0]['thumbnail'];
+	$stamp = '' !== $event['start'] ? strtotime( $event['start'] ) : false;
+
+	$badge = ( 'upcoming' === $state )
+		? __( 'Up next', 'aravaipa-elements' )
+		: __( 'Latest broadcast', 'aravaipa-elements' );
+
+	$out  = '<section class="arv-media-hero arv-watch__hero" data-arv-watch-hero>';
+	$out .= '<a class="arv-media-hero__link" href="' . esc_url( $href ) . '"'
+		. ( $page_hit ? '' : ' target="_blank" rel="noopener"' ) . '>';
+
+	$out .= '<span class="arv-media-hero__art">';
+	$out .= '<img class="arv-media-hero__img" src="' . esc_url( $art ) . '" alt=""'
+		. ' loading="eager" decoding="async" width="960" height="540" />';
+	$out .= '</span>';
+
+	$out .= '<span class="arv-media-hero__body">';
+	$out .= '<span class="arv-media-hero__badge">' . esc_html( $badge ) . '</span>';
+	$out .= '<span class="arv-media-hero__title">' . esc_html( $event['name'] ) . '</span>';
+
+	$bits = array();
+
+	if ( $stamp ) {
+		$bits[] = gmdate( 'F j, Y', $stamp );
+	}
+
+	if ( ! empty( $event['place'] ) ) {
+		$bits[] = $event['place'];
+	}
+
+	if ( ! empty( $bits ) ) {
+		$out .= '<span class="arv-media-hero__date">' . esc_html( implode( ' · ', $bits ) ) . '</span>';
+	}
+
+	return $out . '</span></a></section>';
+}
+
+/**
  * One past broadcast: the event, with its segments behind a toggle.
  *
  * Same shape the results archive uses for a race's earlier editions, and
@@ -473,18 +636,13 @@ function arv_watch_event( $event ) {
 	// eighteen hours of coverage above it.
 	$lead = $event['streams'][0];
 
-	// A dedicated page once one exists for the race, which embeds every
-	// edition rather than sending this click to YouTube. Falls back to the
-	// lead segment's own URL for a race nobody has built a page for yet,
-	// exactly like arv_live_page_for_live_url() falls back to the board.
-	$page     = arv_watch_page_map();
-	$key      = arv_watch_race_key( $event['name'] );
-	$page_hit = isset( $page[ $key ] );
-	$href     = $page_hit ? $page[ $key ] : $lead['url'];
+	list( $href, $page_hit ) = arv_watch_event_href( $event );
+
+	$year = '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '';
 
 	// The card itself opens the race page on the right edition, not just the
 	// race: a 2022 thumbnail that lands on 2026 is a card that lied.
-	$card = arv_watch_segment_url( $href, $page_hit, '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '', null );
+	$card = arv_watch_segment_url( $href, $page_hit, $year, null );
 
 	$out = '<li class="arv-watch__race" data-arv-watch-name="' . esc_attr( strtolower( $event['name'] ) ) . '"'
 		. ' data-arv-watch-year="' . esc_attr( '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '' ) . '">';
@@ -531,8 +689,6 @@ function arv_watch_event( $event ) {
 			. '</summary>';
 
 		$out .= '<ul class="arv-watch__segments">';
-
-		$year = '' !== $event['start'] ? substr( $event['start'], 0, 4 ) : '';
 
 		foreach ( $event['streams'] as $stream ) {
 			// Straight to that segment on our own page, playing here, rather

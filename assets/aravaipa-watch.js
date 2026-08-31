@@ -63,6 +63,11 @@
 		var count = root.querySelector('[data-arv-watch-count]');
 		var clear = root.querySelector('[data-arv-watch-clear]');
 		var year = root.querySelector('[data-arv-watch-year]');
+		// The featured broadcast above the archive. It is deliberately not
+		// one of the cards, so it cannot be filtered out with them, and one
+		// broadcast left stranded over an empty grid reads as a bug. Hidden
+		// whenever either control is set, back the moment both are clear.
+		var hero = root.querySelector('[data-arv-watch-hero]');
 
 		if (!list) {
 			return;
@@ -90,6 +95,10 @@
 
 			if (clear) {
 				clear.hidden = '' === q;
+			}
+
+			if (hero) {
+				hero.hidden = !('' === q && '' === y);
 			}
 
 			if (count) {
