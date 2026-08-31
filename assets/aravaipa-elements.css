@@ -8932,3 +8932,36 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	font-size: var(--arv-fs-label);
 	color: rgba(16, 32, 31, 0.6);
 }
+
+/* The shop rail's cards, on the same shell as the films rail. Product
+   photography is square and shot on white, the same reasoning the shop
+   page's own cards use: letting it sit on white keeps the garment
+   looking like the garment instead of forced onto a dark tile. */
+.arv-rail__shot {
+	position: relative;
+	display: block;
+	background: #fff;
+}
+
+.arv-rail__art--square {
+	aspect-ratio: 1 / 1;
+	background: #fff;
+}
+
+.arv-rail__item--shop .arv-rail__art--square {
+	object-fit: contain;
+}
+
+.arv-rail__flag {
+	position: absolute;
+	top: 0.5rem;
+	left: 0.5rem;
+	padding: 0.2rem 0.5rem;
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	background: rgba(16, 32, 31, 0.85);
+	color: #fff;
+}
