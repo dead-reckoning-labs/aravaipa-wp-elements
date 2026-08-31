@@ -585,6 +585,63 @@ function arv_films_duration( $iso ) {
 }
 
 /**
+ * How long ago a film went up, as "3 months ago".
+ *
+ * A full date is right on the films page, where the cards are a catalogue
+ * and the question is which edition you are looking at. On a rail of five
+ * across the home page the question is only whether a thing is new, and
+ * "August 12, 2023" makes a reader do that arithmetic themselves.
+ *
+ * Months are 30 days and years are 365 on purpose. The alternative is
+ * calendar arithmetic to make "11 months" tip over on the right day, which
+ * nobody reading "3 months ago" is checking, and which would be the only
+ * reason this function needed a timezone.
+ *
+ * @param string $published ISO 8601, as YouTube returns it.
+ * @param int    $now       Unix time, for tests. Defaults to now.
+ * @return string '' when there is no usable date.
+ */
+function arv_films_age( $published, $now = 0 ) {
+	$stamp = $published ? strtotime( (string) $published ) : 0;
+
+	if ( ! $stamp ) {
+		return '';
+	}
+
+	$now  = $now ? (int) $now : time();
+	// A film dated in the future is a clock disagreeing with YouTube, not a
+	// film from the future. "0 days ago" is the honest reading of that.
+	$diff = max( 0, $now - $stamp );
+
+	if ( $diff < DAY_IN_SECONDS ) {
+		return __( 'today', 'aravaipa-elements' );
+	}
+
+	$days = (int) floor( $diff / DAY_IN_SECONDS );
+
+	if ( $days < 7 ) {
+		/* translators: %d: a number of days. */
+		return sprintf( _n( '%d day ago', '%d days ago', $days, 'aravaipa-elements' ), $days );
+	}
+
+	if ( $days < 30 ) {
+		$weeks = (int) floor( $days / 7 );
+		/* translators: %d: a number of weeks. */
+		return sprintf( _n( '%d week ago', '%d weeks ago', $weeks, 'aravaipa-elements' ), $weeks );
+	}
+
+	if ( $days < 365 ) {
+		$months = (int) floor( $days / 30 );
+		/* translators: %d: a number of months. */
+		return sprintf( _n( '%d month ago', '%d months ago', $months, 'aravaipa-elements' ), $months );
+	}
+
+	$years = (int) floor( $days / 365 );
+	/* translators: %d: a number of years. */
+	return sprintf( _n( '%d year ago', '%d years ago', $years, 'aravaipa-elements' ), $years );
+}
+
+/**
  * A view count as "792K" or "1.2M", which is what a card has room for.
  *
  * @param int $views
@@ -1079,13 +1136,30 @@ function arv_films_rail_render( $args = array() ) {
 
 		$bits = array();
 
-		if ( '' !== $film['duration'] ) {
-			$bits[] = $film['duration'];
+		// The formatted duration, not the raw field. This shipped reading
+		// "PT58M13S" on the home page: YouTube's ISO 8601 duration, straight
+		// through, while the formatter for it sat two functions away and the
+		// films page had been using it all along.
+		$duration = arv_films_duration( $film['duration'] );
+
+		if ( '' !== $duration ) {
+			$bits[] = $duration;
 		}
 
-		if ( $film['views'] ) {
-			/* translators: %s: a count of YouTube views. */
-			$bits[] = sprintf( __( '%s views', 'aravaipa-elements' ), number_format_i18n( $film['views'] ) );
+		// Abbreviated, unlike the films page. Three facts have to fit on a
+		// card a fifth of the page wide, and "259K views" costs a third of
+		// what "259,208 views" does for the same answer.
+		$views = arv_films_views( $film['views'] );
+
+		if ( '' !== $views ) {
+			/* translators: %s: an abbreviated view count, e.g. "259K". */
+			$bits[] = sprintf( __( '%s views', 'aravaipa-elements' ), $views );
+		}
+
+		$age = arv_films_age( $film['published'] );
+
+		if ( '' !== $age ) {
+			$bits[] = $age;
 		}
 
 		if ( ! empty( $bits ) ) {
