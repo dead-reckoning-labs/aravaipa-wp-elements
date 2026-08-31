@@ -44,7 +44,7 @@ function wp_strip_all_tags( $s, $breaks = false ) { $s = preg_replace( '#<(scrip
 function wp_unslash( $v ) { return $v; }
 function get_queried_object_id() { return $GLOBALS['QUERIED_ID'] ?? 0; }
 function get_post_field( $field, $id = 0 ) { return $GLOBALS['POST_FIELD'][ $id ][ $field ] ?? ''; }
-function get_permalink( $id = 0 ) { return $GLOBALS['PERMALINK'][ $id ] ?? 'https://www.aravaiparunning.com/live/test/'; }
+function get_permalink( $id = 0 ) { $id = is_object( $id ) ? $id->ID : $id; return $GLOBALS['PERMALINK'][ $id ] ?? 'https://www.aravaiparunning.com/live/test/'; }
 
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_url( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
@@ -143,6 +143,10 @@ function wp_update_post( $a ) {
 	return $a['ID'];
 }
 function wp_trash_post( $id ) { $GLOBALS['posts'][ $id ]['status'] = 'trash'; }
+function get_the_title( $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['title'] ?? ( is_object( $post ) ? $post->post_title : '' ); }
+function get_the_date( $fmt, $post ) { $id = is_object( $post ) ? $post->ID : $post; return $GLOBALS['posts'][ $id ]['date'] ?? ''; }
+function get_the_post_thumbnail_url( $id, $size = 'medium' ) { $id = is_object( $id ) ? $id->ID : $id; return $GLOBALS['posts'][ $id ]['thumb'] ?? false; }
+function get_post_type( $id ) { $id = is_object( $id ) ? $id->ID : $id; return $GLOBALS['posts'][ $id ]['type'] ?? 'post'; }
 function update_post_meta( $id, $k, $v ) { $GLOBALS['meta'][ $id ][ $k ] = $v; }
 function get_post_meta( $id, $k, $single = false ) { return $GLOBALS['meta'][ $id ][ $k ] ?? ''; }
 function wp_set_object_terms( $id, $terms, $tax, $append = false ) { $GLOBALS['terms'][ $id ] = (array) $terms; }
@@ -181,6 +185,15 @@ function get_posts( $args ) {
 
 	foreach ( $GLOBALS['posts'] as $id => $p ) {
 		if ( ! in_array( $p['status'], $statuses, true ) ) { continue; }
+		// Only a fixture that bothers to set its own 'type' is filtered by
+		// post_type; one that never set it matches any query, same as
+		// before this existed, so the dozens of untyped race/page fixtures
+		// elsewhere in this file are unaffected. Without this, a query for
+		// post_type=post silently swept up every other fixture in the
+		// suite too and blog-post tests were finding other tests' data
+		// instead of their own the moment more than posts_per_page of them
+		// existed.
+		if ( isset( $p['type'] ) && isset( $args['post_type'] ) && $p['type'] !== $args['post_type'] ) { continue; }
 		if ( isset( $args['meta_query'] ) ) {
 			$q = $args['meta_query'][0];
 			if ( ( $GLOBALS['meta'][ $id ][ $q['key'] ] ?? null ) !== $q['value'] ) { continue; }
@@ -224,6 +237,7 @@ require_once __DIR__ . '/includes/podcasts-store.php';
 require_once __DIR__ . '/includes/media-follow.php';
 require_once __DIR__ . '/includes/media-subnav.php';
 require_once __DIR__ . '/includes/media-hub.php';
+require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
@@ -3403,7 +3417,9 @@ echo "\nmedia hub:\n";
 $cards = arv_media_hub_cards();
 t( 'five cards, in a fixed order',        array( 'Broadcasts', 'Films', 'Podcasts', 'Photos', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
 t( 'each links to its real page',         home_url( '/watch/' ) === $cards[0]['url'] );
-t( 'photos points at the current year',   home_url( '/photos-2026/' ) === $cards[3]['url'] );
+// Was /photos-2026/, a year that goes stale every January. Points at the
+// real, filterable index now that one exists (see the Photos rebuild).
+t( 'photos points at the real index',     home_url( '/photos/' ) === $cards[3]['url'] );
 
 // A live thumbnail for Watch, from the same store the Watch page itself
 // reads, so this card is never showing something a click into Watch would
@@ -3968,6 +3984,115 @@ arv_race_store_flush_cache();
 // with no data-terrain at all.
 $pasted = arv_upcoming_races_parse_row( array( 'Tucson Marathon', '2027-12-05' ) );
 t( 'a bare pasted row still carries terrain', 'road' === $pasted['terrain'] );
+
+echo "\nmedia latest, merged across every source:\n";
+// Every other test in this file leaves posts sitting in $GLOBALS['posts'],
+// none of it typed, so a post_type=post query for this feed matches all of
+// it: by this point in the file that is already more than one page of
+// results, and every one of those leftovers has no 'thumb' key, so they
+// would fill this feed's post_type query and crowd out the real fixture
+// below it. Swapped out for a clean slate for just this block, since
+// nothing later in the file reads $GLOBALS['posts'] again.
+$real_posts          = $GLOBALS['posts'];
+$GLOBALS['posts']    = array();
+
+// Each source is seeded through its own store's real cache, the same way
+// a page render would find it, rather than mocking arv_media_latest's own
+// functions: the point of this feed is that it trusts nothing about the
+// order four different stores hand data back in.
+$GLOBALS['_transients']['arv_watch_events'] = array(
+	array(
+		'slug' => 'cocodona', 'name' => 'Cocodona 250', 'live' => false,
+		'start' => '2026-05-04T08:00:00Z', 'place' => '', 'desc' => '',
+		'streams' => array( array(
+			'id' => 'aaaaaaaaaaa', 'title' => 'Start', 'url' => 'https://youtu.be/aaaaaaaaaaa',
+			'thumbnail' => 'https://i.ytimg.com/vi/aaaaaaaaaaa/hqdefault.jpg', 'live' => false,
+			'type' => '', 'start' => '', 'desc' => '', 'aired' => '2026-05-04T08:00:00Z',
+			'minutes' => 60, 'views' => 100,
+		) ),
+	),
+);
+$GLOBALS['_transients']['arv_films'] = array(
+	array( 'key' => 'documentaries', 'title' => 'Documentaries', 'films' => array( array(
+		'id' => 'bbbbbbbbbbb', 'title' => 'A Film', 'desc' => '', 'thumbnail' => 'https://x.test/b.jpg',
+		'published' => '2026-05-06T00:00:00Z', 'views' => 500, 'duration' => '', 'url' => 'https://youtu.be/bbbbbbbbbbb',
+		'lead' => 'A FILM', 'race' => '', 'division' => null, 'trailer' => null,
+	) ) ),
+);
+$GLOBALS['_transients']['arv_podcasts'] = array(
+	array(
+		'key' => 'inside-aravaipa', 'title' => 'Inside Aravaipa', 'feed' => '', 'spotify' => '', 'apple' => '',
+		'artwork' => 'https://x.test/show.jpg', 'summary' => '',
+		'episodes' => array( array(
+			'title' => 'An Episode', 'audio' => 'https://x.test/ep.mp3', 'link' => 'https://anchor.fm/ep',
+			'artwork' => '', 'guid' => 'ep-1', 'duration' => '', 'published' => '2026-05-05T00:00:00Z',
+		) ),
+	),
+);
+$GLOBALS['posts'][9301] = array( 'title' => 'A Blog Post', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-07T00:00:00Z', 'thumb' => 'https://x.test/post.jpg' );
+$GLOBALS['posts'][9302] = array( 'title' => 'No Image Post', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-08T00:00:00Z', 'thumb' => false );
+$GLOBALS['PERMALINK'][9301] = 'https://www.aravaiparunning.com/a-blog-post/';
+
+$items = arv_media_latest_items();
+$types = array_column( $items, 'type' );
+
+t( 'a post with no featured image is dropped', ! in_array( 'No Image Post', array_column( $items, 'title' ), true ) );
+t( 'all four sources are represented',    4 === count( array_unique( $types ) ) );
+t( 'newest first regardless of source',   'article' === $items[0]['type'] ); // 05-07 post is the newest of the four
+t( 'then the film',                       'film' === $items[1]['type'] );
+t( 'then the podcast episode',            'podcast' === $items[2]['type'] );
+t( 'then the broadcast',                  'broadcast' === $items[3]['type'] );
+
+t( 'a limit is honoured',                 2 === count( arv_media_latest_items( 2 ) ) );
+t( 'and it keeps the newest, not the oldest', 'article' === arv_media_latest_items( 1 )[0]['type'] );
+
+t( 'the podcast item links to the show page, not anchor.fm',
+	home_url( '/podcasts/inside-aravaipa/' ) === $items[2]['url'] );
+t( 'the broadcast carries a real badge',  'Broadcast' === $items[3]['badge'] );
+
+echo "\nmedia latest, rendered:\n";
+$html = arv_media_latest_render( array( 'heading' => 'Latest', 'intro' => 'Everything, newest first.' ) );
+t( 'the heading renders',                 false !== strpos( $html, 'Latest' ) );
+t( 'one card per item',                   4 === substr_count( $html, 'class="arv-media-latest__card"' ) );
+// Not 'arv-media-latest__filter': that string is also a prefix of the
+// wrapping '__filters' div's own class and would count it too.
+t( 'a filter button per type, plus All',  5 === substr_count( $html, '<button type="button" class="arv-media-latest__filter' ) );
+t( 'each card carries its type for the JS filter', false !== strpos( $html, 'data-arv-latest-type="article"' ) );
+t( 'the dropped post never reaches the page', false === strpos( $html, 'No Image Post' ) );
+
+// A page whose feed is entirely one type gets no filter bar: every button
+// would do the same thing as "All".
+$GLOBALS['_transients']['arv_films'] = array();
+$GLOBALS['_transients']['arv_podcasts'] = array();
+$GLOBALS['posts'][9302]['status'] = 'trash';
+unset( $GLOBALS['posts'][9301] );
+// The post list caches itself for an hour, same as every other source
+// here; the render above already populated that cache with 9301 in it,
+// so mutating $GLOBALS['posts'] now needs a fresh read to be seen at all.
+delete_transient( 'arv_media_latest_posts' );
+$only_watch = arv_media_latest_render( array() );
+t( 'a single-type feed has no filter bar', false === strpos( $only_watch, 'arv-media-latest__filters' ) );
+
+$GLOBALS['_transients']['arv_watch_events'] = array();
+t( 'nothing anywhere renders nothing',    '' === arv_media_latest_render( array() ) );
+
+echo "\nmedia latest, the post cache busts on save:\n";
+$GLOBALS['posts'][9303] = array( 'title' => 'Fresh Post', 'status' => 'publish', 'type' => 'post', 'date' => '2026-06-01T00:00:00Z', 'thumb' => 'https://x.test/fresh.jpg' );
+arv_media_latest_from_posts(); // populate the cache
+$before = get_transient( 'arv_media_latest_posts' );
+t( 'the post list is cached',             false !== $before );
+arv_media_latest_flush_on_save( 9303 );
+t( 'saving a post drops the cache',       false === get_transient( 'arv_media_latest_posts' ) );
+// A race post saving must not touch this cache: it is a different post
+// type and has nothing to do with the blog.
+$GLOBALS['posts'][9304] = array( 'title' => 'Some Race', 'status' => 'publish', 'type' => 'arv_race', 'date' => '', 'thumb' => false );
+arv_media_latest_from_posts();
+arv_media_latest_flush_on_save( 9304 );
+t( 'a non-post save leaves the cache alone', false !== get_transient( 'arv_media_latest_posts' ) );
+
+unset( $GLOBALS['PERMALINK'][9301] );
+$GLOBALS['posts']       = $real_posts;
+$GLOBALS['_transients'] = array();
 
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
