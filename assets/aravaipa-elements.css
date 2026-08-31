@@ -8777,3 +8777,17 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	color: #4ade80;
 	font-weight: 700;
 }
+
+/* A portrait image in a 16:9 hero.
+   ---------------------------------------------------------------------------
+   cover is right for a landscape photograph and destroys a portrait
+   poster: the Sonoma partnership graphic is 1568x1920 with faces along the
+   top and sponsor logos along the bottom, and a 16:9 crop of it kept the
+   middle and removed both. contain shows the whole thing, letterboxed
+   against the section's own background so the box still holds its shape
+   and the row beside it does not move.
+   --------------------------------------------------------------------------- */
+.arv-media-hero__img--tall {
+	object-fit: contain;
+	background: #0b1a19;
+}
