@@ -135,6 +135,9 @@ function arv_films_clean( $raw ) {
 				// Which race this film is about, worked out from its own
 				// title. See arv_films_race_for().
 				'race'      => arv_films_race_for( $title ),
+				// A film can be about a division rather than a race: see
+				// arv_films_division_tags().
+				'division'  => arv_films_division_for( $id ),
 				'trailer'   => null,
 			);
 
@@ -353,8 +356,9 @@ function arv_films_dedupe( $playlists ) {
  * on their own.
  *
  * Returns '' for a film that is not about one race, which "THE RACE
- * DIRECTOR | Crafting Endurance in the Midwest" genuinely is not: no tag
- * is the honest answer there rather than the nearest guess.
+ * DIRECTOR | Crafting Endurance in the Midwest" genuinely is not: it is
+ * about Great Lakes Endurance, the division, not a single event, and
+ * gets its own badge from arv_films_division_for() instead.
  *
  * @param string $title
  * @return string Race name as the store spells it, or ''.
@@ -387,6 +391,44 @@ function arv_films_race_for( $title ) {
 	}
 
 	return $best;
+}
+
+/**
+ * A film that is about a division rather than a race: literal, by video
+ * id, the same reason the two YouTube playlist ids above are literal.
+ * Which films these are is a decision about what the site carries, not
+ * something a name-matching rule could ever infer, since a division is
+ * not in the race store to match against in the first place.
+ *
+ * Filterable so a second film about the same division does not need a
+ * plugin release, only a filter added wherever this list is meant to grow.
+ *
+ * @return array<string, array{label: string, url: string}> Keyed by video id.
+ */
+function arv_films_division_tags() {
+	return apply_filters(
+		'arv_films_division_tags',
+		array(
+			// THE RACE DIRECTOR | Crafting Endurance in the Midwest.
+			// Great Lakes Endurance joined Aravaipa in September 2025;
+			// this is the film about the division itself, not one of its
+			// races, so it has no entry in the race store to match.
+			'JFjNlB9g_pE' => array(
+				'label' => 'Great Lakes Endurance',
+				'url'   => home_url( '/great-lakes-endurance/' ),
+			),
+		)
+	);
+}
+
+/**
+ * @param string $video_id
+ * @return array{label: string, url: string}|null
+ */
+function arv_films_division_for( $video_id ) {
+	$tags = arv_films_division_tags();
+
+	return isset( $tags[ $video_id ] ) ? $tags[ $video_id ] : null;
 }
 
 /**
@@ -852,13 +894,17 @@ function arv_films_controls( $all ) {
 function arv_films_card( $film, $active_id ) {
 	$is_active = ( $film['id'] === $active_id );
 	$stamp     = $film['published'] ? strtotime( $film['published'] ) : 0;
+	// isset() rather than a direct read: a transient cached from before this
+	// key existed would otherwise throw a notice on every card until the
+	// cache's own hour is up.
+	$division  = isset( $film['division'] ) ? $film['division'] : null;
 
 	// Sorting and filtering happen in the browser over cards that are
 	// already on the page, so every value either control reads has to be
 	// on the card itself rather than looked up again.
 	$out = '<li class="arv-films__card' . ( $is_active ? ' is-active' : '' ) . '"'
 		. ' data-arv-films-title="' . esc_attr( strtolower( $film['title'] ) ) . '"'
-		. ' data-arv-films-race="' . esc_attr( arv_films_normalise( $film['race'] ) ) . '"'
+		. ' data-arv-films-race="' . esc_attr( arv_films_normalise( '' !== $film['race'] ? $film['race'] : ( null !== $division ? $division['label'] : '' ) ) ) . '"'
 		. ' data-arv-films-views="' . esc_attr( (int) $film['views'] ) . '"'
 		. ' data-arv-films-date="' . esc_attr( $stamp ? $stamp : 0 ) . '">';
 
@@ -920,6 +966,15 @@ function arv_films_card( $film, $active_id ) {
 				. esc_html__( 'Race page', 'aravaipa-elements' ) . '</a>';
 		}
 
+		$out .= '</span>';
+	} elseif ( null !== $division ) {
+		// Same badge, same slot, but linking straight to the division's
+		// own page rather than filtering this one: a division is not a
+		// race in the dropdown or the ?race= filter, it is where this
+		// film actually belongs.
+		$out .= '<span class="arv-films__race">';
+		$out .= '<a class="arv-films__race-tag" href="' . esc_url( $division['url'] ) . '">'
+			. esc_html( $division['label'] ) . '</a>';
 		$out .= '</span>';
 	}
 
