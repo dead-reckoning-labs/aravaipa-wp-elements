@@ -4983,6 +4983,69 @@ t( 'the merch shortcode too',              isset( $GLOBALS['SHORTCODES']['arv_ra
 
 $GLOBALS['ARV_OPTIONS'] = array();
 
+echo "\nshop rail, the home page's general strip:\n";
+// Race collections are excluded on purpose: they belong on that race's own
+// page, and a specific race's leftover gear on the home page reads as
+// random rather than curated to a visitor who has never heard of it.
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_shop_set( array(
+	'collections' => array(
+		array( 'id' => 'CBC',  'name' => 'Black Canyon Ultras', 'url' => 'https://aravaipa-shop.square.site/shop/bc/CBC',  'image' => '', 'count' => 9, 'race' => true ),
+		array( 'id' => 'CHAT', 'name' => 'Headwear',            'url' => 'https://aravaipa-shop.square.site/shop/hw/CHAT', 'image' => '', 'count' => 2, 'race' => false ),
+		array( 'id' => 'CSEA', 'name' => '2026 Spring Summer',  'url' => 'https://aravaipa-shop.square.site/shop/ss/CSEA', 'image' => '', 'count' => 3, 'race' => false ),
+		array( 'id' => 'CEMP', 'name' => 'Empty Department',    'url' => 'https://aravaipa-shop.square.site/shop/e/CEMP',  'image' => '', 'count' => 0, 'race' => false ),
+	),
+	'products' => array(
+		array( 'id' => 'RACE1', 'name' => 'Black Canyon Hoodie', 'url' => 'https://aravaipa-shop.square.site/product/1/RACE1', 'image' => 'https://x.test/1.png', 'price' => 6500, 'collections' => array( 'CBC' ) ),
+		array( 'id' => 'HAT1',  'name' => 'Trucker Hat',         'url' => 'https://aravaipa-shop.square.site/product/2/HAT1',  'image' => 'https://x.test/2.png', 'price' => 2800, 'collections' => array( 'CHAT' ) ),
+		array( 'id' => 'HAT2',  'name' => 'Beanie',              'url' => 'https://aravaipa-shop.square.site/product/3/HAT2',  'image' => 'https://x.test/3.png', 'price' => 2200, 'sold_out' => true, 'collections' => array( 'CHAT' ) ),
+		// In both department collections: one card, not two.
+		array( 'id' => 'SS1',   'name' => 'Trail Tee',           'url' => 'https://aravaipa-shop.square.site/product/4/SS1',   'image' => 'https://x.test/4.png', 'price' => 3000, 'collections' => array( 'CSEA', 'CHAT' ) ),
+		array( 'id' => 'SS2',   'name' => 'Shorts',              'url' => 'https://aravaipa-shop.square.site/product/5/SS2',   'image' => 'https://x.test/5.png', 'price' => 4000, 'collections' => array( 'CSEA' ) ),
+		array( 'id' => 'SS3',   'name' => 'Windbreaker',         'url' => 'https://aravaipa-shop.square.site/product/6/SS3',   'image' => 'https://x.test/6.png', 'price' => 8000, 'collections' => array( 'CSEA' ) ),
+	),
+) );
+
+$rail = arv_shop_rail_render( array( 'heading' => 'Shop' ) );
+
+t( 'the rail renders',                    false !== strpos( $rail, 'arv-rail__track' ) );
+t( 'no race gear reaches it',             false === strpos( $rail, 'Black Canyon Hoodie' ) );
+t( 'a department item is on it',          false !== strpos( $rail, 'Trucker Hat' ) );
+t( 'and the seasonal collection too',     false !== strpos( $rail, 'Trail Tee' ) );
+// The visible title, not a raw name count: the product's name also
+// appears inside its own card's JSON payload, so a bare substr_count of
+// the name is two per card on its own and would not actually catch a
+// second card for the same product.
+t( 'shared between two collections once', 1 === substr_count( $rail, '<span class="arv-rail__title">Trail Tee</span>' ) );
+t( 'sold out is still stated, not hidden', false !== strpos( $rail, 'Sold out' ) );
+t( 'a link to the shop page, not Square', false !== strpos( $rail, home_url( '/shop/' ) ) );
+t( 'each card opens the shared drawer',   substr_count( $rail, 'data-arv-shop-item=' ) === substr_count( $rail, 'arv-rail__item--shop' ) );
+t( 'prices are on the cards',             false !== strpos( $rail, '$28' ) );
+
+
+// A limit is honoured, and is a count of cards, not of collections.
+$limited = arv_shop_rail_render( array( 'limit' => 2 ) );
+t( 'a limit caps the cards',              2 === substr_count( $limited, 'arv-rail__item--shop' ) );
+
+// Nothing to show is nothing rendered, the same rule every other silent
+// block in this plugin follows.
+$GLOBALS['ARV_OPTIONS'] = array();
+t( 'no catalogue renders nothing',        '' === arv_shop_rail_render() );
+
+arv_shop_set( array(
+	'collections' => array(
+		array( 'id' => 'CBC', 'name' => 'Black Canyon Ultras', 'url' => 'https://aravaipa-shop.square.site/shop/bc/CBC', 'image' => '', 'count' => 9, 'race' => true ),
+	),
+	'products' => array(
+		array( 'id' => 'RACE1', 'name' => 'Black Canyon Hoodie', 'url' => 'https://aravaipa-shop.square.site/product/1/RACE1', 'price' => 6500, 'collections' => array( 'CBC' ) ),
+	),
+) );
+t( 'races only, still renders nothing',   '' === arv_shop_rail_render() );
+
+t( 'the rail shortcode is registered',    isset( $GLOBALS['SHORTCODES']['arv_shop_rail'] ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
+
 echo "\ntrail talk, a real feed for a show that never had one:\n";
 // 44 episodes, self-hosted as WordPress posts with an <audio> tag rather
 // than through a podcast host, is why none of this ever reached Spotify

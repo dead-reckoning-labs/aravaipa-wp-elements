@@ -380,6 +380,172 @@ function arv_shop_race_merch_render( $args = array() ) {
 }
 
 /**
+ * A light, scrollable strip of general shop items for the home page.
+ *
+ * Race collections are deliberately excluded. They belong on that race's
+ * own page, where they are the right merch at the right time; on the home
+ * page every visitor sees the same strip regardless of which race brought
+ * them here, and a specific race's leftover gear reads as random rather
+ * than curated. The department collections, Headwear and the seasonal
+ * collection among them, are the ones nobody's page already owns.
+ *
+ * One card per product, not per collection: the home page is not the
+ * place to browse a catalogue, and <details> tiles that expand in place
+ * make sense stacked on the shop page and would make an odd rail item
+ * here. Same drawer, same click, same "real link first" degradation as
+ * the shop page and every race strip already have.
+ *
+ * @param array $args heading, limit.
+ * @return string
+ */
+function arv_shop_rail_render( $args = array() ) {
+	$shop = arv_shop_get();
+
+	$depts = array_values(
+		array_filter(
+			$shop['collections'],
+			function ( $collection ) {
+				return empty( $collection['race'] ) && $collection['count'] > 0;
+			}
+		)
+	);
+
+	if ( empty( $depts ) ) {
+		return '';
+	}
+
+	// Biggest first. Square's own collection order is an edit history, not
+	// a ranking, and the collection with the most in it is the closest
+	// thing this store has to "what Aravaipa is currently pushing."
+	usort(
+		$depts,
+		function ( $a, $b ) {
+			return $b['count'] - $a['count'];
+		}
+	);
+
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Shop';
+	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 10;
+
+	// Round robin across collections rather than draining one at a time,
+	// so a rail of ten is a sample of everything on offer and not just
+	// whichever collection happens to be biggest.
+	$pools = array();
+
+	foreach ( $depts as $collection ) {
+		$pools[] = arv_shop_products_in( $collection['id'] );
+	}
+
+	$products = array();
+	$seen     = array();
+
+	for ( $i = 0; ( $limit <= 0 || count( $products ) < $limit ) && $i < 50; $i++ ) {
+		$added = false;
+
+		foreach ( $pools as &$pool ) {
+			if ( empty( $pool ) ) {
+				continue;
+			}
+
+			$product = array_shift( $pool );
+			$added   = true;
+
+			// A product can sit in more than one department collection
+			// (Headwear and the seasonal collection both, say). One card
+			// for it, not one per collection it happens to be in.
+			if ( isset( $seen[ $product['id'] ] ) ) {
+				continue;
+			}
+
+			$seen[ $product['id'] ] = true;
+			$products[]             = $product;
+
+			if ( $limit > 0 && count( $products ) >= $limit ) {
+				break 2;
+			}
+		}
+		unset( $pool );
+
+		if ( ! $added ) {
+			break;
+		}
+	}
+
+	if ( empty( $products ) ) {
+		return '';
+	}
+
+	$out  = '<section class="arv-rail arv-rail--shop">';
+	$out .= '<div class="arv-rail__inner">';
+	$out .= '<div class="arv-rail__head">';
+
+	if ( '' !== $heading ) {
+		$out .= '<h2 class="arv-rail__heading">' . esc_html( $heading ) . '</h2>';
+	}
+
+	$out .= '<a class="arv-rail__all" href="' . esc_url( home_url( '/shop/' ) ) . '">'
+		. esc_html__( 'Shop all', 'aravaipa-elements' ) . '</a>';
+	$out .= '</div>';
+
+	$out .= '<ul class="arv-rail__track" tabindex="0" role="list"'
+		. ' aria-label="' . esc_attr__( 'Aravaipa shop', 'aravaipa-elements' ) . '">';
+
+	foreach ( $products as $product ) {
+		$out .= '<li class="arv-rail__item arv-rail__item--shop">';
+		$out .= '<a class="arv-rail__link" href="' . esc_url( arv_shop_url( $product['url'] ) ) . '"'
+			. ' target="_blank" rel="noopener"'
+			. ' data-arv-shop-item="' . esc_attr( wp_json_encode( arv_shop_detail_payload( $product ) ) ) . '">';
+
+		if ( '' !== $product['image'] ) {
+			$out .= '<span class="arv-rail__shot">';
+			$out .= '<img class="arv-rail__art arv-rail__art--square" src="' . esc_url( $product['image'] ) . '" alt=""'
+				. ' loading="lazy" decoding="async" width="300" height="300" />';
+
+			if ( $product['sold_out'] ) {
+				$out .= '<span class="arv-rail__flag">' . esc_html__( 'Sold out', 'aravaipa-elements' ) . '</span>';
+			}
+
+			$out .= '</span>';
+		}
+
+		$out .= '<span class="arv-rail__body">';
+		$out .= '<span class="arv-rail__title">' . esc_html( $product['name'] ) . '</span>';
+
+		$price = arv_shop_price( $product['price'] );
+
+		if ( '' !== $price ) {
+			$out .= '<span class="arv-rail__meta">' . esc_html( $price ) . '</span>';
+		}
+
+		$out .= '</span></a></li>';
+	}
+
+	$out .= '</ul></div></section>' . arv_shop_detail_drawer();
+
+	return $out;
+}
+
+/**
+ * [arv_shop_rail] for the home page.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_shop_rail_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'heading' => 'Shop',
+			'limit'   => 10,
+		),
+		$atts,
+		'arv_shop_rail'
+	);
+
+	return arv_shop_rail_render( $atts );
+}
+add_shortcode( 'arv_shop_rail', 'arv_shop_rail_shortcode' );
+
+/**
  * The shop index: every race collection, then the departments.
  *
  * @param array $args heading, intro.
