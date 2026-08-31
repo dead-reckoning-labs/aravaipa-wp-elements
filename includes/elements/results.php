@@ -503,6 +503,15 @@ function arv_results_race_week( $today, $grace = 3 ) {
 	$races  = array();
 	$cutoff = gmdate( 'Y-m-d', strtotime( $today . ' -' . (int) $grace . ' days' ) );
 
+	// Sunday of the week we are in, so the coming weekend joins the block on
+	// Monday morning rather than waiting for entries to close. The old rule
+	// only let a race in once arv_upcoming_races_action() called it live,
+	// which for a race still selling entries is the Wednesday at the
+	// earliest and race day at the latest: the weekend everyone is actually
+	// looking for was the one thing missing from "race week".
+	$today_ts = strtotime( $today . ' 00:00:00 UTC' );
+	$week_end = gmdate( 'Y-m-d', $today_ts + ( 7 - (int) gmdate( 'N', $today_ts ) ) * DAY_IN_SECONDS );
+
 	foreach ( arv_race_store_get() as $race ) {
 		$action = arv_upcoming_races_action( $race, $today );
 		$last   = ( '' !== $race['end'] ) ? $race['end'] : $race['iso'];
@@ -514,7 +523,12 @@ function arv_results_race_week( $today, $grace = 3 ) {
 		// be seen by anyone.
 		$recent = ( 'results' === $action['phase'] && $last >= $cutoff );
 
-		if ( ! ( 'live' === $action['phase'] || $recent ) || '' === $action['url'] ) {
+		// Still to come, and lands before the week is out. This is what puts
+		// next weekend behind last weekend on a Monday, each with its own
+		// countdown.
+		$ahead = ( $today <= $last && $race['iso'] <= $week_end );
+
+		if ( ! ( 'live' === $action['phase'] || $recent || $ahead ) || '' === $action['url'] ) {
 			continue;
 		}
 
@@ -563,6 +577,12 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			'board'     => $board,
 			'social'    => arv_results_race_social( $race ),
 			'state'     => $state,
+			// The phase's own word for its button. Hardcoding "Live
+			// Results" was safe while nothing unstarted could get in here;
+			// now that the coming weekend does, a race still selling
+			// entries would have offered a live board that does not exist
+			// yet, on a link that goes to UltraSignup's entry form.
+			'label'     => $action['label'],
 		);
 	}
 
@@ -656,7 +676,7 @@ function arv_results_race_week( $today, $grace = 3 ) {
 
 		$out .= '<a class="arv-results__link arv-results__link--live" href="' . esc_url( $race['url'] ) . '"'
 			. arv_races_link_target( $race['url'] ) . '>'
-			. esc_html( __( 'Live Results', 'aravaipa-elements' ) ) . '</a>';
+			. esc_html( $race['label'] ) . '</a>';
 
 		if ( '' !== $race['social']['url'] ) {
 			$out .= '<a class="arv-results__week-social" href="' . esc_url( $race['social']['url'] ) . '" target="_blank" rel="noopener">'

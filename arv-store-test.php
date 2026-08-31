@@ -1134,6 +1134,60 @@ $GLOBALS['NOW'] = '2026-08-28';
 $off = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false' ) );
 t( 'and it can be switched off',        false === strpos( $off, 'arv-results__week' ) );
 
+// ------------------------------------- Next weekend, from Monday morning --
+// Race week used to hold only what the phase engine already called live,
+// which for a race still selling entries is the Wednesday at the earliest.
+// So on a Monday the block showed the weekend just gone and nothing else,
+// and the weekend everyone was actually looking for was the one thing
+// missing from it.
+$olikai = 'Oli Kai Trail Races | 2026-09-05 | Saturday - September 5, 2026 | 9 Hour | 6 Hour | 3 Hour | '
+	. 'Reflection Riding | Chattanooga, TN | https://ultrasignup.com/register.aspx?did=134059 | '
+	. 'https://www.badbeardevents.com/featured-races/oli-kai- | https://example.com/oli-kai.png | '
+	. ' |  | 2026-09-01 | 1 | 0 | 35.0036320 | -85.3646122';
+arv_race_store_import( $olikai );
+
+// The Sunday before: still last week, so the coming weekend stays out.
+$GLOBALS['NOW'] = '2026-09-06';
+$sun = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$sun_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $sun, $sm ) ? $sm[0] : '';
+t( 'the week ends on Sunday',           false === strpos( $sun_week, 'Snow Mountain Ranch' ) );
+
+// Monday morning: this week's races join the block.
+$GLOBALS['NOW'] = '2026-09-07';
+$mon = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$mon_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $mon, $mm ) ? $mm[0] : '';
+t( 'Monday brings the coming weekend',  false !== strpos( $mon_week, 'Snow Mountain Ranch' ) );
+t( 'the whole weekend, not one race',   false !== strpos( $mon_week, 'Mogollon Monster' ) );
+t( 'and it counts down to the start',   false !== strpos( $mon_week, 'Starts in' ) );
+
+// The week is a week, not a rolling window: the following weekend waits.
+t( 'the weekend after still waits',     false === strpos( $mon_week, 'Jangover' ) );
+
+// A race still selling entries must not be handed a live board that does
+// not exist yet, on a link that goes to UltraSignup's entry form.
+t( 'an open race says Register',        false !== strpos( $mon_week, '>Register</a>' ) );
+
+// Last weekend and the coming one, together, oldest first.
+$GLOBALS['NOW'] = '2026-08-31';
+$both = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$both_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $both, $bm ) ? $bm[0] : '';
+t( 'the weekend just gone is still up', false !== strpos( $both_week, 'Rock Hawk' ) );
+t( 'with the coming one behind it',     false !== strpos( $both_week, 'Oli Kai' ) );
+t( 'in date order, finished first',     strpos( $both_week, 'Rock Hawk' ) < strpos( $both_week, 'Oli Kai' ) );
+t( 'the finished one reads Completed',  false !== strpos( $both_week, 'Completed' ) );
+
+// Entries close on the 1st, so from the 2nd the same race turns over to the
+// board on its own. Nothing here has to know that: it is the phase engine's
+// answer, read rather than repeated.
+$GLOBALS['NOW'] = '2026-09-02';
+$wed = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$wed_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $wed, $wm ) ? $wm[0] : '';
+t( 'once entries close it flips',       false !== strpos( $wed_week, 'Live Results' ) );
+t( 'and stops offering Register',       false === strpos( $wed_week, '>Register</a>' ) );
+
+arv_race_store_import( $ROWS, true );
+$GLOBALS['NOW'] = '2026-08-28';
+
 // The heading and eyebrow default to nothing: the page has a hero already.
 $bare = arv_results_render( array( 'mod_id' => 'e1', 'class' => '' ) );
 t( 'no eyebrow by default',             false === strpos( $bare, 'arv-results__eyebrow' ) );
