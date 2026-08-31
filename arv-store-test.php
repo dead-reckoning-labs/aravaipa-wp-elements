@@ -4587,21 +4587,24 @@ t( 'an empty catalogue renders nothing',   '' === arv_shop_render( array() ) );
 t( 'and no strip either',                  '' === arv_shop_race_merch_render( array( 'race' => 'Black Canyon Ultras' ) ) );
 
 echo "\nshop, the custom domain:\n";
-// Square Online supports a custom domain and Run Steep Get High already
-// uses one on this same Square account, so shop.aravaiparunning.com is a
-// DNS record and a setting rather than a migration. Rewritten at render
-// rather than at import, so flipping it does not mean re-importing 166
-// products and a misconfigured domain can be reverted instantly.
-t( 'no custom domain leaves urls alone',   'https://aravaipa-shop.square.site/x' === arv_shop_url( 'https://aravaipa-shop.square.site/x' ) );
-
-add_filter( 'arv_shop_storefront_host', function () { return 'shop.aravaiparunning.com'; } );
-t( 'the storefront host is rewritten',     'https://shop.aravaiparunning.com/x' === arv_shop_url( 'https://aravaipa-shop.square.site/x' ) );
+// shop.aravaiparunning.com connected in Square 2026-08-31 (A record, www
+// CNAME and TXT verification all confirmed resolving over a valid
+// certificate first), so this is now the default rather than something a
+// filter has to turn on. Rewritten at render rather than at import, so a
+// domain that turns out to be misconfigured can be reverted with one
+// filter rather than re-importing 166 products.
+t( 'the storefront host is rewritten by default', 'https://shop.aravaiparunning.com/x' === arv_shop_url( 'https://aravaipa-shop.square.site/x' ) );
 t( 'http is upgraded on the way',          'https://shop.aravaiparunning.com/x' === arv_shop_url( 'http://aravaipa-shop.square.site/x' ) );
 t( 'the path and id survive',              'https://shop.aravaiparunning.com/shop/black-canyon-ultras/CBC' === arv_shop_url( 'https://aravaipa-shop.square.site/shop/black-canyon-ultras/CBC' ) );
 // A filter that rewrote every host it was handed would happily point a
 // YouTube link at the shop.
 t( 'any other host is untouched',          'https://youtu.be/abc' === arv_shop_url( 'https://youtu.be/abc' ) );
 t( 'and an empty url stays empty',         '' === arv_shop_url( '' ) );
+
+// The escape hatch: still a filter, so a misconfigured domain reverts to
+// the bare Square host with one line, not a re-import.
+add_filter( 'arv_shop_storefront_host', function () { return ''; } );
+t( 'a filter can still turn it off',       'https://aravaipa-shop.square.site/x' === arv_shop_url( 'https://aravaipa-shop.square.site/x' ) );
 $GLOBALS['FILTERS']['arv_shop_storefront_host'] = array();
 
 t( 'the shop shortcode is registered',     isset( $GLOBALS['SHORTCODES']['arv_shop'] ) );

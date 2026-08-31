@@ -52,10 +52,12 @@ function arv_shop_get() {
 /**
  * The host the storefront is served from.
  *
- * Square Online supports a custom domain, and Run Steep Get High already
- * uses one on this same Square account, so shop.aravaiparunning.com is a
- * DNS record and a setting rather than a migration. Until that is live
- * this returns '' and every URL is left exactly as Square gave it.
+ * shop.aravaiparunning.com connected in Square on 2026-08-31: an A record
+ * to 199.34.228.169, a CNAME for the www host, and Square's own TXT
+ * verification, all confirmed resolving and served over a valid
+ * certificate before this default changed. The bare Square host stays as
+ * the documented fallback below rather than being deleted, since it is
+ * still what a filter override falls back to if this ever needs undoing.
  *
  * Rewritten at render time rather than at import, so switching the domain
  * on or off is one filter and does not require re-importing 166 products,
@@ -65,7 +67,7 @@ function arv_shop_get() {
  * @return string Bare host, or '' to leave URLs alone.
  */
 function arv_shop_storefront_host() {
-	return (string) apply_filters( 'arv_shop_storefront_host', '' );
+	return (string) apply_filters( 'arv_shop_storefront_host', 'shop.aravaiparunning.com' );
 }
 
 /**
