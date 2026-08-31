@@ -3678,6 +3678,58 @@ t( 'a limit is honoured',                 1 === substr_count( arv_films_rail_ren
 
 // Scrolled natively, so it needs no script and stays keyboard reachable.
 t( 'the track is focusable',              false !== strpos( $rail, 'tabindex="0"' ) );
+
+// The rail shipped reading "PT58M13S" under every card: YouTube's raw ISO
+// 8601 duration, while arv_films_duration() sat two functions away and the
+// films page had been formatting with it all along.
+t( 'no raw ISO duration escapes',         false === strpos( $rail, 'PT' ) );
+
+// Its own fixture: the rail's films above carry no duration, so asserting
+// the formatting on them would pass for the wrong reason.
+$saved_films = $GLOBALS['_transients']['arv_films'];
+$GLOBALS['_transients']['arv_films'] = array(
+	array(
+		'title' => 'Fixture',
+		'films' => array(
+			array( 'id' => 'ddddddddddd', 'title' => 'Long One', 'desc' => '', 'thumbnail' => 'https://x.test/d.jpg',
+			       'published' => '2023-06-01T00:00:00Z', 'views' => 259208, 'duration' => 'PT58M13S',
+			       'url' => 'https://youtu.be/ddddddddddd', 'lead' => '', 'race' => '', 'division' => null, 'trailer' => null ),
+			array( 'id' => 'eeeeeeeeeee', 'title' => 'Over An Hour', 'desc' => '', 'thumbnail' => 'https://x.test/e.jpg',
+			       'published' => '2026-08-30T00:00:00Z', 'views' => 900, 'duration' => 'PT1H5M9S',
+			       'url' => 'https://youtu.be/eeeeeeeeeee', 'lead' => '', 'race' => '', 'division' => null, 'trailer' => null ),
+		),
+	),
+);
+$rail_meta = arv_films_rail_render( array( 'heading' => 'Films' ) );
+
+t( 'the duration is readable',            false !== strpos( $rail_meta, '58:13' ) );
+t( 'and an hour long one carries hours',  false !== strpos( $rail_meta, '1:05:09' ) );
+t( 'no raw ISO reaches the card',         false === strpos( $rail_meta, 'PT58M13S' ) );
+t( 'views are abbreviated, not full',     false !== strpos( $rail_meta, '259K views' ) );
+t( 'and the long count is not printed',   false === strpos( $rail_meta, '259,208' ) );
+t( 'each card says how old it is',        2 === substr_count( $rail_meta, ' ago' ) );
+t( 'the three facts share one line',      (bool) preg_match( '/58:13 · 259K views · \d+ years? ago/u', $rail_meta ) );
+
+$GLOBALS['_transients']['arv_films'] = $saved_films;
+
+// Age rather than a full date. On a five-across rail the only question is
+// whether a thing is new, and a reader should not have to do the
+// arithmetic from "August 12, 2023" themselves.
+$now = strtotime( '2026-08-31 00:00:00 UTC' );
+t( 'the same day reads today',            'today' === arv_films_age( '2026-08-31T06:00:00Z', $now ) );
+t( 'yesterday is a day',                  '1 day ago' === arv_films_age( '2026-08-30T00:00:00Z', $now ) );
+t( 'and it is singular',                  false === strpos( arv_films_age( '2026-08-30T00:00:00Z', $now ), 'days' ) );
+t( 'a few days stay days',                '3 days ago' === arv_films_age( '2026-08-28T00:00:00Z', $now ) );
+t( 'a week becomes a week',               '1 week ago' === arv_films_age( '2026-08-24T00:00:00Z', $now ) );
+t( 'a month becomes a month',             '1 month ago' === arv_films_age( '2026-08-01T00:00:00Z', $now ) );
+t( 'and several months count up',         '6 months ago' === arv_films_age( '2026-03-01T00:00:00Z', $now ) );
+t( 'a year becomes a year',               '1 year ago' === arv_films_age( '2025-08-01T00:00:00Z', $now ) );
+t( 'and several years count up',          '3 years ago' === arv_films_age( '2023-06-01T00:00:00Z', $now ) );
+
+// A clock disagreeing with YouTube is not a film from the future.
+t( 'a future date does not go negative',  'today' === arv_films_age( '2026-09-30T00:00:00Z', $now ) );
+t( 'and no date says nothing at all',     '' === arv_films_age( '', $now ) );
+t( 'nor does an unparseable one',         '' === arv_films_age( 'not a date', $now ) );
 t( 'and labelled for a screen reader',    false !== strpos( $rail, 'aria-label=' ) );
 
 // Nothing to show renders nothing rather than an empty scroller.
