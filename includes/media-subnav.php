@@ -42,7 +42,11 @@ function arv_media_subnav_items() {
 			array( 'key' => 'watch', 'label' => __( 'Broadcasts', 'aravaipa-elements' ), 'url' => home_url( '/watch/' ) ),
 			array( 'key' => 'films', 'label' => __( 'Films', 'aravaipa-elements' ), 'url' => home_url( '/films/' ) ),
 			array( 'key' => 'podcasts', 'label' => __( 'Podcasts', 'aravaipa-elements' ), 'url' => home_url( '/podcasts/' ) ),
-			array( 'key' => 'articles', 'label' => __( 'Articles', 'aravaipa-elements' ), 'url' => home_url( '/blog/' ) ),
+			// /articles/, not /blog/. /blog/ is WordPress's own posts page:
+			// it renders through the theme, so it cannot carry this strip and
+			// does not look like anything else in this list. See
+			// includes/articles-store.php.
+			array( 'key' => 'articles', 'label' => __( 'Articles', 'aravaipa-elements' ), 'url' => home_url( '/articles/' ) ),
 		)
 	);
 }
