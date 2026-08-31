@@ -27,6 +27,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'ARV_ARTICLES_CACHE', 'arv_articles_items' );
 
 /**
+ * The first image in a post's body, for a post with no featured image.
+ *
+ * 71 of the 296 posts here have no featured image, and 58 of those do have
+ * a perfectly good photograph in the body: whoever wrote them uploaded a
+ * picture and never set it as the featured one. Falling back to it turns
+ * 58 placeholder tiles into real cards, and the archive stops looking half
+ * broken for reasons that have nothing to do with the archive.
+ *
+ * Read off the raw post_content rather than by running the_content: this
+ * runs once for every post in the table, and the filter chain on a site
+ * with Jetpack and a page builder installed is not something to invoke 296
+ * times to find an src attribute. The raw markup also carries the original
+ * upload URL rather than the CDN's rewrite of it, which is the more stable
+ * of the two to store.
+ *
+ * @param string $content Raw post content.
+ * @return string
+ */
+function arv_articles_body_image( $content ) {
+	// \s before src, or "data-src" matches as though it were "src": the
+	// leading [^>]* happily eats "data-" and the tail lines up. That reads
+	// as a working fallback right up until a lazy-loading plugin is turned
+	// on, at which point every card silently takes the placeholder GIF.
+	if ( ! preg_match( '/<img[^>]*?\ssrc=["\']([^"\']+)["\']/i', (string) $content, $m ) ) {
+		return '';
+	}
+
+	$url = trim( html_entity_decode( $m[1] ) );
+
+	// Data URIs are placeholders left by lazy-loading scripts, and the real
+	// source sits in a data-src the raw markup does not have. A 1x1
+	// transparent GIF stretched across a card is worse than the panel.
+	if ( '' === $url || 0 === stripos( $url, 'data:' ) ) {
+		return '';
+	}
+
+	return $url;
+}
+
+/**
  * Every published post, newest first.
  *
  * Deliberately not the Latest feed's reader, though the two look similar.
@@ -82,6 +122,14 @@ function arv_articles_items() {
 	foreach ( $posts as $post ) {
 		$date  = get_the_date( 'c', $post );
 		$thumb = get_the_post_thumbnail_url( $post->ID, 'medium' );
+
+		// A post that never had a featured image set, but does have one in
+		// its body. 58 of these, so it is the difference between an archive
+		// that looks finished and one that looks half broken.
+		if ( ! $thumb && isset( $post->post_content ) ) {
+			$thumb = arv_articles_body_image( $post->post_content );
+		}
+
 		$cats  = array();
 
 		foreach ( (array) get_the_category( $post->ID ) as $cat ) {

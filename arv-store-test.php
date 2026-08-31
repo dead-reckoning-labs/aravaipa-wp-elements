@@ -130,7 +130,12 @@ function wp_remote_retrieve_body( $r ) { return is_array( $r ) ? ( $r['body'] ??
 class ARV_Post {
 	public $ID;
 	public $post_title;
-	public function __construct( $id, $title ) { $this->ID = $id; $this->post_title = $title; }
+	public $post_content;
+	public function __construct( $id, $title ) {
+		$this->ID           = $id;
+		$this->post_title   = $title;
+		$this->post_content = $GLOBALS['posts'][ $id ]['body'] ?? '';
+	}
 }
 
 function wp_insert_post( $a ) {
@@ -4257,6 +4262,30 @@ t( 'nor a race',                          ! in_array( 'Not A Post', array_column
 // lie, so a post with no picture gets a placeholder instead of the axe.
 t( 'a post with no image is kept',        in_array( 'A Press Release', array_column( $items, 'title' ), true ) );
 t( 'and carries no thumbnail',            '' === $items[1]['thumb'] );
+
+// 71 of the 296 real posts have no featured image, and 58 of those do have
+// a photograph sitting in the body: whoever wrote them uploaded a picture
+// and never set it as featured. Falling back to it is the difference
+// between an archive that looks finished and one that looks half broken.
+$GLOBALS['posts'][9411] = array( 'title' => 'Body Image Only', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-09T00:00:00Z', 'thumb' => false, 'cats' => array(), 'body' => '<p>Words.</p><img src="https://x.test/in-body.jpg" alt="" /><p>More.</p>' );
+$GLOBALS['posts'][9412] = array( 'title' => 'Lazy Placeholder', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-08T00:00:00Z', 'thumb' => false, 'cats' => array(), 'body' => '<img src="data:image/gif;base64,R0lGOD" data-src="https://x.test/real.jpg" />' );
+$GLOBALS['posts'][9413] = array( 'title' => 'Words Only', 'status' => 'publish', 'type' => 'post', 'date' => '2026-05-07T00:00:00Z', 'thumb' => false, 'cats' => array(), 'body' => '<p>No pictures here at all.</p>' );
+$GLOBALS['PERMALINK'][9411] = 'https://www.aravaiparunning.com/post-9411/';
+$GLOBALS['PERMALINK'][9412] = 'https://www.aravaiparunning.com/post-9412/';
+$GLOBALS['PERMALINK'][9413] = 'https://www.aravaiparunning.com/post-9413/';
+delete_transient( ARV_ARTICLES_CACHE );
+$withbody = arv_articles_items();
+$byTitle  = array_column( $withbody, 'thumb', 'title' );
+t( 'a body image stands in for a featured one', 'https://x.test/in-body.jpg' === $byTitle['Body Image Only'] );
+// A 1x1 transparent GIF stretched across a card is worse than the panel.
+t( 'a lazy-load data: URI is refused',    '' === $byTitle['Lazy Placeholder'] );
+t( 'and a post with no image gets none',  '' === $byTitle['Words Only'] );
+t( 'a featured image still wins',         'https://x.test/a.jpg' === $byTitle['Cocodona Race Report'] );
+t( 'single quotes in the markup parse',   'https://x.test/q.jpg' === arv_articles_body_image( "<img src='https://x.test/q.jpg'>" ) );
+t( 'and no img at all is empty',          '' === arv_articles_body_image( '<p>nothing</p>' ) );
+foreach ( array( 9411, 9412, 9413 ) as $id ) { unset( $GLOBALS['posts'][ $id ], $GLOBALS['PERMALINK'][ $id ] ); }
+delete_transient( ARV_ARTICLES_CACHE );
+$items = arv_articles_items();
 t( 'each carries its year',               2026 === $items[0]['year'] );
 
 // Nobody chose "Uncategorized"; it is what WordPress does when nobody
