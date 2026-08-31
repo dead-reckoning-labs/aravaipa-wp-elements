@@ -2771,50 +2771,77 @@ t( 'and reads as one video',             false !== strpos( $solo, '1 video' ) );
 t( 'and not as one videos',              false === strpos( $solo, '1 videos' ) );
 
 echo "\nwatch, upcoming broadcasts:\n";
-// Mountain Outpost only carries an event once a stream exists for it, so a
-// race months out is invisible in the feed: verified, zero future-dated
-// events there today. These are configured instead, and each expires by
-// its own end date rather than waiting for someone to remember it.
-add_filter( 'arv_watch_upcoming_config', function () {
-	return array(
-		array( 'name' => 'Later Race',   'from' => '2999-12-19', 'to' => '2999-12-20', 'page' => '/later/' ),
-		array( 'name' => 'Sooner Race',  'from' => '2999-10-17', 'to' => '2999-10-18', 'page' => '/sooner/' ),
-		array( 'name' => 'Finished',     'from' => '2020-01-01', 'to' => '2020-01-02', 'page' => '/done/' ),
-		array( 'name' => 'One Day Only', 'from' => '2999-11-05' ),
-	);
-} );
+// Read from Mountain Outpost's /events endpoint, not /streams. That one
+// only carries an event once a stream object exists for it, so it reports
+// zero future-dated events while eight are in fact scheduled. This was a
+// hardcoded list of three until that endpoint turned up; it was both
+// stale-prone and, as it happens, already missing five races.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_transients']['arv_watch_schedule'] = array(
+	array( 'slug' => 'later-race-2999',  'name' => 'Later Race',  'start' => '2999-12-19T16:00:00.000Z', 'live' => false ),
+	array( 'slug' => 'sooner-race-2999', 'name' => 'Sooner Race', 'start' => '2999-10-17T13:00:00.000Z', 'live' => false ),
+	array( 'slug' => 'finished-2020',    'name' => 'Finished',    'start' => '2020-01-01T13:00:00.000Z', 'live' => false ),
+	array( 'slug' => 'on-air-now',       'name' => 'On Air',      'start' => '2999-11-05T13:00:00.000Z', 'live' => true ),
+);
 
 $up = arv_watch_upcoming();
 t( 'a finished broadcast drops off',      ! in_array( 'Finished', array_column( $up, 'name' ), true ) );
 t( 'the rest survive',                    3 === count( $up ) );
 t( 'soonest first',                       'Sooner Race' === $up[0]['name'] );
-t( 'then the next',                       'One Day Only' === $up[1]['name'] );
+t( 'then the next',                       'On Air' === $up[1]['name'] );
 t( 'and the furthest last',               'Later Race' === $up[2]['name'] );
 
-// Judged on the end date: a broadcast is still worth announcing on the
-// morning of day two of a race that ran overnight.
-add_filter( 'arv_watch_upcoming_config', function () {
-	return array( array( 'name' => 'Mid Race', 'from' => '2020-01-01', 'to' => '2999-01-01' ) );
-} );
-t( 'a race already under way still counts', 1 === count( arv_watch_upcoming() ) );
-$GLOBALS['FILTERS']['arv_watch_upcoming_config'] = array();
+// Every row links to Mountain Outpost's own page for the event, which is
+// where the stream actually plays. Verified against the real site that a
+// slug it does not know 404s rather than quietly serving the homepage,
+// which is the failure that would make this link lie.
+t( 'each row links to mountain outpost',  'https://mountainoutpost.com/events/sooner-race-2999' === $up[0]['url'] );
+t( 'and a missing slug yields no link',   '' === arv_watch_outpost_url( '' ) );
 
-// The year said once, the same rule the film tour windows follow.
-t( 'a two-day window reads as one',       'October 31 to November 1, 2026' === arv_watch_upcoming_when( array( 'from' => '2026-10-31', 'to' => '2026-11-01' ) ) );
-t( 'a single day says one date',          'December 19, 2026' === arv_watch_upcoming_when( array( 'from' => '2026-12-19' ) ) );
-t( 'and matching dates collapse',         'December 19, 2026' === arv_watch_upcoming_when( array( 'from' => '2026-12-19', 'to' => '2026-12-19' ) ) );
+// A day's grace past the start, because these are ultras: a race that
+// began yesterday afternoon and is still running must not vanish from the
+// list at midnight while it is being broadcast.
+// Anchored to the harness's pinned clock, not real time: current_time()
+// here answers 2026-08-26 09:00 regardless of when the suite runs, so a
+// fixture built from time() would drift into the future and stop testing
+// the boundary it was written for.
+$pinned = current_time( 'timestamp', true );
+$GLOBALS['_transients']['arv_watch_schedule'] = array(
+	array( 'slug' => 'mid-race', 'name' => 'Mid Race', 'start' => gmdate( 'c', $pinned - ( 12 * HOUR_IN_SECONDS ) ), 'live' => true ),
+	array( 'slug' => 'long-over', 'name' => 'Long Over', 'start' => gmdate( 'c', $pinned - ( 5 * DAY_IN_SECONDS ) ), 'live' => false ),
+);
+$mid = arv_watch_upcoming();
+t( 'a race under way still counts',       1 === count( $mid ) );
+t( 'and it is the one still running',     'Mid Race' === $mid[0]['name'] );
 
-// The three real ones, as configured.
-$real = array_column( arv_watch_upcoming_config(), 'name' );
-t( 'javelina is configured',              in_array( 'Javelina Jundred', $real, true ) );
-t( 'sonoma too',                          in_array( 'Sonoma Fall Classic', $real, true ) );
-t( 'and desert solstice',                 in_array( 'Desert Solstice', $real, true ) );
+echo "\nwatch, upcoming rendered:\n";
+$GLOBALS['_transients']['arv_watch_schedule'] = array(
+	array( 'slug' => 'javelina-jundred-2026', 'name' => 'Javelina Jundred', 'start' => '2999-10-31T13:00:00.000Z', 'live' => false ),
+	array( 'slug' => 'on-air-now', 'name' => 'On Air Race', 'start' => '2999-10-01T13:00:00.000Z', 'live' => true ),
+);
+$uhtml = arv_watch_upcoming_render();
+t( 'the list renders',                    false !== strpos( $uhtml, 'arv-watch__upcoming' ) );
+t( 'linking out to mountain outpost',     false !== strpos( $uhtml, 'https://mountainoutpost.com/events/javelina-jundred-2026' ) );
+t( 'off-site links are safe',             false !== strpos( $uhtml, 'rel="noopener"' ) );
+// On air right now outranks the date entirely: a date beside a race that
+// has already started would read as though it had not begun.
+t( 'a live race is flagged',              false !== strpos( $uhtml, 'Live now' ) );
+t( 'and invites a watch, not a date',     false !== strpos( $uhtml, 'Watch on Mountain Outpost' ) );
+t( 'a scheduled one still shows its date', false !== strpos( $uhtml, 'October 31, 2999' ) );
 
-// Nothing scheduled renders nothing, rather than a heading over an empty
-// shelf, which between seasons would be the normal state.
-add_filter( 'arv_watch_upcoming_config', function () { return array(); } );
-t( 'nothing scheduled renders nothing',   '' === arv_watch_upcoming_render() );
-$GLOBALS['FILTERS']['arv_watch_upcoming_config'] = array();
+// A dead feed renders nothing rather than a heading over an empty shelf,
+// and caches the failure so an outage is not retried on every page view.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+arv_test_queue_response( new WP_Error( 'down' ) );
+t( 'an unreachable schedule is empty',    array() === arv_watch_schedule() );
+t( 'and renders nothing at all',          '' === arv_watch_upcoming_render() );
+$calls = $GLOBALS['_http_calls'];
+arv_watch_schedule();
+t( 'the failure is cached, not hammered', $calls === $GLOBALS['_http_calls'] );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
 
 echo "\nwatch, the featured broadcast:\n";
 // The page leads with one broadcast instead of a centred heading, and what
