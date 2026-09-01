@@ -269,7 +269,13 @@ function arv_shop_detail_drawer() {
 
 	$done = true;
 
-	$out  = '<div class="arv-shop__detail" hidden data-arv-shop-detail>';
+	// style="display:none" alongside the hidden attribute, not instead of
+	// it: Cornerstone's own builder canvas rendered this permanently open,
+	// which is a page builder, not a browser, stripping a bare boolean
+	// attribute it does not recognise while leaving inline style alone.
+	// The two attributes are kept in sync by the script below rather than
+	// relying on either one alone.
+	$out  = '<div class="arv-shop__detail" hidden style="display:none" data-arv-shop-detail>';
 	$out .= '<div class="arv-shop__detail-scrim" data-arv-shop-detail-close></div>';
 	$out .= '<div class="arv-shop__detail-panel" role="dialog" aria-modal="true">';
 	$out .= '<button class="arv-shop__detail-close" type="button" data-arv-shop-detail-close>'
