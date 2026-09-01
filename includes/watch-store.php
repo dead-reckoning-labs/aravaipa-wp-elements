@@ -38,6 +38,23 @@ if ( ! defined( 'ARV_WATCH_EVENTS_API' ) ) {
 }
 
 /**
+ * The Broadcasts page's own URL, the one place that has to know it.
+ *
+ * The page was renamed from Watch to Broadcasts on the label, subnav and
+ * heading in an earlier pass, but its actual page slug stayed "watch" and
+ * every /watch/ literal scattered across this file kept working off the
+ * back of it. /broadcasts/ itself 404'd because nothing existed for
+ * WordPress's own canonical redirect to resolve it to, unlike /films/ and
+ * /podcasts/, whose page slugs do match their labels. The page has since
+ * been renamed for real; this is the one place left to edit next time.
+ *
+ * @return string
+ */
+function arv_watch_url() {
+	return home_url( '/broadcasts/' );
+}
+
+/**
  * Every Aravaipa broadcast, newest first, live ones first of all.
  *
  * Cached for fifteen minutes. Long enough that a busy page is not making an
@@ -1589,7 +1606,7 @@ function arv_watch_race_render( $args = array() ) {
 	$out = '<section class="arv-watch-race">';
 	$out .= '<div class="arv-watch-race__inner">';
 
-	$out .= '<p class="arv-watch-race__back"><a href="' . esc_url( home_url( '/watch/' ) ) . '">'
+	$out .= '<p class="arv-watch-race__back"><a href="' . esc_url( arv_watch_url() ) . '">'
 		. '&larr; ' . esc_html__( 'All broadcasts', 'aravaipa-elements' ) . '</a></p>';
 
 	$out .= '<div class="arv-watch-race__head">';
@@ -1642,8 +1659,8 @@ function arv_watch_race_empty() {
 	return '<section class="arv-watch-race"><div class="arv-watch-race__inner">'
 		. '<p class="arv-watch-race__missing">'
 		. esc_html__( "We don't have a broadcast for that race right now.", 'aravaipa-elements' )
-		. ' <a href="' . esc_url( home_url( '/watch/' ) ) . '">'
-		. esc_html__( 'See everything we have on Watch.', 'aravaipa-elements' ) . '</a></p>'
+		. ' <a href="' . esc_url( arv_watch_url() ) . '">'
+		. esc_html__( 'See everything we have on Broadcasts.', 'aravaipa-elements' ) . '</a></p>'
 		. '</div></section>';
 }
 
@@ -1941,7 +1958,7 @@ function arv_watch_seo_breadcrumbs( $ctx ) {
 				'@type'    => 'ListItem',
 				'position' => 3,
 				'name'     => __( 'Broadcasts', 'aravaipa-elements' ),
-				'item'     => home_url( '/watch/' ),
+				'item'     => arv_watch_url(),
 			),
 			array(
 				'@type'    => 'ListItem',
