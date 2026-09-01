@@ -5201,6 +5201,36 @@ t( 'prices are on the cards',             false !== strpos( $rail, '$28' ) );
 $limited = arv_shop_rail_render( array( 'limit' => 2 ) );
 t( 'a limit caps the cards',              2 === substr_count( $limited, 'arv-rail__item--shop' ) );
 
+// A curated list is not a suggestion layered on the automatic pick: it is
+// the whole answer. Jamil's complaint that shipped this was the rail
+// showing a 2024 race hat and a discontinued tee beside this year's core
+// apparel, all correctly filed under a department collection in Square
+// and none of it what should lead the home page. There is no signal in
+// the catalogue that says "this one is stale", so the fix is letting a
+// person say so directly rather than a smarter guess.
+$curated = arv_shop_rail_render( array( 'products' => 'Windbreaker|Trucker Hat' ) );
+t( 'a curated list picks exactly those',  2 === substr_count( $curated, 'arv-rail__item--shop' ) );
+t( 'in the order given',                  strpos( $curated, 'Windbreaker' ) < strpos( $curated, 'Trucker Hat' ) );
+t( 'not the automatic biggest-first order', false !== strpos( $curated, 'Windbreaker' ) );
+t( 'and the round robin pick is bypassed', false === strpos( $curated, 'Beanie' ) );
+
+// Matched on name, case insensitively, because that is what a person
+// curating this can actually see: the storefront shows a product's name,
+// not its Square catalogue id.
+$cased = arv_shop_rail_render( array( 'products' => 'WINDBREAKER' ) );
+t( 'matching ignores case',               false !== strpos( $cased, 'Windbreaker' ) );
+
+// A retired product drops out; it does not take the rest of the list with
+// it, and it does not fall back to the automatic pick either. A curated
+// list going stale should read as visibly short, not silently become
+// "random stuff" again, which is the exact complaint this exists to fix.
+$partial = arv_shop_rail_render( array( 'products' => 'Windbreaker|Retired Item That Does Not Exist' ) );
+t( 'an unknown name is dropped',          1 === substr_count( $partial, 'arv-rail__item--shop' ) );
+t( 'the real one still renders',          false !== strpos( $partial, 'Windbreaker' ) );
+
+$all_stale = arv_shop_rail_render( array( 'products' => 'Nothing Here|Also Nothing' ) );
+t( 'all names unknown renders nothing, not a fallback', '' === $all_stale );
+
 // A builder has to be able to place this. It shipped as a shortcode with
 // no element, which made it the one rail in the plugin that could only be
 // typed in by hand: everything else here registers both, so neither route
