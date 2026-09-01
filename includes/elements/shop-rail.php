@@ -24,8 +24,9 @@ cs_register_element(
 		'title'   => __( 'Aravaipa Shop Rail', 'aravaipa-elements' ),
 		'values'  => cs_compose_values(
 			array(
-				'heading' => cs_value( 'Shop', 'markup' ),
-				'limit'   => cs_value( '10', 'markup' ),
+				'heading'  => cs_value( 'Shop', 'markup' ),
+				'limit'    => cs_value( '10', 'markup' ),
+				'products' => cs_value( '', 'markup' ),
 			),
 			'omega'
 		),
@@ -43,6 +44,11 @@ function arv_shop_rail_element_builder() {
 			'controls' => array(
 				array( 'key' => 'heading', 'type' => 'text', 'label' => __( 'Heading', 'aravaipa-elements' ) ),
 				array( 'key' => 'limit', 'type' => 'text', 'label' => __( 'How many items', 'aravaipa-elements' ) ),
+				// Product names, separated by |. Empty picks the automatic rail:
+				// see arv_shop_rail_curated_products() for why this exists at all.
+				// A one-off race hat can be correctly filed in Headwear in Square
+				// and still be the wrong thing to lead the home page with.
+				array( 'key' => 'products', 'type' => 'text', 'label' => __( 'Curated items (optional, separate with |)', 'aravaipa-elements' ) ),
 			),
 		),
 		'omega'
@@ -56,8 +62,9 @@ function arv_shop_rail_element_builder() {
 function arv_shop_rail_element_render( $data ) {
 	return arv_shop_rail_render(
 		array(
-			'heading' => isset( $data['heading'] ) ? $data['heading'] : 'Shop',
-			'limit'   => isset( $data['limit'] ) ? (int) $data['limit'] : 10,
+			'heading'  => isset( $data['heading'] ) ? $data['heading'] : 'Shop',
+			'limit'    => isset( $data['limit'] ) ? (int) $data['limit'] : 10,
+			'products' => isset( $data['products'] ) ? $data['products'] : '',
 		)
 	);
 }

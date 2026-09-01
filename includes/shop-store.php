@@ -398,7 +398,21 @@ function arv_shop_race_merch_render( $args = array() ) {
  * @param array $args heading, limit.
  * @return string
  */
-function arv_shop_rail_render( $args = array() ) {
+/**
+ * The rail's default pick, when nobody has curated one.
+ *
+ * Round robin across whichever department collections currently have
+ * anything in stock, biggest first, so a rail of ten is a sample of
+ * everything on offer rather than one collection's whole shelf. Square's
+ * own department tagging is not a promise that everything in it belongs
+ * on the home page though: a one-off 2024 race hat can sit in Headwear
+ * next to this year's core apparel, correctly filed and wrong for a
+ * flagship rail. That is what arv_shop_rail_curated_products() is for.
+ *
+ * @param int $limit 0 for everything.
+ * @return array<int, array>
+ */
+function arv_shop_rail_auto_products( $limit ) {
 	$shop = arv_shop_get();
 
 	$depts = array_values(
@@ -411,12 +425,9 @@ function arv_shop_rail_render( $args = array() ) {
 	);
 
 	if ( empty( $depts ) ) {
-		return '';
+		return array();
 	}
 
-	// Biggest first. Square's own collection order is an edit history, not
-	// a ranking, and the collection with the most in it is the closest
-	// thing this store has to "what Aravaipa is currently pushing."
 	usort(
 		$depts,
 		function ( $a, $b ) {
@@ -424,12 +435,6 @@ function arv_shop_rail_render( $args = array() ) {
 		}
 	);
 
-	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Shop';
-	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 10;
-
-	// Round robin across collections rather than draining one at a time,
-	// so a rail of ten is a sample of everything on offer and not just
-	// whichever collection happens to be biggest.
 	$pools = array();
 
 	foreach ( $depts as $collection ) {
@@ -470,6 +475,78 @@ function arv_shop_rail_render( $args = array() ) {
 			break;
 		}
 	}
+
+	return $products;
+}
+
+/**
+ * A hand-picked rail, one product name per line.
+ *
+ * Matched on name because that is what someone curating this rail can
+ * actually see: the storefront and the admin screens both show a
+ * product's name, not its Square catalogue id, and asking anyone to go
+ * find the id in a page's source before they can feature a hoodie is not
+ * a workflow anyone would keep using.
+ *
+ * Pipe separated, the same convention race rows and the region map
+ * already use for a compact list in one field, and the shape a
+ * Cornerstone text control and a shortcode attribute both actually are:
+ * neither can carry a real newline through.
+ *
+ * A name with no match is dropped rather than failing the whole rail: the
+ * catalogue changes underneath a curated list exactly the way it changes
+ * underneath everything else here, and one retired product should not
+ * take the other nine down with it. What does not fall back to the
+ * automatic pick, on purpose: a curated list going quietly stale should
+ * be visibly short, not silently replaced by whatever Square happens to
+ * be showing, which is the exact problem curation exists to avoid.
+ *
+ * @param string $raw Product names, separated by |.
+ * @return array<int, array>
+ */
+function arv_shop_rail_curated_products( $raw ) {
+	$wanted = array_values(
+		array_filter(
+			array_map( 'trim', explode( '|', $raw ) )
+		)
+	);
+
+	if ( empty( $wanted ) ) {
+		return array();
+	}
+
+	$by_name = array();
+
+	foreach ( arv_shop_get()['products'] as $product ) {
+		// First match wins: if two products ever share a name, the curated
+		// order should still be deterministic rather than picking whichever
+		// happened to sort last.
+		$key = strtolower( $product['name'] );
+		if ( ! isset( $by_name[ $key ] ) ) {
+			$by_name[ $key ] = $product;
+		}
+	}
+
+	$products = array();
+
+	foreach ( $wanted as $name ) {
+		$key = strtolower( $name );
+		if ( isset( $by_name[ $key ] ) ) {
+			$products[] = $by_name[ $key ];
+		}
+	}
+
+	return $products;
+}
+
+function arv_shop_rail_render( $args = array() ) {
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Shop';
+	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 10;
+	$curated = isset( $args['products'] ) ? trim( (string) $args['products'] ) : '';
+
+	$products = ( '' !== $curated )
+		? arv_shop_rail_curated_products( $curated )
+		: arv_shop_rail_auto_products( $limit );
 
 	if ( empty( $products ) ) {
 		return '';
@@ -528,14 +605,16 @@ function arv_shop_rail_render( $args = array() ) {
 /**
  * [arv_shop_rail] for the home page.
  *
- * @param array $atts
+ * @param array $atts heading, limit, products (pipe-separated names, see
+ *                     arv_shop_rail_curated_products()).
  * @return string
  */
 function arv_shop_rail_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		array(
-			'heading' => 'Shop',
-			'limit'   => 10,
+			'heading'  => 'Shop',
+			'limit'    => 10,
+			'products' => '',
 		),
 		$atts,
 		'arv_shop_rail'
