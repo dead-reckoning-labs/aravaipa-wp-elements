@@ -135,10 +135,14 @@ class ARV_Post {
 	public $ID;
 	public $post_title;
 	public $post_content;
+	public $post_name;
 	public function __construct( $id, $title ) {
 		$this->ID           = $id;
 		$this->post_title   = $title;
 		$this->post_content = $GLOBALS['posts'][ $id ]['body'] ?? '';
+		// /races/ and /results-YYYY/ carry no shortcode to recognise them
+		// by, only a slug, so the SEO recogniser needs this to exist at all.
+		$this->post_name    = $GLOBALS['posts'][ $id ]['slug'] ?? '';
 	}
 }
 
@@ -3325,7 +3329,7 @@ t( 'the player is embedded, not linked',    false !== strpos( $html26, 'embed/bc
 t( 'a single segment gets no playlist',     false === strpos( $html26, 'arv-watch-race__playlist' ) );
 t( 'the year switcher offers 2025',         false !== strpos( $html26, '>2025<' ) );
 t( 'and marks 2026 current',                false !== strpos( $html26, 'is-current' ) );
-t( 'links back to the index',               false !== strpos( $html26, home_url( '/watch/' ) ) );
+t( 'links back to the index',               false !== strpos( $html26, home_url( '/broadcasts/' ) ) );
 
 $html25 = arv_watch_race_render( array( 'race' => 'black-canyon', 'edition' => '2025' ) );
 t( '?edition= switches editions',           false !== strpos( $html25, 'Black Canyon Ultras 2025' ) );
@@ -3343,7 +3347,7 @@ t( 'one segment gets no playlist either',   false === strpos( $html_jp, 'arv-wat
 
 $missing = arv_watch_race_render( array( 'race' => 'nonexistent' ) );
 t( 'an unknown race says so',               false !== strpos( $missing, 'have a broadcast' ) );
-t( 'and still links back to the index',     false !== strpos( $missing, home_url( '/watch/' ) ) );
+t( 'and still links back to the index',     false !== strpos( $missing, home_url( '/broadcasts/' ) ) );
 t( 'a blank race key renders nothing',      '' === arv_watch_race_render( array() ) );
 
 echo "\nwatch, cross-links:\n";
@@ -3498,7 +3502,7 @@ t( 'breadcrumbs are a BreadcrumbList',    'BreadcrumbList' === $crumbs['@type'] 
 // was caught matching against the visible breadcrumb.
 t( 'four deep, home to race',             4 === count( $crumbs['itemListElement'] ) );
 t( 'via Media',                           home_url( '/media/' ) === $crumbs['itemListElement'][1]['item'] );
-t( 'then Broadcasts',                     home_url( '/watch/' ) === $crumbs['itemListElement'][2]['item'] );
+t( 'then Broadcasts',                     home_url( '/broadcasts/' ) === $crumbs['itemListElement'][2]['item'] );
 t( 'and the race is last',                $ctx['url'] === $crumbs['itemListElement'][3]['item'] );
 
 // A segment with nothing usable is dropped rather than emitted invalid.
@@ -4028,7 +4032,7 @@ $cards = arv_media_hub_cards();
 // Four, not five: Photos is a runner-facing page, not audience-facing
 // media, so it keeps its top-level nav item and leaves this grid.
 t( 'four cards, in a fixed order',        array( 'Broadcasts', 'Films', 'Podcasts', 'Articles' ) === array_map( function ( $c ) { return $c['title']; }, $cards ) );
-t( 'each links to its real page',         home_url( '/watch/' ) === $cards[0]['url'] );
+t( 'each links to its real page',         home_url( '/broadcasts/' ) === $cards[0]['url'] );
 t( 'photos is not one of the cards',      ! in_array( home_url( '/photos/' ), array_column( $cards, 'url' ), true ) );
 // /articles/, not /blog/. /blog/ is WordPress's own posts page: it renders
 // through the theme and so looks like nothing else in Media, which is the
@@ -4486,7 +4490,19 @@ t( 'photos is not among them',        ! in_array( 'photos', array_column( $subna
 // moving the URL, which would mean a redirect and the ranking the
 // existing path has already built.
 t( 'the watch key labels itself Broadcasts', 'Broadcasts' === $subnav_items[0]['label'] );
-t( 'and still links to /watch/',             home_url( '/watch/' ) === $subnav_items[0]['url'] );
+t( 'and now links to /broadcasts/',          home_url( '/broadcasts/' ) === $subnav_items[0]['url'] );
+
+// The Broadcasts page's own URL only ever comes from arv_watch_url(). It
+// used to be a /watch/ literal copy-pasted into five different files, one
+// of which this exact rename missed the first time through, which is why
+// /broadcasts/ 404'd for a full plugin cycle after the label was renamed
+// everywhere except the page itself. A grep guard rather than trusting
+// five call sites to stay in sync by hand.
+$watch_src = file_get_contents( __DIR__ . '/includes/watch-store.php' )
+	. file_get_contents( __DIR__ . '/includes/media-subnav.php' )
+	. file_get_contents( __DIR__ . '/includes/media-hub.php' );
+t( 'no hardcoded /watch/ url survives', ! preg_match( "#home_url\(\s*'/watch/'\s*\)#", $watch_src ) );
+t( 'the helper is what every caller uses', substr_count( $watch_src, 'arv_watch_url()' ) >= 5 );
 t( 'the Media parent link renders',   false !== strpos( arv_media_subnav_render( 'films' ), 'arv-media-subnav__parent" href="https://www.aravaiparunning.com/media/"' ) );
 // Never the active section: the strip lives on Media's own children, not
 // on /media/ itself, so nothing should ever mark this one current.
@@ -5452,6 +5468,26 @@ t( 'photos too',                          'photos' === arv_media_seo_page() );
 $GLOBALS['posts'][9901]['body'] = '[arv_shop]';
 t( 'and the shop',                        'shop' === arv_media_seo_page() );
 
+$GLOBALS['posts'][9901]['body'] = '[arv_films]';
+t( 'films too',                           'films' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['body'] = '[arv_watch]';
+t( 'broadcasts too',                      'broadcasts' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['body'] = '[arv_podcasts]';
+t( 'podcasts too',                        'podcasts' === arv_media_seo_page() );
+
+// /races/ and /results-YYYY/ carry no shortcode at all: both are built
+// entirely from Cornerstone elements, none of which register one, so
+// there is nothing in post_content for has_shortcode() to find. Matched
+// on slug instead, the one signal actually available for these two.
+$GLOBALS['posts'][9901]['body'] = '';
+$GLOBALS['posts'][9901]['slug'] = 'races';
+t( 'races has no shortcode but is still found', 'races' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['slug'] = 'results-2026';
+t( 'and so is a results year page',       'results' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['slug'] = 'results-old-format';
+t( 'but not a slug that only looks like one', '' === arv_media_seo_page() );
+$GLOBALS['posts'][9901]['slug'] = '';
+
 // A page carrying none of them claims nothing, rather than emitting a
 // description for a page it guessed at.
 $GLOBALS['posts'][9901]['body'] = '<p>An ordinary page.</p>';
@@ -5469,6 +5505,57 @@ $GLOBALS['ARV_OPTIONS'][ ARV_SHOP_OPTION ] = array(
 );
 $shop_meta = arv_media_seo_meta( 'shop' );
 t( 'the shop description counts products', false !== strpos( $shop_meta['description'], '1 piece' ) || false !== strpos( $shop_meta['description'], '1 pieces' ) );
+
+// Films, Broadcasts and Podcasts count from the same transient-backed
+// fetch each page itself renders from, the same rule the original five
+// already followed.
+$GLOBALS['_transients']['arv_films'] = array(
+	array( 'title' => 'Fixture', 'films' => array(
+		array( 'id' => 'f1', 'title' => 'A Film', 'desc' => '', 'thumbnail' => '', 'published' => '2026-01-01T00:00:00Z',
+		       'views' => 1, 'duration' => '', 'url' => 'https://youtu.be/f1', 'lead' => '', 'race' => '', 'division' => null, 'trailer' => null ),
+	) ),
+);
+$films_meta = arv_media_seo_meta( 'films' );
+t( 'the films description counts them',   false !== strpos( $films_meta['description'], '1 Aravaipa Running film' ) );
+$GLOBALS['_transients']['arv_films'] = 'none';
+t( 'and says something with zero films',  '' !== arv_media_seo_meta( 'films' )['description'] );
+
+$GLOBALS['_transients']['arv_watch_events'] = array(
+	array( 'name' => 'Fixture Race', 'slug' => 'fixture-race', 'live' => false, 'streams' => array() ),
+);
+$broadcasts_meta = arv_media_seo_meta( 'broadcasts' );
+t( 'broadcasts counts events',            false !== strpos( $broadcasts_meta['description'], '1 and counting' ) );
+t( 'and the title says Broadcasts, not Watch', 'Broadcasts | Aravaipa Running' === $broadcasts_meta['title'] );
+
+$GLOBALS['_transients']['arv_podcasts'] = array(
+	'inside-aravaipa' => array( 'key' => 'inside-aravaipa', 'title' => 'Inside Aravaipa', 'artwork' => '', 'desc' => '', 'episodes' => array(
+		array( 'title' => 'Ep 1', 'artwork' => '', 'desc' => '', 'guid' => 'g1', 'duration' => '', 'published' => '2026-01-01T00:00:00Z', 'url' => 'https://x.test/1.mp3' ),
+	) ),
+);
+$podcasts_meta = arv_media_seo_meta( 'podcasts' );
+t( 'podcasts counts episodes and shows',  false !== strpos( $podcasts_meta['description'], '1 episodes across 1' ) || false !== strpos( $podcasts_meta['description'], '1 episode' ) );
+
+// Races and Results carry no shortcode, so their descriptions are the
+// clearest sign the slug-based recognition in arv_media_seo_page() is
+// wired to the right builder and not just returning a key nothing reads.
+$races_backup = $GLOBALS['posts'];
+$GLOBALS['posts'] = array();
+arv_race_store_import( "Fixture Race | 2026-09-05 | September 5 | 5K | Fixture Park | Fixtureville, AZ | https://ultrasignup.com/register.aspx?did=1 |  |  |  |  | 1 | 1 | 0 | 33.4 | -111.9\nOther Race | 2026-10-05 | October 5 | 5K | Other Park | Otherville, CO | https://ultrasignup.com/register.aspx?did=2 |  |  |  |  | 1 | 1 | 0 | 39.7 | -104.9" );
+$races_meta = arv_media_seo_meta( 'races' );
+t( 'races counts from the real store',    false !== strpos( $races_meta['description'], '2 Aravaipa Running races' ) );
+t( 'across the states actually present',  false !== strpos( $races_meta['description'], '2 states' ) );
+
+$GLOBALS['ARV_OPTIONS'][ ARV_RESULTS_OPTION ] = array(
+	array( 'name' => 'Fixture Race', 'iso' => '2026-03-01' ),
+	array( 'name' => 'Other Race', 'iso' => '2025-03-01' ),
+);
+$GLOBALS['posts'][9901]['slug'] = 'results-2026';
+$results_meta = arv_media_seo_meta( 'results' );
+t( 'results counts only its own year',    false !== strpos( $results_meta['description'], '1 Aravaipa Running races' ) );
+t( 'and the title carries the year',      'Results 2026 | Aravaipa Running' === $results_meta['title'] );
+$GLOBALS['posts'][9901]['slug'] = '';
+$GLOBALS['posts'] = $races_backup;
+$GLOBALS['ARV_OPTIONS'][ ARV_RESULTS_OPTION ] = array();
 
 echo "\npost SEO, the 296 articles that had none:\n";
 // Individual posts got nothing: no description, no Open Graph, no schema.

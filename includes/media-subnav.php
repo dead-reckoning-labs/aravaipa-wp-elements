@@ -39,7 +39,7 @@ function arv_media_subnav_items() {
 	return apply_filters(
 		'arv_media_subnav_items',
 		array(
-			array( 'key' => 'watch', 'label' => __( 'Broadcasts', 'aravaipa-elements' ), 'url' => home_url( '/watch/' ) ),
+			array( 'key' => 'watch', 'label' => __( 'Broadcasts', 'aravaipa-elements' ), 'url' => arv_watch_url() ),
 			array( 'key' => 'films', 'label' => __( 'Films', 'aravaipa-elements' ), 'url' => home_url( '/films/' ) ),
 			// Directly after Films, because it is a child of Films rather
 			// than a peer of the other four: the tours are how those films

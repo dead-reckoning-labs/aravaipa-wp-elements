@@ -1,13 +1,15 @@
 <?php
 /**
- * Descriptions and structured data for the five pages that had neither.
+ * Descriptions and structured data for the pages that had neither.
  *
- * Watch, Films, Podcasts and the race pages each grew their own head
- * output as they were built. /media/, /film-tours/, /articles/, /photos/
- * and /shop/ did not, so they shipped with no meta description and no
- * structured data at all: Google wrote its own snippet for each from
- * whatever text it found first, which on a page that opens with a nav
- * strip is usually the nav strip.
+ * Started at five: /media/, /film-tours/, /articles/, /photos/ and /shop/
+ * shipped with no meta description and no structured data at all, so
+ * Google wrote its own snippet for each from whatever text it found
+ * first, which on a page that opens with a nav strip is usually the nav
+ * strip. A later pass found the same gap on five more: Films, Broadcasts
+ * and Podcasts had it for the same reason as the original five, and
+ * /races/ and the yearly /results-YYYY/ pages had it too, for a different
+ * one, see arv_media_seo_page() below.
  *
  * That gap is wider than it looks right now, because this site runs no SEO
  * plugin. Yoast is installed and deactivated, and Site Kit only reports on
@@ -19,9 +21,10 @@
  * this rather than produce a second, competing description.
  *
  * Pages are recognised by the shortcode they carry rather than by path or
- * by a stored id. A page that gets renamed, moved under a different
- * parent, or rebuilt keeps working, and the recogniser cannot drift out of
- * step with what the page actually renders.
+ * by a stored id, wherever a shortcode exists to check for: a page that
+ * gets renamed, moved under a different parent, or rebuilt keeps working,
+ * and the recogniser cannot drift out of step with what the page actually
+ * renders.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -46,25 +49,47 @@ function arv_media_seo_page() {
 
 	$post = get_post( $id );
 
-	if ( ! $post || empty( $post->post_content ) ) {
+	if ( ! $post ) {
 		return '';
 	}
 
-	// Ordered most specific first: /media/ carries [arv_media_hub], and
-	// nothing else does, but checking a looser pattern earlier would match
-	// the wrong page.
-	$shortcodes = array(
-		'film-tours' => 'arv_film_tours',
-		'shop'       => 'arv_shop',
-		'articles'   => 'arv_articles',
-		'photos'     => 'arv_photos',
-		'media'      => 'arv_media_hub',
-	);
+	if ( '' !== trim( (string) $post->post_content ) ) {
+		// Ordered most specific first: /media/ carries [arv_media_hub], and
+		// nothing else does, but checking a looser pattern earlier would
+		// match the wrong page.
+		$shortcodes = array(
+			'film-tours' => 'arv_film_tours',
+			'shop'       => 'arv_shop',
+			'articles'   => 'arv_articles',
+			'photos'     => 'arv_photos',
+			'broadcasts' => 'arv_watch',
+			'films'      => 'arv_films',
+			'podcasts'   => 'arv_podcasts',
+			'media'      => 'arv_media_hub',
+		);
 
-	foreach ( $shortcodes as $key => $tag ) {
-		if ( has_shortcode( $post->post_content, $tag ) ) {
-			return $key;
+		foreach ( $shortcodes as $key => $tag ) {
+			if ( has_shortcode( $post->post_content, $tag ) ) {
+				return $key;
+			}
 		}
+	}
+
+	// /races/ and the yearly /results-YYYY/ pages carry no shortcode at
+	// all to check: both are built entirely from Cornerstone elements
+	// (aravaipa-season-calendar, aravaipa-race-map, aravaipa-results),
+	// none of which register a parallel shortcode the way the rails and
+	// the shop do. There is nothing in post_content for has_shortcode()
+	// to find, so these two are matched on slug instead, the one signal
+	// that is actually available. Narrower than it looks: this only ever
+	// fires for these two exact shapes, everything else still goes
+	// through the shortcode path above.
+	if ( 'races' === $post->post_name ) {
+		return 'races';
+	}
+
+	if ( preg_match( '/^results-\d{4}$/', $post->post_name ) ) {
+		return 'results';
 	}
 
 	return '';
@@ -148,6 +173,96 @@ function arv_media_seo_meta( $key ) {
 				/* translators: %s: a count of products. */
 				? sprintf( __( '%s pieces of Aravaipa Running race gear: hats, tees, hoodies and accessories, by race and by category.', 'aravaipa-elements' ), number_format_i18n( $products ) )
 				: __( 'Aravaipa Running race gear, by race and by category.', 'aravaipa-elements' ),
+			'type'        => 'website',
+		);
+	}
+
+	if ( 'films' === $key ) {
+		$films = function_exists( 'arv_films_all' ) && function_exists( 'arv_films_fetch' )
+			? arv_films_all( arv_films_fetch() )
+			: array();
+
+		return array(
+			'title'       => __( 'Films | Aravaipa Running', 'aravaipa-elements' ),
+			'description' => ! empty( $films )
+				/* translators: %s: a count of films. */
+				? sprintf( __( '%s Aravaipa Running films, from race documentaries to full event coverage. Watch them all here.', 'aravaipa-elements' ), number_format_i18n( count( $films ) ) )
+				: __( 'Aravaipa Running films: race documentaries and full event coverage.', 'aravaipa-elements' ),
+			'type'        => 'website',
+		);
+	}
+
+	if ( 'broadcasts' === $key ) {
+		$events = function_exists( 'arv_watch_events' ) ? arv_watch_events() : array();
+
+		return array(
+			'title'       => __( 'Broadcasts | Aravaipa Running', 'aravaipa-elements' ),
+			'description' => ! empty( $events )
+				/* translators: %s: a count of broadcasts. */
+				? sprintf( __( 'Every Aravaipa Running live broadcast, %s and counting: watch upcoming races live and past ones on demand.', 'aravaipa-elements' ), number_format_i18n( count( $events ) ) )
+				: __( 'Aravaipa Running live broadcasts: watch upcoming races live and past ones on demand.', 'aravaipa-elements' ),
+			'type'        => 'website',
+		);
+	}
+
+	if ( 'podcasts' === $key ) {
+		// The fetched shows, episodes and all, the same source the page
+		// itself renders from: arv_podcasts_shows_config() alone is just
+		// feed URLs and carries no episodes to count.
+		$shows    = function_exists( 'arv_podcasts_fetch' ) ? arv_podcasts_fetch() : array();
+		$episodes = function_exists( 'arv_podcasts_all' ) ? arv_podcasts_all( $shows ) : array();
+
+		return array(
+			'title'       => __( 'Podcasts | Aravaipa Running', 'aravaipa-elements' ),
+			'description' => ! empty( $episodes )
+				/* translators: 1: a count of episodes, 2: a count of shows. */
+				? sprintf( __( '%1$s episodes across %2$s Aravaipa Running podcasts: race previews, recaps and conversation with the people who run them.', 'aravaipa-elements' ), number_format_i18n( count( $episodes ) ), number_format_i18n( count( $shows ) ) )
+				: __( 'Aravaipa Running podcasts: race previews, recaps and conversation with the people who run them.', 'aravaipa-elements' ),
+			'type'        => 'website',
+		);
+	}
+
+	if ( 'races' === $key ) {
+		$races  = function_exists( 'arv_race_store_get' ) ? arv_race_store_get() : array();
+		$states = array();
+
+		foreach ( $races as $race ) {
+			if ( preg_match( '/,\s*([A-Z]{2})\s*$/', (string) $race['location'], $m ) ) {
+				$states[ $m[1] ] = true;
+			}
+		}
+
+		return array(
+			'title'       => __( 'Races | Aravaipa Running', 'aravaipa-elements' ),
+			'description' => ! empty( $races )
+				/* translators: 1: a count of races, 2: a count of states. */
+				? sprintf( __( '%1$s Aravaipa Running races across %2$s states: dates, distances and how to register for every one on the calendar.', 'aravaipa-elements' ), number_format_i18n( count( $races ) ), number_format_i18n( count( $states ) ) )
+				: __( 'Every Aravaipa Running race: dates, distances and how to register.', 'aravaipa-elements' ),
+			'type'        => 'website',
+		);
+	}
+
+	if ( 'results' === $key ) {
+		$post = get_post( get_queried_object_id() );
+		$year = ( $post && preg_match( '/^results-(\d{4})$/', $post->post_name, $m ) ) ? $m[1] : '';
+
+		$count = 0;
+
+		if ( '' !== $year && function_exists( 'arv_results_store_get' ) ) {
+			foreach ( arv_results_store_get() as $result ) {
+				if ( $year === substr( (string) $result['iso'], 0, 4 ) ) {
+					$count++;
+				}
+			}
+		}
+
+		return array(
+			/* translators: %s: a year, e.g. 2026. */
+			'title'       => '' !== $year ? sprintf( __( 'Results %s | Aravaipa Running', 'aravaipa-elements' ), $year ) : __( 'Results | Aravaipa Running', 'aravaipa-elements' ),
+			'description' => $count
+				/* translators: 1: a count of races, 2: a year. */
+				? sprintf( __( 'Results from %1$s Aravaipa Running races in %2$s, with live boards for the ones still running.', 'aravaipa-elements' ), number_format_i18n( $count ), $year )
+				: __( 'Aravaipa Running race results, with live boards for the ones still running.', 'aravaipa-elements' ),
 			'type'        => 'website',
 		);
 	}
