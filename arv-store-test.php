@@ -362,6 +362,27 @@ t( 'the calendar does too',                                     substr_count( $c
 t( 'and still shows real dates where they are known',           false !== strpos( $cal, '__day-num">29<' ) );
 t( 'and TBD where they are not',                                false !== strpos( $cal, 'day--tbd' ) );
 
+// The producer note reaches both surfaces, not just the store. Rock Hawk
+// Trail Races stands in for the real case (Devil After Dark) because it is
+// already in this fixture and on both the card grid and the calendar. Its
+// full name, not "Rock Hawk": the note store is keyed on the name exactly
+// as the store holds it, with none of the normalising arv_results_race_key()
+// does elsewhere, so a near-miss here silently matches nothing.
+arv_race_note_store_set( array( 'Rock Hawk Trail Races' => 'Produced by Calico Racing in 2026' ) );
+$noted_cards = arv_upcoming_races_render( array( 'rows' => '', 'limit' => '0' ) );
+$noted_cal   = arv_season_calendar_render( array( 'rows' => '' ) );
+
+t( 'a note reaches the race card',      false !== strpos( $noted_cards, 'arv-races__presented' ) );
+t( 'reading what it was given',         false !== strpos( $noted_cards, 'Produced by Calico Racing in 2026' ) );
+t( 'and reaches the calendar row too',  false !== strpos( $noted_cal, 'arv-calendar__presented' ) );
+
+// Every other race stays clean: this is a caveat on two listings, not a
+// new line on all ninety.
+t( 'only the noted race carries it',    1 === substr_count( $noted_cards, 'arv-races__presented' ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
+t( 'and nothing renders it once cleared', false === strpos( arv_upcoming_races_render( array( 'rows' => '', 'limit' => '0' ) ), 'arv-races__presented' ) );
+
 echo "\nregions, for division pages:\n";
 $az = arv_race_store_get( array( 'region' => 'arizona' ) );
 $co = arv_race_store_get( array( 'region' => 'colorado' ) );
@@ -680,6 +701,38 @@ t( 'and the good one survived', 'https://x.test/w' === arv_race_waitlist_for( ar
 // A nameless race must never match a stored entry by accident.
 t( 'a race with no name is safe', '' === arv_race_waitlist_for( array() ) );
 t( 'a race with a blank name is safe', '' === arv_race_waitlist_for( array( 'name' => '   ' ) ) );
+
+echo "\nproducer notes, for a race Aravaipa owns but does not yet run:\n";
+// Devil After Dark and Out with the Old become Aravaipa events in 2027
+// and Calico Racing is still producing the 2026 editions. Listing them on
+// aravaiparunning.com is an implicit claim about who runs them, and for
+// another year that claim is wrong, so the card says so.
+$GLOBALS['ARV_OPTIONS'] = array();
+
+t( 'no note by default',                  '' === arv_race_presented_by( array( 'name' => 'Devil After Dark' ) ) );
+
+arv_race_note_store_set( array(
+	'Devil After Dark' => 'Produced by Calico Racing in 2026',
+	'Out with the Old' => 'Produced by Calico Racing in 2026',
+) );
+
+t( 'a stored note resolves',              'Produced by Calico Racing in 2026' === arv_race_presented_by( array( 'name' => 'Devil After Dark' ) ) );
+t( 'and only for the races named',        '' === arv_race_presented_by( array( 'name' => 'Javelina Jundred' ) ) );
+
+// Same shape of write cleaning the waitlist store does, for the same
+// reason: this is written by a script and must not store junk.
+$n = arv_race_note_store_set( array( 'Good' => 'A note', '' => 'No name', 'Blank' => '   ' ) );
+t( 'blank names and blank notes are dropped', 1 === $n );
+t( 'and the good one survived',           'A note' === arv_race_presented_by( array( 'name' => 'Good' ) ) );
+
+// A replace, not a merge: an event that has changed hands for real should
+// stop carrying the caveat, and a merge would keep it forever.
+t( 'a race dropped from the store loses its note', '' === arv_race_presented_by( array( 'name' => 'Devil After Dark' ) ) );
+
+t( 'a race with no name is safe',         '' === arv_race_presented_by( array() ) );
+t( 'a blank name is safe too',            '' === arv_race_presented_by( array( 'name' => '  ' ) ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
 
 $GLOBALS['QUIET_FAILS'] = 0;
 // The race week block lists the same races the archive does, so anything

@@ -405,6 +405,14 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 
 	$out .= '<span class="arv-calendar__body">';
 	$out .= '<span class="arv-calendar__name">' . esc_html( $race['name'] ) . '</span>';
+
+	// See arv_race_presented_by(): a race Aravaipa owns from next year but
+	// does not run this year says so, rather than letting the listing imply
+	// otherwise.
+	$presented = arv_race_presented_by( $race );
+	if ( '' !== $presented ) {
+		$out .= '<span class="arv-calendar__presented">' . esc_html( $presented ) . '</span>';
+	}
 	// Pills, matching the map popup, rather than the raw delimiter-joined
 	// string. "50KM | 23K | 4 Mile | 1 Mile" read as a machine-separated
 	// list; the same distances as chips scan as four things a runner can

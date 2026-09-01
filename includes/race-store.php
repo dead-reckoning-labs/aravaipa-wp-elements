@@ -874,6 +874,16 @@ function arv_race_store_rest_import( $request ) {
 define( 'ARV_WAITLIST_OPTION', 'arv_race_waitlists' );
 
 /**
+ * Per-race producer notes, keyed by race name.
+ *
+ * Separate from a row for the same two reasons the waitlist option is:
+ * the row parser counts backwards from a fixed column count, so a new
+ * column re-slices every existing row, and this changes once when an
+ * event changes hands where a row changes every season.
+ */
+define( 'ARV_RACE_NOTE_OPTION', 'arv_race_notes' );
+
+/**
  * The stored waitlist map: race name => waitlist URL.
  *
  * @return array<string, string>
@@ -947,6 +957,85 @@ function arv_race_waitlist_register_rest_route() {
 	);
 }
 add_action( 'rest_api_init', 'arv_race_waitlist_register_rest_route' );
+
+/**
+ * Replace the per-race producer notes.
+ *
+ * @param array $map Race name => note. An empty note removes that race's.
+ * @return int Number of notes stored.
+ */
+function arv_race_note_store_set( $map ) {
+	$clean = array();
+
+	foreach ( (array) $map as $name => $note ) {
+		$name = trim( (string) $name );
+		$note = sanitize_text_field( trim( (string) $note ) );
+
+		if ( '' === $name || '' === $note ) {
+			continue;
+		}
+
+		$clean[ $name ] = $note;
+	}
+
+	update_option( ARV_RACE_NOTE_OPTION, $clean, false );
+
+	return count( $clean );
+}
+
+/**
+ * Register the note write route.
+ *
+ * Same edit_posts scoping as the row importer and the waitlist route, so
+ * the Editor-scoped Application Password reaches this and nothing wider.
+ */
+function arv_race_note_register_rest_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/races/notes',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_race_note_rest_set',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'notes'   => array(
+					'required' => true,
+					'type'     => 'string',
+				),
+				'dry_run' => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_race_note_register_rest_route' );
+
+/**
+ * POST /wp-json/aravaipa/v1/races/notes
+ *
+ * JSON as a string, the same shape the waitlist route takes, so both
+ * writers look identical from a script's side.
+ *
+ * @param WP_REST_Request $request
+ * @return array
+ */
+function arv_race_note_rest_set( $request ) {
+	$decoded = json_decode( (string) $request->get_param( 'notes' ), true );
+
+	if ( ! is_array( $decoded ) ) {
+		return array( 'status' => 'refused', 'reason' => 'notes is not a JSON object' );
+	}
+
+	if ( $request->get_param( 'dry_run' ) ) {
+		return array( 'status' => 'dry_run', 'valid' => count( $decoded ) );
+	}
+
+	return array( 'status' => 'ok', 'stored' => arv_race_note_store_set( $decoded ) );
+}
 
 /**
  * Write the scraped waitlist map.
