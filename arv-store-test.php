@@ -264,6 +264,7 @@ require_once __DIR__ . '/includes/elements/race-status.php';
 require_once __DIR__ . '/includes/elements/featured-race.php';
 require_once __DIR__ . '/includes/elements/race-map.php';
 require_once __DIR__ . '/includes/elements/region-map.php';
+require_once __DIR__ . '/includes/elements/shop-rail.php';
 require_once __DIR__ . '/includes/race-store.php';
 require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
@@ -5183,6 +5184,17 @@ t( 'prices are on the cards',             false !== strpos( $rail, '$28' ) );
 // A limit is honoured, and is a count of cards, not of collections.
 $limited = arv_shop_rail_render( array( 'limit' => 2 ) );
 t( 'a limit caps the cards',              2 === substr_count( $limited, 'arv-rail__item--shop' ) );
+
+// A builder has to be able to place this. It shipped as a shortcode with
+// no element, which made it the one rail in the plugin that could only be
+// typed in by hand: everything else here registers both, so neither route
+// is the privileged one.
+t( 'the rail is a Cornerstone element',   isset( $GLOBALS['EL']['aravaipa-shop-rail'] ) );
+t( 'and renders the same as the shortcode',
+	arv_shop_rail_element_render( array( 'heading' => 'Shop', 'limit' => 2 ) )
+	=== arv_shop_rail_render( array( 'heading' => 'Shop', 'limit' => 2 ) ) );
+t( 'its controls are exposed to the builder',
+	false !== strpos( wp_json_encode( arv_shop_rail_element_builder() ), '"key":"heading"' ) );
 
 // Nothing to show is nothing rendered, the same rule every other silent
 // block in this plugin follows.
