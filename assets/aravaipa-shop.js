@@ -65,12 +65,18 @@
 
 		lastFocus = document.activeElement;
 		drawer.hidden = false;
+		// The inline style a page builder cannot recognise and strip the
+		// hidden attribute out from under: see the PHP side for why this
+		// exists. Cleared here rather than left for CSS, since the whole
+		// point is not to depend on a stylesheet being the thing in charge.
+		drawer.style.display = '';
 		drawer.querySelector('.arv-shop__detail-close').focus();
 		document.addEventListener('keydown', onKeydown);
 	}
 
 	function close() {
 		drawer.hidden = true;
+		drawer.style.display = 'none';
 		document.removeEventListener('keydown', onKeydown);
 
 		if (lastFocus) {

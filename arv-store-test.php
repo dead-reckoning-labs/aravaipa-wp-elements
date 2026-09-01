@@ -5090,6 +5090,22 @@ $GLOBALS['FILTERS']['arv_shop_storefront_host'] = array();
 $combo = $strip . arv_shop_render( array() );
 t( 'still exactly one drawer between them', 1 === substr_count( $combo, 'data-arv-shop-detail>' ) );
 
+// Cornerstone's own builder canvas rendered the drawer permanently open:
+// a page builder stripping a bare boolean attribute it does not
+// recognise, not a CSS bug, since the published page's own markup was
+// always correct. Belt and braces rather than trusting either signal
+// alone: the hidden attribute for browsers that respect it, an inline
+// style next to it that survives whatever strips the other one.
+t( 'the drawer starts hidden two ways',    false !== strpos( $strip, 'arv-shop__detail" hidden style="display:none"' ) );
+
+// The two are kept in sync by the script, not left for one to drift from
+// the other. Nothing in this suite executes it, so this is a content
+// guard rather than a behavioural test: it exists so the next edit to
+// this file cannot quietly drop one half of the fix.
+$shop_js = file_get_contents( __DIR__ . '/assets/aravaipa-shop.js' );
+t( 'opening clears the inline style too', false !== strpos( $shop_js, "drawer.style.display = '';" ) );
+t( 'closing sets it again',               false !== strpos( $shop_js, "drawer.style.display = 'none';" ) );
+
 echo "\nshop, the collection accordion:\n";
 $page = arv_shop_render( array( 'heading' => 'Shop' ) );
 // <details>, not a click handler: opening a tile in place needs no script
