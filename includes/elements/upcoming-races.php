@@ -704,6 +704,15 @@ function arv_upcoming_races_render( $data ) {
 			$cards .= '<p class="arv-races__where">' . esc_html( implode( ', ', $where ) ) . '</p>';
 		}
 
+		// Who is actually putting the race on, where that is not Aravaipa.
+		// A listing here is an implicit claim about that, and for a race
+		// Aravaipa has bought but does not run until next year the claim
+		// would be wrong for another season.
+		$presented = arv_race_presented_by( $race );
+		if ( '' !== $presented ) {
+			$cards .= '<p class="arv-races__presented">' . esc_html( $presented ) . '</p>';
+		}
+
 		// What the primary button offers depends on where the race is in its
 		// life: entries before it, the live field during it, results after.
 		$action = arv_upcoming_races_action( $race, $today, $live_lead );

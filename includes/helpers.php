@@ -365,6 +365,57 @@ function arv_race_series_for( $race ) {
 }
 
 /**
+ * Who actually puts a race on, when that is not Aravaipa.
+ *
+ * The Nevada races bought from Calico Racing become Aravaipa events in
+ * 2027, and Calico is still producing the 2026 editions. They are listed
+ * here now because a runner looking at the Nevada calendar should be able
+ * to find them, but a listing on aravaiparunning.com is an implicit claim
+ * of who is running the event, and for these two that claim would be
+ * wrong for another year. Saying so on the card is cheaper than the
+ * confusion of not saying it.
+ *
+ * Keyed by race name in an option rather than added as a seventeenth
+ * column, exactly like the waitlist store above and for the same reason:
+ * arv_upcoming_races_parse_row() counts backwards from ARV_RACES_COLUMNS
+ * to find its fixed tail, so a new column silently re-slices every
+ * existing row carrying multi-cell distances. This also changes on a
+ * completely different cadence to a row, once when an event changes
+ * hands, where a row changes every season.
+ *
+ * @param array $race Race array.
+ * @return string A short producer note, or '' for an ordinary Aravaipa race.
+ */
+function arv_race_presented_by( $race ) {
+	if ( ! isset( $race['name'] ) || '' === trim( (string) $race['name'] ) ) {
+		return '';
+	}
+
+	$notes = array();
+
+	// defined() as well as function_exists(): the constant lives in
+	// race-store.php and this file loads first, so a caller reaching this
+	// before the store is loaded would otherwise fatal on the constant
+	// rather than simply having no note to show.
+	if ( function_exists( 'get_option' ) && defined( 'ARV_RACE_NOTE_OPTION' ) ) {
+		$stored = get_option( ARV_RACE_NOTE_OPTION, array() );
+
+		if ( is_array( $stored ) ) {
+			$notes = $stored;
+		}
+	}
+
+	/**
+	 * Filters the per-race producer notes.
+	 *
+	 * @param array $notes Race name => note.
+	 */
+	$notes = apply_filters( 'arv_race_presented_by_notes', $notes );
+
+	return isset( $notes[ $race['name'] ] ) ? (string) $notes[ $race['name'] ] : '';
+}
+
+/**
  * Waitlist link for a race that has sold out, keyed by name.
  *
  * Not derivable from anything already in a row, but it is derivable from

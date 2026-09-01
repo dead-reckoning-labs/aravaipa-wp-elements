@@ -1375,6 +1375,19 @@
 	color: var(--arv-races-muted);
 }
 
+/* Who is actually producing the race, where that is not Aravaipa. Quieter
+   than the venue above it and italic, because it is a caveat on the
+   listing rather than another fact about the race: it should read as an
+   aside, not compete with the distances or the date. */
+.arv-races__presented {
+	margin: -0.75rem 0 1rem;
+	font-size: var(--arv-fs-label);
+	font-style: italic;
+	line-height: 1.4;
+	color: var(--arv-races-muted);
+	opacity: 0.8;
+}
+
 /* Pushed to the bottom of the card so the buttons line up across a row even
    when one race has four distances and its neighbour has one. A sibling of
    the body rather than a child of it, so it can span the full card when the
@@ -1879,6 +1892,12 @@
 .arv-calendar__where {
 	font-size: var(--arv-fs-meta);
 	opacity: 0.65;
+}
+
+.arv-calendar__presented {
+	font-size: var(--arv-fs-label);
+	font-style: italic;
+	opacity: 0.6;
 }
 
 .arv-calendar__status {
