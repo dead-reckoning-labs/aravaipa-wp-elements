@@ -73,6 +73,22 @@ while read -r el; do
 done < <(sed -n "/\$elements = array(/,/);/p" "$NAME.php" | grep -oE "'[a-z-]+'" | tr -d "'")
 [ "$missing" -eq 0 ] || exit 1
 
+# And the inverse: an element file nobody loads. The shop rail shipped with
+# a shortcode and no element at all, which made it the one rail a builder
+# could not place, and the check above could not see it because an element
+# that was never registered is never missed. This catches the next one:
+# writing the file and forgetting the array is the same mistake one step
+# later.
+orphan=0
+for f in includes/elements/*.php; do
+	el=$(basename "$f" .php)
+	# index.php is the directory-listing guard, not an element.
+	[ "$el" = "index" ] && continue
+	sed -n "/\$elements = array(/,/);/p" "$NAME.php" | grep -q "'$el'" \
+		|| { echo "element file '$el.php' exists but is never loaded" >&2; orphan=1; }
+done
+[ "$orphan" -eq 0 ] || exit 1
+
 # str_replace( '<', '<', ... ) is a no-op that reads exactly like the fix it
 # is meant to be, and shipped as one in race-map.php until a test caught it.
 # The real escape is \u003C. Cheap to check, and the failure mode is an XSS
