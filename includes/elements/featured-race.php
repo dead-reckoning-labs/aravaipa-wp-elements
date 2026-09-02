@@ -51,7 +51,7 @@ cs_register_element(
 				// the artwork and the copy fight each other and neither wins.
 				// The logo is rendered as a logo below instead, and this is a
 				// real photo behind it.
-				'image'      => cs_value( 'https://www.aravaiparunning.com/avr/wp-content/uploads/ScottRokis_Javelina24_SRR30043.jpg', 'markup' ),
+				'image'      => cs_value( 'https://www.aravaiparunning.com/wp-content/uploads/ScottRokis_Javelina24_SRR30043.jpg', 'markup' ),
 				'overlay'    => cs_value( '0.5', 'style' ),
 				'full_width' => cs_value( 'true', 'markup' ),
 				'theme'      => cs_value( 'dark', 'style' ),
@@ -74,7 +74,7 @@ cs_register_element(
 				//                       coming-soon-section.tsx.
 				'host_label' => cs_value( 'Hosted on Obsession.run', 'markup' ),
 				'host_url'   => cs_value( 'https://obsession.run/challenges/jallucinations', 'markup' ),
-				'host_logo'  => cs_value( 'https://www.aravaiparunning.com/avr/wp-content/uploads/obsession-app-icon.png', 'markup' ),
+				'host_logo'  => cs_value( 'https://www.aravaiparunning.com/wp-content/uploads/obsession-app-icon.png', 'markup' ),
 				// The entry price, not the checkout total. obsession.run breaks
 				// it out the same way ("$49.00 entry + $3.89 fee"), and a bare
 				// "$52.89" reads as a strangely precise number with no
