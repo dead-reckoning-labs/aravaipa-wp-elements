@@ -221,24 +221,37 @@ function arv_shop_price( $cents ) {
  * @return array
  */
 function arv_shop_detail_payload( $product ) {
+	// Read every key as defensively as arv_shop_import() writes it. The
+	// importer has always filled all of these in, but rows written by earlier
+	// versions of it are still in the stored option, and a product missing
+	// 'options' or 'desc' was emitting three warnings per card on every render
+	// of the shop and of every rail that borrows this payload.
+	$price = isset( $product['price'] ) ? $product['price'] : 0;
+
 	$options = array();
 
-	foreach ( $product['options'] as $opt ) {
+	foreach ( (array) ( isset( $product['options'] ) ? $product['options'] : array() ) as $opt ) {
+		if ( ! is_array( $opt ) ) {
+			continue;
+		}
+
+		$opt_price = isset( $opt['price'] ) && $opt['price'] ? $opt['price'] : $price;
+
 		$options[] = array(
-			'name'    => $opt['name'],
-			'price'   => arv_shop_price( $opt['price'] ? $opt['price'] : $product['price'] ),
-			'soldOut' => $opt['sold_out'],
+			'name'    => isset( $opt['name'] ) ? $opt['name'] : '',
+			'price'   => arv_shop_price( $opt_price ),
+			'soldOut' => ! empty( $opt['sold_out'] ),
 		);
 	}
 
 	return array(
-		'name'    => $product['name'],
-		'desc'    => $product['desc'],
-		'image'   => $product['image'],
-		'price'   => arv_shop_price( $product['price'] ),
-		'soldOut' => $product['sold_out'],
+		'name'    => isset( $product['name'] ) ? $product['name'] : '',
+		'desc'    => isset( $product['desc'] ) ? $product['desc'] : '',
+		'image'   => isset( $product['image'] ) ? $product['image'] : '',
+		'price'   => arv_shop_price( $price ),
+		'soldOut' => ! empty( $product['sold_out'] ),
 		'options' => $options,
-		'url'     => arv_shop_url( $product['url'] ),
+		'url'     => arv_shop_url( isset( $product['url'] ) ? $product['url'] : '' ),
 	);
 }
 
