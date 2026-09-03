@@ -4331,13 +4331,6 @@
 	min-width: 0;
 }
 
-/* The winners line belongs under the name, not beside it, so it claims the
-   whole row of this column and wraps onto its own line. */
-.arv-results__race-head > .arv-results__winners {
-	flex: 1 1 100%;
-	min-width: 0;
-}
-
 .arv-results__race-name {
 	margin: 0;
 	font-size: var(--arv-fs-name);
@@ -4387,20 +4380,27 @@
 	margin-right: 0.35rem;
 }
 
-/* The marquee result, one line under the count.
+/* The marquee result, one line below the name/date/buttons row.
 
    Flex rather than inline text so a third division wraps as a unit instead
    of splitting a name from its time mid-line. Most events ran men and women
    and fit on one line; Javelina also scores nonbinary and wraps, which is
-   the correct behaviour rather than a case to design away. */
-.arv-results__winners {
+   the correct behaviour rather than a case to design away. A single scored
+   distance renders as this plain line with no control; more than one gets
+   the same line inside a disclosure's summary, see .arv-results__winners-all
+   below, so the two need matching spacing above them. */
+.arv-results__winners,
+.arv-results__winners-summary {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
 	gap: 0.15rem 0.75rem;
-	margin: 0.15rem 0 0;
 	font-size: var(--arv-fs-body);
 	color: var(--arv-results-muted);
+}
+
+.arv-results__winners {
+	margin: 0.5rem 0 0;
 }
 
 /* The distance the headline is about. Set apart from the names, since
@@ -4439,12 +4439,33 @@
 	background: #fafafa;
 }
 
-.arv-results__winners-all[open] > .arv-results__older-toggle {
+.arv-results__winners-all[open] > .arv-results__winners-summary {
 	margin-bottom: 0.4rem;
 	border-radius: var(--arv-radius);
 }
 
-.arv-results__winners-all[open] > .arv-results__older-toggle .arv-results__chevron {
+/* The summary is the closed-state headline, so it is a cursor away from
+   being mistaken for the plain, non-interactive .arv-results__winners line
+   it visually matches. cursor: pointer says otherwise, and the two marker
+   rules drop the browser's own disclosure triangle, which would otherwise
+   sit doubled up beside the chevron this already draws. */
+.arv-results__winners-summary {
+	cursor: pointer;
+}
+
+.arv-results__winners-summary::marker,
+.arv-results__winners-summary::-webkit-details-marker {
+	content: "";
+	display: none;
+}
+
+.arv-results__chevron {
+	flex: 0 0 auto;
+	align-self: center;
+	transition: transform 0.15s ease;
+}
+
+.arv-results__winners-all[open] > .arv-results__winners-summary .arv-results__chevron {
 	transform: rotate(180deg);
 }
 
