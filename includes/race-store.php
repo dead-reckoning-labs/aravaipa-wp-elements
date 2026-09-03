@@ -626,6 +626,62 @@ function arv_race_store_register_rest_route() {
 add_action( 'rest_api_init', 'arv_race_store_register_rest_route' );
 
 /**
+ * REST handler for the list route.
+ *
+ * The moment predicted in this file's own header comment: something outside
+ * WordPress needs this data. The 2023-on results scraper used to read the
+ * hand-built /results-YYYY/ pages, and those pages are now this element
+ * rendering from the results store, so that scraper had started reading its
+ * own output. The calendar this route exposes is the one source of a
+ * current-season race's date and UltraSignup link that is not downstream of
+ * the results element in any way.
+ *
+ * Read-only, and still edit_posts rather than public: the post type itself
+ * is deliberately not public (see the file header), and a public REST route
+ * would undo that on its own. The scrapers already authenticate as an
+ * Editor for the write routes below; this asks nothing further of them.
+ *
+ * @return WP_REST_Response
+ */
+function arv_race_store_rest_list() {
+	$races = arv_race_store_get();
+
+	foreach ( $races as &$race ) {
+		// Computed here rather than left to every consumer to re-derive: one
+		// regex against the registration link, not one per caller that might
+		// each get the query parameter's case or the host's www. wrong in a
+		// slightly different way.
+		$race['results_url'] = function_exists( 'arv_upcoming_races_results_url' )
+			? arv_upcoming_races_results_url( $race['register'] )
+			: '';
+	}
+
+	return new WP_REST_Response( array( 'races' => $races ), 200 );
+}
+
+/**
+ * Register the list route.
+ */
+function arv_race_store_register_list_route() {
+	if ( function_exists( 'cs_register_element' ) && ! function_exists( 'arv_upcoming_races_results_url' ) ) {
+		require_once ARV_ELEMENTS_PATH . 'includes/elements/upcoming-races.php';
+	}
+
+	register_rest_route(
+		'aravaipa/v1',
+		'/races',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'arv_race_store_rest_list',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_race_store_register_list_route' );
+
+/**
  * Trash stored races by name.
  *
  * The import cannot do this. Its key is the register URL and the name
