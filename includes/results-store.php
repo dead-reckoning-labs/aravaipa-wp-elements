@@ -21,9 +21,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'ARV_RESULTS_OPTION', 'arv_race_results' );
 
 /**
+ * A row's archive links, as label and url pairs.
+ *
+ * Shared by the reader and the writer so both agree on what a valid one is,
+ * and so a malformed entry is dropped in one place rather than two.
+ *
+ * @param array $row
+ * @return array<int, array{label:string,url:string}>
+ */
+function arv_results_archive_links( $row ) {
+	$out = array();
+
+	foreach ( (array) ( isset( $row['archive'] ) ? $row['archive'] : array() ) as $link ) {
+		if ( ! is_array( $link ) || empty( $link['url'] ) ) {
+			continue;
+		}
+
+		$url = esc_url_raw( trim( (string) $link['url'] ) );
+
+		if ( '' === $url || ! preg_match( '#^https?://#i', $url ) ) {
+			continue;
+		}
+
+		$out[] = array(
+			'label' => isset( $link['label'] ) ? sanitize_text_field( (string) $link['label'] ) : '',
+			'url'   => $url,
+		);
+	}
+
+	return $out;
+}
+
+/**
  * Every stored result, newest first.
  *
- * @return array<int, array> Each: name, iso, display, live, ultrasignup, ultrarunning.
+ * @return array<int, array> Each: name, iso, display, live, ultrasignup,
+ *                           ultrarunning, archive.
  */
 function arv_results_store_get() {
 	$stored = get_option( ARV_RESULTS_OPTION, array() );
@@ -49,6 +82,10 @@ function arv_results_store_get() {
 			'live'         => isset( $row['live'] ) ? (string) $row['live'] : '',
 			'ultrasignup'  => isset( $row['ultrasignup'] ) ? (string) $row['ultrasignup'] : '',
 			'ultrarunning' => isset( $row['ultrarunning'] ) ? (string) $row['ultrarunning'] : '',
+			// Rebuilt rather than passed through, like every field above it,
+			// so a row read out of the option has one shape whenever it was
+			// written. A row from before this existed simply has none.
+			'archive'      => arv_results_archive_links( $row ),
 		);
 	}
 
@@ -96,6 +133,18 @@ function arv_results_store_set( $rows ) {
 			continue;
 		}
 
+		// A labelled way through to a result that is not one of the three
+		// named providers. Everything before 2020 is this: the race was
+		// scored on Aravaipa's own site, one static file per distance, so a
+		// single row carries up to five of them and each needs its own label
+		// to be worth anything. The three columns above hold one link each
+		// and cannot say which is the 50K.
+		//
+		// Also where RaceResult, RunSignup, Ultracast and the timing
+		// subdomain land. Fifteen years of racing predates settling on one
+		// provider, and none of those four earns a column of its own.
+		$archive = arv_results_archive_links( $row );
+
 		$entry = array(
 			'name'         => $name,
 			'iso'          => $iso,
@@ -103,9 +152,15 @@ function arv_results_store_set( $rows ) {
 			'live'         => isset( $row['live'] ) ? esc_url_raw( trim( (string) $row['live'] ) ) : '',
 			'ultrasignup'  => isset( $row['ultrasignup'] ) ? esc_url_raw( trim( (string) $row['ultrasignup'] ) ) : '',
 			'ultrarunning' => isset( $row['ultrarunning'] ) ? esc_url_raw( trim( (string) $row['ultrarunning'] ) ) : '',
+			'archive'      => $archive,
 		);
 
-		if ( '' === $entry['live'] && '' === $entry['ultrasignup'] && '' === $entry['ultrarunning'] ) {
+		// A row with no way through to a result is a row that says a race
+		// happened and nothing else, which the calendar already says better.
+		// The archive counts: before 2020 it is usually the only one there
+		// is, and dropping those rows would have discarded most of the years
+		// this store was extended to hold.
+		if ( '' === $entry['live'] && '' === $entry['ultrasignup'] && '' === $entry['ultrarunning'] && empty( $archive ) ) {
 			continue;
 		}
 
