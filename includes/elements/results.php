@@ -78,6 +78,48 @@ cs_register_element(
 );
 
 /**
+ * The same element as a plain shortcode.
+ *
+ * Every other element in this plugin has one of these beside it: the Watch
+ * archive, the Films shelf, the Photos grid. Results did not, and that made
+ * it the one rail that could only be placed inside Cornerstone. Cornerstone
+ * renders a page from a tree it keeps in post meta rather than from the
+ * shortcode text in post_content, so a page assembled anywhere other than
+ * its own builder gets an empty <div id="cs-content"> and nothing else,
+ * which is exactly what the master /results/ page did when it was written
+ * over the REST API.
+ *
+ * This is the way in that does not need the builder. Defaults match the
+ * element's own, so a bare [arv_results] is the whole archive: every year,
+ * grouped by race, with the search box.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_results_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'eyebrow'  => '',
+			'heading'  => '',
+			'intro'    => '',
+			// Blank shows every year. The element also reads a year off a
+			// results-YYYY page slug, and that still applies here: this only
+			// sets it explicitly.
+			'year'     => '',
+			'limit'    => '0',
+			'upcoming' => 'true',
+			'layout'   => 'race',
+			'search'   => 'true',
+		),
+		$atts,
+		'arv_results'
+	);
+
+	return arv_results_render( $atts );
+}
+add_shortcode( 'arv_results', 'arv_results_shortcode' );
+
+/**
  * Builder controls.
  *
  * @return array
