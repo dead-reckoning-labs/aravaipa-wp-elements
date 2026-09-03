@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.74.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.75.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 

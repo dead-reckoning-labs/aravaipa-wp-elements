@@ -9,12 +9,18 @@
  * automatically.
  *
  * So the map is maintained by hand. This is the way to send it, and
- * ultrarunning-seed.json beside it is the thirty races already recovered
- * from the links a human had put on the old per-year results pages, so
- * nobody has to start from an empty list.
+ * ultrarunning-seed.json beside it is the races recovered from the links a
+ * human had put on the old per-year results pages, so nobody has to start
+ * from an empty list.
  *
- * The ids identify the race, not the edition, so an entry added once keeps
- * working every season and lights up every year of that race at once.
+ * WRONG UNTIL 2026-09-03: this used to claim the id identifies the race, not
+ * the edition, so one entry would keep working forever. Confirmed false:
+ * Westminster's stored id (46612) was that race's 2025 results page, and its
+ * 2026 results live at a different id (52620) under the same slug.
+ * UltraRunning mints a new numeric id per year per race, same slug. Every
+ * entry here is only as current as whenever it was last checked against
+ * that race's actual current-year results page, and needs re-verifying each
+ * season, not just once.
  *
  *   node scripts/push-ultrarunning.mjs            # dry run
  *   node scripts/push-ultrarunning.mjs --post
