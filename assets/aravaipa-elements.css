@@ -4584,54 +4584,51 @@
 	}
 }
 
-/* The button that opens a race. Not a disclosure triangle: taking it filters
-   the year down to this race, so it reads as an action rather than a twisty
-   on a footnote. */
-.arv-results__editions-bar {
-	margin-top: 0.75rem;
+/* A race's own page: every edition, and what the race has ever done. */
+.arv-results__race-title {
+	margin: 0.25rem 0 0.2rem;
+	font-size: var(--arv-fs-h2);
+	font-weight: 800;
 }
 
-.arv-results__editions-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-	padding: 0.35rem 0.7rem;
-	border: 1px solid var(--arv-results-rule);
-	border-radius: var(--arv-radius-chip);
-	background: #fff;
-	color: var(--arv-teal-deep);
-	font-family: inherit;
-	font-size: var(--arv-fs-btn);
+.arv-results__race-sub {
+	margin: 0 0 1.5rem;
+	font-size: var(--arv-fs-meta);
+	color: var(--arv-results-muted);
+}
+
+/* The years a race has run, beside its edition count. Quieter than the
+   count: they are the detail, the count is the claim. */
+.arv-results__older-years {
+	font-weight: 400;
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--arv-results-muted);
+}
+
+.arv-results__records {
+	margin-bottom: 2rem;
+}
+
+.arv-results__records-head {
+	margin: 0 0 0.6rem;
+	font-size: var(--arv-fs-label);
 	font-weight: 700;
-	cursor: pointer;
-	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+	color: var(--arv-teal-deep);
 }
 
-@media (hover: hover) {
-	.arv-results__editions-btn:hover {
-		border-color: var(--arv-teal);
-		background: var(--arv-teal);
-		color: #0d1211;
-	}
+/* The year a record was set, beside the time rather than in its own column:
+   a fourth column of four-digit numbers costs more width than it earns, and
+   the year is context on the time rather than a fact of its own. */
+.arv-results__record-year {
+	font-size: var(--arv-fs-meta);
+	color: var(--arv-results-muted);
 }
 
-.arv-results__editions-btn:focus-visible {
-	outline: 2px solid var(--arv-teal);
-	outline-offset: 2px;
-}
-
-.arv-results__editions-btn:hover .arv-results__older-years {
-	color: rgba(13, 18, 17, 0.75);
-}
-
-/* No display rule on the panel itself, so the browser's own
-   [hidden] { display: none } never has to win a specificity fight with an
-   author rule. That is the same trap build.sh checks for on the calendar,
-   watch and films rows. */
-.arv-results__editions {
-	margin-top: 0.5rem;
-	padding: 0.15rem 0.75rem 0.35rem;
-	background: #fafafa;
+.arv-results__editions-all {
+	margin-top: 1.5rem;
 }
 
 .arv-results__back-bar {
@@ -4652,6 +4649,7 @@
 	font-weight: 700;
 	letter-spacing: 1px;
 	text-transform: uppercase;
+	text-decoration: none;
 	cursor: pointer;
 }
 
@@ -4665,7 +4663,6 @@
 	outline: 2px solid var(--arv-teal);
 	outline-offset: 2px;
 }
-
 
 .arv-results__edition {
 	display: flex;

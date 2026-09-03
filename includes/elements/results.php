@@ -484,6 +484,41 @@ function arv_results_render( $data ) {
 	// shortcode's own default rather than something baked into "year is
 	// blank": a page already scoped to one year, by its slug or by the year
 	// attribute, has nothing left to pick between regardless of this flag.
+	// A race page, when the URL named one. Checked before the year picker
+	// because /results/desert-solstice is not a year view narrowed down, it
+	// is a different page that happens to live under the same shortcode.
+	$race_slug = function_exists( 'get_query_var' ) ? (string) get_query_var( 'arv_race' ) : '';
+
+	if ( '' !== $race_slug ) {
+		$race_key = arv_results_race_by_slug( $race_slug );
+
+		if ( '' === $race_key ) {
+			$out .= '<p class="arv-results__empty">'
+				. esc_html( __( 'No race by that name.', 'aravaipa-elements' ) ) . '</p>';
+
+			return $out . '</div></div>';
+		}
+
+		$editions = array();
+
+		foreach ( $rows as $row ) {
+			if ( arv_results_race_key( $row['name'] ) === $race_key ) {
+				$editions[] = $row;
+			}
+		}
+
+		if ( empty( $editions ) ) {
+			$out .= '<p class="arv-results__empty">'
+				. esc_html( __( 'No results to show yet.', 'aravaipa-elements' ) ) . '</p>';
+
+			return $out . '</div></div>';
+		}
+
+		$out .= arv_results_race_page( $editions, $editions[0]['name'] );
+
+		return $out . '</div></div>';
+	}
+
 	$year_tabs = isset( $data['year_tabs'] ) ? $data['year_tabs'] : false;
 	$year_tabs = ! ( 'false' === $year_tabs || false === $year_tabs || '0' === $year_tabs );
 
@@ -1289,18 +1324,17 @@ function arv_results_race_groups_markup( $rows ) {
 		$out .= '<div class="arv-results__latest">';
 		$out .= '<div class="arv-results__race-head">';
 
-		// Linked to the race's own page where the store knows one. The name
-		// was the most obviously clickable thing on the row and did nothing,
-		// which is its own kind of broken.
-		$pages = arv_results_race_pages();
-		$page  = isset( $pages[ arv_results_race_key( $latest['name'] ) ] )
-			? $pages[ arv_results_race_key( $latest['name'] ) ]
-			: '';
+		// To this race's own results page, not to the race's marketing page.
+		// The name pointed at the latter for one release, which was the
+		// obvious reading of "make the name clickable" and the wrong one:
+		// somebody reading an archive wants the race's results, and the
+		// entry page is a click away from there anyway.
+		$race_url = rtrim( arv_results_archive_url(), '/' ) . '/'
+			. arv_results_race_slug( $latest['name'] ) . '/';
 
 		$out .= '<h4 class="arv-results__race-name">';
-		$out .= '' !== $page
-			? '<a class="arv-results__race-link" href="' . esc_url( $page ) . '">' . esc_html( $latest['name'] ) . '</a>'
-			: esc_html( $latest['name'] );
+		$out .= '<a class="arv-results__race-link" href="' . esc_url( $race_url ) . '">'
+			. esc_html( $latest['name'] ) . '</a>';
 		$out .= '</h4>';
 
 		// The date sits beside the name rather than under it, the way the
@@ -1327,65 +1361,13 @@ function arv_results_race_groups_markup( $rows ) {
 			$out .= arv_results_winners_table( $stats );
 		}
 
-		if ( ! empty( $older ) ) {
-			// A button that opens the race, not a disclosure triangle.
-			// "N earlier editions" as a <summary> read as a footnote you
-			// could optionally expand, when opening a race is the second
-			// thing anyone comes to this page to do: find the race, then
-			// read its history. The button says what it does and what you
-			// get, and taking it filters the year down to this one race so
-			// its editions are the page rather than a nested list inside it.
-			$out .= '<div class="arv-results__editions-bar">';
-			$out .= '<button type="button" class="arv-results__editions-btn"'
-				. ' data-arv-results-editions aria-expanded="false">'
-				. esc_html(
-					sprintf(
-						// translators: %d is a count of previous runnings.
-						_n( 'All %d editions', 'All %d editions', count( $older ) + 1, 'aravaipa-elements' ),
-						count( $older ) + 1
-					)
-				)
-				// The years themselves, beside the count. "5 editions" says
-				// there is more without saying whether it is the years you
-				// want, so anyone after a particular one would have to open
-				// it to find out. They are already in hand, so they go here.
-				. '<span class="arv-results__older-years">' . esc_html( arv_results_years( $older ) ) . '</span>'
-				. '</button>';
-			$out .= '</div>';
-
-			// Hidden until the button is taken. Rendered server-side either
-			// way so a reader with no JavaScript, and a crawler, still get
-			// every edition in the markup.
-			$out .= '<div class="arv-results__editions" data-arv-results-editions-panel hidden>';
-
-			// Every earlier running in the same shape as the one above it,
-			// rather than the compact date-and-links line this used to be.
-			// The point of opening a race is to read its history, and a
-			// history rendered thinner than the current year reads as a
-			// footnote to it: the 2014 running had winners and a finisher
-			// count too, and they are the part worth having.
-			foreach ( $older as $edition ) {
-				$stats_older = arv_stats_store_find( $edition['live'] );
-
-				$out .= '<div class="arv-results__edition">';
-				$out .= '<div class="arv-results__latest">';
-				$out .= '<div class="arv-results__race-head">';
-				$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) )
-					. arv_results_finisher_count( $stats_older ) . '</p>';
-				$out .= arv_results_headline_winners( $stats_older );
-				$out .= '</div>';
-				$out .= arv_results_links( $edition );
-				$out .= '</div>';
-
-				if ( null !== $stats_older ) {
-					$out .= arv_results_winners_table( $stats_older );
-				}
-
-				$out .= '</div>';
-			}
-
-			$out .= '</div>';
-		}
+		// No editions control here at all any more. The year list answers
+		// "what happened in 2024", and a race's history is a different
+		// question with its own page now: the race name above links to it.
+		// An accordion in every row was the third shape this had, after a
+		// disclosure and a filter button, and all three were the same
+		// mistake, which is putting a race's whole history inside a row of
+		// the year it last ran.
 
 		$out .= '</div>';
 	}
@@ -1894,4 +1876,235 @@ function arv_results_cell( $url, $label, $kind ) {
 	return '<td class="arv-results__cell">'
 		. '<a class="arv-results__link arv-results__link--' . esc_attr( $kind ) . '" href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
 		. esc_html( $label ) . '</a></td>';
+}
+
+/**
+ * One race, every edition, all time.
+ *
+ * The page a race name links to from the archive. Its job is the question
+ * the year list cannot answer: not "what happened in 2024" but "what is this
+ * race, and what has it ever done".
+ *
+ * Course records are derived rather than stored, because the stats store
+ * holds each edition's winner per distance per division and a course record
+ * IS the fastest of those: nobody can have run a distance faster than the
+ * person who won it. That equivalence is exactly why top ten all time is NOT
+ * here. It needs the whole field, and the store keeps only winners, so a
+ * "top ten" built from this data would be a top ten of first places, which
+ * is a different and misleading thing.
+ *
+ * @param array  $editions Newest first, every running of one race.
+ * @param string $name     The race's current name.
+ * @return string
+ */
+function arv_results_race_page( $editions, $name ) {
+	$out = '<div class="arv-results__race-page">';
+
+	$out .= '<div class="arv-results__back-bar">';
+	$out .= '<a class="arv-results__back" href="' . esc_url( arv_results_archive_url() ) . '">'
+		. '<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
+		. '<path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+		. '</svg>'
+		. esc_html( __( 'All races', 'aravaipa-elements' ) ) . '</a>';
+	$out .= '</div>';
+
+	$out .= '<h2 class="arv-results__race-title">' . esc_html( $name ) . '</h2>';
+
+	$years = arv_results_years( $editions );
+	$out  .= '<p class="arv-results__race-sub">'
+		. esc_html(
+			sprintf(
+				// translators: %d is a count of runnings.
+				_n( '%d edition', '%d editions', count( $editions ), 'aravaipa-elements' ),
+				count( $editions )
+			)
+		);
+
+	if ( '' !== $years ) {
+		$out .= ' <span class="arv-results__older-years">' . esc_html( $years ) . '</span>';
+	}
+
+	$out .= '</p>';
+
+	$out .= arv_results_course_records( $editions );
+	$out .= arv_results_editions_table( $editions );
+
+	return $out . '</div>';
+}
+
+/**
+ * The fastest winning time at each distance, and who set it.
+ *
+ * Times are compared as strings only after being parsed to seconds, because
+ * "10:04:19" and "9:22:16" sort the wrong way round as text, and half this
+ * archive is hour-scale while the other half is not.
+ *
+ * @param array $editions
+ * @return string
+ */
+function arv_results_course_records( $editions ) {
+	$best = array();
+
+	foreach ( $editions as $edition ) {
+		$stats = arv_stats_store_find( $edition['live'] );
+
+		if ( null === $stats || empty( $stats['winners'] ) ) {
+			continue;
+		}
+
+		$year = substr( (string) $edition['iso'], 0, 4 );
+
+		foreach ( $stats['winners'] as $row ) {
+			$distance = isset( $row['distance'] ) ? (string) $row['distance'] : '';
+
+			if ( '' === $distance ) {
+				continue;
+			}
+
+			foreach ( arv_stats_divisions() as $division ) {
+				if ( ! isset( $row[ $division ]['time'] ) ) {
+					continue;
+				}
+
+				$seconds = arv_results_time_seconds( $row[ $division ]['time'] );
+
+				if ( null === $seconds ) {
+					continue;
+				}
+
+				$current = isset( $best[ $distance ][ $division ] ) ? $best[ $distance ][ $division ] : null;
+
+				if ( null === $current || $seconds < $current['seconds'] ) {
+					$best[ $distance ][ $division ] = array(
+						'name'    => $row[ $division ]['name'],
+						'time'    => $row[ $division ]['time'],
+						'year'    => $year,
+						'seconds' => $seconds,
+					);
+				}
+			}
+		}
+	}
+
+	if ( empty( $best ) ) {
+		return '';
+	}
+
+	$divisions = array();
+
+	foreach ( $best as $rows ) {
+		foreach ( arv_stats_divisions() as $division ) {
+			if ( isset( $rows[ $division ] ) ) {
+				$divisions[ $division ] = true;
+			}
+		}
+	}
+
+	$out  = '<section class="arv-results__records">';
+	$out .= '<h3 class="arv-results__records-head">' . esc_html( __( 'Course records', 'aravaipa-elements' ) ) . '</h3>';
+	$out .= '<div class="arv-results__winners-scroll"><table class="arv-results__winners-table"><thead><tr>';
+	$out .= '<th scope="col">' . esc_html( __( 'Distance', 'aravaipa-elements' ) ) . '</th>';
+
+	foreach ( array_keys( $divisions ) as $division ) {
+		$out .= '<th scope="col">' . esc_html( arv_results_division_label( $division ) ) . '</th>';
+	}
+
+	$out .= '</tr></thead><tbody>';
+
+	foreach ( $best as $distance => $rows ) {
+		$out .= '<tr><th scope="row">' . esc_html( arv_results_distance_label( $distance ) ) . '</th>';
+
+		foreach ( array_keys( $divisions ) as $division ) {
+			$out .= '<td>';
+
+			if ( isset( $rows[ $division ] ) ) {
+				$out .= '<span class="arv-results__winner-name">' . esc_html( $rows[ $division ]['name'] ) . '</span> '
+					. '<span class="arv-results__winner-time">' . esc_html( $rows[ $division ]['time'] ) . '</span> '
+					. '<span class="arv-results__record-year">' . esc_html( $rows[ $division ]['year'] ) . '</span>';
+			}
+
+			$out .= '</td>';
+		}
+
+		$out .= '</tr>';
+	}
+
+	return $out . '</tbody></table></div></section>';
+}
+
+/**
+ * "10:04:19" and "58:22" to seconds, or null if it is neither.
+ *
+ * Two and three part times both occur here: a 5K winner runs minutes and a
+ * hundred miler runs hours, and the board writes each the short way.
+ *
+ * @param string $time
+ * @return int|null
+ */
+function arv_results_time_seconds( $time ) {
+	$parts = explode( ':', trim( (string) $time ) );
+
+	if ( count( $parts ) < 2 || count( $parts ) > 3 ) {
+		return null;
+	}
+
+	foreach ( $parts as $part ) {
+		if ( ! preg_match( '/^\d+$/', trim( $part ) ) ) {
+			return null;
+		}
+	}
+
+	$parts   = array_map( 'intval', $parts );
+	$seconds = array_pop( $parts );
+	$seconds += array_pop( $parts ) * 60;
+
+	if ( ! empty( $parts ) ) {
+		$seconds += array_pop( $parts ) * 3600;
+	}
+
+	return $seconds;
+}
+
+/**
+ * Every edition, one row each.
+ *
+ * @param array $editions
+ * @return string
+ */
+function arv_results_editions_table( $editions ) {
+	$out  = '<section class="arv-results__editions-all">';
+	$out .= '<h3 class="arv-results__records-head">' . esc_html( __( 'Every edition', 'aravaipa-elements' ) ) . '</h3>';
+
+	foreach ( $editions as $edition ) {
+		$stats = arv_stats_store_find( $edition['live'] );
+
+		$out .= '<div class="arv-results__edition">';
+		$out .= '<div class="arv-results__latest">';
+		$out .= '<div class="arv-results__race-head">';
+		$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) )
+			. arv_results_finisher_count( $stats ) . '</p>';
+		$out .= arv_results_headline_winners( $stats );
+		$out .= '</div>';
+		$out .= arv_results_links( $edition );
+		$out .= '</div>';
+
+		if ( null !== $stats ) {
+			$out .= arv_results_winners_table( $stats );
+		}
+
+		$out .= '</div>';
+	}
+
+	return $out . '</section>';
+}
+
+/**
+ * The archive's own URL, for the way back out of a race page.
+ *
+ * @return string
+ */
+function arv_results_archive_url() {
+	$id = function_exists( 'get_queried_object_id' ) ? (int) get_queried_object_id() : 0;
+
+	return $id > 0 && function_exists( 'get_permalink' ) ? (string) get_permalink( $id ) : '/results/';
 }
