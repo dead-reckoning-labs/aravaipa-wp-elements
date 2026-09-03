@@ -542,26 +542,66 @@ function arv_results_ultrarunning_rest_set( $request ) {
 }
 
 /**
- * /results/<race> as a real URL.
+ * The base segment the per-race pages live under.
+ *
+ * NOT "results", and it cannot be. /results/ is a real directory on the web
+ * server holding the legacy static archive: /results/2008JJResults100m.htm
+ * is a 70KB file that has been served from disk since 2008, and
+ * /results/virtual/ is a whole tree of them from the 2020 season. Those
+ * files are still linked, by the archive rows in this very store and by
+ * however many external pages over eighteen years.
+ *
+ * Apache resolves that directory before WordPress is ever reached, and
+ * because a subdirectory's own rules are not inherited from the root
+ * .htaccess, nothing under /results/ reaches index.php at all: a missing
+ * path there returns Apache's own 404, not WordPress's. /results/virtual/
+ * answers 403, which is a directory refusing to list itself. No rewrite
+ * rule registered in PHP can win an argument the filesystem settles first,
+ * so the pages moved instead of the archive.
+ */
+const ARV_RESULTS_RACE_BASE = 'race-results';
+
+/**
+ * /race-results/<race> as a real URL.
  *
  * A page cannot have children it does not have, and the archive's races are
  * rows in an option rather than posts, so there is nothing for WordPress to
- * resolve /results/desert-solstice against on its own: it would 404 before
- * any element ran. This maps the segment onto the results page itself and
- * hands the race through as a query var for the element to read.
- *
- * Registered against the page's own slug rather than a fixed "results",
- * read from the page that actually carries the shortcode, so renaming that
- * page does not silently strand every per-race URL.
+ * resolve a race against on its own: it would 404 before any element ran.
+ * This maps the segment onto the results page itself and hands the race
+ * through as a query var for the element to read.
  */
 function arv_results_add_rewrite() {
 	add_rewrite_rule(
-		'^results/([^/]+)/?$',
+		'^' . ARV_RESULTS_RACE_BASE . '/([^/]+)/?$',
 		'index.php?pagename=results&arv_race=$matches[1]',
 		'top'
 	);
 }
 add_action( 'init', 'arv_results_add_rewrite' );
+
+/**
+ * Keep WordPress from tidying a race URL away.
+ *
+ * The rule above resolves to pagename=results, and that page's own permalink
+ * is /results/, so redirect_canonical sees a URL that does not match the post
+ * it resolved and "corrects" it, dropping the race on the way. Worse, with no
+ * rule matched at all it guesses: /race-results/black-bear-trail-races/ was
+ * 301ing to an unrelated page that happened to share the last segment. Both
+ * behaviours are right in general and wrong here, where the extra segment is
+ * the whole point, so canonicalisation is declined for exactly these
+ * requests and left alone everywhere else.
+ *
+ * @param string|false $redirect
+ * @return string|false
+ */
+function arv_results_keep_race_url( $redirect ) {
+	if ( function_exists( 'get_query_var' ) && '' !== (string) get_query_var( 'arv_race' ) ) {
+		return false;
+	}
+
+	return $redirect;
+}
+add_filter( 'redirect_canonical', 'arv_results_keep_race_url' );
 
 /**
  * Let WordPress carry arv_race through to the query.

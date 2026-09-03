@@ -1031,7 +1031,12 @@ $byrace = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' =
 t( 'one group per race, not per edition', 2 === substr_count( $byrace, 'arv-results__race-group' ) );
 t( 'the newest name is the one shown',    false !== strpos( $byrace, 'Black Canyon Ultras' ) );
 t( 'the year list carries no editions',   false === strpos( $byrace, 'arv-results__editions' ) );
-t( 'the race name links to its own page', false !== strpos( $byrace, '/black-canyon-ultras/' ) );
+// Under race-results/, never results/. That path is a real directory of
+// static archive files on the web server and Apache answers it off disk
+// before WordPress sees the request, so a race page served there 404s no
+// matter what rewrite rule is registered.
+t( 'the race name links to its own page', false !== strpos( $byrace, '/race-results/black-canyon-ultras/' ) );
+t( 'and never under the archive path',    false === strpos( $byrace, '"/results/black-canyon-ultras/' ) );
 t( 'and only the newest runs inline',     false === strpos( $byrace, 'bc-2024' ) );
 t( 'every race gets exactly one link',    2 === substr_count( $byrace, 'arv-results__race-link' ) );
 t( 'the other race stayed separate',      false !== strpos( $byrace, 'Crown King Scramble' ) );
