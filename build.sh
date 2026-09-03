@@ -52,7 +52,7 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php includes/updater.php includes/seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/photos-store.php includes/articles-store.php includes/tours-store.php includes/shop-store.php includes/trailtalk-feed.php includes/media-seo.php includes/media-follow.php includes/media-subnav.php includes/media-hub.php includes/media-latest.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
+cp includes/helpers.php includes/updater.php includes/seo.php includes/page-seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/photos-store.php includes/articles-store.php includes/tours-store.php includes/shop-store.php includes/trailtalk-feed.php includes/media-seo.php includes/media-follow.php includes/media-subnav.php includes/media-hub.php includes/media-latest.php includes/weather.php includes/live-page.php includes/race-admin.php "$STAGE/includes/"
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
@@ -227,6 +227,14 @@ grep -q '\.arv-featured__cta:link' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-featured__cta:link is missing, the button will lose its colour to the theme's a:hover on hover" >&2; missing=1; }
 grep -q '\.arv-featured__card-cta:link' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-featured__card-cta:link is missing, the button will lose its colour to the theme's a:hover on hover" >&2; missing=1; }
+
+# Same trap on the results archive chips. These are the only route to the
+# result files for the years Aravaipa scored its own races, twenty of them,
+# and they are hollow: dark text on white. Losing the text colour to the
+# theme's a:hover turns a hovered chip into red-on-white against a row of
+# black-on-white siblings, on the one link the visitor is about to click.
+grep -q '\.arv-results__archive-link:link' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-results__archive-link:link is missing, the archive chips will lose their colour to the theme's a:hover on hover" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
 ( cd "$OUT" && zip -qr "$NAME.zip" "$NAME" )
