@@ -61,9 +61,12 @@ cs_register_element(
 				// rather than written from memory:
 				//
 				//   price / price_note  read off the challenge's own page on
-				//                       obsession.run, which states $49.00
-				//                       entry plus a $3.89 fee and an
-				//                       increase to $59.00 on September 1.
+				//                       obsession.run. It was $49 with a
+				//                       stated increase to $59 on September
+				//                       1; that date has passed and the page
+				//                       now shows the $59 price outright,
+				//                       so this does too, with no further
+				//                       increase to advertise.
 				//   syncs               Strava and Coros are both shipped
 				//                       integrations in the Obsession
 				//                       codebase (src/app/settings has a real
@@ -76,14 +79,15 @@ cs_register_element(
 				'host_url'   => cs_value( 'https://obsession.run/challenges/jallucinations', 'markup' ),
 				'host_logo'  => cs_value( 'https://www.aravaiparunning.com/wp-content/uploads/obsession-app-icon.png', 'markup' ),
 				// The entry price, not the checkout total. obsession.run breaks
-				// it out the same way ("$49.00 entry + $3.89 fee"), and a bare
-				// "$52.89" reads as a strangely precise number with no
-				// explanation, where "$49 + fees" reads as a price. Both
-				// halves of the before/after say "+ fees" so the comparison is
-				// like for like: quoting one with fees and one without would
-				// overstate the increase.
-				'price'      => cs_value( '$49 + fees', 'markup' ),
-				'price_note' => cs_value( 'Goes up to $59 + fees on September 1', 'markup' ),
+				// it out the same way ("$59.00 entry + fee"), and a bare
+				// total reads as a strangely precise number with no
+				// explanation, where "$59 + fees" reads as a price.
+				'price'      => cs_value( '$59 + fees', 'markup' ),
+				// Blank: there is no scheduled further increase to state.
+				// This field exists for exactly the one purpose the comment
+				// above just retired, so leaving it blank rather than
+				// deleting the field keeps it ready for the next one.
+				'price_note' => cs_value( '', 'markup' ),
 				'syncs'      => cs_value( 'Strava, Coros', 'markup' ),
 
 				// What you actually get, lifted verbatim from the "The Experience"
@@ -103,17 +107,12 @@ cs_register_element(
 				// choice described twice rather than two different offers.
 				'card_cta'   => cs_value( 'Register on Obsession.run', 'markup' ),
 
-				// A separate fact from the price rise, confirmed directly by
-				// Jamil rather than found on the public challenge page: this
-				// is the first year of goody-pack fulfilment for this race,
-				// and September 1 is also the order cutoff to be guaranteed
-				// one before the challenge starts. Two real reasons to act by
-				// the same date, kept as two lines rather than merged into
-				// one, since a visitor who already has last year's shirt and
-				// does not care about a new one should still see the price
-				// note clearly, and a visitor lured mainly by the goody pack
-				// should not have to parse it out of a sentence about price.
-				'deadline_note' => cs_value( 'Order by September 1 to guarantee your goody pack before the challenge begins.', 'markup' ),
+				// The September 1 goody-pack order cutoff has passed along with
+				// the price increase above, so there is nothing left for an
+				// urgency line to say. Blank rather than deleted, same
+				// reasoning as price_note: the next deadline gets a line
+				// here, not a re-invented field.
+				'deadline_note' => cs_value( '', 'markup' ),
 			),
 			'omega'
 		),
