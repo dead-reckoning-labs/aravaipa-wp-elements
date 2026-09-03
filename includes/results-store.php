@@ -254,6 +254,81 @@ function arv_results_rest_set( $request ) {
 	);
 }
 
+/**
+ * A race's own URL segment, from its name.
+ *
+ * Slugged from the name as written, not from arv_results_race_key. The key
+ * exists to make "Black Canyon Ultras" and "Black Canyon Trail Runs" match
+ * each other, and it does that by stripping words and singularising anything
+ * over four letters, which is right for matching and wrong for a URL:
+ * "Across The Years" keys to "acros year" and would have been published at
+ * /results/acros-year.
+ *
+ * Grouping is still by key. This only decides what the group's URL is
+ * called, and arv_results_race_by_slug resolves it back.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_results_race_slug( $name ) {
+	$slug = strtolower( trim( (string) $name ) );
+	$slug = preg_replace( '/[^a-z0-9]+/', '-', $slug );
+
+	return trim( (string) $slug, '-' );
+}
+
+/**
+ * Slug to the race key it names, built from the stored rows.
+ *
+ * One entry per race, its slug taken from the newest edition's name, which
+ * is the same edition the archive headlines a race with, so a race that was
+ * renamed is reachable at the name it goes by now.
+ *
+ * @return array<string, string> slug => race key
+ */
+function arv_results_race_slugs() {
+	static $map = null;
+
+	if ( null !== $map ) {
+		return $map;
+	}
+
+	$map  = array();
+	$seen = array();
+
+	foreach ( arv_results_store_get() as $row ) {
+		$key = arv_results_race_key( $row['name'] );
+
+		// Rows arrive newest first, so the first name seen for a key is the
+		// current one.
+		if ( isset( $seen[ $key ] ) ) {
+			continue;
+		}
+
+		$seen[ $key ] = true;
+		$slug         = arv_results_race_slug( $row['name'] );
+
+		if ( '' !== $slug && ! isset( $map[ $slug ] ) ) {
+			$map[ $slug ] = $key;
+		}
+	}
+
+	return $map;
+}
+
+/**
+ * The race key a URL segment names, or '' when it names nothing.
+ *
+ * @param string $slug
+ * @return string
+ */
+function arv_results_race_by_slug( $slug ) {
+	$slugs = arv_results_race_slugs();
+	$slug  = arv_results_race_slug( $slug );
+
+	return isset( $slugs[ $slug ] ) ? $slugs[ $slug ] : '';
+}
+
 define( 'ARV_ULTRARUNNING_OPTION', 'arv_race_ultrarunning' );
 
 /**
@@ -428,3 +503,60 @@ function arv_results_ultrarunning_rest_set( $request ) {
 		'rejected' => $rejected,
 	);
 }
+
+/**
+ * /results/<race> as a real URL.
+ *
+ * A page cannot have children it does not have, and the archive's races are
+ * rows in an option rather than posts, so there is nothing for WordPress to
+ * resolve /results/desert-solstice against on its own: it would 404 before
+ * any element ran. This maps the segment onto the results page itself and
+ * hands the race through as a query var for the element to read.
+ *
+ * Registered against the page's own slug rather than a fixed "results",
+ * read from the page that actually carries the shortcode, so renaming that
+ * page does not silently strand every per-race URL.
+ */
+function arv_results_add_rewrite() {
+	add_rewrite_rule(
+		'^results/([^/]+)/?$',
+		'index.php?pagename=results&arv_race=$matches[1]',
+		'top'
+	);
+}
+add_action( 'init', 'arv_results_add_rewrite' );
+
+/**
+ * Let WordPress carry arv_race through to the query.
+ *
+ * @param array $vars
+ * @return array
+ */
+function arv_results_query_vars( $vars ) {
+	$vars[] = 'arv_race';
+
+	return $vars;
+}
+add_filter( 'query_vars', 'arv_results_query_vars' );
+
+/**
+ * Flush the rules once, on the version that introduces them.
+ *
+ * Rewrite rules are cached in an option, so a rule added by an update is
+ * inert until something flushes. Doing it on every load is the standard
+ * mistake: flush_rewrite_rules() rebuilds and writes the whole set, which is
+ * expensive enough that WordPress's own docs say never to call it on init.
+ * This runs once per plugin version instead.
+ */
+function arv_results_maybe_flush_rewrite() {
+	$flushed = get_option( 'arv_results_rewrite_version' );
+
+	if ( ARV_ELEMENTS_VERSION === $flushed ) {
+		return;
+	}
+
+	arv_results_add_rewrite();
+	flush_rewrite_rules( false );
+	update_option( 'arv_results_rewrite_version', ARV_ELEMENTS_VERSION, false );
+}
+add_action( 'init', 'arv_results_maybe_flush_rewrite', 20 );

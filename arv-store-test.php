@@ -1030,10 +1030,10 @@ arv_results_store_set( array(
 $byrace = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
 t( 'one group per race, not per edition', 2 === substr_count( $byrace, 'arv-results__race-group' ) );
 t( 'the newest name is the one shown',    false !== strpos( $byrace, 'Black Canyon Ultras' ) );
-t( 'older editions start hidden',         false !== strpos( $byrace, 'data-arv-results-editions-panel hidden' ) );
-t( 'and counted, the race included',      false !== strpos( $byrace, 'All 3 editions' ) );
-t( 'every edition is still in the html',  false !== strpos( $byrace, 'bc-2024' ) );
-t( 'a one-edition race gets no button',   1 === substr_count( $byrace, 'data-arv-results-editions ' ) );
+t( 'the year list carries no editions',   false === strpos( $byrace, 'arv-results__editions' ) );
+t( 'the race name links to its own page', false !== strpos( $byrace, '/black-canyon-ultras/' ) );
+t( 'and only the newest runs inline',     false === strpos( $byrace, 'bc-2024' ) );
+t( 'every race gets exactly one link',    2 === substr_count( $byrace, 'arv-results__race-link' ) );
 t( 'the other race stayed separate',      false !== strpos( $byrace, 'Crown King Scramble' ) );
 t( 'and the search box is there',         false !== strpos( $byrace, 'data-arv-results-search' ) );
 
@@ -1043,7 +1043,7 @@ arv_results_store_set( array(
 	array( 'name' => 'Zion Ultras', 'iso' => '2025-04-11', 'live' => 'https://live.aravaiparunning.com/#/z-2025' ),
 ) );
 $one = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
-t( 'a two-edition race counts both',      false !== strpos( $one, 'All 2 editions' ) );
+t( 'a two-edition race links out too',    false !== strpos( $one, 'arv-results__race-link' ) );
 
 // The name key has to survive stripping. "Race the Cog" loses both "race"
 // and "the" and would otherwise group on nothing.
@@ -1091,7 +1091,7 @@ t( 'three slots per edition, always',     0 === $slots % 3 );
 
 // The expander needs a chevron of its own: any display other than
 // list-item removes the browser's disclosure triangle.
-t( 'the expander is a real button',       false !== strpos( $withsearch, 'arv-results__editions-btn' ) );
+t( 'the race name is the way in',         false !== strpos( $withsearch, 'arv-results__race-link' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 
@@ -2100,9 +2100,9 @@ t( 'the latest edition counts',         false !== strpos( $html, '349 finishers'
 t( 'on the date line, not its own',     false !== strpos( $html, 'August 8, 2026 <span class="arv-results__stat">349 finishers</span>' ) );
 t( 'and names its marquee winners',     false !== strpos( $html, 'Alex Bustamante' ) && false !== strpos( $html, 'Sydney Park' ) );
 t( 'the table holds the other one',     false !== strpos( $html, 'Devin Sharps' ) );
-t( 'the older edition carries a count', false !== strpos( $html, '312 finishers' ) );
-t( 'the expander names its years',      false !== strpos( $html, '2025</span>' ) );
-t( 'and still counts them',             false !== strpos( $html, 'All 2 editions' ) );
+t( 'the newest edition carries a count', false !== strpos( $html, 'finishers' ) );
+t( 'and the name links to the race',    false !== strpos( $html, 'arv-results__race-link' ) );
+t( 'with no inline edition list',       false === strpos( $html, 'arv-results__editions' ) );
 
 // Nothing stored at all is the state this page shipped in, and it has to
 // keep rendering exactly as it did.
