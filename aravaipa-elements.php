@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.65.0
+ * Version:           0.66.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.65.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.66.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -136,6 +136,11 @@ if ( is_admin() ) {
 	// while the stale copy next to it quietly collects them.
 	define( 'ARV_ELEMENTS_SLUG', plugin_basename( __FILE__ ) );
 	require_once ARV_ELEMENTS_PATH . 'includes/updater.php';
+
+	// The editing screen for the photo gallery directory, which is admin-only
+	// for the same reason: it registers a menu and answers a form, and does
+	// nothing at all on a page a visitor requests.
+	require_once ARV_ELEMENTS_PATH . 'includes/photos-admin.php';
 }
 
 /**
