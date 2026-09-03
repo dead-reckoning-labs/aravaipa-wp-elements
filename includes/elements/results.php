@@ -69,6 +69,13 @@ cs_register_element(
 				// question, what happened recently.
 				'layout'   => cs_value( 'race', 'markup' ),
 				'search'   => cs_value( 'true', 'markup' ),
+				// False here on purpose: dropped onto a page with no year of
+				// its own, this element has always meant "every race,
+				// merged across every year it ran, in one flat list", and
+				// that contract is real and tested. The year picker is what
+				// the plain [arv_results] shortcode defaults to instead, for
+				// the one page that wants it.
+				'year_tabs' => cs_value( 'false', 'markup' ),
 			),
 			'omega'
 		),
@@ -110,6 +117,13 @@ function arv_results_shortcode( $atts ) {
 			'upcoming' => 'true',
 			'layout'   => 'race',
 			'search'   => 'true',
+			// True here, false on the Cornerstone element: this shortcode
+			// exists specifically for the one page with no year page of its
+			// own to fall back to, /results/, and that page is exactly
+			// where "every race in one flat list" stopped being the right
+			// answer. year="2020" (or a results-YYYY slug) still means what
+			// it always has and turns this off regardless.
+			'year_tabs' => 'true',
 		),
 		$atts,
 		'arv_results'
@@ -461,7 +475,23 @@ function arv_results_render( $data ) {
 		$out .= arv_results_race_week( $today );
 	}
 
-	$out .= arv_results_by_race( $rows, $show_search );
+	// Opt in, not the default for a blank year: the direct-call contract of
+	// "no year means every race, merged across every year it ran, in one
+	// flat list" is real and tested (arv-store-test.php's Black Canyon
+	// Ultras/Black Canyon/Black Canyon Trail Runs case), and every existing
+	// use of this element relies on it. The year picker is a second, opt-in
+	// shape for the one page that wants it, the plain [arv_results]
+	// shortcode's own default rather than something baked into "year is
+	// blank": a page already scoped to one year, by its slug or by the year
+	// attribute, has nothing left to pick between regardless of this flag.
+	$year_tabs = isset( $data['year_tabs'] ) ? $data['year_tabs'] : false;
+	$year_tabs = ! ( 'false' === $year_tabs || false === $year_tabs || '0' === $year_tabs );
+
+	if ( '' === $year && $year_tabs ) {
+		$out .= arv_results_by_race_yearly( $rows, $show_search );
+	} else {
+		$out .= arv_results_by_race( $rows, $show_search );
+	}
 	$out .= '</div></div>';
 
 	return $out;
@@ -1040,7 +1070,105 @@ function arv_results_month_label( $iso ) {
  * @param bool  $show_search
  * @return string
  */
+function arv_results_search_markup() {
+	return '<div class="arv-results__search">'
+		. '<label class="arv-results__search-label" for="arv-results-q">'
+		. esc_html( __( 'Search races', 'aravaipa-elements' ) ) . '</label>'
+		. '<span class="arv-results__search-field">'
+		. '<input class="arv-results__search-input" id="arv-results-q" type="search" autocomplete="off"'
+		. ' placeholder="' . esc_attr( __( 'Race name', 'aravaipa-elements' ) ) . '" data-arv-results-search />'
+		// Our own clear button rather than the one type="search" gives
+		// you: WebKit's only appears once there is text and is a small
+		// unlabelled target, and Firefox draws none at all. This one is
+		// a real button with a real name, and the native one is hidden
+		// so there are never two.
+		. '<button class="arv-results__search-clear" type="button" hidden data-arv-results-clear>'
+		. '<span class="arv-results__sr">' . esc_html( __( 'Clear search', 'aravaipa-elements' ) ) . '</span>'
+		. '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">'
+		. '<path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+		. '</svg></button>'
+		. '</span>'
+		. '<p class="arv-results__count" data-arv-results-count aria-live="polite"></p>'
+		. '</div>';
+}
+
 function arv_results_by_race( $rows, $show_search ) {
+	$out = $show_search ? arv_results_search_markup() : '';
+
+	$out .= arv_results_race_groups_markup( $rows );
+
+	return $out;
+}
+
+/**
+ * The master page: one year at a time, newest first.
+ *
+ * A single flat list already exists for a page that is itself scoped to one
+ * year, results-YYYY and the year attribute both render through
+ * arv_results_by_race unchanged. This is only for the page with no year of
+ * its own, where "every race, forever" is the whole point and a bare
+ * seventeen-year scroll answered a question nobody asked ("what happened
+ * across all of history at once") in place of the one a visitor actually
+ * has ("what happened this year", then, sometimes, "what about this one
+ * before that"). A year picker leading with the current one answers the
+ * first without hiding the second: arv_results_filter_year keeps every
+ * earlier running of a race that appears in the selected year, exactly as
+ * it already does for results-2026 and the other eighteen, so a race's own
+ * "N earlier editions" disclosure still opens onto its complete history.
+ *
+ * One panel per year rather than re-deriving on demand, so a reader with no
+ * JavaScript still gets the current year's results, and a search engine
+ * still indexes every year rather than only whichever one happened to be
+ * selected when it crawled.
+ *
+ * @param array $rows Newest first, unfiltered.
+ * @param bool  $show_search
+ * @return string
+ */
+function arv_results_by_race_yearly( $rows, $show_search ) {
+	$years = array();
+
+	foreach ( $rows as $row ) {
+		$y = substr( (string) $row['iso'], 0, 4 );
+		if ( preg_match( '/^\d{4}$/', $y ) && ! in_array( $y, $years, true ) ) {
+			$years[] = $y;
+		}
+	}
+
+	if ( empty( $years ) ) {
+		return arv_results_by_race( $rows, $show_search );
+	}
+
+	rsort( $years );
+	$current = $years[0];
+
+	$out = '<div class="arv-results__year-bar">'
+		. '<label class="arv-results__year-label" for="arv-results-year">'
+		. esc_html( __( 'Year', 'aravaipa-elements' ) ) . '</label>'
+		. '<select class="arv-results__year-select" id="arv-results-year" data-arv-results-year-select>';
+
+	foreach ( $years as $y ) {
+		$out .= '<option value="' . esc_attr( $y ) . '"' . ( $y === $current ? ' selected' : '' ) . '>'
+			. esc_html( $y ) . '</option>';
+	}
+
+	$out .= '</select></div>';
+
+	if ( $show_search ) {
+		$out .= arv_results_search_markup();
+	}
+
+	foreach ( $years as $y ) {
+		$out .= '<div class="arv-results__year-panel" data-arv-results-year-panel="' . esc_attr( $y ) . '"'
+			. ( $y === $current ? '' : ' hidden' ) . '>';
+		$out .= arv_results_race_groups_markup( arv_results_filter_year( $rows, $y ) );
+		$out .= '</div>';
+	}
+
+	return $out;
+}
+
+function arv_results_race_groups_markup( $rows ) {
 	$races = array();
 
 	foreach ( $rows as $row ) {
@@ -1051,31 +1179,7 @@ function arv_results_by_race( $rows, $show_search ) {
 		$races[ $key ][] = $row;
 	}
 
-	$out = '';
-
-	if ( $show_search ) {
-		$out .= '<div class="arv-results__search">'
-			. '<label class="arv-results__search-label" for="arv-results-q">'
-			. esc_html( __( 'Search races', 'aravaipa-elements' ) ) . '</label>'
-			. '<span class="arv-results__search-field">'
-			. '<input class="arv-results__search-input" id="arv-results-q" type="search" autocomplete="off"'
-			. ' placeholder="' . esc_attr( __( 'Race name', 'aravaipa-elements' ) ) . '" data-arv-results-search />'
-			// Our own clear button rather than the one type="search" gives
-			// you: WebKit's only appears once there is text and is a small
-			// unlabelled target, and Firefox draws none at all. This one is
-			// a real button with a real name, and the native one is hidden
-			// so there are never two.
-			. '<button class="arv-results__search-clear" type="button" hidden data-arv-results-clear>'
-			. '<span class="arv-results__sr">' . esc_html( __( 'Clear search', 'aravaipa-elements' ) ) . '</span>'
-			. '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">'
-			. '<path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
-			. '</svg></button>'
-			. '</span>'
-			. '<p class="arv-results__count" data-arv-results-count aria-live="polite"></p>'
-			. '</div>';
-	}
-
-	$out .= '<div class="arv-results__races" data-arv-results-list>';
+	$out = '<div class="arv-results__races" data-arv-results-list>';
 
 	// Grouped under the month of its newest edition, the way the calendar
 	// already groups the season. Seventy-four races in one unbroken column

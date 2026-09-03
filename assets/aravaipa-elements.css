@@ -4079,6 +4079,50 @@
    edition is always open, because that is the one most people came for and
    a click for it would be a click for nothing. */
 
+/* The master page's own control, above the search box rather than beside
+   it: this is the primary way in (which year), search is a secondary
+   narrowing of whichever year is showing. Absent on every other page, since
+   results-YYYY and the year attribute have only ever had the one list. */
+.arv-results__year-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	margin-top: 0.5rem;
+}
+
+.arv-results__year-label {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 1.2px;
+	text-transform: uppercase;
+}
+
+/* Same field chrome as the search input beside it, so the two read as one
+   control bar rather than two different widgets that happen to be stacked. */
+.arv-results__year-select {
+	padding: 0.55rem 2rem 0.55rem 0.9rem;
+	border: 1px solid #d4d4d4;
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-input);
+	font-weight: 700;
+	font-family: inherit;
+	background: #fff;
+	color: inherit;
+	/* The chevron. Custom rather than the browser's own: Safari and Firefox
+	   each draw a different one at a different size, which the search
+	   field's hand-drawn clear icon already set the precedent of not
+	   trusting for this element. */
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='11' height='11'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23272727' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+}
+
+.arv-results__year-select:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 1px;
+}
+
 .arv-results__search {
 	display: flex;
 	flex-wrap: wrap;
