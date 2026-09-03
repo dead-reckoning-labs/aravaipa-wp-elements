@@ -95,8 +95,8 @@ const api = async path => {
 
 const GENERIC = new Set(
   ('mountain mountains canyon valley ridge creek desert lake park springs river peak peaks ' +
-   'trail trails endurance festival classic series marathon ultras ultra night runs run race races ' +
-   'events event photos photo gallery half').split(' ')
+   'trail trails endurance festival classic series marathon ultras ultra night runs run running ' +
+   'race races events event photos photo gallery half').split(' ')
 );
 
 /**
