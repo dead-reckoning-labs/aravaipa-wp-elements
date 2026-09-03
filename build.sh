@@ -52,7 +52,38 @@ rm -rf "$STAGE" "$OUT/$NAME.zip"
 mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
 
 cp "$NAME.php" "$STAGE/"
-cp includes/helpers.php includes/updater.php includes/seo.php includes/page-seo.php includes/race-store.php includes/race-schema.php includes/results-store.php includes/live-store.php includes/stats-store.php includes/watch-store.php includes/films-store.php includes/podcasts-store.php includes/photos-store.php includes/articles-store.php includes/tours-store.php includes/shop-store.php includes/trailtalk-feed.php includes/media-seo.php includes/media-follow.php includes/media-subnav.php includes/media-hub.php includes/media-latest.php includes/weather.php includes/live-page.php includes/race-admin.php includes/photos-admin.php "$STAGE/includes/"
+# Read from the require_once calls rather than a list kept beside them. The
+# list was maintained by hand and drifted three times: v0.7.0 shipped without
+# includes/seo.php, and includes/page-seo.php and includes/photos-admin.php
+# were both caught by the guard below on the build that would have shipped
+# them. None of those is a missing feature, they are all a fatal on every
+# page of a site that sells race entries, because these are require_once and
+# not the file_exists-guarded element loads. Adding a require is now the only
+# step.
+# while-read rather than mapfile: macOS ships bash 3.2, where mapfile does
+# not exist, and this script runs there.
+INCLUDE_RE="ARV_ELEMENTS_PATH \. 'includes/[A-Za-z0-9_-]+\.php'"
+INCLUDES=()
+while IFS= read -r inc; do
+	INCLUDES+=("$inc")
+done < <(grep -oE "$INCLUDE_RE" "$NAME.php" | sed -E "s#.*includes/##; s#'##" | sort -u)
+
+# The derivation is now the only thing standing between a require and the
+# payload, so it has to fail loudly rather than quietly come up short. Any
+# require_once naming a file under includes/ that the pattern above did not
+# match would otherwise be dropped by this and by the guard further down,
+# which reads the same pattern and would agree with it.
+declared=$(grep -cE "require_once +ARV_ELEMENTS_PATH \. 'includes/" "$NAME.php")
+
+if [ "${#INCLUDES[@]}" -ne "$declared" ]; then
+	echo "$NAME.php require_once's $declared files under includes/ but only ${#INCLUDES[@]} parsed: a filename does not match $INCLUDE_RE" >&2
+	exit 1
+fi
+
+for inc in "${INCLUDES[@]}"; do
+	[ -f "includes/$inc" ] || { echo "$NAME.php requires includes/$inc, which does not exist" >&2; exit 1; }
+	cp "includes/$inc" "$STAGE/includes/"
+done
 cp includes/elements/*.php "$STAGE/includes/elements/"
 cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
@@ -100,15 +131,12 @@ if grep -rn "str_replace( *'<', *'<'" "$NAME.php" includes/ 2>/dev/null | grep -
 	exit 1
 fi
 
-# Every includes/*.php the plugin require_once's must actually be in the
-# payload. Unlike the element loop above, these are not guarded by file_exists
-# at runtime: a missing one is a fatal that takes the whole site down, not a
-# quietly absent element. Shipping v0.7.0 without includes/seo.php, which the
-# hand-maintained cp line above had not been updated for, is exactly what this
-# is here to stop happening twice.
+# Belt and braces on the copy above, which now derives this same list. Cheap,
+# and it catches the case where the copy loop ran but something later in this
+# script removed or overwrote a file in the payload.
 while read -r inc; do
 	[ -f "$STAGE/includes/$inc" ] || { echo "includes/$inc is required by $NAME.php but not packaged" >&2; missing=1; }
-done < <(grep -oE "ARV_ELEMENTS_PATH \. 'includes/[a-z-]+\.php'" "$NAME.php" | sed -E "s#.*includes/##; s#'##")
+done < <(printf '%s\n' "${INCLUDES[@]}")
 [ "$missing" -eq 0 ] || exit 1
 
 # The artwork WordPress renders on its own screens. A missing icon is not a
