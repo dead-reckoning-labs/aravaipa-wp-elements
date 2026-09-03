@@ -1960,7 +1960,7 @@ t( 'one finisher reads singular',       false !== strpos( arv_results_finisher_c
 
 echo "\nresults stats: the marquee winners:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
-$head = arv_results_headline_winners( array(
+$block = arv_results_winners_block( array(
 	'headline' => true,
 	'winners'  => array(
 		array(
@@ -1971,25 +1971,30 @@ $head = arv_results_headline_winners( array(
 		array( 'distance' => '20K', 'men' => array( 'name' => 'Devin Sharps', 'time' => '1:33:38' ) ),
 	),
 ) );
+$summary = substr( $block, 0, strpos( $block, '</summary>' ) );
 
 // Both divisions, not one winner. At Bear Chase 2024 the women's 100K
 // champion beat the men's, so naming a single winner was a wrong answer.
-t( 'the headline names the men',        false !== strpos( $head, 'Alex Bustamante' ) );
-t( 'and the women',                     false !== strpos( $head, 'Sydney Park' ) );
-t( 'with their times',                  false !== strpos( $head, '5:49:58' ) && false !== strpos( $head, '6:02:07' ) );
-t( 'and the distance they ran',         false !== strpos( $head, '>52K<' ) );
-t( 'normalised, like everywhere else',  false === strpos( $head, '52KM' ) );
+t( 'the headline names the men',        false !== strpos( $block, 'Alex Bustamante' ) );
+t( 'and the women',                     false !== strpos( $block, 'Sydney Park' ) );
+t( 'with their times',                  false !== strpos( $block, '5:49:58' ) && false !== strpos( $block, '6:02:07' ) );
+t( 'and the distance they ran',         false !== strpos( $block, '>52K<' ) );
+t( 'normalised, like everywhere else',  false === strpos( $block, '52KM' ) );
 
 // The division is named for a screen reader and not drawn: sighted readers
 // get it from the names, and "Men Alex Bustamante" is scaffolding.
-t( 'divisions are named for a11y',      false !== strpos( $head, 'Men: ' ) && false !== strpos( $head, 'Women: ' ) );
+t( 'divisions are named for a11y',      false !== strpos( $block, 'Men: ' ) && false !== strpos( $block, 'Women: ' ) );
 
-// Only the premier distance. The rest are in the table.
-t( 'the headline is one distance',      false === strpos( $head, 'Devin Sharps' ) );
+// The premier distance features in the closed summary; the rest wait behind
+// it rather than repeating the summary's own result a second time.
+t( 'the summary is one distance',       false === strpos( $summary, 'Devin Sharps' ) );
+t( 'the table holds what is left over', false !== strpos( $block, 'Devin Sharps' ) );
+t( 'the featured result names once',    1 === substr_count( $block, 'Alex Bustamante' ) );
+t( 'and says how much more there is',   false !== strpos( $block, '1 more distance' ) );
 
 // A winner's name is untrusted text like any other.
 t( 'a winner name is escaped',          false === strpos(
-	arv_results_headline_winners( array(
+	arv_results_winners_block( array(
 		'headline' => true,
 		'winners'  => array( array( 'distance' => '50K', 'men' => array( 'name' => '<script>x</script>', 'time' => '1:00:00' ) ) ),
 	) ),
@@ -2014,11 +2019,12 @@ $full = array(
 		),
 	),
 );
-$table = arv_results_winners_table( $full );
-t( 'every distance is a row',           false !== strpos( $table, '>52K<' ) && false !== strpos( $table, '>20K<' ) );
+$table = arv_results_winners_block( $full );
+t( 'the summary names the headline',    false !== strpos( $table, '>52K<' ) );
+t( 'the table names the rest',          false !== strpos( $table, '>20K<' ) );
 t( 'and every winner a cell',           false !== strpos( $table, 'Devin Sharps' ) && false !== strpos( $table, 'Liliana Gutierrez' ) );
 t( 'columns are the scored divisions',  false !== strpos( $table, '>Men<' ) && false !== strpos( $table, '>Women<' ) && false !== strpos( $table, '>Nonbinary<' ) );
-t( 'it counts what it holds',           false !== strpos( $table, '2 distances' ) );
+t( 'it counts what is left over',       false !== strpos( $table, '1 more distance' ) );
 
 // A division the board could not resolve is an empty cell, not a dash: one
 // 6K women's winner on the archive has a finish stamp equal to her start.
@@ -2029,18 +2035,23 @@ t( 'a missing winner is a blank cell',  false !== strpos( $table, '<td></td>' ) 
 $one = array( 'headline' => true, 'winners' => array( array(
 	'distance' => '50K', 'men' => array( 'name' => 'A', 'time' => '1:00:00' ),
 ) ) );
-t( 'one distance needs no table',       '' === arv_results_winners_table( $one ) );
+t( 'one distance needs no control',     false === strpos( arv_results_winners_block( $one ), '<details' ) );
+t( 'but still names the winner',        false !== strpos( arv_results_winners_block( $one ), 'A' ) );
 
 // Unless there was no headline to repeat. A lap event runs every category
 // over one loop, so it has no premier distance, but "who won the six hour
-// solo" is still a real answer.
+// solo" is still a real answer, and nothing gets featured over anything else.
 $lap = array_merge( $one, array( 'headline' => false ) );
-t( 'but a lap event still gets one',    false !== strpos( arv_results_winners_table( $lap ), 'A' ) );
-t( 'and no winners means no table',     '' === arv_results_winners_table( array( 'headline' => false ) ) );
+t( 'but a lap event still gets one',    false !== strpos( arv_results_winners_block( $lap ), 'A' ) );
+t( 'behind a plain label, not a name',  false !== strpos( arv_results_winners_block( $lap ), '>Winners<' ) );
+t( 'and no winners means no table',     '' === arv_results_winners_block( array( 'headline' => false ) ) );
 
-// A lap event has no marquee result to name.
-t( 'no headline, no headline line',     '' === arv_results_headline_winners( array( 'headline' => false, 'winners' => $full['winners'] ) ) );
-t( 'and none without winners either',   '' === arv_results_headline_winners( array( 'headline' => true ) ) );
+// A lap event has no marquee result to feature over the others.
+$no_headline  = arv_results_winners_block( array( 'headline' => false, 'winners' => $full['winners'] ) );
+$no_headline_summary = substr( $no_headline, 0, strpos( $no_headline, '</summary>' ) );
+t( 'no headline, no featured name',     false === strpos( $no_headline_summary, 'Alex Bustamante' ) );
+t( 'every distance still shows up',     false !== strpos( $no_headline, 'Alex Bustamante' ) && false !== strpos( $no_headline, 'Devin Sharps' ) );
+t( 'and none without winners either',   '' === arv_results_winners_block( array( 'headline' => true ) ) );
 
 echo "\nresults: years on the expander:\n";
 t( 'years are listed newest first',     '2025, 2024, 2023' === arv_results_years( array(

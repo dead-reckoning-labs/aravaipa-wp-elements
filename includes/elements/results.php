@@ -1352,14 +1352,10 @@ function arv_results_race_groups_markup( $rows ) {
 		}
 
 		$out .= arv_results_finisher_count( $stats ) . '</p>';
-		$out .= arv_results_headline_winners( $stats );
 		$out .= '</div>';
 		$out .= arv_results_links( $latest );
 		$out .= '</div>';
-
-		if ( null !== $stats ) {
-			$out .= arv_results_winners_table( $stats );
-		}
+		$out .= arv_results_winners_block( $stats );
 
 		// No editions control here at all any more. The year list answers
 		// "what happened in 2024", and a race's history is a different
@@ -1413,39 +1409,45 @@ function arv_results_finisher_count( $stats ) {
 }
 
 /**
- * The marquee result: who won the event's premier distance.
+ * A time as it reads in a sentence, not a column.
  *
- * One distance, every division that ran it. Not one winner: at Bear Chase
- * 2024 the women's 100K champion finished in 11:35:21 and the men's in
- * 12:10:00, so naming a single winner was not a summary of that race, it was
- * a wrong answer. The full table below carries the rest.
+ * "0:23:30" is how the table has to store a sub-hour time, padded so every
+ * row in its column lines up. Sitting alone in a headline it reads like a
+ * placeholder rather than a race length. Trimmed only here; the table below
+ * keeps the padded form where the alignment needs it.
  *
- * Adaptive rather than fixed at two, for the same reason the table's columns
- * are: most events ran men and women, Javelina and Black Canyon also scored
- * nonbinary, and hardcoding the common case would erase the flagship's own
- * results.
- *
- * @param array $stats
+ * @param string $time
  * @return string
  */
-function arv_results_headline_winners( $stats ) {
-	// No premier distance means no headline. A lap event runs every category
-	// over one loop, so its longest distance is whichever the GPS rounded up.
-	// The table still lists them all.
-	if ( empty( $stats['winners'] ) || empty( $stats['headline'] ) ) {
-		return '';
-	}
+function arv_results_headline_time( $time ) {
+	return preg_replace( '/^0:(?=\d\d:\d\d$)/', '', (string) $time );
+}
 
-	$top = $stats['winners'][0];
-	$out = '<p class="arv-results__winners">';
+/**
+ * One distance's winners, as a line: the shape both the closed summary and
+ * the open headline need, so there is exactly one place that draws a name
+ * and a time next to a division.
+ *
+ * Not one winner: at Bear Chase 2024 the women's 100K champion finished in
+ * 11:35:21 and the men's in 12:10:00, so naming a single winner was not a
+ * summary of that race, it was a wrong answer. Adaptive rather than fixed at
+ * two for the same reason the table's columns are: most events ran men and
+ * women, Javelina and Black Canyon also scored nonbinary, and hardcoding the
+ * common case would erase the flagship's own results.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_results_winner_line( $row ) {
+	$out = '';
 
-	if ( '' !== $top['distance'] ) {
+	if ( '' !== $row['distance'] ) {
 		$out .= '<span class="arv-results__winners-distance">'
-			. esc_html( arv_results_distance_label( $top['distance'] ) ) . '</span>';
+			. esc_html( arv_results_distance_label( $row['distance'] ) ) . '</span>';
 	}
 
 	foreach ( arv_stats_divisions() as $division ) {
-		if ( ! isset( $top[ $division ] ) ) {
+		if ( ! isset( $row[ $division ] ) ) {
 			continue;
 		}
 
@@ -1456,58 +1458,93 @@ function arv_results_headline_winners( $stats ) {
 			// scaffolding for four words of result.
 			. '<span class="arv-results__sr">'
 			. esc_html( arv_results_division_label( $division ) ) . ': </span>'
-			. '<span class="arv-results__winner-name">' . esc_html( $top[ $division ]['name'] ) . '</span> '
-			. '<span class="arv-results__winner-time">' . esc_html( $top[ $division ]['time'] ) . '</span>'
+			. '<span class="arv-results__winner-name">' . esc_html( $row[ $division ]['name'] ) . '</span> '
+			. '<span class="arv-results__winner-time">'
+			. esc_html( arv_results_headline_time( $row[ $division ]['time'] ) ) . '</span>'
 			. '</span>';
 	}
 
-	return $out . '</p>';
+	return $out;
 }
 
 /**
- * Every distance's winners, behind a disclosure.
+ * The winners, headline first and the rest behind a disclosure.
  *
- * A real table, because that is what this is: a distance and a winner per
- * division, read across. Up to nine rows and three columns at Royal Gorge
- * Groove, which is exactly the amount of information that has to be closed
- * by default; seventy-four of those open at once is not an archive, it is a
- * results booklet.
+ * This used to be two functions and two elements: a headline paragraph, then
+ * a details/summary repeating that same top distance as the table's first
+ * row before the remaining ones. Every race with more than one distance
+ * said its premier result twice, forty or so pixels apart. One function now,
+ * because there is one control: closed, it reads as the headline line
+ * already did; opening it adds the other distances rather than restating the
+ * first one. An event with a single scored distance gets the line with no
+ * control at all, same as before.
  *
- * Not rendered when the headline already said everything. An event with one
- * scored distance would otherwise get a control that opens to repeat the
- * line directly above it.
+ * "Winners" as a label sat directly under the winners it was announcing,
+ * telling a reader nothing the line above it had not already shown. "4 more
+ * distances" says what the click is actually for.
+ *
+ * Up to nine rows and three columns at Royal Gorge Groove, which is exactly
+ * the amount of information that has to be closed by default; seventy-four
+ * of those open at once is not an archive, it is a results booklet.
  *
  * @param array $stats
  * @return string
  */
-function arv_results_winners_table( $stats ) {
+function arv_results_winners_block( $stats ) {
 	$winners = isset( $stats['winners'] ) ? $stats['winners'] : array();
-
-	if ( count( $winners ) < 2 && ! empty( $stats['headline'] ) ) {
-		return '';
-	}
 
 	if ( empty( $winners ) ) {
 		return '';
 	}
 
+	// A headline means winners[0] is the premier distance: feature it and
+	// fold the rest behind it. Without one, a lap event runs every category
+	// over one loop, so its longest distance is whichever the GPS rounded
+	// up and none of them is a "top" result to feature over the others; "who
+	// won the six hour solo" still needs an answer, so every distance,
+	// including a lone one, goes straight into the table with a plain label
+	// on the summary rather than a preview that would overstate one of them.
+	$has_headline = ! empty( $stats['headline'] );
+	$top          = $has_headline ? $winners[0] : null;
+	$rest         = $has_headline ? array_slice( $winners, 1 ) : $winners;
+
+	if ( $has_headline && empty( $rest ) ) {
+		return '<p class="arv-results__winners">' . arv_results_winner_line( $top ) . '</p>';
+	}
+
 	$divisions = arv_stats_divisions_present( $winners );
 
-	$out = '<details class="arv-results__winners-all">';
-	$out .= '<summary class="arv-results__older-toggle">'
+	$out  = '<details class="arv-results__winners-all">';
+	$out .= '<summary class="arv-results__winners-summary">'
 		. '<svg class="arv-results__chevron" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
 		. '<path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-		. '</svg>'
-		. esc_html( __( 'Winners', 'aravaipa-elements' ) )
-		. '<span class="arv-results__older-years">'
-		. esc_html(
-			sprintf(
-				// translators: %d is a count of distances.
-				_n( '%d distance', '%d distances', count( $winners ), 'aravaipa-elements' ),
-				count( $winners )
+		. '</svg>';
+
+	if ( $has_headline ) {
+		$out .= arv_results_winner_line( $top )
+			. '<span class="arv-results__older-years">'
+			. esc_html(
+				sprintf(
+					// translators: %d is a count of additional distances.
+					_n( '%d more distance', '%d more distances', count( $rest ), 'aravaipa-elements' ),
+					count( $rest )
+				)
 			)
-		)
-		. '</span></summary>';
+			. '</span>';
+	} else {
+		$out .= esc_html( __( 'Winners', 'aravaipa-elements' ) )
+			. '<span class="arv-results__older-years">'
+			. esc_html(
+				sprintf(
+					// translators: %d is a count of distances.
+					_n( '%d distance', '%d distances', count( $winners ), 'aravaipa-elements' ),
+					count( $winners )
+				)
+			)
+			. '</span>';
+	}
+
+	$out .= '</summary>';
 
 	// Wrapped so the overflow lives on a div rather than on the table. Set
 	// on the table itself it needs display:block, which throws away the table
@@ -1522,7 +1559,7 @@ function arv_results_winners_table( $stats ) {
 
 	$out .= '</tr></thead><tbody>';
 
-	foreach ( $winners as $row ) {
+	foreach ( $rest as $row ) {
 		$out .= '<tr><th scope="row">'
 			. esc_html( arv_results_distance_label( $row['distance'] ) ) . '</th>';
 
@@ -2083,14 +2120,10 @@ function arv_results_editions_table( $editions ) {
 		$out .= '<div class="arv-results__race-head">';
 		$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) )
 			. arv_results_finisher_count( $stats ) . '</p>';
-		$out .= arv_results_headline_winners( $stats );
 		$out .= '</div>';
 		$out .= arv_results_links( $edition );
 		$out .= '</div>';
-
-		if ( null !== $stats ) {
-			$out .= arv_results_winners_table( $stats );
-		}
+		$out .= arv_results_winners_block( $stats );
 
 		$out .= '</div>';
 	}
