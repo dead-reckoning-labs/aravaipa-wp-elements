@@ -52,6 +52,32 @@ const ACCOUNTS = [
   { nick: 'springvelvet', by: 'Spring Velvet Photography' },
 ];
 
+// How many photographs are actually behind a node, albums nested inside it
+// included. A race folder is created on SmugMug when the race is scheduled,
+// not when it is shot, so the upcoming half of a season sits there as real,
+// correctly-named, completely empty folders. Discovery matched all of them
+// happily, and posting that set would have put eight dead galleries on the
+// photos page: "Cave Creek Thriller 2026" linking to nothing, three months
+// before the race is run. Counted rather than guessed from the date, because
+// a race can be shot and posted late, and a folder can be seeded early.
+const photoCount = async (nodeId, depth = 0) => {
+  if (depth > 2) return 0;
+
+  const kids = await api(`node/${nodeId}!children?count=200`);
+  let total = 0;
+
+  for (const child of kids?.Response?.Node ?? []) {
+    if (child.Type === 'Album' && child.Uris?.Album?.Uri) {
+      const album = await api(child.Uris.Album.Uri.replace('/api/v2/', ''));
+      total += album?.Response?.Album?.ImageCount ?? 0;
+    } else if (child.Type === 'Folder') {
+      total += await photoCount(child.NodeID, depth + 1);
+    }
+  }
+
+  return total;
+};
+
 const api = async path => {
   const url = new URL(`https://api.smugmug.com/api/v2/${path}`);
   url.searchParams.set('APIKey', KEY);
@@ -246,7 +272,14 @@ async function walk( node, account, ancestors, depth ) {
       return;
     }
 
-    accepted.push({ race, year, by: account.by, url: node.WebUri });
+    const photos = await photoCount( node.NodeID );
+
+    if ( photos === 0 ) {
+      rejected.push({ account: account.nick, name: node.Name, parent: ancestors.join(' / '), why: 'matched a race but holds no photographs yet' });
+      return;
+    }
+
+    accepted.push({ race, year, by: account.by, url: node.WebUri, photos });
     // Outermost wins: do not descend into this race's own albums.
     return;
   }
@@ -302,7 +335,12 @@ console.error(`\n${accepted.length} accepted, ${rejected.length} rejected\n`);
 // never blind, which is only true if the exclusions are visible.
 const byReason = new Map();
 for (const r of rejected) {
-  const k = r.why.startsWith('matched') ? 'matched a race but no year could be read' : r.why;
+  // Grouped on the whole reason, not on a "matched" prefix. That prefix
+  // collapse predates there being a second reason starting with the same
+  // word, and it silently filed 23 galleries rejected for holding no
+  // photographs under "no year could be read", which is a different and
+  // wrong claim about why they were skipped.
+  const k = r.why;
   byReason.set(k, (byReason.get(k) || 0) + 1);
 }
 console.error('rejected, by reason:');

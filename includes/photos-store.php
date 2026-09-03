@@ -828,6 +828,47 @@ function arv_photos_register_rest_route() {
 add_action( 'rest_api_init', 'arv_photos_register_rest_route' );
 
 /**
+ * REST handler for the list route.
+ *
+ * The import route replaces the store outright, so anything adding a
+ * gallery has to send every row it wants kept, and until this existed the
+ * only way to read the existing ones back was to parse them out of the
+ * rendered photos page. That reconstruction is lossy in two ways that
+ * matter: a row's year is only recoverable from its URL, which fails for
+ * the eight galleries whose URL carries no year (Spring Velvet's, Abby
+ * Bennett's, the 2018 Race-Photography folders), and the photographer name
+ * comes back HTML-escaped, so "Let's Wander" round-trips as
+ * "Let&#039;s Wander". Adding three galleries that way would have
+ * degraded eight real rows to do it.
+ *
+ * Read-only, edit_posts like the import route beside it, for the scripts
+ * that already authenticate as an Editor.
+ *
+ * @return WP_REST_Response
+ */
+function arv_photos_rest_list() {
+	return new WP_REST_Response( array( 'rows' => arv_photos_store_get() ), 200 );
+}
+
+/**
+ * Register the list route.
+ */
+function arv_photos_register_list_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/photos',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'arv_photos_rest_list',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_photos_register_list_route' );
+
+/**
  * POST /wp-json/aravaipa/v1/photos/import
  *
  * Guarded exactly the way the results importer is, and for the same
