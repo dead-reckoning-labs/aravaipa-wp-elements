@@ -1142,30 +1142,90 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 	rsort( $years );
 	$current = $years[0];
 
+	// A row of years rather than a select. Nineteen of them is a lot to put
+	// behind a click: the archive going back to 2008 is most of what was
+	// rescued, and a closed dropdown says nothing about how deep it runs.
+	// Laid out as buttons it reads as a range at a glance, and picking a year
+	// is one tap instead of two. Scrolls sideways when it does not fit rather
+	// than wrapping into a block of numbers.
 	$out = '<div class="arv-results__year-bar">'
-		. '<label class="arv-results__year-label" for="arv-results-year">'
-		. esc_html( __( 'Year', 'aravaipa-elements' ) ) . '</label>'
-		. '<select class="arv-results__year-select" id="arv-results-year" data-arv-results-year-select>';
+		. '<span class="arv-results__year-label" id="arv-results-year-label">'
+		. esc_html( __( 'Year', 'aravaipa-elements' ) ) . '</span>'
+		. '<div class="arv-results__years" role="tablist" aria-labelledby="arv-results-year-label">';
 
 	foreach ( $years as $y ) {
-		$out .= '<option value="' . esc_attr( $y ) . '"' . ( $y === $current ? ' selected' : '' ) . '>'
-			. esc_html( $y ) . '</option>';
+		$on = ( $y === $current );
+		$out .= '<button type="button" role="tab"'
+			. ' class="arv-results__year' . ( $on ? ' is-on' : '' ) . '"'
+			. ' data-arv-results-year="' . esc_attr( $y ) . '"'
+			. ' aria-selected="' . ( $on ? 'true' : 'false' ) . '"'
+			. ' aria-controls="arv-results-panel-' . esc_attr( $y ) . '">'
+			. esc_html( $y ) . '</button>';
 	}
 
-	$out .= '</select></div>';
+	$out .= '</div></div>';
 
 	if ( $show_search ) {
 		$out .= arv_results_search_markup();
 	}
 
 	foreach ( $years as $y ) {
-		$out .= '<div class="arv-results__year-panel" data-arv-results-year-panel="' . esc_attr( $y ) . '"'
+		$out .= '<div class="arv-results__year-panel" id="arv-results-panel-' . esc_attr( $y ) . '"'
+			. ' role="tabpanel" data-arv-results-year-panel="' . esc_attr( $y ) . '"'
 			. ( $y === $current ? '' : ' hidden' ) . '>';
 		$out .= arv_results_race_groups_markup( arv_results_filter_year( $rows, $y ) );
 		$out .= '</div>';
 	}
 
 	return $out;
+}
+
+/**
+ * Race key to the race's own page on the site.
+ *
+ * Built from the race store, which is the only place a race's page URL lives.
+ * That store is forward-looking (it drops a race once it has run), so this is
+ * keyed by race rather than by edition on purpose: a race listed for next
+ * spring lends its page to every one of its past editions too, which is what
+ * a reader clicking a 2014 result actually wants, the race's page, not a
+ * 2014 page that never existed.
+ *
+ * Empty when the race store is not loaded, in which case names render as
+ * plain text exactly as they did before.
+ *
+ * @return array
+ */
+function arv_results_race_pages() {
+	static $map = null;
+
+	if ( null !== $map ) {
+		return $map;
+	}
+
+	$map = array();
+
+	if ( ! function_exists( 'arv_race_store_get' ) || ! function_exists( 'arv_results_race_key' ) ) {
+		return $map;
+	}
+
+	foreach ( arv_race_store_get() as $race ) {
+		$page = isset( $race['page'] ) ? trim( (string) $race['page'] ) : '';
+
+		if ( '' === $page ) {
+			continue;
+		}
+
+		$key = arv_results_race_key( $race['name'] );
+
+		// First one wins. A race in the store twice (this year and next) has
+		// the same page both times, and if it somehow does not, the nearer
+		// edition is the better guess.
+		if ( '' !== $key && ! isset( $map[ $key ] ) ) {
+			$map[ $key ] = $page;
+		}
+	}
+
+	return $map;
 }
 
 function arv_results_race_groups_markup( $rows ) {
@@ -1217,7 +1277,20 @@ function arv_results_race_groups_markup( $rows ) {
 
 		$out .= '<div class="arv-results__latest">';
 		$out .= '<div class="arv-results__race-head">';
-		$out .= '<h4 class="arv-results__race-name">' . esc_html( $latest['name'] ) . '</h4>';
+
+		// Linked to the race's own page where the store knows one. The name
+		// was the most obviously clickable thing on the row and did nothing,
+		// which is its own kind of broken.
+		$pages = arv_results_race_pages();
+		$page  = isset( $pages[ arv_results_race_key( $latest['name'] ) ] )
+			? $pages[ arv_results_race_key( $latest['name'] ) ]
+			: '';
+
+		$out .= '<h4 class="arv-results__race-name">';
+		$out .= '' !== $page
+			? '<a class="arv-results__race-link" href="' . esc_url( $page ) . '">' . esc_html( $latest['name'] ) . '</a>'
+			: esc_html( $latest['name'] );
+		$out .= '</h4>';
 
 		// The date sits beside the name rather than under it, the way the
 		// race week block already puts them, and the finisher count joins it
@@ -1270,11 +1343,29 @@ function arv_results_race_groups_markup( $rows ) {
 				. '<span class="arv-results__older-years">' . esc_html( arv_results_years( $older ) ) . '</span>'
 				. '</summary>';
 
+			// Every earlier running in the same shape as the one above it,
+			// rather than the compact date-and-links line this used to be.
+			// The point of opening a race is to read its history, and a
+			// history rendered thinner than the current year reads as a
+			// footnote to it: the 2014 running had winners and a finisher
+			// count too, and they are the part worth having.
 			foreach ( $older as $edition ) {
+				$stats_older = arv_stats_store_find( $edition['live'] );
+
 				$out .= '<div class="arv-results__edition">';
+				$out .= '<div class="arv-results__latest">';
+				$out .= '<div class="arv-results__race-head">';
 				$out .= '<p class="arv-results__edition-date">' . esc_html( arv_results_edition_label( $edition ) )
-					. arv_results_finisher_count( arv_stats_store_find( $edition['live'] ) ) . '</p>';
+					. arv_results_finisher_count( $stats_older ) . '</p>';
+				$out .= arv_results_headline_winners( $stats_older );
+				$out .= '</div>';
 				$out .= arv_results_links( $edition );
+				$out .= '</div>';
+
+				if ( null !== $stats_older ) {
+					$out .= arv_results_winners_table( $stats_older );
+				}
+
 				$out .= '</div>';
 			}
 

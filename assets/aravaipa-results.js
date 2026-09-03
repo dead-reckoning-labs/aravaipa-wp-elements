@@ -37,7 +37,7 @@
 
 		var count = root.querySelector( '[data-arv-results-count]' );
 		var clear = root.querySelector( '[data-arv-results-clear]' );
-		var yearSelect = root.querySelector( '[data-arv-results-year-select]' );
+		var yearButtons = root.querySelectorAll( '[data-arv-results-year]' );
 		var panels = root.querySelectorAll( '[data-arv-results-year-panel]' );
 
 		// The master page renders one full list per year, all but the
@@ -167,28 +167,38 @@
 			apply();
 		}
 
-		if ( yearSelect ) {
-			yearSelect.addEventListener( 'change', function () {
-				for ( var p = 0; p < panels.length; p++ ) {
-					panels[ p ].hidden = panels[ p ].getAttribute( 'data-arv-results-year-panel' ) !== yearSelect.value;
-				}
+		function selectYear( year ) {
+			for ( var p = 0; p < panels.length; p++ ) {
+				panels[ p ].hidden = panels[ p ].getAttribute( 'data-arv-results-year-panel' ) !== year;
+			}
 
-				// A query typed against 2026 means nothing once the reader
-				// has switched to 2015; carrying it over would either hide a
-				// year that has no reason to be empty or leave a stale count
-				// reading "3 races" under a list that was never searched.
-				input.value = '';
-				autoOpened.length = 0;
+			for ( var b = 0; b < yearButtons.length; b++ ) {
+				var on = yearButtons[ b ].getAttribute( 'data-arv-results-year' ) === year;
+				yearButtons[ b ].classList.toggle( 'is-on', on );
+				yearButtons[ b ].setAttribute( 'aria-selected', on ? 'true' : 'false' );
+			}
 
-				// The closures above were built over the year that was
-				// active when this input was first wired, so switching
-				// years has to repoint every one of them at the panel that
-				// is visible now, not the one that was visible on load.
-				list = activeList();
-				groups = list ? list.querySelectorAll( '[data-arv-results-race]' ) : [];
-				months = list ? list.querySelectorAll( '[data-arv-results-month]' ) : [];
+			// A query typed against 2026 means nothing once the reader has
+			// switched to 2015; carrying it over would either hide a year that
+			// has no reason to be empty or leave a stale count reading "3
+			// races" under a list that was never searched.
+			input.value = '';
+			autoOpened.length = 0;
 
-				apply();
+			// The closures above were built over the year that was active when
+			// this input was first wired, so switching years has to repoint
+			// every one of them at the panel that is visible now, not the one
+			// that was visible on load.
+			list = activeList();
+			groups = list ? list.querySelectorAll( '[data-arv-results-race]' ) : [];
+			months = list ? list.querySelectorAll( '[data-arv-results-month]' ) : [];
+
+			apply();
+		}
+
+		for ( var y = 0; y < yearButtons.length; y++ ) {
+			yearButtons[ y ].addEventListener( 'click', function () {
+				selectYear( this.getAttribute( 'data-arv-results-year' ) );
 			} );
 		}
 	}

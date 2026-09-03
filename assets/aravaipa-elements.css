@@ -4086,41 +4086,77 @@
 .arv-results__year-bar {
 	display: flex;
 	align-items: center;
-	gap: 0.6rem;
+	gap: 0.7rem;
 	margin-top: 0.5rem;
 }
 
 .arv-results__year-label {
+	flex: 0 0 auto;
 	font-size: var(--arv-fs-label);
 	font-weight: 700;
 	letter-spacing: 1.2px;
 	text-transform: uppercase;
 }
 
-/* Same field chrome as the search input beside it, so the two read as one
-   control bar rather than two different widgets that happen to be stacked. */
-.arv-results__year-select {
-	padding: 0.55rem 2rem 0.55rem 0.9rem;
-	border: 1px solid #d4d4d4;
-	border-radius: var(--arv-radius);
-	font-size: var(--arv-fs-input);
-	font-weight: 700;
-	font-family: inherit;
-	background: #fff;
-	color: inherit;
-	/* The chevron. Custom rather than the browser's own: Safari and Firefox
-	   each draw a different one at a different size, which the search
-	   field's hand-drawn clear icon already set the precedent of not
-	   trusting for this element. */
-	appearance: none;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='11' height='11'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23272727' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-	background-repeat: no-repeat;
-	background-position: right 0.75rem center;
+/* Scrolls sideways rather than wrapping. Nineteen years wrapped into three
+   ragged rows reads as a wall of numbers; one line that runs off the edge
+   reads as a range, which is what it is. */
+.arv-results__years {
+	display: flex;
+	gap: 0.3rem;
+	overflow-x: auto;
+	scrollbar-width: thin;
+	padding-bottom: 0.2rem;
+	-webkit-overflow-scrolling: touch;
 }
 
-.arv-results__year-select:focus-visible {
+.arv-results__year {
+	flex: 0 0 auto;
+	padding: 0.4rem 0.7rem;
+	border: 1px solid #d4d4d4;
+	border-radius: var(--arv-radius-chip);
+	background: #fff;
+	color: inherit;
+	font-family: inherit;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+@media (hover: hover) {
+	.arv-results__year:hover {
+		border-color: var(--arv-teal);
+	}
+}
+
+.arv-results__year.is-on {
+	background: var(--arv-teal);
+	border-color: var(--arv-teal);
+	color: #0d1211;
+}
+
+.arv-results__year:focus-visible {
 	outline: 2px solid var(--arv-teal);
 	outline-offset: 1px;
+}
+
+/* The race name, linked to the race's own page. Underlined only on hover:
+   nineteen names down a page, each permanently underlined, turns the list
+   into a wall of blue. */
+.arv-results__race-link,
+.arv-results__race-link:link,
+.arv-results__race-link:visited {
+	color: inherit;
+	text-decoration: none;
+}
+
+@media (hover: hover) {
+	a.arv-results__race-link:hover {
+		color: var(--arv-teal-deep);
+		text-decoration: underline;
+	}
 }
 
 .arv-results__search {
