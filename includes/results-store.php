@@ -181,6 +181,43 @@ function arv_results_store_set( $rows ) {
 }
 
 /**
+ * Read route for the store.
+ *
+ * The import route replaces the whole thing, so fixing one row (an editor
+ * hand you a corrected UltraRunning link for a single old edition) means
+ * dumping the current store, patching that one row, and posting it back.
+ * Without this there was nothing to dump from: the only prior way to see
+ * live rows was a stale file from an earlier scrape, and the store had
+ * moved on since (561 rows in the last dump, 544 actually live, a two-hour
+ * gap that would have silently reverted whatever ran in between). Read-only,
+ * edit_posts like the import route beside it and the same pair on photos
+ * and races, for the scripts that already authenticate as an Editor.
+ *
+ * @return WP_REST_Response
+ */
+function arv_results_rest_list() {
+	return new WP_REST_Response( array( 'rows' => arv_results_store_get() ), 200 );
+}
+
+/**
+ * Register the list route.
+ */
+function arv_results_register_list_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/results',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'arv_results_rest_list',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_results_register_list_route' );
+
+/**
  * Write route for the scraper.
  *
  * Same edit_posts scoping as the race importer and the waitlist map, for the
