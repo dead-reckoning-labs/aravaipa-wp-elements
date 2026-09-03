@@ -6,6 +6,15 @@ define('ABSPATH', true);
 define('ARV_ELEMENTS_URL', './');
 define( 'ARV_ELEMENTS_PATH', __DIR__ . '/' );
 
+// WordPress core defines these; the harness does not load WordPress. Without
+// them includes/helpers.php fatals on the constant it builds out of
+// DAY_IN_SECONDS, which took the whole preview with it. arv-store-test.php
+// has stubbed the same four since it was written.
+define( 'MINUTE_IN_SECONDS', 60 );
+define( 'HOUR_IN_SECONDS', 3600 );
+define( 'DAY_IN_SECONDS', 86400 );
+define( 'WEEK_IN_SECONDS', 604800 );
+
 function cs_register_element($n, $c) { $GLOBALS['ARV_EL'][$n] = $c; }
 function cs_value($d, $desig = 'markup', $p = false) { return $d; }
 function cs_compose_values($v, ...$p) { return $v; }

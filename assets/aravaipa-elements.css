@@ -4455,6 +4455,55 @@
 	display: block;
 }
 
+/* One race's own result files, one per distance, from the years Aravaipa
+   scored its own races. A variable number of them, so they wrap rather than
+   sitting in the three-column grid above, and they are deliberately quieter
+   than the buttons: a distance is a way into a result, not a destination
+   the way "UltraSignup" is. */
+.arv-results__actions {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.4rem;
+}
+
+.arv-results__archive {
+	display: flex;
+	flex-wrap: wrap;
+	/* Right, to hang off the same edge the buttons above do. A race with
+	   nine of these wraps to a second line, and left-aligning would leave
+	   that line ending in the middle of the row under a button column that
+	   ends flush. */
+	justify-content: flex-end;
+	gap: 0.3rem;
+}
+
+.arv-results__archive-link,
+.arv-results__archive-link:link,
+.arv-results__archive-link:visited {
+	display: inline-block;
+	padding: 0.2rem 0.5rem;
+	background: transparent;
+	border: 1px solid var(--arv-results-rule);
+	color: #4a4a4a;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	text-decoration: none;
+	white-space: nowrap;
+	border-radius: var(--arv-radius-chip);
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+@media (hover: hover) {
+	a.arv-results__archive-link:hover {
+		background: var(--arv-teal);
+		border-color: var(--arv-teal);
+		color: #0d1211;
+	}
+}
+
 .arv-results__older {
 	margin-top: 0.75rem;
 }
@@ -4591,6 +4640,17 @@
 	.arv-results__links .arv-results__link {
 		width: 100%;
 		min-width: 0;
+	}
+
+	/* The edition row is a stretched column at this width, so the buttons
+	   already span it and there is no right edge left to hang the chips
+	   off. They read as a list under the buttons instead. */
+	.arv-results__actions {
+		align-items: stretch;
+	}
+
+	.arv-results__archive {
+		justify-content: flex-start;
 	}
 }
 

@@ -1379,8 +1379,6 @@ function arv_results_edition_label( $row ) {
  * @return string
  */
 function arv_results_links( $row ) {
-	$out = '<div class="arv-results__links">';
-
 	// The branded page for this edition where one has been built, the board
 	// itself where one has not, which is most of them.
 	$live = function_exists( 'arv_live_page_for_live_url' )
@@ -1388,32 +1386,173 @@ function arv_results_links( $row ) {
 		: '';
 	$live = '' !== $live ? $live : $row['live'];
 
-	foreach ( array(
+	$slots = array(
 		array( $live, __( 'Live Results', 'aravaipa-elements' ), 'live' ),
-		array( $row['ultrasignup'], __( 'UltraSignup', 'aravaipa-elements' ), 'us' ),
-		array( $row['ultrarunning'], __( 'UltraRunning', 'aravaipa-elements' ), 'ur' ),
-	) as $link ) {
-		list( $url, $label, $kind ) = $link;
-		$url = trim( (string) $url );
+		array( isset( $row['ultrasignup'] ) ? $row['ultrasignup'] : '', __( 'UltraSignup', 'aravaipa-elements' ), 'us' ),
+		array( isset( $row['ultrarunning'] ) ? $row['ultrarunning'] : '', __( 'UltraRunning', 'aravaipa-elements' ), 'ur' ),
+	);
 
-		if ( '' === $url ) {
-			// An empty slot, not nothing. There are three fixed columns here
-			// even though the layout has no table: dropping a missing link
-			// let the row shrink from the left, so a race with two listings
-			// started its buttons 119px right of a race with three and the
-			// whole page had a ragged edge running down it. The slot holds
-			// the column and shows nothing.
-			$out .= '<span class="arv-results__slot" aria-hidden="true"></span>';
+	$has_slot = false;
+
+	foreach ( $slots as $slot ) {
+		if ( '' !== trim( (string) $slot[0] ) ) {
+			$has_slot = true;
+			break;
+		}
+	}
+
+	// Both forms of the live URL: the archive link was scraped off the same
+	// page that fed the slots, so it can match either the board or the
+	// branded page that stands in for it.
+	$primary = array( $live, $row['live'] );
+
+	foreach ( $slots as $slot ) {
+		$primary[] = $slot[0];
+	}
+
+	$archive = arv_results_archive( $row, $primary );
+	$out     = '';
+
+	// A race with no listing and no files of its own has nothing to show.
+	// Returning the wrapper anyway would put an empty flex child in the
+	// edition row and pull the date off the left with its gap.
+	if ( '' === $archive && ! $has_slot ) {
+		return '';
+	}
+
+	// One box around both rows. The edition line is a space-between flex
+	// row of exactly two things, the date and the links, and adding the
+	// archive beside them made it three: the chips then sat wherever the
+	// wrap happened to put them, right-aligned next to the date on a race
+	// with four of them and left-aligned on its own line on a race with
+	// nine. Wrapped, they hang off the same right edge as the buttons
+	// regardless of how many there are.
+	$out .= '<div class="arv-results__actions">';
+
+	// The grid holds three fixed columns still, so a race with two listings
+	// does not start its buttons where a race with three starts its second.
+	// A race with none of the three has nothing to line up with and gets no
+	// grid at all: three empty columns above a row of archive links is a gap
+	// holding space for buttons that are never coming, which is most of what
+	// the archive years look like.
+	if ( $has_slot ) {
+		$out .= '<div class="arv-results__links">';
+
+		foreach ( $slots as $slot ) {
+			list( $url, $label, $kind ) = $slot;
+			$url = trim( (string) $url );
+
+			if ( '' === $url ) {
+				// An empty slot, not nothing. Dropping a missing link let the
+				// row shrink from the left, so a race with two listings
+				// started its buttons 119px right of a race with three and
+				// the whole page had a ragged edge running down it. The slot
+				// holds the column and shows nothing.
+				$out .= '<span class="arv-results__slot" aria-hidden="true"></span>';
+				continue;
+			}
+
+			$out .= '<a class="arv-results__link arv-results__link--' . esc_attr( $kind ) . '" href="'
+				. esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
+		}
+
+		$out .= '</div>';
+	}
+
+	return $out . $archive . '</div>';
+}
+
+/**
+ * A race's own result files, one per distance.
+ *
+ * Everything before 2020 was scored on Aravaipa's own site rather than by a
+ * timing provider with a page per race, so an edition is not one link but
+ * several: "6 Day", "72 Hours", "48 Hours", "24 Hours", "Splits" for Across
+ * The Years 2016, each a separate file.
+ *
+ * Not in the three-column grid above, and not styled as a fourth button.
+ * Both would be wrong. The grid holds three fixed columns and this is a
+ * variable number of them; and a distance is not the same kind of thing as
+ * "UltraSignup", which names a place to go rather than a race to read. So
+ * they wrap as a set, sized and weighted below the buttons, which is also
+ * how they read: one race, several distances.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_results_archive( $row, $primary = array() ) {
+	$links = isset( $row['archive'] ) && is_array( $row['archive'] ) ? $row['archive'] : array();
+
+	if ( empty( $links ) ) {
+		return '';
+	}
+
+	$seen = array();
+
+	foreach ( (array) $primary as $url ) {
+		$url = arv_results_archive_key( $url );
+
+		if ( '' !== $url ) {
+			$seen[ $url ] = true;
+		}
+	}
+
+	$chips = array();
+
+	foreach ( $links as $link ) {
+		if ( ! is_array( $link ) || empty( $link['url'] ) ) {
 			continue;
 		}
 
-		$out .= '<a class="arv-results__link arv-results__link--' . esc_attr( $kind ) . '" href="'
-			. esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
+		// Some editions list their UltraSignup board twice, once as the
+		// listing and once among the per-distance files. Rendering it as a
+		// button and again as a chip beside it just looks like a mistake.
+		$key = arv_results_archive_key( $link['url'] );
+
+		if ( '' === $key || isset( $seen[ $key ] ) ) {
+			continue;
+		}
+
+		$seen[ $key ] = true;
+
+		$label = isset( $link['label'] ) ? trim( (string) $link['label'] ) : '';
+
+		// A file with no label of its own still needs a word on it. "Results"
+		// is what the page it came from called the ones it did not name.
+		if ( '' === $label ) {
+			$label = __( 'Results', 'aravaipa-elements' );
+		}
+
+		$chips[] = '<a class="arv-results__archive-link" href="' . esc_url( $link['url'] )
+			. '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
 	}
 
-	$out .= '</div>';
+	// Every link this row had was already a button above it. The row is not
+	// empty-looking, it is absent, which is the correct amount of nothing.
+	if ( empty( $chips ) ) {
+		return '';
+	}
 
-	return $out;
+	return '<div class="arv-results__archive">' . implode( '', $chips ) . '</div>';
+}
+
+/**
+ * Normalizes a results URL enough to tell two spellings of the same link
+ * apart. Scheme, host case, and a trailing slash all vary between the
+ * scraped pages and the stored slots; nothing past that is touched, because
+ * query strings are what identify an UltraSignup board.
+ */
+function arv_results_archive_key( $url ) {
+	$url = strtolower( trim( (string) $url ) );
+
+	if ( '' === $url ) {
+		return '';
+	}
+
+	$url = preg_replace( '#^https?://#', '', $url );
+	$url = preg_replace( '#^www\.#', '', $url );
+
+	return rtrim( $url, '/' );
 }
 
 /**
