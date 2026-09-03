@@ -1329,8 +1329,7 @@ function arv_results_race_groups_markup( $rows ) {
 		// obvious reading of "make the name clickable" and the wrong one:
 		// somebody reading an archive wants the race's results, and the
 		// entry page is a click away from there anyway.
-		$race_url = rtrim( arv_results_archive_url(), '/' ) . '/'
-			. arv_results_race_slug( $latest['name'] ) . '/';
+		$race_url = arv_results_race_url( $latest['name'] );
 
 		$out .= '<h4 class="arv-results__race-name">';
 		$out .= '<a class="arv-results__race-link" href="' . esc_url( $race_url ) . '">'
@@ -2129,6 +2128,25 @@ function arv_results_editions_table( $editions ) {
 	}
 
 	return $out . '</section>';
+}
+
+/**
+ * One race's own page.
+ *
+ * Built from the site root and ARV_RESULTS_RACE_BASE rather than from the
+ * archive page's permalink, because the two are deliberately not the same
+ * path any more: see the constant's own note for why /results/<race> is
+ * unavailable no matter what WordPress is told.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_results_race_url( $name ) {
+	$base = function_exists( 'home_url' )
+		? rtrim( (string) home_url( '/' . ARV_RESULTS_RACE_BASE ), '/' )
+		: '/' . ARV_RESULTS_RACE_BASE;
+
+	return $base . '/' . arv_results_race_slug( $name ) . '/';
 }
 
 /**
