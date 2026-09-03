@@ -84,20 +84,27 @@
 		var autoOpened = [];
 
 		function setOpen( el, open ) {
-			var details = el.querySelector( 'details' );
-			if ( ! details ) {
+			var panel = el.querySelector( '[data-arv-results-editions-panel]' );
+			var btn = el.querySelector( '[data-arv-results-editions]' );
+			if ( ! panel ) {
 				return;
 			}
 			if ( open ) {
-				if ( ! details.open ) {
-					details.open = true;
-					autoOpened.push( details );
+				if ( panel.hidden ) {
+					panel.hidden = false;
+					if ( btn ) {
+						btn.setAttribute( 'aria-expanded', 'true' );
+					}
+					autoOpened.push( el );
 				}
 				return;
 			}
-			var at = autoOpened.indexOf( details );
+			var at = autoOpened.indexOf( el );
 			if ( at !== -1 ) {
-				details.open = false;
+				panel.hidden = true;
+				if ( btn ) {
+					btn.setAttribute( 'aria-expanded', 'false' );
+				}
 				autoOpened.splice( at, 1 );
 			}
 		}
@@ -184,6 +191,12 @@
 			// races" under a list that was never searched.
 			input.value = '';
 			autoOpened.length = 0;
+			for ( var bb = 0; bb < panels.length; bb++ ) {
+				var pb = panels[ bb ].querySelector( '[data-arv-results-back]' );
+				if ( pb ) {
+					pb.hidden = true;
+				}
+			}
 
 			// The closures above were built over the year that was active when
 			// this input was first wired, so switching years has to repoint
@@ -195,6 +208,87 @@
 
 			apply();
 		}
+
+		// Opening one race filters the year down to it. The editions are the
+		// page at that point rather than a nested list inside a row of other
+		// races, which is the whole difference between "expand a footnote"
+		// and "read this race's history".
+		// Resolved per call, not once: there is one back bar per year panel, so
+		// caching the first one found meant a race opened in 2015 unhid
+		// 2026's bar, inside a panel nobody can see, and the way out of the
+		// filtered view simply never appeared.
+		function activeBackBar() {
+			var list = activeList();
+			var panel = list ? list.closest( '[data-arv-results-year-panel]' ) : null;
+			return ( panel || root ).querySelector( '[data-arv-results-back]' );
+		}
+
+		function openRace( group ) {
+			var panel = group.querySelector( '[data-arv-results-editions-panel]' );
+			var btn = group.querySelector( '[data-arv-results-editions]' );
+
+			for ( var i = 0; i < groups.length; i++ ) {
+				groups[ i ].hidden = groups[ i ] !== group;
+			}
+			for ( var m = 0; m < months.length; m++ ) {
+				months[ m ].hidden = ! months[ m ].querySelector(
+					'[data-arv-results-race]:not([hidden])'
+				);
+			}
+			if ( panel ) {
+				panel.hidden = false;
+			}
+			if ( btn ) {
+				btn.setAttribute( 'aria-expanded', 'true' );
+			}
+			var bar = activeBackBar();
+			if ( bar ) {
+				bar.hidden = false;
+			}
+			if ( count ) {
+				count.textContent = '';
+			}
+		}
+
+		function closeRace() {
+			for ( var i = 0; i < groups.length; i++ ) {
+				var p = groups[ i ].querySelector( '[data-arv-results-editions-panel]' );
+				var b = groups[ i ].querySelector( '[data-arv-results-editions]' );
+				if ( p ) {
+					p.hidden = true;
+				}
+				if ( b ) {
+					b.setAttribute( 'aria-expanded', 'false' );
+				}
+			}
+			var bar = activeBackBar();
+			if ( bar ) {
+				bar.hidden = true;
+			}
+			autoOpened.length = 0;
+			apply();
+		}
+
+		root.addEventListener( 'click', function ( ev ) {
+			var btn = ev.target.closest ? ev.target.closest( '[data-arv-results-editions]' ) : null;
+			if ( btn ) {
+				var group = btn.closest( '[data-arv-results-race]' );
+				if ( group ) {
+					// Taking it a second time puts the year back, so the
+					// button is a toggle rather than a one-way door that
+					// only the back bar can undo.
+					if ( 'true' === btn.getAttribute( 'aria-expanded' ) ) {
+						closeRace();
+					} else {
+						openRace( group );
+					}
+				}
+				return;
+			}
+			if ( ev.target.closest && ev.target.closest( '.arv-results__back' ) ) {
+				closeRace();
+			}
+		} );
 
 		for ( var y = 0; y < yearButtons.length; y++ ) {
 			yearButtons[ y ].addEventListener( 'click', function () {

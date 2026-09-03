@@ -1239,7 +1239,18 @@ function arv_results_race_groups_markup( $rows ) {
 		$races[ $key ][] = $row;
 	}
 
-	$out = '<div class="arv-results__races" data-arv-results-list>';
+	// Shown only while a single race is open. Server-rendered hidden rather
+	// than built in JavaScript so the control exists before the script runs
+	// and cannot end up orphaned if it does not.
+	$out  = '<div class="arv-results__back-bar" data-arv-results-back hidden>';
+	$out .= '<button type="button" class="arv-results__back">'
+		. '<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
+		. '<path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+		. '</svg>'
+		. esc_html( __( 'All races', 'aravaipa-elements' ) ) . '</button>';
+	$out .= '</div>';
+
+	$out .= '<div class="arv-results__races" data-arv-results-list>';
 
 	// Grouped under the month of its newest edition, the way the calendar
 	// already groups the season. Seventy-four races in one unbroken column
@@ -1317,31 +1328,35 @@ function arv_results_race_groups_markup( $rows ) {
 		}
 
 		if ( ! empty( $older ) ) {
-			$out .= '<details class="arv-results__older">';
-			$out .= '<summary class="arv-results__older-toggle">'
-				// An explicit chevron, because setting any display other
-				// than list-item on a <summary> removes the browser's own
-				// disclosure triangle, and this had ended up with no visible
-				// affordance at all: bold teal text that gave no sign it
-				// could be opened. Rotates via CSS on [open].
-				. '<svg class="arv-results__chevron" viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
-				. '<path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-				. '</svg>'
+			// A button that opens the race, not a disclosure triangle.
+			// "N earlier editions" as a <summary> read as a footnote you
+			// could optionally expand, when opening a race is the second
+			// thing anyone comes to this page to do: find the race, then
+			// read its history. The button says what it does and what you
+			// get, and taking it filters the year down to this one race so
+			// its editions are the page rather than a nested list inside it.
+			$out .= '<div class="arv-results__editions-bar">';
+			$out .= '<button type="button" class="arv-results__editions-btn"'
+				. ' data-arv-results-editions aria-expanded="false">'
 				. esc_html(
 					sprintf(
 						// translators: %d is a count of previous runnings.
-						_n( '%d earlier edition', '%d earlier editions', count( $older ), 'aravaipa-elements' ),
-						count( $older )
+						_n( 'All %d editions', 'All %d editions', count( $older ) + 1, 'aravaipa-elements' ),
+						count( $older ) + 1
 					)
 				)
-				// The years themselves, next to the count. "3 earlier
-				// editions" tells you there is more without telling you
-				// whether it is the years you want, so anyone after a
-				// particular one has to open every group to find out. The
-				// years answer that before the click, and they are already
-				// in hand.
+				// The years themselves, beside the count. "5 editions" says
+				// there is more without saying whether it is the years you
+				// want, so anyone after a particular one would have to open
+				// it to find out. They are already in hand, so they go here.
 				. '<span class="arv-results__older-years">' . esc_html( arv_results_years( $older ) ) . '</span>'
-				. '</summary>';
+				. '</button>';
+			$out .= '</div>';
+
+			// Hidden until the button is taken. Rendered server-side either
+			// way so a reader with no JavaScript, and a crawler, still get
+			// every edition in the markup.
+			$out .= '<div class="arv-results__editions" data-arv-results-editions-panel hidden>';
 
 			// Every earlier running in the same shape as the one above it,
 			// rather than the compact date-and-links line this used to be.
@@ -1369,7 +1384,7 @@ function arv_results_race_groups_markup( $rows ) {
 				$out .= '</div>';
 			}
 
-			$out .= '</details>';
+			$out .= '</div>';
 		}
 
 		$out .= '</div>';

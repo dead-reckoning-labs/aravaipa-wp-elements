@@ -1030,10 +1030,10 @@ arv_results_store_set( array(
 $byrace = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
 t( 'one group per race, not per edition', 2 === substr_count( $byrace, 'arv-results__race-group' ) );
 t( 'the newest name is the one shown',    false !== strpos( $byrace, 'Black Canyon Ultras' ) );
-t( 'older editions are collapsed',        false !== strpos( $byrace, '<details' ) );
-t( 'and counted',                         false !== strpos( $byrace, '2 earlier editions' ) );
+t( 'older editions start hidden',         false !== strpos( $byrace, 'data-arv-results-editions-panel hidden' ) );
+t( 'and counted, the race included',      false !== strpos( $byrace, 'All 3 editions' ) );
 t( 'every edition is still in the html',  false !== strpos( $byrace, 'bc-2024' ) );
-t( 'a one-edition race gets no toggle',   1 === substr_count( $byrace, '<details' ) );
+t( 'a one-edition race gets no button',   1 === substr_count( $byrace, 'data-arv-results-editions ' ) );
 t( 'the other race stayed separate',      false !== strpos( $byrace, 'Crown King Scramble' ) );
 t( 'and the search box is there',         false !== strpos( $byrace, 'data-arv-results-search' ) );
 
@@ -1043,7 +1043,7 @@ arv_results_store_set( array(
 	array( 'name' => 'Zion Ultras', 'iso' => '2025-04-11', 'live' => 'https://live.aravaiparunning.com/#/z-2025' ),
 ) );
 $one = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
-t( 'one earlier edition reads singular',  false !== strpos( $one, '1 earlier edition<' ) );
+t( 'a two-edition race counts both',      false !== strpos( $one, 'All 2 editions' ) );
 
 // The name key has to survive stripping. "Race the Cog" loses both "race"
 // and "the" and would otherwise group on nothing.
@@ -1091,7 +1091,7 @@ t( 'three slots per edition, always',     0 === $slots % 3 );
 
 // The expander needs a chevron of its own: any display other than
 // list-item removes the browser's disclosure triangle.
-t( 'the expander has a chevron',          false !== strpos( $withsearch, 'arv-results__chevron' ) );
+t( 'the expander is a real button',       false !== strpos( $withsearch, 'arv-results__editions-btn' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 
@@ -2102,7 +2102,7 @@ t( 'and names its marquee winners',     false !== strpos( $html, 'Alex Bustamant
 t( 'the table holds the other one',     false !== strpos( $html, 'Devin Sharps' ) );
 t( 'the older edition carries a count', false !== strpos( $html, '312 finishers' ) );
 t( 'the expander names its years',      false !== strpos( $html, '2025</span>' ) );
-t( 'and still counts them',             false !== strpos( $html, '1 earlier edition' ) );
+t( 'and still counts them',             false !== strpos( $html, 'All 2 editions' ) );
 
 // Nothing stored at all is the state this page shipped in, and it has to
 // keep rendering exactly as it did.

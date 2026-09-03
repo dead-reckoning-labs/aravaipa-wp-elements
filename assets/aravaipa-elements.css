@@ -4584,59 +4584,88 @@
 	}
 }
 
-.arv-results__older {
+/* The button that opens a race. Not a disclosure triangle: taking it filters
+   the year down to this race, so it reads as an action rather than a twisty
+   on a footnote. */
+.arv-results__editions-bar {
 	margin-top: 0.75rem;
 }
 
-.arv-results__older-toggle {
+.arv-results__editions-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-	padding: 0.2rem 0;
+	gap: 0.5rem;
+	padding: 0.35rem 0.7rem;
+	border: 1px solid var(--arv-results-rule);
+	border-radius: var(--arv-radius-chip);
+	background: #fff;
+	color: var(--arv-teal-deep);
+	font-family: inherit;
 	font-size: var(--arv-fs-btn);
 	font-weight: 700;
-	color: var(--arv-teal-deep);
 	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-/* Any display other than list-item drops the browser's own disclosure
-   triangle, which is why this needs one of its own; see the matching
-   comment in includes/elements/results.php. */
-.arv-results__older-toggle::marker,
-.arv-results__older-toggle::-webkit-details-marker {
-	content: "";
-	display: none;
+@media (hover: hover) {
+	.arv-results__editions-btn:hover {
+		border-color: var(--arv-teal);
+		background: var(--arv-teal);
+		color: #0d1211;
+	}
 }
 
-.arv-results__chevron {
-	flex: 0 0 auto;
-	transition: transform 0.15s ease;
-}
-
-.arv-results__older[open] > .arv-results__older-toggle .arv-results__chevron {
-	transform: rotate(180deg);
-}
-
-.arv-results__older-toggle:focus-visible {
+.arv-results__editions-btn:focus-visible {
 	outline: 2px solid var(--arv-teal);
 	outline-offset: 2px;
 }
 
-/* An open race reads as one unit rather than as its latest edition
-   followed by some loose rows. Deliberately not zebra striping the whole
-   list: at seventy-four races that is a lot of banding to say something the
-   hairline rules already say, and it fights the plain index register this
-   shares with the calendar. The tint marks the one thing that is actually a
-   group. */
-.arv-results__older[open] {
+.arv-results__editions-btn:hover .arv-results__older-years {
+	color: rgba(13, 18, 17, 0.75);
+}
+
+/* No display rule on the panel itself, so the browser's own
+   [hidden] { display: none } never has to win a specificity fight with an
+   author rule. That is the same trap build.sh checks for on the calendar,
+   watch and films rows. */
+.arv-results__editions {
 	margin-top: 0.5rem;
 	padding: 0.15rem 0.75rem 0.35rem;
 	background: #fafafa;
 }
 
-.arv-results__older[open] .arv-results__older-toggle {
-	margin-bottom: 0.5rem;
+.arv-results__back-bar {
+	margin-bottom: 1rem;
 }
+
+.arv-results__back {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.4rem 0.8rem;
+	border: 1px solid var(--arv-results-rule);
+	border-radius: var(--arv-radius-chip);
+	background: #fff;
+	color: inherit;
+	font-family: inherit;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
+@media (hover: hover) {
+	.arv-results__back:hover {
+		border-color: var(--arv-teal);
+	}
+}
+
+.arv-results__back:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 2px;
+}
+
 
 .arv-results__edition {
 	display: flex;
