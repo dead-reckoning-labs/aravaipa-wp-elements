@@ -22,12 +22,32 @@
  * work; this simply does not read them yet.
  *
  *   node scripts/fetch-results.mjs [--from 2023] [--to 2026] [--port 9333]
- *   node scripts/fetch-results.mjs --post
- *   node scripts/fetch-results.mjs --post --dry-run
+ *   node scripts/fetch-results.mjs --merge-with older.json --post
+ *   node scripts/fetch-results.mjs --merge-with older.json --post --dry-run
  *
  * --post requires ARAVAIPA_WP_URL, ARAVAIPA_WP_USER and
  * ARAVAIPA_WP_APP_PASSWORD, an Application Password on an Editor-role user.
+ *
+ * READ THIS BEFORE --post. The import route replaces the store outright. This
+ * script reads 2023 on and scripts/backfill-results.mjs reads 2008 to 2022,
+ * and since the backfill ran, the store holds both: posting these years alone
+ * would delete twenty-three years of rescued history. The route's own guard
+ * catches it today, because 154 rows against 497 stored is a drop of far more
+ * than the fifth it refuses at, but that is a backstop and not a plan: it
+ * stops protecting the moment this script's own years outgrow it.
+ *
+ * So --post refuses to run without --merge-with, pointed at the other
+ * script's rows:
+ *
+ *   node scripts/backfill-results.mjs > older.json
+ *   node scripts/fetch-results.mjs --merge-with older.json --post
+ *
+ * These rows win on a name-and-date collision, being the fresher read of the
+ * years this script owns. In practice the two never collide: they read
+ * different pages covering different years.
  */
+import { readFileSync } from 'node:fs';
+
 const args = Object.fromEntries(
   process.argv.slice(2).join(' ').split('--').filter(Boolean)
     .map(s => s.trim().split(/\s+/)).map(([k, v]) => [k, v ?? true])
@@ -161,6 +181,27 @@ if (!args.post) {
   process.exit(0);
 }
 
+// The store is replaced, not merged, so what is posted has to already be
+// everything the store should hold.
+if (!args['merge-with']) {
+  console.error('\n--post needs --merge-with <file>, the rows for the years this script does not read.');
+  console.error('The import route replaces the store, so posting only 2023 on would delete');
+  console.error('2008 to 2022. Generate those first:');
+  console.error('  node scripts/backfill-results.mjs > older.json');
+  console.error('  node scripts/fetch-results.mjs --merge-with older.json --post');
+  process.exit(1);
+}
+
+const existing = JSON.parse(readFileSync(args['merge-with'], 'utf8'));
+const keyOf = r => `${String(r.name).trim().toLowerCase()}|${r.iso}`;
+const mine = new Set(rows.map(keyOf));
+
+// These rows win: they are the fresher read of the years this script owns.
+const union = [...rows, ...existing.filter(r => !mine.has(keyOf(r)))]
+  .sort((a, b) => (a.iso === b.iso ? a.name.localeCompare(b.name) : (a.iso < b.iso ? 1 : -1)));
+
+console.error(`posting ${union.length} rows: ${rows.length} from these years, ${union.length - rows.length} carried through`);
+
 const url = process.env.ARAVAIPA_WP_URL;
 const user = process.env.ARAVAIPA_WP_USER;
 const pass = process.env.ARAVAIPA_WP_APP_PASSWORD;
@@ -172,7 +213,7 @@ const res = await fetch(`${url}/wp-json/aravaipa/v1/results/import`, {
     'Content-Type': 'application/json',
     Authorization: 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64'),
   },
-  body: JSON.stringify({ rows, dry_run: !!args['dry-run'] }),
+  body: JSON.stringify({ rows: union, dry_run: !!args['dry-run'] }),
 });
 console.error(`HTTP ${res.status}`);
 console.error(await res.text());

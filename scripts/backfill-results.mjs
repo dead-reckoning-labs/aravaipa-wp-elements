@@ -119,8 +119,15 @@ const DATE_RE = /^[A-Z][a-z]+\s+\d{1,2}(?:st|nd|rd|th)?\b.*20\d\d\s*$/;
 // listing the outbound links on all thirteen of them rather than assuming.
 // Fifteen years of racing predates settling on one timing provider: there is
 // UltraSignup, RaceResult on three different numbered subdomains, RunSignup
-// once, Aravaipa's own ultracast.tv and timing subdomain, and the static
-// files under /results/ that predate all of it.
+// once, Aravaipa's own ultracast.tv and timing subdomain, the Ultracast
+// viewer under /ultracast/ on this host, and the static files under
+// /results/ that predate all of it.
+//
+// The /ultracast/ links were held back on the first pass: that directory had
+// been left behind on the old host the same way /results/ was, so all sixty
+// three of them 404'd and storing them would have put a dead link on thirty
+// races and called it a result. The directory has since been rescued and
+// every one of those .clax files now resolves, so they are read in.
 //
 // Leaving RaceResult out cost Javelina Jundred 2021 its only result link,
 // which is the kind of gap that looks like the race simply had none.
@@ -242,18 +249,11 @@ function parsePage(html, years) {
     const href = absolute(tok.href);
     if (!href) continue;
 
-    // The Ultracast viewer and its .clax data are still on the old host: the
-    // whole /ultracast/ directory was left behind the same way /results/ was,
-    // so every one of these 404s today. Storing them would put a dead button
-    // on thirty races and call it a result. They come back when that
-    // directory does.
-    if (/\/ultracast\//.test(href)) continue;
-
     if (/live\.aravaiparunning/.test(href)) {
       current.live ||= href;
     } else if (/ultrarunning\.com/.test(href)) {
       current.ultrarunning ||= href;
-    } else if (/raceresult\.com|runsignup\.com|ultracast\.tv|timing\.aravaiparunning/.test(href)) {
+    } else if (/raceresult\.com|runsignup\.com|ultracast\.tv|\/ultracast\/|timing\.aravaiparunning/.test(href)) {
       // No column of their own in the store, and they do not need one: what
       // a reader wants is a labelled way through to the result, which is
       // exactly what the archive list is. The label the page gave is kept,
@@ -262,7 +262,7 @@ function parsePage(html, years) {
       // nothing about which is which.
       const provider = /raceresult\.com/.test(href) ? 'RaceResult'
         : /runsignup\.com/.test(href) ? 'RunSignup'
-        : /ultracast\.tv/.test(href) ? 'Ultracast'
+        : /ultracast\.tv|\/ultracast\//.test(href) ? 'Ultracast'
         : 'Timing';
       const label = tok.label && !/^results?$/i.test(tok.label) ? tok.label : provider;
       if (!current.archive.some(a => a.url === href)) {
