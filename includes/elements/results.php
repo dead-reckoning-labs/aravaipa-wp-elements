@@ -1576,10 +1576,18 @@ function arv_results_winner_line( $row ) {
  * a details/summary repeating that same top distance as the table's first
  * row before the remaining ones. Every race with more than one distance
  * said its premier result twice, forty or so pixels apart. One function now,
- * because there is one control: closed, it reads as the headline line
- * already did; opening it adds the other distances rather than restating the
- * first one. An event with a single scored distance gets the line with no
- * control at all, same as before.
+ * because there is one control. An event with a single scored distance gets
+ * the line with no control at all, same as before.
+ *
+ * The two states show different things rather than more and less of the
+ * same thing. Closed is a peek: the premier distance and how many others
+ * there are. Open is the table, every distance in it, under headings that
+ * say which column is which. The first attempt at this kept the peek on
+ * screen while open and dropped the premier distance from the table, which
+ * removed the duplication but left the most important distance sitting
+ * above the DISTANCE/MEN/WOMEN headings in a different shape from the rows
+ * it belonged with. Swapping the two on open costs one line of CSS and puts
+ * every distance back in one table.
  *
  * "Winners" as a label sat directly under the winners it was announcing,
  * telling a reader nothing the line above it had not already shown. "4 more
@@ -1622,6 +1630,16 @@ function arv_results_winners_block( $stats ) {
 		. '<path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
 		. '</svg>';
 
+	// The closed state's peek, hidden by CSS the moment this opens. Open, the
+	// table below carries every distance including this one, under the column
+	// headings that name what the numbers are; leaving the peek on screen
+	// would put the premier distance above those headings, in a different
+	// shape from every row it belongs with. Both are in the markup and only
+	// ever one is displayed, so neither a reader nor a screen reader meets
+	// the same result twice: display:none takes the peek out of the
+	// accessibility tree, and a closed <details> takes the table out of it.
+	$out .= '<span class="arv-results__winners-peek">';
+
 	if ( $has_headline ) {
 		$out .= arv_results_winner_line( $top )
 			. '<span class="arv-results__older-years">'
@@ -1646,6 +1664,19 @@ function arv_results_winners_block( $stats ) {
 			. '</span>';
 	}
 
+	$out .= '</span>';
+	$out .= '<span class="arv-results__winners-shut">'
+		. esc_html( __( 'Winners', 'aravaipa-elements' ) )
+		. '<span class="arv-results__older-years">'
+		. esc_html(
+			sprintf(
+				// translators: %d is a count of distances.
+				_n( '%d distance', '%d distances', count( $winners ), 'aravaipa-elements' ),
+				count( $winners )
+			)
+		)
+		. '</span></span>';
+
 	$out .= '</summary>';
 
 	// Wrapped so the overflow lives on a div rather than on the table. Set
@@ -1661,7 +1692,7 @@ function arv_results_winners_block( $stats ) {
 
 	$out .= '</tr></thead><tbody>';
 
-	foreach ( $rest as $row ) {
+	foreach ( $winners as $row ) {
 		$out .= '<tr><th scope="row">'
 			. esc_html( arv_results_distance_label( $row['distance'] ) ) . '</th>';
 
