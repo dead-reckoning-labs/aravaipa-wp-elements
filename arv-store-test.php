@@ -1993,12 +1993,21 @@ t( 'normalised, like everywhere else',  false === strpos( $block, '52KM' ) );
 // get it from the names, and "Men Alex Bustamante" is scaffolding.
 t( 'divisions are named for a11y',      false !== strpos( $block, 'Men: ' ) && false !== strpos( $block, 'Women: ' ) );
 
-// The premier distance features in the closed summary; the rest wait behind
-// it rather than repeating the summary's own result a second time.
+// Closed, the summary peeks at the premier distance and says how many more
+// there are. Open, the table carries every distance including that one,
+// under headings that name the columns: the premier distance sitting above
+// those headings, in a shape matching none of the rows below it, was the
+// thing this arrangement replaced.
 t( 'the summary is one distance',       false === strpos( $summary, 'Devin Sharps' ) );
-t( 'the table holds what is left over', false !== strpos( $block, 'Devin Sharps' ) );
-t( 'the featured result names once',    1 === substr_count( $block, 'Alex Bustamante' ) );
+t( 'the table holds every distance',    false !== strpos( $block, 'Devin Sharps' )
+                                        && false !== strpos( $block, '>52K<' ) );
 t( 'and says how much more there is',   false !== strpos( $block, '1 more distance' ) );
+
+// The peek and the label are both in the markup and CSS shows exactly one,
+// which is also what keeps a screen reader from meeting the result twice:
+// display:none takes the hidden half out of the accessibility tree.
+t( 'the peek is the closed state',      false !== strpos( $block, 'arv-results__winners-peek' ) );
+t( 'and a label is the open one',       false !== strpos( $block, 'arv-results__winners-shut' ) );
 
 // A winner's name is untrusted text like any other.
 t( 'a winner name is escaped',          false === strpos(

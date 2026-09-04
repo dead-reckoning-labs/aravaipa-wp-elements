@@ -4389,8 +4389,12 @@
    distance renders as this plain line with no control; more than one gets
    the same line inside a disclosure's summary, see .arv-results__winners-all
    below, so the two need matching spacing above them. */
+/* The peek carries the same layout as the summary around it, because the
+   spans inside it are the ones being laid out: wrapping it moved them a
+   level down, out of reach of the summary's own gap. */
 .arv-results__winners,
-.arv-results__winners-summary {
+.arv-results__winners-summary,
+.arv-results__winners-peek {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
@@ -4451,6 +4455,25 @@
    sit doubled up beside the chevron this already draws. */
 .arv-results__winners-summary {
 	cursor: pointer;
+}
+
+/* Closed, the summary peeks at the premier distance. Open, the table below
+   holds that distance too, under headings naming the columns, so the peek
+   stands down and the summary becomes a plain label. Without this the
+   premier distance sat above the DISTANCE/MEN/WOMEN row in a shape that
+   matched none of the rows it belonged with.
+
+   display:none rather than visibility or opacity, deliberately: it takes
+   the hidden half out of the accessibility tree as well as off the screen,
+   so a screen reader meets each result once, exactly like a sighted
+   reader. */
+.arv-results__winners-shut,
+.arv-results__winners-all[open] .arv-results__winners-peek {
+	display: none;
+}
+
+.arv-results__winners-all[open] .arv-results__winners-shut {
+	display: inline;
 }
 
 .arv-results__winners-summary::marker,
