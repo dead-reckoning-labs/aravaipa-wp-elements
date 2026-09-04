@@ -2093,11 +2093,44 @@ t( 'the title defers to a real plugin', 'Results' === arv_results_race_seo_title
 ob_start(); arv_results_race_seo_head(); $race_head = ob_get_clean();
 t( 'and so do the head tags',           '' === $race_head );
 
+// The archive and the calendar name the same race differently often enough
+// that exact matching found a page for only 66 of 120 races, and the misses
+// were current races, not retired ones.
+echo "\n";
+t( 'the same race, named shorter',      arv_results_same_race( 'Desert Solstice', 'Desert Solstice Track Invitational' ) );
+t( 'or named longer',                   arv_results_same_race( 'Aspen Backcountry Marathon', 'Aspen Backcountry' ) );
+t( 'and an unrelated race is not',      ! arv_results_same_race( 'Black Bear Trail Races', 'Rock Hawk Trail Races' ) );
+
+// A ride is not a run. The archive carries the bike editions of four night
+// races, and every word of "Stunner Night Runs" is in "Stunner Night Rides",
+// so a plain subset match sent riders to the runners' page.
+t( 'a ride is not the run',             ! arv_results_same_race( 'Stunner Night Rides', 'Stunner Night Runs' ) );
+t( 'nor is a virtual edition',          ! arv_results_same_race( 'Hypnosis Virtual Night Race', 'Hypnosis Night Runs' ) );
+
+// The key strips numbers, so both of these reduce to "silverton" and matched
+// each other. Compared before the stripping instead.
+t( 'and a number has to agree',         ! arv_results_same_race( 'Silverton 1000', 'Silverton Alpine Marathon' ) );
+
 // The race is the subject of the page, so it is the h1. There was no h1 on
 // it at all before: the theme does not print the Page's own title here.
 $racepage = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
 t( 'the race name is the h1',           false !== strpos( $racepage, '<h1 class="arv-results__race-title">Black Bear Trail Races</h1>' ) );
 t( 'and the other race is not on it',   false === strpos( $racepage, 'Rock Hawk' ) );
+
+// "Where do I enter this" is the one question a results page cannot answer,
+// so the race's own page sits beside the name. Black Bear is on the calendar
+// (imported far above), so it gets the button.
+t( 'a live race links to its page',     false !== strpos( $racepage, 'arv-results__race-info' ) );
+t( 'pointing at the calendar page',     false !== strpos( $racepage, 'https://www.aravaiparunning.com/wme/bb/' ) );
+
+// Rock Hawk is on the archive but not the calendar, which is what a retired
+// race looks like: results to read and nothing to enter. No button rather
+// than a button to nowhere.
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'rock-hawk-trail-races' );
+$retired = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'a retired race gets no button',     false === strpos( $retired, 'arv-results__race-info' ) );
+t( 'but still gets its own page',       false !== strpos( $retired, '<h1 class="arv-results__race-title">Rock Hawk Trail Races</h1>' ) );
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'black-bear-trail-races' );
 
 // One edition is one year, so it does not claim a range it does not have.
 $GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'rock-hawk-trail-races' );

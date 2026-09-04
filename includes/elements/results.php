@@ -1263,6 +1263,103 @@ function arv_results_race_pages() {
 	return $map;
 }
 
+/**
+ * Words that mean two similarly named events are not the same event.
+ *
+ * The archive and the calendar disagree about names often enough that an
+ * exact key match finds a page for only 66 of the 120 races on the archive,
+ * and the misses are not retired races: Desert Solstice, Chocorua and Aspen
+ * Backcountry are all current and all named differently in the two stores.
+ * A word-subset match bridges that, the same way the timing importer bridges
+ * it, but subset alone is too generous in one specific way: the archive
+ * carries the bike editions of four night races, and "Stunner Night Rides"
+ * has every word of "Stunner Night Runs" plus one, so it matched and would
+ * have sent riders to the runners' page. A ride is not a run and a virtual
+ * edition is not the road one, so a word from this list present on one side
+ * only is a rejection rather than a near miss.
+ */
+const ARV_RESULTS_NOT_THE_SAME = '/\b(ride|rides|virtual)\b/i';
+
+/**
+ * The race's own page on the site: entry, course, logistics.
+ *
+ * Exact key first, then the guarded subset above, and only when exactly one
+ * calendar race matches: "Flagstaff 50 Endurance Runs" matches both Flagstaff
+ * Sky Peaks and Flagstaff Extreme Big Pine, and two candidates is not an
+ * answer. Numbers have to agree too, which is what keeps Silverton 1000 off
+ * Silverton Alpine Marathon's page.
+ *
+ * Returns empty for a race with no page, which is the right answer for the
+ * forty-three retired ones: they have results and nothing to enter.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_results_race_page_url( $name ) {
+	$pages = arv_results_race_pages();
+	$key   = arv_results_race_key( $name );
+
+	if ( isset( $pages[ $key ] ) ) {
+		return $pages[ $key ];
+	}
+
+	if ( ! function_exists( 'arv_race_store_get' ) ) {
+		return '';
+	}
+
+	$found = '';
+
+	foreach ( arv_race_store_get() as $race ) {
+		$page = isset( $race['page'] ) ? trim( (string) $race['page'] ) : '';
+
+		if ( '' === $page || ! arv_results_same_race( $name, $race['name'] ) ) {
+			continue;
+		}
+
+		// A second, different page means the name was ambiguous. No button
+		// beats a button onto the wrong race.
+		if ( '' !== $found && $found !== $page ) {
+			return '';
+		}
+
+		$found = $page;
+	}
+
+	return $found;
+}
+
+/**
+ * Whether two race names, written by two different systems, mean one race.
+ *
+ * @param string $a
+ * @param string $b
+ * @return bool
+ */
+function arv_results_same_race( $a, $b ) {
+	if ( preg_match( ARV_RESULTS_NOT_THE_SAME, $a ) !== preg_match( ARV_RESULTS_NOT_THE_SAME, $b ) ) {
+		return false;
+	}
+
+	// "Silverton 1000" and "Silverton Alpine Marathon" both reduce to
+	// "silverton" once the key strips the number, so the numbers are compared
+	// before that happens rather than after.
+	preg_match_all( '/\d+/', (string) $a, $na );
+	preg_match_all( '/\d+/', (string) $b, $nb );
+
+	if ( implode( ',', $na[0] ) !== implode( ',', $nb[0] ) ) {
+		return false;
+	}
+
+	$aw = array_filter( explode( ' ', arv_results_race_key( $a ) ) );
+	$bw = array_filter( explode( ' ', arv_results_race_key( $b ) ) );
+
+	if ( empty( $aw ) || empty( $bw ) ) {
+		return false;
+	}
+
+	return array() === array_diff( $aw, $bw ) || array() === array_diff( $bw, $aw );
+}
+
 function arv_results_race_groups_markup( $rows ) {
 	$races = array();
 
@@ -1408,17 +1505,23 @@ function arv_results_finisher_count( $stats ) {
 }
 
 /**
- * A time as it reads in a sentence, not a column.
+ * A finish time as a person would write it.
  *
- * "0:23:30" is how the table has to store a sub-hour time, padded so every
- * row in its column lines up. Sitting alone in a headline it reads like a
- * placeholder rather than a race length. Trimmed only here; the table below
- * keeps the padded form where the alignment needs it.
+ * "0:23:30" is how the board stores a sub-hour time and it reads as a
+ * placeholder, or as a stopwatch that has not started, rather than as
+ * twenty-three and a half minutes.
+ *
+ * This was applied to the headline only at first, on the theory that the
+ * tables needed the padded form to keep their times in a column. They do
+ * not: a time in those tables follows a runner's name in the same cell, so
+ * it starts wherever that name ends and there is no column of times to
+ * align in the first place. The padding was buying nothing anywhere, so it
+ * goes everywhere.
  *
  * @param string $time
  * @return string
  */
-function arv_results_headline_time( $time ) {
+function arv_results_time_label( $time ) {
 	return preg_replace( '/^0:(?=\d\d:\d\d$)/', '', (string) $time );
 }
 
@@ -1459,7 +1562,7 @@ function arv_results_winner_line( $row ) {
 			. esc_html( arv_results_division_label( $division ) ) . ': </span>'
 			. '<span class="arv-results__winner-name">' . esc_html( $row[ $division ]['name'] ) . '</span> '
 			. '<span class="arv-results__winner-time">'
-			. esc_html( arv_results_headline_time( $row[ $division ]['time'] ) ) . '</span>'
+			. esc_html( arv_results_time_label( $row[ $division ]['time'] ) ) . '</span>'
 			. '</span>';
 	}
 
@@ -1575,7 +1678,7 @@ function arv_results_winners_block( $stats ) {
 			$out .= '<td><span class="arv-results__winner-name">'
 				. esc_html( $row[ $division ]['name'] ) . '</span> '
 				. '<span class="arv-results__winner-time">'
-				. esc_html( $row[ $division ]['time'] ) . '</span></td>';
+				. esc_html( arv_results_time_label( $row[ $division ]['time'] ) ) . '</span></td>';
 		}
 
 		$out .= '</tr>';
@@ -1947,7 +2050,26 @@ function arv_results_race_page( $editions, $name ) {
 	// h1, not h2: the page has none of its own (the theme does not print the
 	// Page's title here), and on a page whose entire subject is one race the
 	// race is the heading, not a subheading of an unstated one.
+	//
+	// The race's own page sits beside the name rather than under the results,
+	// because "where do I enter this" is the one question this page cannot
+	// answer and the most likely reason somebody reading a course record
+	// leaves it. Absent for a retired race, which has results and nothing to
+	// enter, so the heading closes up rather than holding an empty slot.
+	$race_page = arv_results_race_page_url( $name );
+
+	$out .= '<div class="arv-results__race-head-row">';
 	$out .= '<h1 class="arv-results__race-title">' . esc_html( $name ) . '</h1>';
+
+	if ( '' !== $race_page ) {
+		$out .= '<a class="arv-results__race-info" href="' . esc_url( $race_page ) . '">'
+			. esc_html( __( 'Race Info', 'aravaipa-elements' ) )
+			. '<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
+			. '<path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+			. '</svg></a>';
+	}
+
+	$out .= '</div>';
 
 	$years = arv_results_years( $editions );
 	$out  .= '<p class="arv-results__race-sub">'
@@ -2058,7 +2180,8 @@ function arv_results_course_records( $editions ) {
 
 			if ( isset( $rows[ $division ] ) ) {
 				$out .= '<span class="arv-results__winner-name">' . esc_html( $rows[ $division ]['name'] ) . '</span> '
-					. '<span class="arv-results__winner-time">' . esc_html( $rows[ $division ]['time'] ) . '</span> '
+					. '<span class="arv-results__winner-time">'
+					. esc_html( arv_results_time_label( $rows[ $division ]['time'] ) ) . '</span> '
 					. '<span class="arv-results__record-year">' . esc_html( $rows[ $division ]['year'] ) . '</span>';
 			}
 
