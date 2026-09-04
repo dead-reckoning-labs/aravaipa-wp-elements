@@ -366,6 +366,55 @@ function arv_results_race_by_slug( $slug ) {
 	return isset( $slugs[ $slug ] ) ? $slugs[ $slug ] : '';
 }
 
+/**
+ * What race, if any, this request is a page for.
+ *
+ * Resolved once and shared by the renderer and by every piece of SEO, the
+ * same arrangement the live pages use, so a race page's title, description,
+ * canonical and heading cannot disagree with each other about which race is
+ * on screen.
+ *
+ * @return array|null name, slug, url and editions newest first.
+ */
+function arv_results_race_context() {
+	// Deliberately not memoized. It is called about four times a request, by
+	// the title, the canonical, the head tags and the renderer, and each one
+	// is a slug lookup against a map that memoizes itself plus one pass over
+	// the store. A cache here would buy almost nothing and would have to be
+	// invalidated whenever the store changes, which is a real thing that
+	// happens: the importer replaces it wholesale.
+	$slug = function_exists( 'get_query_var' ) ? (string) get_query_var( 'arv_race' ) : '';
+
+	if ( '' === $slug ) {
+		return null;
+	}
+
+	$key = arv_results_race_by_slug( $slug );
+
+	if ( '' === $key ) {
+		return null;
+	}
+
+	$editions = array();
+
+	foreach ( arv_results_store_get() as $row ) {
+		if ( arv_results_race_key( $row['name'] ) === $key ) {
+			$editions[] = $row;
+		}
+	}
+
+	if ( empty( $editions ) ) {
+		return null;
+	}
+
+	return array(
+		'name'     => $editions[0]['name'],
+		'slug'     => arv_results_race_slug( $editions[0]['name'] ),
+		'url'      => function_exists( 'arv_results_race_url' ) ? arv_results_race_url( $editions[0]['name'] ) : '',
+		'editions' => $editions,
+	);
+}
+
 define( 'ARV_ULTRARUNNING_OPTION', 'arv_race_ultrarunning' );
 
 /**

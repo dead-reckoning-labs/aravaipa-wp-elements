@@ -54,6 +54,10 @@ function arv_page_seo_claimed() {
 		return true;
 	}
 
+	if ( function_exists( 'arv_results_race_context' ) && null !== arv_results_race_context() ) {
+		return true;
+	}
+
 	return false;
 }
 

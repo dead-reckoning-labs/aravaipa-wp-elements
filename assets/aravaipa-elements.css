@@ -4648,6 +4648,15 @@
 	color: var(--arv-results-muted);
 }
 
+/* A separator, because the two things either side of it are both numbers.
+   "5:54:47 2025" on a space alone reads as one long figure before it reads
+   as a time and the year it was set, the same reason the finisher count
+   carries a dot after the date. */
+.arv-results__record-year::before {
+	content: "\00b7";
+	margin-right: 0.3rem;
+}
+
 .arv-results__editions-all {
 	margin-top: 1.5rem;
 }
@@ -4685,19 +4694,37 @@
 	outline-offset: 2px;
 }
 
+/* One edition is a block, not a flex row.
+
+   It was a row back when it held exactly two things, a date and its links,
+   and could lay them out itself. It now holds a whole .arv-results__latest,
+   which is its own space-between row, and nesting one inside the other made
+   both wrong: the inner row shrank to its content instead of claiming the
+   line, so the buttons sat wherever the date's length left them and every
+   edition started its buttons at a different x. Block here, and the inner
+   row spans the full width and pushes its buttons to the same right edge on
+   every edition, which is what .arv-results__race-group already does with
+   the identical markup one page over.
+
+   Separated by a rule between editions rather than a bar down the side of
+   each: on a race with fourteen of them the left bar ran unbroken down the
+   whole page and marked nothing, while what actually needed marking was
+   where one edition stops and the next starts. */
 .arv-results__edition {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.6rem;
-	padding: 0.55rem 0 0.55rem 1.1rem;
-	border-left: 2px solid var(--arv-results-rule);
+	padding: 1rem 0;
 }
 
+.arv-results__edition + .arv-results__edition {
+	border-top: 1px solid var(--arv-results-rule);
+}
+
+/* Bigger than the date on a year page's row: there, the race name is the
+   heading and the date is a detail under it. Here the race name is the
+   page title and the date is the only thing telling one edition from
+   another, so it is the heading of its own block. */
 .arv-results__edition-date {
 	margin: 0;
-	font-size: var(--arv-fs-body);
+	font-size: var(--arv-fs-name);
 	font-weight: 700;
 }
 
@@ -4744,9 +4771,9 @@
 
 	/* Name above, links below, both full width: side by side there is not
 	   enough room for three link buttons and a race name that can run to
-	   forty characters. */
-	.arv-results__latest,
-	.arv-results__edition {
+	   forty characters. Only .arv-results__latest needs saying: an edition
+	   is a block now and stacks its children at every width. */
+	.arv-results__latest {
 		flex-direction: column;
 		align-items: stretch;
 	}

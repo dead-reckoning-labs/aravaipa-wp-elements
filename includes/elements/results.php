@@ -1944,7 +1944,10 @@ function arv_results_race_page( $editions, $name ) {
 		. esc_html( __( 'All races', 'aravaipa-elements' ) ) . '</a>';
 	$out .= '</div>';
 
-	$out .= '<h2 class="arv-results__race-title">' . esc_html( $name ) . '</h2>';
+	// h1, not h2: the page has none of its own (the theme does not print the
+	// Page's title here), and on a page whose entire subject is one race the
+	// race is the heading, not a subheading of an unstated one.
+	$out .= '<h1 class="arv-results__race-title">' . esc_html( $name ) . '</h1>';
 
 	$years = arv_results_years( $editions );
 	$out  .= '<p class="arv-results__race-sub">'
