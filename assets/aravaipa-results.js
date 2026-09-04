@@ -340,11 +340,22 @@
 		// to keep the columns of a fixed-width field from jumping, which
 		// applies to the minutes and seconds inside the number and never to
 		// the first digit of it.
+		//
+		// Two days out or more, hours are the finest unit worth showing.
+		// "3d 4:22:10" was ticking a second nobody was watching and updating
+		// a race in the calendar every second whether anyone had the tab
+		// open or not; "3d 4h" resolves faster anyway and only changes once
+		// an hour. One day out keeps the fine form: "tomorrow, at what time"
+		// is a real question in the last 24 hours in a way it is not at 3.
 		function span( ms ) {
 			var s = Math.floor( ms / 1000 );
 			var d = Math.floor( s / 86400 );
 			var h = Math.floor( ( s % 86400 ) / 3600 );
 			var m = Math.floor( ( s % 3600 ) / 60 );
+
+			if ( d >= 2 ) {
+				return d + 'd ' + h + 'h';
+			}
 
 			if ( d > 0 ) {
 				return d + 'd ' + h + ':' + pad( m ) + ':' + pad( s % 60 );
