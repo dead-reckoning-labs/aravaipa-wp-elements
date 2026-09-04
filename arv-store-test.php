@@ -78,6 +78,9 @@ function current_time( $f ) {
 function is_wp_error( $t ) { return $t instanceof WP_Error; }
 function home_url( $p = '/' ) { return 'https://www.aravaiparunning.com' . $p; }
 function is_singular( $t = '' ) { return $GLOBALS['IS_SINGULAR'] ?? false; }
+// The race pages are one WordPress page rendering many races, told apart by
+// this var alone, so the harness has to be able to set it.
+function get_query_var( $v, $default = '' ) { return $GLOBALS['QUERY_VARS'][ $v ] ?? $default; }
 function is_page( $p = '' ) { return $GLOBALS['IS_PAGE'] ?? false; }
 // Pages are recognised by the shortcode they carry, so the harness needs a
 // post object with content and WP's own shortcode detector.
@@ -2057,6 +2060,57 @@ $no_headline_summary = substr( $no_headline, 0, strpos( $no_headline, '</summary
 t( 'no headline, no featured name',     false === strpos( $no_headline_summary, 'Alex Bustamante' ) );
 t( 'every distance still shows up',     false !== strpos( $no_headline, 'Alex Bustamante' ) && false !== strpos( $no_headline, 'Devin Sharps' ) );
 t( 'and none without winners either',   '' === arv_results_winners_block( array( 'headline' => true ) ) );
+
+echo "\nresults: a race's own page:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+	array( 'name' => 'Rock Hawk Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026' ),
+) );
+
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'black-bear-trail-races' );
+$ctx = arv_results_race_context();
+t( 'a race slug resolves to a race',    null !== $ctx && 'Black Bear Trail Races' === $ctx['name'] );
+t( 'carrying only its own editions',    2 === count( $ctx['editions'] ) );
+t( 'and its own url',                   'https://www.aravaiparunning.com/race-results/black-bear-trail-races/' === $ctx['url'] );
+
+// The canonical is the whole reason this context exists. Every race page
+// resolves to the one Results page, so WordPress pointed all of them at
+// /results/, which tells a crawler not to index any of them.
+t( 'the canonical is the race page',    $ctx['url'] === arv_results_race_canonical( 'https://www.aravaiparunning.com/results/' ) );
+t( 'the description counts editions',   false !== strpos( arv_results_race_seo_description( $ctx ), '2 editions run from 2025 to 2026' ) );
+
+// The title and the head tags defer to a real SEO plugin, and WPSEO_VERSION
+// is defined far above for the front-page tests, so from here on they are
+// correctly silent. The canonical deliberately does NOT defer: standing down
+// there would hand every race page back the /results/ canonical that is the
+// entire bug, so it corrects Yoast's answer instead of declining to give one.
+t( 'the title defers to a real plugin', 'Results' === arv_results_race_seo_title_parts( array( 'title' => 'Results' ) )['title'] );
+ob_start(); arv_results_race_seo_head(); $race_head = ob_get_clean();
+t( 'and so do the head tags',           '' === $race_head );
+
+// The race is the subject of the page, so it is the h1. There was no h1 on
+// it at all before: the theme does not print the Page's own title here.
+$racepage = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'the race name is the h1',           false !== strpos( $racepage, '<h1 class="arv-results__race-title">Black Bear Trail Races</h1>' ) );
+t( 'and the other race is not on it',   false === strpos( $racepage, 'Rock Hawk' ) );
+
+// One edition is one year, so it does not claim a range it does not have.
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'rock-hawk-trail-races' );
+t( 'a single edition says one year',    false !== strpos( arv_results_race_seo_description( arv_results_race_context() ), 'from the 2026 race' ) );
+
+// A slug for no race is not a race page, so nothing claims it and the
+// archive's own canonical and title stand.
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'no-such-race' );
+t( 'an unknown slug is no context',     null === arv_results_race_context() );
+t( 'and leaves the canonical alone',    'https://www.aravaiparunning.com/results/' === arv_results_race_canonical( 'https://www.aravaiparunning.com/results/' ) );
+$GLOBALS['QUERY_VARS'] = array();
+t( 'as does the archive itself',        null === arv_results_race_context() );
+$GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nresults: years on the expander:\n";
 t( 'years are listed newest first',     '2025, 2024, 2023' === arv_results_years( array(

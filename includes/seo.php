@@ -542,3 +542,163 @@ function arv_watch_seo_head() {
 	echo arv_seo_schema_script( $nodes ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
 add_action( 'wp_head', 'arv_watch_seo_head', 4 );
+
+/**
+ * Title, description, canonical and Open Graph on a per-race results page.
+ *
+ * These pages shipped with none of their own. Every one of them, and there
+ * is one per race, served WordPress's "Results | Aravaipa Running" and, far
+ * worse, a canonical pointing at /results/, which is a page telling Google
+ * it is a duplicate of a different page and should not be indexed. Seventy
+ * or so race pages were built to be the durable home of a race's history and
+ * every one of them was asking to be ignored.
+ *
+ * The canonical is the load-bearing fix here. The rest follows the shape of
+ * arv_live_seo_head() above: one context resolved once, every piece built
+ * from it, and arv_seo_handled_elsewhere() checked first so a real SEO
+ * plugin wins rather than competing.
+ *
+ * @param array $parts
+ * @return array
+ */
+function arv_results_race_seo_title_parts( $parts ) {
+	if ( arv_seo_handled_elsewhere() || ! function_exists( 'arv_results_race_context' ) ) {
+		return $parts;
+	}
+
+	$ctx = arv_results_race_context();
+
+	if ( null === $ctx ) {
+		return $parts;
+	}
+
+	$parts['title'] = sprintf(
+		// translators: %s is a race name.
+		__( '%s Results', 'aravaipa-elements' ),
+		$ctx['name']
+	);
+
+	return $parts;
+}
+add_filter( 'document_title_parts', 'arv_results_race_seo_title_parts' );
+
+/**
+ * Point the canonical at the race page itself, not at the archive it is
+ * rendered by.
+ *
+ * WordPress builds this from the resolved post, which for every race page is
+ * the one Results page, so core was correctly answering a question nobody
+ * meant to ask. Filtered rather than unhooked so pages without a race, the
+ * archive included, keep the canonical core gives them.
+ *
+ * @param string $url
+ * @return string
+ */
+function arv_results_race_canonical( $url ) {
+	if ( ! function_exists( 'arv_results_race_context' ) ) {
+		return $url;
+	}
+
+	$ctx = arv_results_race_context();
+
+	if ( null === $ctx || '' === $ctx['url'] ) {
+		return $url;
+	}
+
+	return $ctx['url'];
+}
+add_filter( 'get_canonical_url', 'arv_results_race_canonical' );
+// The one place in this file that does not stand down for a real SEO plugin,
+// because standing down means handing the page back the /results/ canonical
+// that is the whole problem. Yoast and Rank Math write the tag themselves and
+// would each reach the same wrong answer the same way core did, from the
+// resolved post, so they are corrected rather than deferred to.
+add_filter( 'wpseo_canonical', 'arv_results_race_canonical' );
+add_filter( 'rank_math/frontend/canonical', 'arv_results_race_canonical' );
+
+/**
+ * What a race page is about, in one sentence built from what it holds.
+ *
+ * Counted from the editions themselves rather than written, because there
+ * is one of these per race and no one is going to write seventy of them.
+ *
+ * @param array $ctx
+ * @return string
+ */
+function arv_results_race_seo_description( $ctx ) {
+	$years = array();
+
+	foreach ( $ctx['editions'] as $edition ) {
+		$year = substr( (string) $edition['iso'], 0, 4 );
+
+		if ( '' !== $year ) {
+			$years[ $year ] = true;
+		}
+	}
+
+	$years = array_keys( $years );
+	$count = count( $ctx['editions'] );
+
+	if ( empty( $years ) ) {
+		return sprintf(
+			// translators: %s is a race name.
+			__( 'Results and course records for %s.', 'aravaipa-elements' ),
+			$ctx['name']
+		);
+	}
+
+	$oldest = end( $years );
+	$newest = reset( $years );
+
+	if ( $oldest === $newest ) {
+		return sprintf(
+			// translators: 1: race name, 2: a year.
+			__( 'Results, winners and course records for %1$s, from the %2$s race.', 'aravaipa-elements' ),
+			$ctx['name'],
+			$newest
+		);
+	}
+
+	return sprintf(
+		// translators: 1: race name, 2: a count of editions, 3: earliest year, 4: latest year.
+		__( 'Results, winners and course records for %1$s: every one of the %2$d editions run from %3$s to %4$s.', 'aravaipa-elements' ),
+		$ctx['name'],
+		$count,
+		$oldest,
+		$newest
+	);
+}
+
+/**
+ * @return void
+ */
+function arv_results_race_seo_head() {
+	if ( arv_seo_handled_elsewhere() || ! function_exists( 'arv_results_race_context' ) ) {
+		return;
+	}
+
+	$ctx = arv_results_race_context();
+
+	if ( null === $ctx ) {
+		return;
+	}
+
+	$description = arv_results_race_seo_description( $ctx );
+	$title       = sprintf(
+		// translators: %s is a race name.
+		__( '%s Results', 'aravaipa-elements' ),
+		$ctx['name']
+	);
+
+	echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
+	echo '<meta property="og:title" content="' . esc_attr( $title . ' | Aravaipa Running' ) . '" />' . "\n";
+	echo '<meta name="twitter:title" content="' . esc_attr( $title . ' | Aravaipa Running' ) . '" />' . "\n";
+	echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	echo '<meta name="twitter:description" content="' . esc_attr( $description ) . '" />' . "\n";
+	echo '<meta property="og:type" content="website" />' . "\n";
+
+	if ( '' !== $ctx['url'] ) {
+		echo '<meta property="og:url" content="' . esc_url( $ctx['url'] ) . '" />' . "\n";
+	}
+}
+add_action( 'wp_head', 'arv_results_race_seo_head', 4 );
