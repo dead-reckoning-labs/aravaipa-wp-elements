@@ -4606,10 +4606,55 @@
 }
 
 /* A race's own page: every edition, and what the race has ever done. */
+/* The race name and the way to enter it, on one line. Baseline rather than
+   centre so the button sits on the name's baseline instead of floating
+   against the middle of a heading three times its height, and wrap allows
+   a long race name to take the line and drop the button under it rather
+   than squeezing both. */
+.arv-results__race-head-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.5rem 1rem;
+}
+
 .arv-results__race-title {
 	margin: 0.25rem 0 0.2rem;
 	font-size: var(--arv-fs-h2);
 	font-weight: 800;
+}
+
+/* The one thing this page cannot answer. Filled rather than outlined, the
+   only solid control on the page besides a live board's own button: every
+   other link here goes to a result, and this one goes to the race. */
+.arv-results__race-info {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.4rem 0.85rem;
+	border: 1px solid var(--arv-teal);
+	border-radius: var(--arv-radius-chip);
+	background: var(--arv-teal);
+	color: #0d1211;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+@media (hover: hover) {
+	.arv-results__race-info:hover {
+		background: var(--arv-teal-deep);
+		border-color: var(--arv-teal-deep);
+		color: #fff;
+	}
+}
+
+.arv-results__race-info:focus-visible {
+	outline: 2px solid var(--arv-teal-deep);
+	outline-offset: 2px;
 }
 
 .arv-results__race-sub {
@@ -4643,18 +4688,25 @@
 /* The year a record was set, beside the time rather than in its own column:
    a fourth column of four-digit numbers costs more width than it earns, and
    the year is context on the time rather than a fact of its own. */
-.arv-results__record-year {
-	font-size: var(--arv-fs-meta);
-	color: var(--arv-results-muted);
-}
+/* A badge, not a third word on the line.
 
-/* A separator, because the two things either side of it are both numbers.
-   "5:54:47 2025" on a space alone reads as one long figure before it reads
-   as a time and the year it was set, the same reason the finisher count
-   carries a dot after the date. */
-.arv-results__record-year::before {
-	content: "\00b7";
-	margin-right: 0.3rem;
+   A dot and a muted year read as more of the same sentence: "Oliver Jay
+   5:41:55 2026" is three facts of apparently equal weight, and the eye has
+   to parse the whole line to find out that only one of them is a year.
+   Boxed, it is a label on the record rather than part of it, and a column
+   of them scans as "which year does this race's record come from", which is
+   most of what a records table is asked. */
+.arv-results__record-year {
+	display: inline-block;
+	padding: 0.05rem 0.4rem;
+	border: 1px solid var(--arv-results-rule);
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.03em;
+	color: var(--arv-results-muted);
+	vertical-align: 0.05em;
 }
 
 .arv-results__editions-all {
