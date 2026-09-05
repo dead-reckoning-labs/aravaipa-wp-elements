@@ -4591,14 +4591,33 @@
 	gap: 0.4rem;
 }
 
+/* A race's own result files, on their own line under the date.
+
+   These used to sit inside the right-aligned actions column, below the
+   external buttons, which made a lone "100 MILE" chip look like a sub-item
+   of the ULTRARUNNING button above it. On every year Aravaipa scored its
+   own races these files ARE the results and the external listings are the
+   afterthought, so they lead their own row now, left-aligned with the race
+   and labelled, and wrap left-to-right like the reading order they are. */
+.arv-results__files {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.3rem 0.5rem;
+	margin-top: 0.5rem;
+}
+
+.arv-results__files-label {
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--arv-results-muted);
+}
+
 .arv-results__archive {
 	display: flex;
 	flex-wrap: wrap;
-	/* Right, to hang off the same edge the buttons above do. A race with
-	   nine of these wraps to a second line, and left-aligning would leave
-	   that line ending in the middle of the row under a button column that
-	   ends flush. */
-	justify-content: flex-end;
 	gap: 0.3rem;
 }
 
@@ -4872,14 +4891,10 @@
 	}
 
 	/* The edition row is a stretched column at this width, so the buttons
-	   already span it and there is no right edge left to hang the chips
-	   off. They read as a list under the buttons instead. */
+	   already span it. The archive chips need nothing here any more: they
+	   are their own left-aligned row at every width now. */
 	.arv-results__actions {
 		align-items: stretch;
-	}
-
-	.arv-results__archive {
-		justify-content: flex-start;
 	}
 }
 
