@@ -515,9 +515,21 @@ function arv_races_link_target( $url ) {
  * "50KM" and "50 K" and "50k" are all 50K.
  *
  * The rows are typed by hand from whatever each race's own page calls its
- * distances, so the same distance is written three ways across the
- * calendar. Normalised only for display: the stored value is left alone,
- * since it is also what matches a distance to the timing board's name.
+ * distances, so the same distance is written several ways across the
+ * calendar. Counted across the results store: 163 distinct labels, of which
+ * a good third are another spelling of one already in the list. Javelina
+ * alone offers "100 Mile" on 2015, "100 Miler" on 2016 and "100M"
+ * elsewhere, and its 100K is "100K" on one edition and "100k" on the next,
+ * which is why the buttons down an older race's page stop matching each
+ * other the further down you read.
+ *
+ * Every rule here is anchored end to end, so only a label that is nothing
+ * but a distance is touched. "3hr Ride" stays a ride, "Dawnbreaker 100 Mile
+ * Ride" keeps its name, and "Kids", "Hike", "Marathon and Half" and
+ * "Last Person Standing" are left exactly as somebody wrote them.
+ *
+ * Normalised only for display: the stored value is left alone, since it is
+ * also what matches a distance to the timing board's name.
  *
  * @param string $distance
  * @return string
@@ -525,10 +537,32 @@ function arv_races_link_target( $url ) {
 function arv_results_distance_label( $distance ) {
 	$label = trim( (string) $distance );
 
-	// 50KM -> 50K, and 50 K -> 50K. Kilometres only: "4 Mile" and
-	// "1 Mile Fun Run" are already how anyone would say them.
-	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s*(?:km|kms|kilometers?|kilometres?)$/i', '$1K', $label );
-	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s+k$/i', '$1K', $label );
+	// 50KM, 50 K and 50k are all 50K.
+	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s*(?:k|km|kms|kilometers?|kilometres?)$/i', '$1K', $label );
+
+	// 50M and 100 Miler are 50 Mile and 100 Mile. M is miles here and never
+	// metres: Mesquite Canyon ran the same race as "50 Mile" in 2015 and
+	// "50M" in 2016.
+	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s*(?:m|mi|miles?|miler)$/i', '$1 Mile', $label );
+
+	// 24H, 24h and 24 Hours are one race, and the fixed-time events are
+	// written every one of those ways across the archive.
+	$label = preg_replace( '/^(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hours?)$/i', '$1 Hour', $label );
+	$label = preg_replace( '/^(\d+)\s*(?:d|days?)$/i', '$1 Day', $label );
+
+	// Steep Camp's weighted carries. The plus is carried through rather
+	// than assumed: 45 and 60 Lbs are exact classes and only 75 is "and up",
+	// so adding one to all three would invent two classes that never ran.
+	$label = preg_replace( '/^(\d+)\s*(\+?)\s*lbs\.?\s*(\+?)$/i', '$1$2$3 Lbs', $label );
+
+	// "Half", "1/2" and "Half Marathon" are the same thing said three ways.
+	if ( preg_match( '#^(?:half|1/2)(?:\s*marathon)?$#i', $label ) ) {
+		$label = __( 'Half Marathon', 'aravaipa-elements' );
+	}
+
+	if ( preg_match( '/^(?:vk|vertical\s*k(?:ilometers?)?)$/i', $label ) ) {
+		$label = __( 'Vertical K', 'aravaipa-elements' );
+	}
 
 	return $label;
 }

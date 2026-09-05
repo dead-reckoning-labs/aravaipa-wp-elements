@@ -1514,7 +1514,7 @@ function arv_results_race_groups_markup( $rows ) {
 		$out .= '<div class="arv-results__race-group" data-arv-results-race="'
 			. esc_attr( strtolower( $latest['name'] ) ) . '">';
 
-		$stats = arv_stats_store_find( $latest['live'] );
+		$stats = arv_stats_for_row( $latest );
 
 		$out .= '<div class="arv-results__latest">';
 		$out .= '<div class="arv-results__race-head">';
@@ -1652,10 +1652,19 @@ function arv_results_winner_line( $row ) {
 		}
 
 		$out .= '<span class="arv-results__winner">'
-			// The division is named for a screen reader and not drawn, because
-			// sighted readers get it from the names and a row reading
+			// A badge rather than the word. Spelled out, a line reading
 			// "Men Alex Bustamante Women Sydney Park" is three words of
-			// scaffolding for four words of result.
+			// scaffolding for four words of result, which is why this was
+			// screen-reader-only to begin with; drawing nothing at all
+			// leaves two names in a row and asks the reader to guess which
+			// is which off the names, which is a guess and sometimes a
+			// wrong one. Two characters is the size this information is.
+			//
+			// Only here. The table below carries the same results under
+			// MEN and WOMEN column headings, where a badge in every cell
+			// would repeat the heading down the whole column.
+			. '<span class="arv-results__division arv-results__division--' . esc_attr( $division ) . '"'
+			. ' aria-hidden="true">' . esc_html( arv_results_division_code( $division ) ) . '</span>'
 			. '<span class="arv-results__sr">'
 			. esc_html( arv_results_division_label( $division ) ) . ': </span>'
 			. '<span class="arv-results__winner-name">' . esc_html( $row[ $division ]['name'] ) . '</span> '
@@ -1822,6 +1831,28 @@ function arv_results_winners_block( $stats ) {
  * @param string $division
  * @return string
  */
+/**
+ * The division as a badge: M, F, NB.
+ *
+ * Not "X" for nonbinary, which is the timing industry's code and means
+ * nothing to a reader who has not entered a race. Not "M1 / F1 / X1"
+ * either: everybody on this line won, so the 1 is on every badge on every
+ * line of every edition, and a number that is always the same number is
+ * not information.
+ *
+ * @param string $division
+ * @return string
+ */
+function arv_results_division_code( $division ) {
+	$codes = array(
+		'men'       => _x( 'M', 'division badge', 'aravaipa-elements' ),
+		'women'     => _x( 'F', 'division badge', 'aravaipa-elements' ),
+		'nonbinary' => _x( 'NB', 'division badge', 'aravaipa-elements' ),
+	);
+
+	return isset( $codes[ $division ] ) ? $codes[ $division ] : strtoupper( substr( $division, 0, 2 ) );
+}
+
 function arv_results_division_label( $division ) {
 	$labels = array(
 		'men'       => __( 'Men', 'aravaipa-elements' ),
@@ -2037,6 +2068,15 @@ function arv_results_archive( $row, $primary = array() ) {
 			$label = __( 'Results', 'aravaipa-elements' );
 		}
 
+		// Through the same normaliser as every other distance on the page.
+		// These labels were typed by hand, one edition at a time, over
+		// eighteen years, and they show it: Javelina reads "100 Mile" on
+		// 2015, "100 Miler" on 2016 and "100K" then "100k" on consecutive
+		// rows. Nothing was wrong with any single button. They were only
+		// wrong next to each other, which is exactly how a reader scrolling
+		// an older race's page meets them.
+		$label = arv_results_distance_label( $label );
+
 		// Same element as the named buttons, not a smaller chip beside them.
 		// It was inline-block at 0.2rem padding and a smaller font next to
 		// an inline-flex button at 0.45rem with a 38px floor, so the two sat
@@ -2251,10 +2291,11 @@ function arv_results_race_page( $editions, $name ) {
  * @return string
  */
 function arv_results_course_records( $editions ) {
-	$best = array();
+	$best   = array();
+	$labels = array();
 
 	foreach ( $editions as $edition ) {
-		$stats = arv_stats_store_find( $edition['live'] );
+		$stats = arv_stats_for_row( $edition );
 
 		if ( null === $stats || empty( $stats['winners'] ) ) {
 			continue;
@@ -2269,6 +2310,23 @@ function arv_results_course_records( $editions ) {
 				continue;
 			}
 
+			// Grouped on the normalised distance and not the stored one.
+			// Two editions of the same race spell the same distance
+			// differently often enough that keying on what was typed would
+			// give Javelina a "100 Mile" record row and a "100 Miler" one,
+			// each holding a record that is only the best of the years that
+			// happened to spell it that way. The label is kept for display,
+			// first spelling seen, since they all mean the same distance.
+			$key = arv_results_distance_key( $distance );
+
+			if ( '' === $key ) {
+				continue;
+			}
+
+			if ( ! isset( $labels[ $key ] ) ) {
+				$labels[ $key ] = $distance;
+			}
+
 			foreach ( arv_stats_divisions() as $division ) {
 				if ( ! isset( $row[ $division ]['time'] ) ) {
 					continue;
@@ -2280,10 +2338,10 @@ function arv_results_course_records( $editions ) {
 					continue;
 				}
 
-				$current = isset( $best[ $distance ][ $division ] ) ? $best[ $distance ][ $division ] : null;
+				$current = isset( $best[ $key ][ $division ] ) ? $best[ $key ][ $division ] : null;
 
 				if ( null === $current || $seconds < $current['seconds'] ) {
-					$best[ $distance ][ $division ] = array(
+					$best[ $key ][ $division ] = array(
 						'name'    => $row[ $division ]['name'],
 						'time'    => $row[ $division ]['time'],
 						'year'    => $year,
@@ -2319,8 +2377,8 @@ function arv_results_course_records( $editions ) {
 
 	$out .= '</tr></thead><tbody>';
 
-	foreach ( $best as $distance => $rows ) {
-		$out .= '<tr><th scope="row">' . esc_html( arv_results_distance_label( $distance ) ) . '</th>';
+	foreach ( $best as $key => $rows ) {
+		$out .= '<tr><th scope="row">' . esc_html( arv_results_distance_label( $labels[ $key ] ) ) . '</th>';
 
 		foreach ( array_keys( $divisions ) as $division ) {
 			$out .= '<td>';
@@ -2385,7 +2443,7 @@ function arv_results_editions_table( $editions ) {
 	$out .= '<h3 class="arv-results__records-head">' . esc_html( __( 'Every edition', 'aravaipa-elements' ) ) . '</h3>';
 
 	foreach ( $editions as $edition ) {
-		$stats = arv_stats_store_find( $edition['live'] );
+		$stats = arv_stats_for_row( $edition );
 
 		$out .= '<div class="arv-results__edition">';
 		$out .= '<div class="arv-results__latest">';

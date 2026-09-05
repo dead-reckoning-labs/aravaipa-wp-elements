@@ -46,6 +46,9 @@ function cs_partial_controls( $n ) {
 function __( $s, $d = '' ) {
 	return $s;
 }
+function _x( $s, $ctx, $d = '' ) {
+	return $s;
+}
 function esc_html( $s ) {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
 }

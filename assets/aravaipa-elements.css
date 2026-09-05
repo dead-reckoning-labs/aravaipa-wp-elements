@@ -4425,6 +4425,62 @@
 	white-space: nowrap;
 }
 
+/* Which division this winner won. Only on the headline line, where two
+   names sit side by side under no headings at all and the reader is
+   otherwise guessing off the names which one is which. The table below
+   has MEN and WOMEN at the top of their columns and needs none of this.
+
+   Coloured, and by division, because the colour is doing the work the
+   letter cannot: a race page is eighteen of these lines stacked up, and a
+   reader looking for who won the women's race wants to find it down the
+   column without reading a single name. One neutral badge on every line
+   marks where the answer is; three colours mean the eye lands on it.
+
+   Tinted rather than solid. Solid pink repeated down eighteen rows is
+   louder than anything else on the page including the race's own name,
+   and these are a supporting mark on a result, not the result.
+
+   min-width squares M and F off against NB, so the names down a column
+   start in the same place instead of stepping in and out by a character.
+   Shape, size and radius are the year badge on a course record, so the
+   two read as the same kind of mark wearing different colours. */
+.arv-results__division {
+	display: inline-block;
+	min-width: 1.55em;
+	margin-right: 0.3rem;
+	padding: 0.05rem 0.3rem;
+	border: 1px solid var(--arv-results-rule);
+	border-radius: var(--arv-radius-chip);
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	text-align: center;
+	color: var(--arv-results-muted);
+	vertical-align: 0.05em;
+}
+
+/* Every pair here clears 4.5:1 against its own fill, so the letter is
+   still a letter and not only a colour. The colour is the fast path and
+   never the only one: the badge says M, and a screen reader is read the
+   whole word from the span beside it. */
+.arv-results__division--men {
+	background: #e7f0fe;
+	border-color: #bcd4fb;
+	color: #14539a;
+}
+
+.arv-results__division--women {
+	background: #fdeaf1;
+	border-color: #f6c3d6;
+	color: #98164a;
+}
+
+.arv-results__division--nonbinary {
+	background: #f0eafc;
+	border-color: #d6c6f5;
+	color: #523091;
+}
+
 .arv-results__winner-name {
 	color: var(--arv-ink, #272727);
 }

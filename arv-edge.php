@@ -20,6 +20,7 @@ $GLOBALS['ENQUEUED'] = array();
 function wp_enqueue_script($h,$src='',$deps=array(),$v=false,$footer=false){ $GLOBALS['ENQUEUED'][]='js:'.$h; }
 function wp_enqueue_style($h,$src='',$deps=array(),$v=false){ $GLOBALS['ENQUEUED'][]='css:'.$h; }
 function _n($single,$plural,$count,$domain=''){return $count===1?$single:$plural;}
+function _x($s,$ctx,$d=''){return $s;}
 $GLOBALS['NOW']='2026-08-25';
 function current_time($f){return $GLOBALS['NOW'];}
 function apply_filters($tag,$v){return $v;}
