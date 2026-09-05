@@ -412,6 +412,25 @@ function title( t ) {
 	return out.replace( /^Mc([a-z])/, ( _, c ) => 'Mc' + c.toUpperCase() );
 }
 
+// What a course name says it is, in metres, for the two files that
+// declare every one of their courses as distance="0". Javelina 2017 is
+// one of them, and with nothing to sort on its 100K led its 100 Mile.
+// Only ever a fallback: where the file states a length, the file wins.
+function guessMetres( name ) {
+	const n = name.toLowerCase();
+
+	if ( /^(1\/2|half)\s*marathon$/.test( n ) ) return 21098;
+	if ( /^marathon$/.test( n ) ) return 42195;
+
+	const mi = n.match( /^([\d.]+)\s*(?:m|mi|miles?|miler)$/ );
+	if ( mi ) return Math.round( +mi[ 1 ] * 1609.344 );
+
+	const km = n.match( /^([\d.]+)\s*k(?:m|ilometers?)?$/ );
+	if ( km ) return Math.round( +km[ 1 ] * 1000 );
+
+	return 0;
+}
+
 function parseClax( xml ) {
 	const entrants = new Map();
 
@@ -427,7 +446,10 @@ function parseClax( xml ) {
 
 	for ( const m of xml.matchAll( /<Pcs\b[^>]*\/>/g ) ) {
 		const a = claxAttrs( m[ 0 ] );
-		if ( a.nom ) lengths[ courseName( a.nom ) ] = +a.distance || 0;
+		if ( a.nom ) {
+			const c = courseName( a.nom );
+			lengths[ c ] = ( +a.distance || 0 ) || guessMetres( c );
+		}
 	}
 
 	const byCourse = {};
