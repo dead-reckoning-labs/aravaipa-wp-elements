@@ -8,19 +8,28 @@
  * bounces off, which is there precisely to stop this being looked up
  * automatically.
  *
- * So the map is maintained by hand. This is the way to send it, and
- * ultrarunning-seed.json beside it is the races recovered from the links a
- * human had put on the old per-year results pages, so nobody has to start
- * from an empty list.
+ * So the map is maintained by hand, and every entry here is the bare slug,
+ * no "/race/{id}". That was not always true, and the reason it changed is
+ * worth keeping: UltraRunning mints a new numeric id per year per race, same
+ * slug, so a stored id can only ever be right for whichever single year it
+ * belongs to. This map is the shared fallback applied to every edition of a
+ * race with no link of its own, which is most editions of most races, and
+ * one id there was not "mostly right", it was confidently wrong on every
+ * year but its own: Westminster's stored id (46612) was 2025's results page,
+ * asserted on the 2026 row too, live on the site until caught. A bare slug
+ * resolves to the race's own results index instead, every year listed there
+ * to pick, one click further than a direct link but never the wrong year,
+ * because it never claims one.
  *
- * WRONG UNTIL 2026-09-03: this used to claim the id identifies the race, not
- * the edition, so one entry would keep working forever. Confirmed false:
- * Westminster's stored id (46612) was that race's 2025 results page, and its
- * 2026 results live at a different id (52620) under the same slug.
- * UltraRunning mints a new numeric id per year per race, same slug. Every
- * entry here is only as current as whenever it was last checked against
- * that race's actual current-year results page, and needs re-verifying each
- * season, not just once.
+ * A specific "{slug}/race/{id}" is still a real, better answer where it is
+ * actually known to be right for one edition. That belongs on that row's
+ * own ultrarunning field, not in this shared map: see
+ * scripts/fetch-results-from-timing.mjs and the results/import route, which
+ * checked before this map is ever consulted at all.
+ *
+ * ultrarunning-seed.json beside this script is the races recovered from the
+ * links a human had put on the old per-year results pages, so nobody has to
+ * start from an empty list.
  *
  *   node scripts/push-ultrarunning.mjs            # dry run
  *   node scripts/push-ultrarunning.mjs --post
