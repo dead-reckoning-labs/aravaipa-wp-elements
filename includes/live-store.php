@@ -239,11 +239,14 @@ function arv_race_cutoff_store_set( $map ) {
  * falls back to marking a race finished at the end of its last day, which
  * is what it did before any of this existed.
  *
- * @param string $name  Race name.
- * @param array|null $board Board entry, or null.
+ * @param string     $name     Race name.
+ * @param array|null $board    Board entry, or null.
+ * @param int        $start_ts The race's real start, for a race with no
+ *                             board. Optional; the board's own start is
+ *                             used when this is 0.
  * @return int Unix timestamp, or 0.
  */
-function arv_race_cutoff_for( $name, $board ) {
+function arv_race_cutoff_for( $name, $board, $start_ts = 0 ) {
 	$overrides = arv_race_cutoff_store_get();
 	$hours     = isset( $overrides[ $name ] ) ? (float) $overrides[ $name ] : 0;
 
@@ -257,6 +260,16 @@ function arv_race_cutoff_for( $name, $board ) {
 	$hours = (float) apply_filters( 'arv_race_cutoff_hours', $hours, $name, $board );
 
 	$start = ( null !== $board && ! empty( $board['start'] ) ) ? strtotime( $board['start'] ) : 0;
+
+	// A race Aravaipa does not time itself has no board and therefore no
+	// board start, and until this fell back to the caller's own start an
+	// override could never apply to one: Oli Kai is scored on RaceResult,
+	// its 9 hour cutoff was stored and ignored, and the race read LIVE NOW
+	// for an hour after it finished. The callers have already resolved the
+	// real start, including the start-time override, so take theirs.
+	if ( ! $start ) {
+		$start = (int) $start_ts;
+	}
 
 	// An override is a duration from the gun, so it needs a gun to measure
 	// from. Without a start time the board's own cutoff is all there is.
