@@ -2415,6 +2415,36 @@ t( 'an unknown slug is no context',     null === arv_results_race_context() );
 t( 'and leaves the canonical alone',    'https://www.aravaiparunning.com/results/' === arv_results_race_canonical( 'https://www.aravaiparunning.com/results/' ) );
 $GLOBALS['QUERY_VARS'] = array();
 t( 'as does the archive itself',        null === arv_results_race_context() );
+
+echo "\nresults: a sitemap for the pages no other one lists:\n";
+
+// Both races seeded above are still in the store, one live and one
+// retired, which is the one distinction a sitemap does not care about:
+// a retired race still has a page, so it still gets a URL.
+$entries = arv_results_sitemap_entries();
+$urls    = array_map( function ( $e ) { return $e['url']; }, $entries );
+
+t( 'the live race is in it',            in_array( 'https://www.aravaiparunning.com/race-results/black-bear-trail-races/', $urls, true ) );
+t( 'so is the retired one',             in_array( 'https://www.aravaiparunning.com/race-results/rock-hawk-trail-races/', $urls, true ) );
+
+// lastmod is the newest edition's own date, not today's, so a crawler can
+// tell an untouched race from one that just added a result.
+$bb = null;
+foreach ( $entries as $entry ) {
+	if ( false !== strpos( $entry['url'], 'black-bear' ) ) {
+		$bb = $entry;
+	}
+}
+t( 'lastmod is the newest edition date', null !== $bb && 0 === strpos( $bb['lastmod'], '2026-' ) );
+
+// The XML itself, from the pure builder: the route handler around it
+// calls exit on a real request, which is exactly right there and
+// exactly what a test cannot call through.
+$xml = arv_results_sitemap_xml();
+t( 'renders a real urlset',             false !== strpos( $xml, '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' ) );
+t( 'with both races as <url> entries',  substr_count( $xml, '<loc>' ) >= 2 );
+t( 'each loc escaped for XML',          false !== strpos( $xml, '<loc>https://www.aravaiparunning.com/race-results/black-bear-trail-races/</loc>' ) );
+
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nresults: an archive year's own result files:\n";

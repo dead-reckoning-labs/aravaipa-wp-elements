@@ -745,3 +745,138 @@ function arv_results_maybe_flush_rewrite() {
 	update_option( 'arv_results_rewrite_version', ARV_ELEMENTS_VERSION, false );
 }
 add_action( 'init', 'arv_results_maybe_flush_rewrite', 20 );
+
+/* ------------------------------------------------------------------ *
+ * A sitemap for the race pages, because no other one knows they exist.
+ *
+ * /race-results/<slug>/ is a virtual URL: a rewrite rule, not a post, so
+ * every sitemap generator that lists actual content is blind to it. 143 of
+ * them exist, linked from /results/ so Google can still crawl its way in,
+ * but never declared anywhere, discovered only as fast as a crawler
+ * chooses to follow a link rather than told about outright. The flat
+ * sitemap.xml this site already submits has 501 URLs in it and not one of
+ * these; core WordPress's own wp-sitemap.xml, built from real posts and
+ * pages, cannot see them for the same reason.
+ *
+ * A dedicated file rather than trying to inject into either of those: this
+ * plugin does not own whatever generates the flat one, and a second
+ * sitemap is one more URL to submit in Search Console, not a migration.
+ * ------------------------------------------------------------------ */
+
+/**
+ * One race, sized down to what the sitemap needs: its URL and the most
+ * recent date anything about it changed.
+ *
+ * lastmod is the newest edition's own date where the race has run since,
+ * which is real information a crawler can act on, and today's date on a
+ * race that has not run this year, since nothing here would justify
+ * claiming otherwise.
+ *
+ * @param string $slug
+ * @param array  $editions Newest first, this race's rows from the store.
+ * @return array
+ */
+function arv_results_sitemap_entry( $slug, $editions ) {
+	$newest = isset( $editions[0]['iso'] ) ? (string) $editions[0]['iso'] : '';
+	$stamp  = $newest && preg_match( '/^\d{4}-\d{2}-\d{2}/', $newest )
+		? substr( $newest, 0, 10 ) . 'T00:00:00+00:00'
+		: gmdate( 'c' );
+
+	return array(
+		'url'     => arv_results_race_url( $editions[0]['name'] ),
+		'lastmod' => $stamp,
+	);
+}
+
+/**
+ * Every race page, present tense: only races with at least one edition in
+ * the store today, in the same newest-first order the archive itself uses.
+ *
+ * @return array
+ */
+function arv_results_sitemap_entries() {
+	$by_key = array();
+
+	foreach ( arv_results_store_get() as $row ) {
+		$key = arv_results_race_key( $row['name'] );
+
+		if ( '' === $key ) {
+			continue;
+		}
+
+		$by_key[ $key ][] = $row;
+	}
+
+	$entries = array();
+
+	foreach ( arv_results_race_slugs() as $slug => $key ) {
+		if ( empty( $by_key[ $key ] ) ) {
+			continue;
+		}
+
+		$entries[] = arv_results_sitemap_entry( $slug, $by_key[ $key ] );
+	}
+
+	return $entries;
+}
+
+/**
+ * GET /race-results-sitemap.xml
+ *
+ * A physical rewrite rather than a query var on the results page, so this
+ * is servable and cacheable as a plain file URL, the shape Search Console
+ * and every crawler expects a sitemap to have.
+ */
+function arv_results_sitemap_add_rewrite() {
+	add_rewrite_rule( '^race-results-sitemap\.xml$', 'index.php?arv_results_sitemap=1', 'top' );
+}
+add_action( 'init', 'arv_results_sitemap_add_rewrite' );
+
+function arv_results_sitemap_query_vars( $vars ) {
+	$vars[] = 'arv_results_sitemap';
+
+	return $vars;
+}
+add_filter( 'query_vars', 'arv_results_sitemap_query_vars' );
+
+/**
+ * The sitemap XML itself, built and handed back rather than echoed.
+ *
+ * Kept separate from the route handler below so a test can call this and
+ * read a string, rather than the one below, which ends the request: PHP's
+ * exit cannot be caught, so a function that calls it is untestable by
+ * construction and has to be a thin wrapper around one that is not.
+ *
+ * @return string
+ */
+function arv_results_sitemap_xml() {
+	$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+	$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+	foreach ( arv_results_sitemap_entries() as $entry ) {
+		$xml .= "\t<url>\n";
+		$xml .= "\t\t<loc>" . esc_url( $entry['url'] ) . "</loc>\n";
+		$xml .= "\t\t<lastmod>" . esc_html( $entry['lastmod'] ) . "</lastmod>\n";
+		$xml .= "\t</url>\n";
+	}
+
+	return $xml . '</urlset>';
+}
+
+/**
+ * Serve the sitemap and stop, the moment the rewrite matches.
+ *
+ * On template_redirect rather than a template file: the rewrite resolves
+ * to no real post, so there is no template WordPress would otherwise
+ * choose, and this needs to run before it tries and serves a 404.
+ */
+function arv_results_sitemap_render() {
+	if ( ! function_exists( 'get_query_var' ) || '1' !== (string) get_query_var( 'arv_results_sitemap' ) ) {
+		return;
+	}
+
+	header( 'Content-Type: application/xml; charset=UTF-8' );
+	echo arv_results_sitemap_xml();
+	exit;
+}
+add_action( 'template_redirect', 'arv_results_sitemap_render' );
