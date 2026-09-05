@@ -177,6 +177,10 @@ function arv_results_store_set( $rows ) {
 
 	update_option( ARV_RESULTS_OPTION, $clean, false );
 
+	// The slug map is derived from these rows, so it is stale the moment
+	// they change.
+	arv_results_flush_slug_cache();
+
 	return count( $clean );
 }
 
@@ -317,37 +321,62 @@ function arv_results_race_slug( $name ) {
 /**
  * Slug to the race key it names, built from the stored rows.
  *
- * One entry per race, its slug taken from the newest edition's name, which
- * is the same edition the archive headlines a race with, so a race that was
- * renamed is reachable at the name it goes by now.
+ * Every spelling a race has ever been stored under gets an entry, not just
+ * the newest one's, and that is the whole point. Grouping is by race key,
+ * which deliberately collapses "Black Canyon", "Black Canyon Ultras" and
+ * "Black Canyon Trail Runs" into one race, but the archive renders a panel
+ * per year and each panel links a race by THAT year's own name. Registering
+ * only the newest spelling meant the 2025 panel linked
+ * /race-results/black-canyon-ultras/ while only /race-results/black-canyon/
+ * resolved: 73 of 553 editions across 23 races pointed at a URL that
+ * answered "No race by that name".
+ *
+ * First spelling wins a given slug, and rows arrive newest first, so where
+ * two different races would somehow claim the same slug the current one
+ * keeps it. The older spellings are aliases onto the same page, which is
+ * also why they cost nothing in search: arv_results_race_url() always
+ * builds from the newest name, so every alias canonicals to the one URL.
  *
  * @return array<string, string> slug => race key
  */
-function arv_results_race_slugs() {
+function &arv_results_race_slugs_cache() {
 	static $map = null;
+
+	return $map;
+}
+
+/**
+ * Drop the memoized slug map.
+ *
+ * The map is derived from the store, so a write to the store invalidates it.
+ * That is not only a test concern: the import route replaces the whole store
+ * inside a single request, and anything rendering after it in that request
+ * would otherwise resolve slugs against the set of races that existed before
+ * the import. Same reason and same shape as arv_race_store_flush_cache().
+ */
+function arv_results_flush_slug_cache() {
+	$map =& arv_results_race_slugs_cache();
+	$map = null;
+}
+
+function arv_results_race_slugs() {
+	$map =& arv_results_race_slugs_cache();
 
 	if ( null !== $map ) {
 		return $map;
 	}
 
-	$map  = array();
-	$seen = array();
+	$map = array();
 
 	foreach ( arv_results_store_get() as $row ) {
-		$key = arv_results_race_key( $row['name'] );
+		$key  = arv_results_race_key( $row['name'] );
+		$slug = arv_results_race_slug( $row['name'] );
 
-		// Rows arrive newest first, so the first name seen for a key is the
-		// current one.
-		if ( isset( $seen[ $key ] ) ) {
+		if ( '' === $key || '' === $slug || isset( $map[ $slug ] ) ) {
 			continue;
 		}
 
-		$seen[ $key ] = true;
-		$slug         = arv_results_race_slug( $row['name'] );
-
-		if ( '' !== $slug && ! isset( $map[ $slug ] ) ) {
-			$map[ $slug ] = $key;
-		}
+		$map[ $slug ] = $key;
 	}
 
 	return $map;
