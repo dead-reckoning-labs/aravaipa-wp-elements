@@ -953,3 +953,116 @@ function arv_podcasts_series_node( $show, $with_episodes = false ) {
 
 	return $node;
 }
+
+/**
+ * The newest episodes across every show, as a home page rail.
+ *
+ * Same shape as the Films and Shop rails beside it on that page: one
+ * horizontal scroll region, no script, artwork and three facts a card.
+ * Podcasts were the one Media strand with no presence outside /media/,
+ * which is a strange place to leave four shows and fifty-odd episodes.
+ *
+ * Cross-show on purpose. Each show already has its own page, and a rail
+ * split three ways would be three near-empty rails; what a reader wants
+ * from a home page is the newest thing Aravaipa published, whichever show
+ * it came from, which is exactly what arv_podcasts_all() already returns.
+ * The show's name rides on each card so the mixing is legible.
+ *
+ * Square artwork, unlike Films. Podcast art is square everywhere it is
+ * published and letterboxing it into a 16:9 card to match its neighbour
+ * would crop the show's own logo.
+ *
+ * @param array $args heading, limit.
+ * @return string
+ */
+function arv_podcasts_rail_render( $args = array() ) {
+	$episodes = arv_podcasts_all( arv_podcasts_fetch() );
+
+	if ( empty( $episodes ) ) {
+		return '';
+	}
+
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : 'Aravaipa Podcasts';
+	$limit   = isset( $args['limit'] ) ? (int) $args['limit'] : 12;
+
+	if ( $limit > 0 ) {
+		$episodes = array_slice( $episodes, 0, $limit );
+	}
+
+	$out  = '<section class="arv-rail">';
+	$out .= '<div class="arv-rail__inner">';
+	$out .= '<div class="arv-rail__head">';
+
+	if ( '' !== $heading ) {
+		$out .= '<h2 class="arv-rail__heading">' . esc_html( $heading ) . '</h2>';
+	}
+
+	$out .= '<a class="arv-rail__all" href="' . esc_url( home_url( '/media/podcasts/' ) ) . '">'
+		. esc_html__( 'All podcasts', 'aravaipa-elements' ) . '</a>';
+	$out .= '</div>';
+
+	$out .= '<ul class="arv-rail__track" tabindex="0" role="list"'
+		. ' aria-label="' . esc_attr__( 'Recent Aravaipa podcast episodes', 'aravaipa-elements' ) . '">';
+
+	foreach ( $episodes as $episode ) {
+		// The show's own page, not the episode's audio. A card on a home
+		// page is an invitation to the show, and the show page is where
+		// the player, the back catalogue and the subscribe links already
+		// are.
+		$href = home_url( '/media/podcasts/' . $episode['show_key'] . '/' );
+
+		$out .= '<li class="arv-rail__item">';
+		$out .= '<a class="arv-rail__link" href="' . esc_url( $href ) . '">';
+
+		if ( '' !== $episode['artwork'] ) {
+			$out .= '<img class="arv-rail__art arv-rail__art--square" src="' . esc_url( $episode['artwork'] ) . '" alt=""'
+				. ' loading="lazy" decoding="async" width="300" height="300" />';
+		}
+
+		$out .= '<span class="arv-rail__body">';
+		$out .= '<span class="arv-rail__show">' . esc_html( $episode['show_title'] ) . '</span>';
+		$out .= '<span class="arv-rail__title">' . esc_html( $episode['title'] ) . '</span>';
+
+		$bits = array();
+
+		$duration = arv_podcasts_display_duration( $episode['duration'] );
+
+		if ( '' !== $duration ) {
+			$bits[] = $duration;
+		}
+
+		$stamp = $episode['published'] ? strtotime( $episode['published'] ) : 0;
+
+		if ( $stamp ) {
+			$bits[] = gmdate( 'M j, Y', $stamp );
+		}
+
+		if ( ! empty( $bits ) ) {
+			$out .= '<span class="arv-rail__meta">' . esc_html( implode( ' · ', $bits ) ) . '</span>';
+		}
+
+		$out .= '</span></a></li>';
+	}
+
+	return $out . '</ul></div></section>';
+}
+
+/**
+ * [arv_podcasts_rail] so a page can carry this without Cornerstone.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_podcasts_rail_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'heading' => 'Aravaipa Podcasts',
+			'limit'   => 12,
+		),
+		$atts,
+		'arv_podcasts_rail'
+	);
+
+	return arv_podcasts_rail_render( $atts );
+}
+add_shortcode( 'arv_podcasts_rail', 'arv_podcasts_rail_shortcode' );
