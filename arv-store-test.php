@@ -2154,6 +2154,38 @@ $GLOBALS['QUERY_VARS'] = array();
 t( 'as does the archive itself',        null === arv_results_race_context() );
 $GLOBALS['ARV_OPTIONS'] = array();
 
+echo "\nresults: an archive year's own result files:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$GLOBALS['QUERY_VARS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Javelina Jundred', 'iso' => '2008-11-15', 'display' => 'November 15-16',
+	       'ultrarunning' => 'https://ultrarunning.com/calendar/event/javelina-jundred/race/1836/results',
+	       'archive' => array(
+		       array( 'label' => '100 Mile', 'url' => 'https://aravaiparunning.com/results/2008JJResults100m.htm' ),
+		       array( 'label' => '100 KM', 'url' => 'https://aravaiparunning.com/results/2008JJResults100k.htm' ),
+	       ) ),
+) );
+$arch = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+
+// The files are the results on these years, so they get their own labelled
+// row rather than riding inside the right-aligned actions column, where a
+// lone "100 MILE" chip read as a sub-item of the UltraRunning button.
+t( 'the files get their own row',        false !== strpos( $arch, 'arv-results__files' ) );
+t( 'and the row says what they are',     false !== strpos( $arch, '>Results</span>' ) );
+t( 'every distance is a chip',           false !== strpos( $arch, '>100 Mile<' ) && false !== strpos( $arch, '>100 KM<' ) );
+t( 'and they are out of the actions box', false === strpos( $arch, 'arv-results__archive"></div><div class="arv-results__files"' )
+                                          && strpos( $arch, 'arv-results__files' ) > strpos( $arch, 'arv-results__actions' ) );
+
+// A race whose every link is already a button up top adds no empty row.
+arv_results_store_set( array(
+	array( 'name' => 'Vertigo Night Runs', 'iso' => '2026-08-09', 'display' => 'August 9',
+	       'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' ),
+) );
+t( 'no files, no row at all',            false === strpos(
+	arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) ),
+	'arv-results__files' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
 echo "\nresults: ?arv_year= opens the archive on that year:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
 arv_results_store_set( array(

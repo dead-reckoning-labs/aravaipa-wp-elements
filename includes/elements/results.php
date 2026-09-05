@@ -1478,6 +1478,7 @@ function arv_results_race_groups_markup( $rows ) {
 		$out .= arv_results_links( $latest );
 		$out .= '</div>';
 		$out .= arv_results_winners_block( $stats );
+		$out .= arv_results_archive_row( $latest );
 
 		// No editions control here at all any more. The year list answers
 		// "what happened in 2024", and a race's history is a different
@@ -1840,23 +1841,25 @@ function arv_results_links( $row ) {
 		$primary[] = $slot[0];
 	}
 
-	$archive = arv_results_archive( $row, $primary );
-	$out     = '';
+	$out = '';
 
-	// A race with no listing and no files of its own has nothing to show.
-	// Returning the wrapper anyway would put an empty flex child in the
-	// edition row and pull the date off the left with its gap.
-	if ( '' === $archive && ! $has_slot ) {
+	// A race with no listing has no buttons to show. Returning the wrapper
+	// anyway would put an empty flex child in the edition row and pull the
+	// date off the left with its gap. Its archive files, if it has any, are
+	// a separate row and are not this function's business.
+	if ( ! $has_slot ) {
 		return '';
 	}
 
-	// One box around both rows. The edition line is a space-between flex
-	// row of exactly two things, the date and the links, and adding the
-	// archive beside them made it three: the chips then sat wherever the
-	// wrap happened to put them, right-aligned next to the date on a race
-	// with four of them and left-aligned on its own line on a race with
-	// nine. Wrapped, they hang off the same right edge as the buttons
-	// regardless of how many there are.
+	// Just the buttons now. The archive files used to ride along in here
+	// too, below the buttons and right-aligned with them, which read as
+	// though they belonged to whichever button happened to sit above them:
+	// Javelina 2008 showed an ULTRARUNNING button with a lone "100 MILE"
+	// chip tucked under it, as if the chip were a sub-item of UltraRunning
+	// rather than a link to Aravaipa's own results for that race. On the
+	// archive years those files ARE the results, and burying them under an
+	// external listing had the emphasis exactly backwards. They render as
+	// their own labelled row now, see arv_results_archive_row().
 	$out .= '<div class="arv-results__actions">';
 
 	// The grid holds three fixed columns still, so a race with two listings
@@ -1889,7 +1892,48 @@ function arv_results_links( $row ) {
 		$out .= '</div>';
 	}
 
-	return $out . $archive . '</div>';
+	return $out . '</div>';
+}
+
+/**
+ * The archive files as their own row, under the date rather than under the
+ * buttons.
+ *
+ * These are the actual results for every year Aravaipa scored its own races,
+ * so on those editions they are the most important link on the row and the
+ * three external buttons are the afterthought, not the other way round.
+ * Labelled, because a bare row of "100 MILE" "50K" "25K" chips does not say
+ * on its own what taking one of them does.
+ *
+ * Takes the same dedupe list arv_results_links() builds, so a file already
+ * shown as a button up there does not appear again down here.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_results_archive_row( $row ) {
+	$live = function_exists( 'arv_live_page_for_live_url' )
+		? arv_live_page_for_live_url( $row['live'] )
+		: '';
+	$live = '' !== $live ? $live : $row['live'];
+
+	$primary = array(
+		$live,
+		$row['live'],
+		isset( $row['ultrasignup'] ) ? $row['ultrasignup'] : '',
+		isset( $row['ultrarunning'] ) ? $row['ultrarunning'] : '',
+	);
+
+	$archive = arv_results_archive( $row, $primary );
+
+	if ( '' === $archive ) {
+		return '';
+	}
+
+	return '<div class="arv-results__files">'
+		. '<span class="arv-results__files-label">'
+		. esc_html( __( 'Results', 'aravaipa-elements' ) ) . '</span>'
+		. $archive . '</div>';
 }
 
 /**
@@ -2306,6 +2350,7 @@ function arv_results_editions_table( $editions ) {
 		$out .= arv_results_links( $edition );
 		$out .= '</div>';
 		$out .= arv_results_winners_block( $stats );
+		$out .= arv_results_archive_row( $edition );
 
 		$out .= '</div>';
 	}
