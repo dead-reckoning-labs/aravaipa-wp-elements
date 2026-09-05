@@ -2168,6 +2168,47 @@ arv_results_store_set( array(
 $GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'black-bear-trail-races' );
 $ctx = arv_results_race_context();
 t( 'a race slug resolves to a race',    null !== $ctx && 'Black Bear Trail Races' === $ctx['name'] );
+
+// A race the archive has stored under more than one name is reachable at
+// every one of them, not only its newest. Grouping collapses the spellings
+// into one race, but the archive renders a panel per year and each panel
+// links that year's row by ITS name, so registering only the newest meant
+// the older panels linked a URL that answered "No race by that name": 73
+// of 553 editions across 23 races, Black Canyon and Cocodona included.
+arv_results_store_set( array(
+	array( 'name' => 'Black Canyon', 'iso' => '2026-02-14', 'display' => 'February 14',
+	       'live' => 'https://live.aravaiparunning.com/#/black_canyon-2026' ),
+	array( 'name' => 'Black Canyon Ultras', 'iso' => '2025-02-08', 'display' => 'February 8',
+	       'live' => 'https://live.aravaiparunning.com/#/black_canyon-2025' ),
+	array( 'name' => 'Black Canyon Trail Runs', 'iso' => '2024-02-10', 'display' => 'February 10',
+	       'live' => 'https://live.aravaiparunning.com/#/black_canyon-2024' ),
+) );
+
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'black-canyon' );
+t( 'the newest spelling resolves',      null !== arv_results_race_context() );
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'black-canyon-ultras' );
+$alias = arv_results_race_context();
+t( 'and so does an older one',          null !== $alias );
+// All the way to the same race, not a partial view of it: an alias is the
+// same page, so it carries every edition the newest spelling does.
+t( 'the alias is the same race',        null !== $alias && 3 === count( $alias['editions'] ) );
+t( 'headlined by the current name',     null !== $alias && 'Black Canyon' === $alias['name'] );
+// And canonicals to the one real URL, so the aliases cost nothing in search.
+t( 'canonical points at the newest',    'https://www.aravaiparunning.com/race-results/black-canyon/' === $alias['url'] );
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'black-canyon-trail-runs' );
+t( 'a third spelling too',              null !== arv_results_race_context() );
+
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2025-08-30', 'display' => 'August 30',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2025' ),
+	array( 'name' => 'Rock Hawk Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026' ),
+) );
+$GLOBALS['QUERY_VARS'] = array( 'arv_race' => 'black-bear-trail-races' );
+$ctx = arv_results_race_context();
 t( 'carrying only its own editions',    2 === count( $ctx['editions'] ) );
 t( 'and its own url',                   'https://www.aravaiparunning.com/race-results/black-bear-trail-races/' === $ctx['url'] );
 
