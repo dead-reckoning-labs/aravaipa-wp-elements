@@ -46,18 +46,55 @@ if ( ! defined( 'ARV_RESULTS_LIVE_MERGE_GRACE' ) ) {
 /**
  * The query var the archive reads a year from.
  *
- * Namespaced, and it has to be: "year" is one of WordPress's own reserved
- * query vars for date archives. /results/?year=2008 was parsed as a request
- * for the 2008 date archive, found no posts published that year and returned
- * a 404; ?year=2020 and ?year=2025 got redirected off to a date archive
- * instead. Only ?year=2026 happened to work, which is exactly the kind of
- * bug that looks fine on the one year you test.
+ * Not "year", which is one of WordPress's own reserved query vars for date
+ * archives: /results/?year=2008 was parsed as a request for the 2008 date
+ * archive, found no posts published that year and returned a 404, while
+ * ?year=2020 and ?year=2025 were redirected off to a date archive instead.
+ * Only ?year=2026 happened to work, which is exactly the kind of bug that
+ * looks fine on the one year you test. The photos element hit the same wall
+ * first and its own note in includes/photos-store.php says so.
  *
- * The photos element hit this same wall first and its own note says so, in
- * includes/photos-store.php. Same fix, same prefix, for the same reason.
+ * "race_year" rather than the "arv_" prefix that shipped first. The prefix
+ * is right for a function or an option, where it keeps this plugin out of
+ * everyone else's namespace, and wrong in a URL a person reads and sends to
+ * somebody: /results/?race_year=2024 says what it does, /results/?arv_year=
+ * 2024 makes the reader wonder what an arv is.
+ *
+ * "season" reads better still and was the first choice, until the store
+ * itself argued against it: Momentum names the board for the January 2024
+ * San Tan Scramble "san_tan_scramble-2023", because a season and a calendar
+ * year are not the same thing here. These pills are strictly calendar
+ * years, so the URL should not borrow a word that already means something
+ * looser inside Aravaipa's own systems.
  */
 if ( ! defined( 'ARV_RESULTS_YEAR_VAR' ) ) {
-	define( 'ARV_RESULTS_YEAR_VAR', 'arv_year' );
+	define( 'ARV_RESULTS_YEAR_VAR', 'race_year' );
+}
+
+/**
+ * What the year var was called before, still answered to.
+ *
+ * Only ever live for a few hours, so this is close to free, but a URL is a
+ * promise the moment anyone copies one out of an address bar, and somebody
+ * was clicking around this page while it said arv_year.
+ */
+if ( ! defined( 'ARV_RESULTS_YEAR_VAR_WAS' ) ) {
+	define( 'ARV_RESULTS_YEAR_VAR_WAS', 'arv_year' );
+}
+
+/**
+ * The year the URL is asking for, under either name, digits only.
+ *
+ * @return string Empty when the URL names none.
+ */
+function arv_results_requested_year() {
+	foreach ( array( ARV_RESULTS_YEAR_VAR, ARV_RESULTS_YEAR_VAR_WAS ) as $var ) {
+		if ( isset( $_GET[ $var ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return preg_replace( '/\D/', '', wp_unslash( $_GET[ $var ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		}
+	}
+
+	return '';
 }
 
 
@@ -1235,7 +1272,7 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 	// behind the /race-results/ rewrite, it is the plain archive page
 	// WordPress already resolves on its own, so nothing registers this as a
 	// var for get_query_var() to return.
-	$requested = isset( $_GET[ ARV_RESULTS_YEAR_VAR ] ) ? preg_replace( '/\D/', '', wp_unslash( $_GET[ ARV_RESULTS_YEAR_VAR ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$requested = arv_results_requested_year();
 	$current   = in_array( $requested, $years, true ) ? $requested : $years[0];
 
 	// A row of years rather than a select. Nineteen of them is a lot to put
