@@ -473,3 +473,18 @@ function arv_articles_rail_shortcode( $atts ) {
 	return arv_articles_rail_render( $atts );
 }
 add_shortcode( 'arv_articles_rail', 'arv_articles_rail_shortcode' );
+
+/**
+ * Run shortcodes inside Custom HTML widgets.
+ *
+ * Core runs them in the legacy Text widget and in post content, but not
+ * here, so a shortcode dropped into a Custom HTML widget renders as its
+ * own literal source text. It fails quietly and looks like the shortcode
+ * is broken rather than unsupported, which is exactly how [arv_articles_rail]
+ * in the sidebar first appeared to do nothing at all.
+ *
+ * Widget content is admin-authored, the same trust level as post content,
+ * so there is nothing here that do_shortcode does not already accept from
+ * the editor.
+ */
+add_filter( 'widget_custom_html_content', 'do_shortcode', 11 );
