@@ -686,6 +686,19 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			} else {
 				$state = 'soon';
 			}
+		} elseif ( 'done' !== $state && function_exists( 'arv_race_start_override_ts' ) ) {
+			// No board, but a director has told us the actual gun time: the
+			// same day-based 'soon'/'live' split above flips to live at
+			// midnight in Phoenix regardless of where the race is, which for
+			// a race east of here means claiming it is live hours before the
+			// gun. Refined here, never past 'done': there is no known cutoff
+			// without a board, so a race that already finished by the date
+			// check does not get pulled back to 'live' by this.
+			$override_ts = arv_race_start_override_ts( $race['name'], $race['iso'] );
+
+			if ( null !== $override_ts ) {
+				$state = ( arv_results_now() >= $override_ts ) ? 'live' : 'soon';
+			}
 		}
 
 		$races[] = array(
@@ -999,10 +1012,27 @@ function arv_results_week_status( $race ) {
 	$board  = $race['board'];
 	$has    = ( null !== $board && '' !== $board['start'] );
 
-	// The board's clock where it has one, midnight on race day where it
-	// does not. The second is the honest fallback rather than a guess at a
-	// start time: it is what the store actually knows.
-	$start = $has ? gmdate( 'c', strtotime( $board['start'] ) ) : arv_results_start_iso( $race['iso'] );
+	// A director-told start time, for the race that has no board but does
+	// have one of these: see arv_race_start_override_ts(). Checked whenever
+	// there is no board rather than only when nobody else can answer,
+	// because a board that has not started scoring yet and a hand-entered
+	// gun time are not in conflict, but "no board" and "we were told 8am"
+	// are the exact case this exists for.
+	$override_ts = ( ! $has && function_exists( 'arv_race_start_override_ts' ) )
+		? arv_race_start_override_ts( $race['name'], $race['iso'] )
+		: null;
+
+	// The board's clock where it has one, the director's where that is all
+	// that exists, midnight on race day where neither does. The last of
+	// those is the honest fallback rather than a guess at a start time: it
+	// is what the store actually knows.
+	if ( $has ) {
+		$start = gmdate( 'c', strtotime( $board['start'] ) );
+	} elseif ( null !== $override_ts ) {
+		$start = gmdate( 'c', $override_ts );
+	} else {
+		$start = arv_results_start_iso( $race['iso'] );
+	}
 
 	$cutoff_ts = function_exists( 'arv_race_cutoff_for' ) ? arv_race_cutoff_for( $race['name'], $board ) : 0;
 	$cutoff_ts = arv_results_backstop_cutoff( $cutoff_ts, $start );
@@ -1013,18 +1043,23 @@ function arv_results_week_status( $race ) {
 		. ( '' !== $cutoff ? ' data-arv-cutoff="' . esc_attr( $cutoff ) . '"' : '' )
 		. '>';
 
+	// Same three-way choice as $start above, so the server-rendered text a
+	// reader sees before the clock script runs already says "in 6 hours"
+	// rather than a coarse "today" that the script then visibly corrects.
+	$countdown_source = $has ? $board['start'] : ( null !== $override_ts ? $start : '' );
+
 	$out .= '<span class="arv-results__countdown" data-arv-results-countdown'
 		. ( 'soon' === $race['state'] ? '' : ' hidden' ) . '>'
 		. '<span class="arv-results__clock-label">' . esc_html( __( 'Starts in', 'aravaipa-elements' ) ) . '</span> '
 		. '<span class="arv-results__countdown-value" data-arv-results-countdown-value>'
-		. esc_html( arv_results_countdown_text( $race['iso'], $has ? $board['start'] : '' ) )
+		. esc_html( arv_results_countdown_text( $race['iso'], $countdown_source ) )
 		. '</span></span>';
 
 	$out .= '<span class="arv-results__elapsed" data-arv-results-elapsed'
 		. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
 		. '<span class="arv-results__clock-label">' . esc_html( __( 'Elapsed', 'aravaipa-elements' ) ) . '</span> '
 		. '<span class="arv-results__elapsed-value" data-arv-results-elapsed-value>'
-		. esc_html( arv_results_elapsed_text( $has ? $board['start'] : '' ) )
+		. esc_html( arv_results_elapsed_text( $countdown_source ) )
 		. '</span>'
 		. '</span>';
 

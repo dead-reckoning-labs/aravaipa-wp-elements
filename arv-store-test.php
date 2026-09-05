@@ -741,6 +741,45 @@ t( 'a blank name is safe too',            '' === arv_race_presented_by( array( '
 
 $GLOBALS['ARV_OPTIONS'] = array();
 
+echo "\na director-told gun time, for the race calendar has no field for one:\n";
+$n = arv_race_start_store_set( array(
+	'Oli Kai Trail Races' => array( 'time' => '08:00', 'tz' => 'America/New_York' ),
+) );
+t( 'a good entry is stored',              1 === $n );
+t( 'and resolves to a real timestamp',    strtotime( '2026-09-05T12:00:00Z' ) === arv_race_start_override_ts( 'Oli Kai Trail Races', '2026-09-05' ) );
+
+// Arizona never observes daylight saving and Tennessee does, so the same
+// stored "08:00" has to land at a different UTC instant depending on the
+// time of year, correctly, without this code ever comparing dates against
+// a DST calendar of its own. Checked in January, when Chattanooga is only
+// five hours off UTC rather than four.
+t( 'the zone handles its own DST, not us', strtotime( '2026-01-10T13:00:00Z' ) === arv_race_start_override_ts( 'Oli Kai Trail Races', '2026-01-10' ) );
+
+// Written by a script; validated rather than trusted, same posture as the
+// notes and waitlist maps beside it.
+$n = arv_race_start_store_set( array(
+	'Bad Time'  => array( 'time' => '8am', 'tz' => 'America/New_York' ),
+	'Bad Zone'  => array( 'time' => '08:00', 'tz' => 'Mars/Phoenix' ),
+	'No Zone'   => array( 'time' => '08:00' ),
+	'Not Array' => 'nope',
+	''          => array( 'time' => '08:00', 'tz' => 'America/New_York' ),
+	'Good'      => array( 'time' => '17:30', 'tz' => 'America/Denver' ),
+) );
+t( 'only the one valid entry survives',   1 === $n );
+t( 'a bad time is rejected',              null === arv_race_start_override_ts( 'Bad Time', '2026-09-05' ) );
+t( 'a bad zone is rejected',              null === arv_race_start_override_ts( 'Bad Zone', '2026-09-05' ) );
+t( 'a missing zone is rejected',          null === arv_race_start_override_ts( 'No Zone', '2026-09-05' ) );
+t( 'and the good one made it through',    null !== arv_race_start_override_ts( 'Good', '2026-09-05' ) );
+
+// A replace, not a merge, same reason as the notes map: a race whose start
+// time changes or gets pulled should not keep the old one forever.
+t( 'a race dropped from the map has none', null === arv_race_start_override_ts( 'Oli Kai Trail Races', '2026-09-05' ) );
+
+t( 'no name, no answer',                  null === arv_race_start_override_ts( '', '2026-09-05' ) );
+t( 'no entry at all, no answer',          null === arv_race_start_override_ts( 'Nothing Stored', '2026-09-05' ) );
+
+$GLOBALS['ARV_OPTIONS'] = array();
+
 $GLOBALS['QUIET_FAILS'] = 0;
 // The race week block lists the same races the archive does, so anything
 // counting occurrences in the archive has to look at the archive alone.
@@ -1212,6 +1251,36 @@ $olikai = 'Oli Kai Trail Races | 2026-09-05 | Saturday - September 5, 2026 | 9 H
 	. 'https://www.badbeardevents.com/featured-races/oli-kai- | https://example.com/oli-kai.png | '
 	. ' |  | 2026-09-01 | 1 | 0 | 35.0036320 | -85.3646122';
 arv_race_store_import( $olikai );
+
+// A director-told gun time, for the one race that has it: 8am in
+// Chattanooga, not midnight in Phoenix. Without this, the day-based
+// 'soon'/'live' split above flips the moment Arizona's own calendar rolls
+// over to race day, hours before the actual gun three time zones east.
+arv_race_start_store_set( array(
+	'Oli Kai Trail Races' => array( 'time' => '08:00', 'tz' => 'America/New_York' ),
+) );
+
+// Arizona's midnight on race day (2026-09-05T07:00Z) has already passed,
+// but Chattanooga's 8am gun (EDT, so 12:00Z) has not. The day-only check
+// would call this live; the override should not.
+$GLOBALS['NOW']    = '2026-09-05';
+$GLOBALS['NOW_TS'] = strtotime( '2026-09-05T09:00:00Z' );
+$before_gun = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$bg_week    = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $before_gun, $bgm ) ? $bgm[0] : '';
+t( 'not live before the real gun',      false !== strpos( $bg_week, 'data-arv-results-live hidden' ) );
+t( 'the countdown still shows',         false !== strpos( $bg_week, 'Starts in' ) );
+// EDT in September, so 8am there is 12:00Z: DST handled by the zone itself,
+// not by anything this code had to get right on its own.
+t( 'and targets the real gun, in UTC',  false !== strpos( $bg_week, 'data-arv-start="2026-09-05T12:00:00+00:00"' ) );
+
+// Past the real gun now.
+$GLOBALS['NOW_TS'] = strtotime( '2026-09-05T13:00:00Z' );
+$after_gun = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$ag_week   = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $after_gun, $agm ) ? $agm[0] : '';
+t( 'live once the real gun has gone',   false !== strpos( $ag_week, 'data-arv-results-live>' ) );
+
+arv_race_start_store_set( array() );
+$GLOBALS['NOW_TS'] = null;
 
 // The Sunday before: still last week, so the coming weekend stays out.
 $GLOBALS['NOW'] = '2026-09-06';
