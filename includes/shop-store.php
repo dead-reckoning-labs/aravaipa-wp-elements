@@ -197,6 +197,29 @@ function arv_shop_products_in( $collection_id, $limit = 0 ) {
  * @param int $cents
  * @return string
  */
+/**
+ * A product's photographs, cleaned the same way its single image is.
+ *
+ * Capped, because this renders in a post body rather than a lightbox and
+ * a listing with eleven angles is a scroll trap, not a gallery.
+ *
+ * @param mixed $raw
+ * @return array<int, string>
+ */
+function arv_shop_clean_images( $raw ) {
+	$out = array();
+
+	foreach ( (array) $raw as $url ) {
+		$url = arv_shop_clean_url( (string) $url );
+
+		if ( '' !== $url && ! in_array( $url, $out, true ) ) {
+			$out[] = $url;
+		}
+	}
+
+	return array_slice( $out, 0, 6 );
+}
+
 function arv_shop_price( $cents ) {
 	$cents = (int) $cents;
 
@@ -875,6 +898,10 @@ function arv_shop_set( $payload ) {
 			'name'        => sanitize_text_field( (string) $row['name'] ),
 			'url'         => $url,
 			'image'       => arv_shop_clean_url( isset( $row['image'] ) ? $row['image'] : '' ),
+			// Every photograph the listing has. The grid renders 'image'
+			// and always did; this is for a single product embedded on its
+			// own, where the other angles are most of what a listing is.
+			'images'      => arv_shop_clean_images( isset( $row['images'] ) ? $row['images'] : array() ),
 			'desc'        => sanitize_text_field( isset( $row['desc'] ) ? (string) $row['desc'] : '' ),
 			'price'       => isset( $row['price'] ) ? (int) $row['price'] : 0,
 			'sold_out'    => ! empty( $row['sold_out'] ),
@@ -968,3 +995,117 @@ function arv_shop_rest_set( $request ) {
 
 	return array( 'status' => 'ok' ) + arv_shop_set( $payload );
 }
+
+/**
+ * One product by its Square id.
+ *
+ * @param string $id
+ * @return array|null
+ */
+function arv_shop_product( $id ) {
+	$id = sanitize_text_field( (string) $id );
+
+	if ( '' === $id ) {
+		return null;
+	}
+
+	foreach ( arv_shop_get()['products'] as $product ) {
+		if ( isset( $product['id'] ) && $product['id'] === $id ) {
+			return $product;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * A single product, embedded in a page or a post.
+ *
+ * The shop rail and the race merch grid both answer "what else is there".
+ * This answers "buy this one", which is a different card: the other
+ * photographs, the description Square already holds, the price, and a
+ * button that goes to the cart rather than to a listing.
+ *
+ * Reads the stored catalogue rather than calling Square, the same as
+ * everything else here. The catalogue is refreshed by fetch-shop.mjs and
+ * a post render is not the place to depend on someone else's API being
+ * up.
+ *
+ * Sold out is rendered, not hidden. A post about race weekend outlives
+ * the stock, and a card that quietly disappears reads as a broken page,
+ * where one that says sold out is still telling the reader something.
+ *
+ * @param array $args id, heading.
+ * @return string
+ */
+function arv_shop_product_render( $args ) {
+	$product = arv_shop_product( isset( $args['id'] ) ? $args['id'] : '' );
+
+	if ( null === $product ) {
+		return '';
+	}
+
+	$sold  = ! empty( $product['sold_out'] );
+	$price = arv_shop_price( isset( $product['price'] ) ? $product['price'] : 0 );
+	$url   = arv_shop_url( isset( $product['url'] ) ? $product['url'] : '' );
+
+	$shots = array();
+
+	foreach ( (array) ( isset( $product['images'] ) ? $product['images'] : array() ) as $shot ) {
+		$shots[] = $shot;
+	}
+
+	// Older catalogue rows predate the images list and carry one image.
+	if ( empty( $shots ) && ! empty( $product['image'] ) ) {
+		$shots[] = $product['image'];
+	}
+
+	$out = '<section class="arv-product' . ( $sold ? ' arv-product--out' : '' ) . '">';
+
+	if ( ! empty( $shots ) ) {
+		$out .= '<div class="arv-product__shots">';
+
+		foreach ( $shots as $i => $shot ) {
+			$out .= '<a class="arv-product__shot" href="' . esc_url( $url ) . '">'
+				. '<img src="' . esc_url( $shot ) . '" alt="'
+				. esc_attr( 0 === $i ? $product['name'] : '' ) . '" loading="lazy" decoding="async" />'
+				. '</a>';
+		}
+
+		$out .= '</div>';
+	}
+
+	$out .= '<div class="arv-product__body">';
+	$out .= '<h3 class="arv-product__name">' . esc_html( $product['name'] ) . '</h3>';
+
+	if ( '' !== $price ) {
+		$out .= '<p class="arv-product__price">' . esc_html( $price ) . '</p>';
+	}
+
+	if ( ! empty( $product['desc'] ) ) {
+		$out .= '<p class="arv-product__desc">' . esc_html( $product['desc'] ) . '</p>';
+	}
+
+	if ( $sold ) {
+		$out .= '<span class="arv-product__btn arv-product__btn--out">'
+			. esc_html__( 'Sold out', 'aravaipa-elements' ) . '</span>';
+	} else {
+		$out .= '<a class="arv-product__btn" href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
+			. esc_html__( 'Order now', 'aravaipa-elements' ) . '</a>';
+	}
+
+	return $out . '</div></section>';
+}
+
+/**
+ * [arv_product id="SQUARE_ITEM_ID"] for a post or page.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_shop_product_shortcode( $atts ) {
+	$atts = shortcode_atts( array( 'id' => '' ), $atts, 'arv_product' );
+
+	return arv_shop_product_render( $atts );
+}
+add_shortcode( 'arv_product', 'arv_shop_product_shortcode' );
