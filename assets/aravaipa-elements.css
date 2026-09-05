@@ -4556,69 +4556,38 @@
 	font-variant-numeric: tabular-nums;
 }
 
-/* Three fixed columns, even though there is no table here. The row is
-   right-aligned against the race name, so sizing the buttons to whichever
-   links a race happens to have let the block shrink from the left: a race
-   with two listings started 119px right of a race with three, and the page
-   had a ragged edge running down it. Fixed tracks and an empty slot for a
-   missing listing put every button in the same place on every row. */
-.arv-results__links {
-	display: grid;
-	grid-template-columns: repeat(3, 7.75rem);
-	gap: 0.45rem;
-}
-
-.arv-results__links .arv-results__link {
-	width: 100%;
-	min-width: 0;
-}
-
-/* Holds a column open where a race has no listing. Not a dash and not a
-   disabled button: the point is only that the columns line up. */
-.arv-results__slot {
-	display: block;
-}
-
-/* One race's own result files, one per distance, from the years Aravaipa
-   scored its own races. A variable number of them, so they wrap rather than
-   sitting in the three-column grid above, and they are deliberately quieter
-   than the buttons: a distance is a way into a result, not a destination
-   the way "UltraSignup" is. */
+/* The one child this wraps is .arv-results__links itself; kept as its own
+   element because the edition row above (.arv-results__latest) needs a
+   single flex item on its right to hold space against, not because
+   anything here needs to happen twice. */
 .arv-results__actions {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
-	gap: 0.4rem;
 }
 
-/* A race's own result files, on their own line under the date.
-
-   These used to sit inside the right-aligned actions column, below the
-   external buttons, which made a lone "100 MILE" chip look like a sub-item
-   of the ULTRARUNNING button above it. On every year Aravaipa scored its
-   own races these files ARE the results and the external listings are the
-   afterthought, so they lead their own row now, left-aligned with the race
-   and labelled, and wrap left-to-right like the reading order they are. */
-.arv-results__files {
+/* One row: the named services and Aravaipa's own result files together,
+   wrapping as a single set. This used to be two rows in two treatments, a
+   fixed three-column grid of buttons (an empty slot held a missing one
+   open so the columns lined up down the page) with the archive files
+   either riding along inside it, under whichever button happened to be
+   there, or split into their own separately-labelled row. Both looked
+   meaningful, and neither was: the split only ever encoded which server
+   hosts the file, not anything about the race. Flex-wrap rather than the
+   old grid because there is no longer a fixed column count to line up: a
+   race can carry anywhere from one button to nine archive chips, and the
+   row simply wraps, right-aligned, at whatever width it needs. */
+.arv-results__links {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: baseline;
-	gap: 0.3rem 0.5rem;
-	margin-top: 0.5rem;
+	justify-content: flex-end;
+	gap: 0.45rem;
 }
 
-.arv-results__files-label {
-	font-size: var(--arv-fs-label);
-	font-weight: 700;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--arv-results-muted);
-}
-
-.arv-results__archive {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.3rem;
+/* The base button is width:100% for the fixed grid this no longer is; here
+   every chip, named service or archive file alike, sizes to its own label. */
+.arv-results__links .arv-results__link {
+	width: auto;
 }
 
 .arv-results__archive-link,
@@ -4872,30 +4841,12 @@
 		align-items: stretch;
 	}
 
-	/* Three equal columns here too, not flex. Flex sized each button to the
-	   row it was in, so a race with two listings got two half-width buttons
-	   and the race under it got three at a third each: no two rows lined up
-	   down the page. The empty slot costs a gap on a two-listing row and
-	   buys alignment on every row, which is the better trade at this width
-	   for the same reason it is on desktop. */
-	.arv-results__links {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		width: 100%;
-		gap: 0.45rem;
-	}
-
-	.arv-results__links .arv-results__link {
-		width: 100%;
-		min-width: 0;
-	}
-
-	/* The edition row is a stretched column at this width, so the buttons
-	   already span it. The archive chips need nothing here any more: they
-	   are their own left-aligned row at every width now. */
-	.arv-results__actions {
-		align-items: stretch;
-	}
+	/* The row still wraps and right-aligns exactly as it does above this
+	   width: a fixed column count made sense when this held up to three
+	   buttons of predictable width, and stopped making sense the moment
+	   archive chips, anywhere from one to nine of them, started sharing the
+	   row. Nothing to override here now beyond the tap-target heights
+	   already set above. */
 }
 
 /* --- Results: race week ------------------------------------------------ */

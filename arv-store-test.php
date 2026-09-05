@@ -1130,11 +1130,12 @@ t( 'there is a real clear button',        false !== strpos( $withsearch, 'data-a
 t( 'hidden until something is typed',     false !== strpos( $withsearch, 'type="button" hidden' ) );
 t( 'and it is named for a screen reader', false !== strpos( $withsearch, 'Clear search' ) );
 
-// Every link row holds three slots whether or not the race has three
-// listings, so the columns line up down the page.
-t( 'a missing listing still holds its column', substr_count( $withsearch, 'arv-results__slot' ) > 0 );
-$slots = substr_count( $withsearch, 'arv-results__slot' ) + substr_count( $withsearch, 'arv-results__link ' );
-t( 'three slots per edition, always',     0 === $slots % 3 );
+// The fixed three-slot grid is gone: a missing listing is a missing chip
+// now, not an empty placeholder holding a column open. There is no longer
+// a fixed column count for a placeholder to hold open in the first place,
+// since an edition's own result files share this same row and that count
+// runs one to nine.
+t( 'a missing listing is just absent',    false === strpos( $withsearch, 'arv-results__slot' ) );
 
 // The expander needs a chevron of its own: any display other than
 // list-item removes the browser's disclosure triangle.
@@ -2236,23 +2237,39 @@ arv_results_store_set( array(
 ) );
 $arch = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
 
-// The files are the results on these years, so they get their own labelled
-// row rather than riding inside the right-aligned actions column, where a
-// lone "100 MILE" chip read as a sub-item of the UltraRunning button.
-t( 'the files get their own row',        false !== strpos( $arch, 'arv-results__files' ) );
-t( 'and the row says what they are',     false !== strpos( $arch, '>Results</span>' ) );
-t( 'every distance is a chip',           false !== strpos( $arch, '>100 Mile<' ) && false !== strpos( $arch, '>100 KM<' ) );
-t( 'and they are out of the actions box', false === strpos( $arch, 'arv-results__archive"></div><div class="arv-results__files"' )
-                                          && strpos( $arch, 'arv-results__files' ) > strpos( $arch, 'arv-results__actions' ) );
+// One row now, not two. It used to split by an implementation detail no
+// reader should see, which server hosts the file: a fixed grid of named
+// buttons on the right, Aravaipa's own files either riding inside that grid
+// (reading as a sub-item of whichever button was there) or split into a
+// separately labelled row of their own (reading as though the split meant
+// something about the race). Neither ever encoded anything but hosting.
+$links_block = substr( $arch, strpos( $arch, 'arv-results__links' ) );
+$links_block = substr( $links_block, 0, strpos( $links_block, '</div>' ) );
+t( 'the archive files join the same row', false !== strpos( $links_block, '>100 Mile<' ) && false !== strpos( $links_block, '>100 KM<' ) );
+t( 'alongside the named service button',  false !== strpos( $links_block, '>UltraRunning<' ) );
+t( 'no separate labelled row exists',     false === strpos( $arch, 'arv-results__files' ) );
+t( 'and no left/right split either',      false === strpos( $arch, 'arv-results__archive"' ) );
 
-// A race whose every link is already a button up top adds no empty row.
+// A file labelled by the viewer software, not by the result. Sixty-nine
+// rows carry this, all but two of them the only file on their row, so
+// "Results" is the same honest answer an unlabelled file already gets.
+arv_results_store_set( array(
+	array( 'name' => 'Fat Ox', 'iso' => '2019-11-29', 'display' => 'November 29',
+	       'archive' => array( array( 'label' => 'Ultracast', 'url' => 'http://ultracast.tv/?f=results/fo/2019/Fat Ox 2019.clax' ) ) ),
+) );
+$ultracast = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( '"Ultracast" is not a real label',     false === strpos( $ultracast, '>Ultracast<' ) );
+t( 'it reads as Results instead',         false !== strpos( $ultracast, '>Results<' ) );
+
+// A race whose every link is already a named button adds nothing extra:
+// no empty archive chips, and the row still renders once, not twice.
 arv_results_store_set( array(
 	array( 'name' => 'Vertigo Night Runs', 'iso' => '2026-08-09', 'display' => 'August 9',
 	       'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' ),
 ) );
-t( 'no files, no row at all',            false === strpos(
-	arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) ),
-	'arv-results__files' ) );
+$no_archive = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'no files, no archive-link chip',     false === strpos( $no_archive, 'arv-results__archive-link' ) );
+t( 'one links row, not two',             1 === substr_count( $no_archive, 'class="arv-results__links"' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
 echo "\nresults: ?arv_year= opens the archive on that year:\n";
