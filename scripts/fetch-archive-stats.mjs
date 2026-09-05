@@ -43,7 +43,9 @@
  *
  * Credentials from ARAVAIPA_WP_URL / _ADMIN_USER / _ADMIN_APP_PASSWORD.
  */
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const args = process.argv.slice( 2 );
 const flag = ( n ) => args.includes( n );
@@ -631,16 +633,40 @@ async function main() {
 		// how many finished without saying who won, and a count is still
 		// more than the nothing these editions show today.
 		if ( winners.length || finishers ) {
+			// A clax file already answered which distance leads, off the
+			// real course lengths it carries. Static files are one
+			// distance each with no ordering between them, so where clax
+			// took no part the same question is answered the same way:
+			// guess each label's length from its own name and rank by it.
+			//
+			// 2017 Mogollon Monster is the file this fixes. Three files,
+			// "100M", "105k", "35k", 113 finishers between them, and the
+			// old rule ("headline only when there is exactly one file")
+			// called that three-way tie and showed none of them, a plain
+			// "Winners, 3 distances" where every other year on the page
+			// leads with its 100 Mile result. The distance a file is
+			// named for says which one that is here as plainly as a
+			// clax file's own Pcs table does.
+			if ( null === headline && winners.length > 1 ) {
+				winners.forEach( ( w ) => {
+					w._m = guessMetres( w.distance || '' );
+				} );
+				winners.sort( ( a, b ) => b._m - a._m );
+
+				const longest = winners[ 0 ]._m;
+				headline = longest > 0 && winners.filter( ( w ) => w._m === longest ).length === 1;
+
+				winners.forEach( ( w ) => {
+					delete w._m;
+				} );
+			}
+
 			events.push( {
 				name: row.name,
 				iso: row.iso,
 				starters,
 				finishers,
 				rows: rowsMax,
-				// An Ultracast file states which distance leads, because it
-				// carries every course's real length. The static files are
-				// one distance each with no ordering between them, so there
-				// a lone file is the only thing that can lead.
 				headline: null === headline ? winners.length === 1 : headline,
 				winners,
 			} );
@@ -652,6 +678,34 @@ async function main() {
 	console.error( `\n${ events.length } editions parsed, ${ skipped.length } files skipped` );
 	for ( const s of skipped.slice( 0, 12 ) ) console.error( `  ${ s }` );
 	if ( skipped.length > 12 ) console.error( `  ... and ${ skipped.length - 12 } more` );
+
+	// Editions this script cannot discover on its own: no local file, no
+	// Ultracast entry, nothing here to walk to. /stats/archive replaces its
+	// option wholesale, on purpose, the same reason this script's own run
+	// replaces the whole thing rather than merging: absence means gone. A
+	// plain re-run of this script is exactly that kind of absence for a
+	// hand-researched year, and it cost the 2012 and 2013 Mogollon Monster
+	// entries twice in one session before this file existed. Merged in
+	// every run, after parsing and before posting, so a re-run can never
+	// drop them again.
+	const __dir = dirname( fileURLToPath( import.meta.url ) );
+	const manualPath = join( __dir, '..', 'data', 'archive-stats-manual.json' );
+
+	if ( existsSync( manualPath ) ) {
+		const manual = JSON.parse( readFileSync( manualPath, 'utf8' ) ).events || [];
+		const seen = new Set( events.map( ( e ) => `${ e.name.trim().toLowerCase() }|${ e.iso }` ) );
+		let added = 0;
+
+		for ( const e of manual ) {
+			const key = `${ e.name.trim().toLowerCase() }|${ e.iso }`;
+			if ( ! seen.has( key ) ) {
+				events.push( e );
+				added++;
+			}
+		}
+
+		console.error( `${ added } hand-researched edition(s) merged in from data/archive-stats-manual.json` );
+	}
 
 	if ( opt( '--out' ) ) {
 		writeFileSync( opt( '--out' ), JSON.stringify( events, null, 1 ) );
