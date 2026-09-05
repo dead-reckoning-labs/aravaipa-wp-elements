@@ -1,0 +1,134 @@
+{
+ "_readme": "Editions this script cannot discover on its own: no local file, no Ultracast entry, nothing fetch-archive-stats.mjs can walk to. Sourced by hand and merged into every run's output before it posts, so a re-run of the script can never drop them the way a plain wholesale POST to /stats/archive would.",
+ "events": [
+  {
+   "name": "Mogollon Monster",
+   "iso": "2012-09-28",
+   "finishers": 9,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Jamil Coury",
+      "time": "22:24:00"
+     }
+    }
+   ],
+   "source": "wayback-ultrarunning"
+  },
+  {
+   "name": "Mogollon Monster",
+   "iso": "2013-09-28",
+   "finishers": 24,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Steven Moore",
+      "time": "21:34:00"
+     },
+     "women": {
+      "name": "Rachel Ballard",
+      "time": "32:04:00"
+     }
+    }
+   ],
+   "source": "wayback-ultrarunning"
+  },
+  {
+   "name": "Mogollon Monster 105K",
+   "iso": "2020-09-12",
+   "finishers": 23,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "105K",
+     "men": {
+      "name": "Andy Chrysler",
+      "time": "13:27:29"
+     },
+     "women": {
+      "name": "Brianna Grigsby",
+      "time": "15:50:15"
+     }
+    }
+   ],
+   "source": "ultrasignup-browser"
+  },
+  {
+   "name": "Mogollon Monster",
+   "iso": "2021-09-11",
+   "finishers": 145,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Jeff Browning",
+      "time": "20:52:07"
+     },
+     "women": {
+      "name": "Sarah Ostaszewski",
+      "time": "27:55:43"
+     }
+    },
+    {
+     "distance": "105K",
+     "men": {
+      "name": "Michael Sallinger",
+      "time": "15:29:20"
+     },
+     "women": {
+      "name": "Moira Hough",
+      "time": "17:00:49"
+     }
+    },
+    {
+     "distance": "42K",
+     "men": {
+      "name": "Tj Cuddy",
+      "time": "5:18:13"
+     },
+     "women": {
+      "name": "Natalie Sandoval",
+      "time": "4:47:54"
+     }
+    }
+   ],
+   "source": "ultrasignup-browser"
+  },
+  {
+   "name": "Mogollon Monster",
+   "iso": "2022-09-10",
+   "finishers": 181,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Carlos Ruibal",
+      "time": "22:48:52"
+     },
+     "women": {
+      "name": "Leora Wallace",
+      "time": "29:48:26"
+     }
+    },
+    {
+     "distance": "42K",
+     "men": {
+      "name": "Brian King",
+      "time": "4:42:07"
+     },
+     "women": {
+      "name": "Mamiko Berger",
+      "time": "5:27:24"
+     }
+    }
+   ],
+   "source": "ultrasignup-browser"
+  }
+ ]
+}
