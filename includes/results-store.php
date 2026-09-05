@@ -484,15 +484,33 @@ function arv_results_ultrarunning_store_set( $map ) {
 }
 
 /**
- * The "{slug}/race/{id}" part of an UltraRunning results URL.
+ * The "{slug}/race/{id}" part of an UltraRunning results URL, or bare
+ * "{slug}" when no specific edition is on file.
  *
- * Validated rather than trusted, and deliberately narrow: anything that is
- * not recognisably one of their race paths returns '' and is dropped, so a
- * typo becomes a missing link rather than a link to nowhere. The trailing
- * "/results" and any "#selected_year" anchor are stripped, because those are
+ * UltraRunning mints a new numeric race id every year for the same race, so
+ * a single "{slug}/race/{id}" entry can only ever be correct for whichever
+ * one year that id belongs to. Applied as the fallback for every edition of
+ * a race with no id of its own, which is most editions of most races, that
+ * meant one specific year being asserted, confidently, on every year but
+ * its own: Javelina's map entry pointed 2009 through 2023 at 2024's
+ * results, and Westminster 2026 was showing 2025's. A bare slug fixes that
+ * at the cost of a click: it resolves to the race's own results index,
+ * every year it has ever run listed there for a reader to pick, which is
+ * never the wrong year because it does not claim one.
+ *
+ * A specific "{slug}/race/{id}" is still accepted and still preferred where
+ * it is known to be right; it is what an exact per-edition override (see
+ * arv_results_ultrarunning_url()'s caller, which checks a row's own field
+ * before ever reaching this map) should hold. This map itself, the shared
+ * fallback with one entry per race, should generally hold the bare form.
+ *
+ * Validated rather than trusted either way: anything not recognisably one
+ * of their two path shapes returns '' and is dropped, so a typo becomes a
+ * missing link rather than a link to nowhere. A trailing "/results" and any
+ * "#selected_year" anchor are stripped from either shape, because those are
  * ours to add back consistently.
  *
- * @param string $value Full URL or bare path.
+ * @param string $value Full URL or bare path, either shape.
  * @return string
  */
 function arv_results_ultrarunning_path( $value ) {
@@ -504,6 +522,10 @@ function arv_results_ultrarunning_path( $value ) {
 
 	if ( preg_match( '#(?:^|ultrarunning\.com/)(?:calendar/event/)?([a-z0-9-]+)/race/(\d+)#i', $value, $m ) ) {
 		return strtolower( $m[1] ) . '/race/' . $m[2];
+	}
+
+	if ( preg_match( '~^(?:https?://(?:www\.)?ultrarunning\.com/calendar/event/)?([a-z0-9-]+)/?(?:#.*)?$~i', $value, $m ) ) {
+		return strtolower( $m[1] );
 	}
 
 	return '';
@@ -527,7 +549,15 @@ function arv_results_ultrarunning_url( $name ) {
 		return '';
 	}
 
-	return 'https://ultrarunning.com/calendar/event/' . $map[ $key ] . '/results';
+	$path = $map[ $key ];
+
+	// A specific edition ("{slug}/race/{id}") gets the results page a bare
+	// slug cannot. A bare slug gets the race's own index instead of a
+	// results page it has no id for: every year it has run, right there to
+	// pick, rather than a guess at which one this row actually is.
+	$suffix = ( false !== strpos( $path, '/race/' ) ) ? '/results' : '/race';
+
+	return 'https://ultrarunning.com/calendar/event/' . $path . $suffix;
 }
 
 /**

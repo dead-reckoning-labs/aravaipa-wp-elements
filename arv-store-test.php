@@ -863,8 +863,18 @@ t( 'a full results url reduces to its path', 'black-canyon-trail/race/44116' ===
 // The anchor comes along when it is copied out of the address bar.
 t( 'and drops a selected_year anchor',       'cocodona-250/race/44204' === arv_results_ultrarunning_path( 'https://ultrarunning.com/calendar/event/cocodona-250/race/44204/results#selected_year' ) );
 t( 'a bare path is accepted too',            'north-fork-50-mile-50k/race/46070' === arv_results_ultrarunning_path( 'north-fork-50-mile-50k/race/46070' ) );
-// A typo becomes a missing link, not a link to nowhere.
-t( 'a url with no race id is refused',       '' === arv_results_ultrarunning_path( 'https://ultrarunning.com/calendar/event/javelina-jundred' ) );
+
+// A bare slug, no id, is accepted too, and deliberately: UltraRunning mints
+// a new id every year, so an entry with one can only ever be right for a
+// single edition. Every entry stored this way used to claim a specific,
+// usually wrong, year for every OTHER edition of that race, and a bare
+// slug is how this map stops doing that: it resolves to the race's own
+// results index instead, every year it has run listed there to pick, which
+// is never the wrong year because it never claims one.
+t( 'a bare slug is accepted, with no id',    'javelina-jundred' === arv_results_ultrarunning_path( 'https://ultrarunning.com/calendar/event/javelina-jundred' ) );
+t( 'the plain slug alone works too',         'javelina-jundred' === arv_results_ultrarunning_path( 'javelina-jundred' ) );
+t( 'trailing slash and case do not matter',  'javelina-jundred' === arv_results_ultrarunning_path( 'JAVELINA-JUNDRED/' ) );
+
 t( 'another site is refused',                '' === arv_results_ultrarunning_path( 'https://example.com/black-canyon-trail/race/44116' ) );
 t( 'and an empty value is refused',          '' === arv_results_ultrarunning_path( '' ) );
 
@@ -873,13 +883,17 @@ t( 'and an empty value is refused',          '' === arv_results_ultrarunning_pat
 arv_results_ultrarunning_store_set( array(
 	'Black Canyon Ultras' => 'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results',
 	'Cocodona 250'        => 'cocodona-250/race/44204',
+	'Javelina Jundred'    => 'javelina-jundred',
 	'Typo Race'           => 'not a url',
 ) );
-t( 'the typo was dropped',                   2 === count( arv_results_ultrarunning_store_get() ) );
-t( 'a race resolves to a full url',          'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results' === arv_results_ultrarunning_url( 'Black Canyon Ultras' ) );
+t( 'the typo was dropped',                   3 === count( arv_results_ultrarunning_store_get() ) );
+t( 'a race with an id resolves to results',  'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results' === arv_results_ultrarunning_url( 'Black Canyon Ultras' ) );
 // The whole point of keying on the race key rather than the exact name.
 t( 'under a different spelling too',         'https://ultrarunning.com/calendar/event/black-canyon-trail/race/44116/results' === arv_results_ultrarunning_url( 'Black Canyon' ) );
 t( 'and with the distance dropped',          'https://ultrarunning.com/calendar/event/cocodona-250/race/44204/results' === arv_results_ultrarunning_url( 'Cocodona' ) );
+// A race with no id on file resolves to its index, not a results page: no
+// id means no way to build one that is not a guess at the year.
+t( 'a race with no id resolves to its index', 'https://ultrarunning.com/calendar/event/javelina-jundred/race' === arv_results_ultrarunning_url( 'Javelina Jundred' ) );
 t( 'a race not on file resolves to nothing', '' === arv_results_ultrarunning_url( 'Not A Real Race' ) );
 
 // Filled in at render for any row the scraper left blank, which is most of
