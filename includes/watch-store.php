@@ -256,6 +256,18 @@ function arv_watch_youtube_id( $url ) {
 		return $m[1];
 	}
 
+	// An embed URL is what someone pasting from YouTube's own Share > Embed
+	// dialog arrives with, and a /shorts/ one is what a phone produces.
+	// Neither was handled while this only ever read Mountain Outpost's
+	// stream URLs, which are always watch links.
+	if ( preg_match( '~/embed/([A-Za-z0-9_-]{11})~', $url, $m ) ) {
+		return $m[1];
+	}
+
+	if ( preg_match( '~/shorts/([A-Za-z0-9_-]{11})~', $url, $m ) ) {
+		return $m[1];
+	}
+
 	return '';
 }
 
