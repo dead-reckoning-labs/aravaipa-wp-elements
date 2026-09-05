@@ -256,13 +256,18 @@ grep -q '\.arv-featured__cta:link' assets/aravaipa-elements.css \
 grep -q '\.arv-featured__card-cta:link' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-featured__card-cta:link is missing, the button will lose its colour to the theme's a:hover on hover" >&2; missing=1; }
 
-# Same trap on the results archive chips. These are the only route to the
+# Same trap on the results archive files. These are the only route to the
 # result files for the years Aravaipa scored its own races, twenty of them,
 # and they are hollow: dark text on white. Losing the text colour to the
-# theme's a:hover turns a hovered chip into red-on-white against a row of
+# theme's a:hover turns a hovered one into red-on-white against a row of
 # black-on-white siblings, on the one link the visitor is about to click.
-grep -q '\.arv-results__archive-link:link' assets/aravaipa-elements.css \
-	|| { echo "assets/aravaipa-elements.css: .arv-results__archive-link:link is missing, the archive chips will lose their colour to the theme's a:hover on hover" >&2; missing=1; }
+#
+# Was .arv-results__archive-link until these stopped being a smaller chip
+# beside the buttons and became the same control as them, so the guard
+# follows the class rather than being dropped: the hazard is the hollow
+# treatment, not the name it went under.
+grep -q '\.arv-results__link--file:link' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-results__link--file:link is missing, the result-file links will lose their colour to the theme's a:hover on hover" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
 ( cd "$OUT" && zip -qr "$NAME.zip" "$NAME" )
