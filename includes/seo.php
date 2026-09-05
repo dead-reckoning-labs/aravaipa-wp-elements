@@ -719,7 +719,7 @@ add_action( 'wp_head', 'arv_results_race_seo_head', 4 );
  * @return string|null
  */
 function arv_results_archive_seo_year() {
-	if ( ! function_exists( 'is_page' ) || ! is_page() || ! isset( $_GET['year'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! function_exists( 'is_page' ) || ! is_page() || ! isset( $_GET[ ARV_RESULTS_YEAR_VAR ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return null;
 	}
 
@@ -735,7 +735,7 @@ function arv_results_archive_seo_year() {
 		return null;
 	}
 
-	$year  = preg_replace( '/\D/', '', wp_unslash( $_GET['year'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$year  = preg_replace( '/\D/', '', wp_unslash( $_GET[ ARV_RESULTS_YEAR_VAR ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$years = array();
 
 	foreach ( arv_results_store_get() as $row ) {
@@ -804,6 +804,6 @@ function arv_results_archive_seo_canonical( $url ) {
 		return $url;
 	}
 
-	return add_query_arg( 'year', $year, $url );
+	return add_query_arg( ARV_RESULTS_YEAR_VAR, $year, $url );
 }
 add_filter( 'get_canonical_url', 'arv_results_archive_seo_canonical' );

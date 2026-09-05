@@ -290,18 +290,24 @@
 			}
 		} );
 
+		// Namespaced to match includes/elements/results.php: "year" is one of
+		// WordPress's own reserved query vars, and using it turned
+		// /results/?year=2008 into a request for the 2008 date archive, which
+		// 404s. See ARV_RESULTS_YEAR_VAR there for the full note.
+		var YEAR_VAR = 'arv_year';
+
 		// The newest year, PHP's own default when the URL names none. Kept
-		// so a click back to it can drop ?year= rather than write it out,
-		// which is what keeps /results/ itself as the canonical address for
-		// the year everyone actually lands on.
+		// so a click back to it can drop the parameter rather than write it
+		// out, which is what keeps /results/ itself as the canonical address
+		// for the year everyone actually lands on.
 		var defaultYear = yearButtons.length ? yearButtons[ 0 ].getAttribute( 'data-arv-results-year' ) : null;
 
 		function yearUrl( year ) {
 			var url = new URL( window.location.href );
 			if ( year === defaultYear ) {
-				url.searchParams.delete( 'year' );
+				url.searchParams.delete( YEAR_VAR );
 			} else {
-				url.searchParams.set( 'year', year );
+				url.searchParams.set( YEAR_VAR, year );
 			}
 			return url.pathname + url.search + url.hash;
 		}
@@ -322,7 +328,7 @@
 		// screen does not follow it.
 		if ( panels.length && window.history ) {
 			window.addEventListener( 'popstate', function () {
-				var year = new URLSearchParams( window.location.search ).get( 'year' ) || defaultYear;
+				var year = new URLSearchParams( window.location.search ).get( YEAR_VAR ) || defaultYear;
 				if ( year ) {
 					selectYear( year );
 				}
