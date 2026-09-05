@@ -278,6 +278,7 @@ require_once __DIR__ . '/includes/results-store.php';
 require_once __DIR__ . '/includes/live-store.php';
 require_once __DIR__ . '/includes/stats-store.php';
 require_once __DIR__ . '/includes/watch-store.php';
+require_once __DIR__ . '/includes/race-video.php';
 require_once __DIR__ . '/includes/films-store.php';
 require_once __DIR__ . '/includes/photos-store.php';
 require_once __DIR__ . '/includes/podcasts-store.php';
@@ -6417,6 +6418,125 @@ $GLOBALS['NOW']   = '2026-08-26';
 $GLOBALS['posts'] = $next_backup;
 $GLOBALS['meta']  = $next_meta_backup;
 arv_race_store_flush_cache();
+
+
+// ---------------------------------------------------------------- //
+// [arv_race_video].
+//
+// The ID parse is the part that matters: a URL form this does not know
+// renders nothing at all, and the fallback that accepts a bare ID must
+// not quietly salvage eleven characters out of a URL it failed to read
+// and embed the wrong video.
+// ---------------------------------------------------------------- //
+
+t( 'a youtu.be link parses',       '2QL2rVaEcpg' === arv_race_video_id( 'https://youtu.be/2QL2rVaEcpg?si=JLydMQBKC' ) );
+t( 'a watch link parses',          '2QL2rVaEcpg' === arv_race_video_id( 'https://www.youtube.com/watch?v=2QL2rVaEcpg' ) );
+t( 'an embed link parses',         '2QL2rVaEcpg' === arv_race_video_id( 'https://www.youtube.com/embed/2QL2rVaEcpg' ) );
+t( 'a shorts link parses',         '2QL2rVaEcpg' === arv_race_video_id( 'https://youtube.com/shorts/2QL2rVaEcpg' ) );
+t( 'a live link parses',           '2QL2rVaEcpg' === arv_race_video_id( 'https://www.youtube.com/live/2QL2rVaEcpg' ) );
+t( 'a bare id passes through',     '2QL2rVaEcpg' === arv_race_video_id( '2QL2rVaEcpg' ) );
+t( 'blank gives nothing',          '' === arv_race_video_id( '' ) );
+t( 'a non-YouTube url gives none', '' === arv_race_video_id( 'https://vimeo.com/123456789' ) );
+
+// The anchor on the bare-ID pattern. Without it this returns 'aravaiparun'
+// off the host and embeds a video nobody chose.
+t( 'an unparseable YouTube url is not salvaged',
+	'' === arv_race_video_id( 'https://aravaiparunning.com/some/page/' ) );
+
+// No id, no markup. An empty section with a black 16:9 hole in it is worse
+// than the element simply not being there.
+t( 'no id renders nothing',        '' === arv_race_video_render( array( 'url' => '' ) ) );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+$GLOBALS['_http_calls'] = 0;
+
+$rv = arv_race_video_render( array(
+	'url'        => 'https://youtu.be/2QL2rVaEcpg',
+	'title'      => 'JIGGER JOHNSON 100 | America\'s Most Brutal',
+	'credit'     => 'Ultra Kraut Running',
+	'credit_url' => 'https://www.youtube.com/@ultrakraut',
+) );
+
+t( 'the embed is on the nocookie host', false !== strpos( $rv, 'youtube-nocookie.com/embed/2QL2rVaEcpg' ) );
+t( 'and it is lazy',                    false !== strpos( $rv, 'loading="lazy"' ) );
+t( 'the title shows',                   false !== strpos( $rv, 'America&#039;s Most Brutal' ) );
+t( 'the channel is credited',           false !== strpos( $rv, 'Ultra Kraut Running' ) );
+t( 'and the credit links out',          false !== strpos( $rv, '@ultrakraut' ) );
+
+// Given a title and a credit there is nothing left to look up, and a race
+// page must not make a network call it does not need.
+t( 'nothing was fetched',               0 === $GLOBALS['_http_calls'] );
+
+// No date means no uploadDate, and a VideoObject without one is invalid,
+// so the whole node is dropped rather than shipped broken.
+t( 'no date, no schema',                false === strpos( $rv, 'VideoObject' ) );
+
+// The node builder, tested directly. WPSEO_VERSION is defined earlier in
+// this file and a constant cannot be unset, so the printer correctly
+// defers from here to the end of the run and can only be asserted on that.
+$node = arv_race_video_schema_node( '2QL2rVaEcpg', 'Jigger Johnson 100', '', array( 'date' => '2026-09-01' ) );
+
+t( 'a date builds a node',              'VideoObject' === ( $node['@type'] ?? '' ) );
+t( 'and carries uploadDate',            0 === strpos( $node['uploadDate'] ?? '', '2026-09-01' ) );
+t( 'with a thumbnail',                  false !== strpos( $node['thumbnailUrl'] ?? '', 'i.ytimg.com/vi/2QL2rVaEcpg' ) );
+t( 'and the nocookie embed url',        false !== strpos( $node['embedUrl'] ?? '', 'youtube-nocookie.com/embed/2QL2rVaEcpg' ) );
+t( 'description falls back to title',   'Jigger Johnson 100' === ( $node['description'] ?? '' ) );
+
+$node_cap = arv_race_video_schema_node( '2QL2rVaEcpg', 'Jigger Johnson 100', 'A film about the race.', array( 'date' => '2026-09-01' ) );
+t( 'a caption becomes the description', 'A film about the race.' === ( $node_cap['description'] ?? '' ) );
+
+// The three ways a node cannot be valid.
+t( 'no date, no node',    array() === arv_race_video_schema_node( '2QL2rVaEcpg', 'T', '', array() ) );
+t( 'no title, no node',   array() === arv_race_video_schema_node( '2QL2rVaEcpg', '', '', array( 'date' => '2026-09-01' ) ) );
+t( 'junk date, no node',  array() === arv_race_video_schema_node( '2QL2rVaEcpg', 'T', '', array( 'date' => 'soon' ) ) );
+
+// And the printer defers while a real SEO plugin is active, which it is by
+// this point in the run.
+$rv_dated = arv_race_video_render( array(
+	'url'    => 'https://youtu.be/2QL2rVaEcpg',
+	'title'  => 'Jigger Johnson 100',
+	'credit' => 'Ultra Kraut Running',
+	'date'   => '2026-09-01',
+) );
+
+t( 'the printer defers to a real SEO plugin', false === strpos( $rv_dated, 'VideoObject' ) );
+t( 'but the embed still renders',             false !== strpos( $rv_dated, 'youtube-nocookie.com/embed/2QL2rVaEcpg' ) );
+
+// Missing title and credit: oEmbed fills them, once, and the result is
+// cached so a second render on the same page does not call out again.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_calls'] = 0;
+$GLOBALS['_http_queue'] = array(
+	array( 'code' => 200, 'body' => wp_json_encode( array(
+		'title'         => 'JIGGER JOHNSON 100',
+		'author_name'   => 'Ultra Kraut Running',
+		'author_url'    => 'https://www.youtube.com/@ultrakraut',
+		'thumbnail_url' => 'https://i.ytimg.com/vi/2QL2rVaEcpg/hqdefault.jpg',
+	) ) ),
+);
+
+$rv_auto = arv_race_video_render( array( 'url' => 'https://youtu.be/2QL2rVaEcpg' ) );
+t( 'the title came from oEmbed',        false !== strpos( $rv_auto, 'JIGGER JOHNSON 100' ) );
+t( 'so did the credit',                 false !== strpos( $rv_auto, 'Ultra Kraut Running' ) );
+t( 'it took one call',                  1 === $GLOBALS['_http_calls'] );
+
+arv_race_video_render( array( 'url' => 'https://youtu.be/2QL2rVaEcpg' ) );
+t( 'the second render used the cache',  1 === $GLOBALS['_http_calls'] );
+
+// A dead or private video must not re-request on every page load.
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_calls'] = 0;
+$GLOBALS['_http_queue'] = array( array( 'code' => 404, 'body' => '' ) );
+
+$rv_dead = arv_race_video_render( array( 'url' => 'https://youtu.be/aaaaaaaaaaa' ) );
+t( 'a dead video still embeds',         false !== strpos( $rv_dead, 'youtube-nocookie.com/embed/aaaaaaaaaaa' ) );
+t( 'and the failure is cached',         1 === $GLOBALS['_http_calls'] );
+arv_race_video_render( array( 'url' => 'https://youtu.be/aaaaaaaaaaa' ) );
+t( 'so it does not re-request',         1 === $GLOBALS['_http_calls'] );
+
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
 
 
 echo "\n$pass passed, $fail failed\n";

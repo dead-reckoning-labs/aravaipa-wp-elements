@@ -9394,6 +9394,80 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 }
 
 /* ------------------------------------------------------------------ *
+ * One video, on a race page.
+ *
+ * Same frame as .arv-watch__frame: the wrapper owns the 16:9 and the
+ * iframe fills it, so the space exists before the embed loads and
+ * nothing under it jumps when it does. The raw pasted iframes this
+ * replaces were a fixed 560x315 that overflowed narrow columns.
+ * ------------------------------------------------------------------ */
+
+.arv-race-video {
+	margin: 0 0 2rem;
+}
+
+.arv-race-video__head {
+	margin: 0 0 0.85rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--arv-ink, #272727);
+}
+
+.arv-race-video__frame {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	background: #000;
+	border-radius: var(--arv-radius-card);
+	overflow: hidden;
+}
+
+.arv-race-video__frame iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+.arv-race-video__meta {
+	margin-top: 0.7rem;
+}
+
+.arv-race-video__title {
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--arv-ink, #272727);
+}
+
+.arv-race-video__credit {
+	margin: 0.2rem 0 0;
+	font-size: 0.78rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--arv-results-muted, #7a7a7a);
+}
+
+.arv-race-video__credit a {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.arv-race-video__credit a:hover {
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-race-video__caption {
+	margin: 0.45rem 0 0;
+	font-size: 0.85rem;
+	line-height: 1.5;
+	color: var(--arv-results-muted, #7a7a7a);
+}
+
+/* ------------------------------------------------------------------ *
  * Next races, in the blog sidebar.
  *
  * Same 68px tile and two-column grid as .arv-articles-rail directly
