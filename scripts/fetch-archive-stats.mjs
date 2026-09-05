@@ -289,6 +289,261 @@ function winnersFrom( html ) {
 	return { winners: best, finishers: seen };
 }
 
+/* ------------------------------------------------------------------ *
+ * Ultracast (.clax)
+ *
+ * 70 editions, every one of them 2017 to 2020, list a single "Ultracast"
+ * link and nothing else. That is the whole gap between the static files,
+ * which stop around 2016, and the timing board, which starts in 2021, and
+ * it swallows three years of Javelina among 38 other races.
+ *
+ * They were passed over here as "a JS viewer loading a binary", which was
+ * a guess and a wrong one. The viewer is a viewer; the .clax behind it is
+ * plain XML and serves fine on its own. It is written by French timing
+ * software, so the tag names are French: Epreuve is the event, Engages the
+ * entrants, Resultats the results, Parcours the courses.
+ *
+ *   <E d="1" n="Reagan Patrick" a="1987" x="M" p="100 Miler" ... />
+ *   <R d="1" t="13h11'48" ... />
+ *
+ * <E> is one entrant keyed by bib, <R> one result keyed by the same bib,
+ * and neither is in finishing order, so the two are joined on the bib and
+ * ranked here.
+ * ------------------------------------------------------------------ */
+
+// The viewer's own URL is what got stored: the file is the f= parameter
+// hanging off it. 38 of the 70 were stored through something that encoded
+// the percent signs too, so "%20" arrives as "%2520" and needs unwrapping
+// twice before it is a path.
+function claxUrl( viewer ) {
+	const m = viewer.match( /[?&]f=([^&]+)/ );
+
+	if ( ! m ) return null;
+
+	let f = m[ 1 ];
+
+	for ( let i = 0; i < 2 && /%25/.test( f ); i++ ) f = decodeURIComponent( f );
+
+	f = decodeURIComponent( f ).replace( /^\.?\//, '' );
+
+	return viewer.replace( /\/?\?.*$/, '' ).replace( /\/$/, '' )
+		+ '/' + f.split( '/' ).map( encodeURIComponent ).join( '/' );
+}
+
+const claxAttrs = ( tag ) =>
+	Object.fromEntries( [ ...tag.matchAll( /([\w:.-]+)="([^"]*)"/g ) ].map( ( m ) => [ m[ 1 ], m[ 2 ] ] ) );
+
+// "13h11'48" and "58'22".
+function claxSeconds( t ) {
+	const m = ( t || '' ).match( /^(?:(\d+)h)?(\d+)'(\d+)/ );
+	return m ? ( +( m[ 1 ] || 0 ) ) * 3600 + ( +m[ 2 ] ) * 60 + ( +m[ 3 ] ) : null;
+}
+
+function claxTime( t ) {
+	const n = claxSeconds( t );
+
+	if ( null === n ) return '';
+
+	const h = Math.floor( n / 3600 );
+	const mm = Math.floor( ( n % 3600 ) / 60 );
+	const ss = n % 60;
+
+	return h
+		? `${ h }:${ String( mm ).padStart( 2, '0' ) }:${ String( ss ).padStart( 2, '0' ) }`
+		: `${ mm }:${ String( ss ).padStart( 2, '0' ) }`;
+}
+
+// The name arrives surname first and in one field, so where the surname
+// ends can only be guessed. The last word is taken as the given name,
+// which is right for "Reagan Patrick" and right again for the compound
+// surnames that make up most of the longer ones: "Del Conte Joe",
+// "St. Louis Jackie", "Perez Colon Francisco", "Strach III Walter".
+//
+// It is wrong for somebody entered under two given names, "Ahern Ann
+// Marie", who comes out as "Marie Ahern Ann". 24 of 1212 entrants in the
+// file this was measured on have three words at all, and roughly two
+// thirds of those are the compound-surname kind, so the rule is right for
+// about 99% of names and there is nothing in the file that would settle
+// the rest.
+function claxName( whole ) {
+	const parts = ( whole || '' ).trim().split( /\s+/ ).filter( Boolean );
+
+	if ( ! parts.length ) return '';
+
+	const flipped = parts.length < 2
+		? parts
+		: [ parts[ parts.length - 1 ], ...parts.slice( 0, -1 ) ];
+
+	return recase( flipped );
+}
+
+const SHOUTED = ( t ) => t.length > 2 && t === t.toUpperCase() && /[A-Z]/.test( t );
+
+// 2018 and much of 2019 were entered with the surname in capitals, so a
+// fifth of these read "Patrick REAGAN" and "Tim TOLLEFSON" next to a board
+// result reading "Cody Lind". The capitals are a data-entry convention and
+// not how anybody spells their name, so they come back down.
+//
+// Only where the record is already shouting. A two-letter run of capitals
+// is initials ("AJ", "CJ") on a name that was typed normally, and only
+// worth touching once a longer word in the same name has proved the whole
+// record was typed in caps: that is what tells "Isaac ST MARTIN" apart
+// from "AJ Degraw". The given name is left alone either way, since after
+// the flip it leads and initials live there.
+function recase( parts ) {
+	if ( ! parts.some( SHOUTED ) ) return parts.join( ' ' );
+
+	return parts
+		.map( ( t, i ) => ( SHOUTED( t ) || ( i > 0 && t === t.toUpperCase() && /[A-Z]/.test( t ) ) ? title( t ) : t ) )
+		.join( ' ' );
+}
+
+// Capitals after a hyphen or an apostrophe as well, so SMITH-JONES and
+// O'BRIEN come back as themselves. Mc is the one prefix worth knowing:
+// MCKEE is McKee to everyone including the board, which spells her that
+// way on the years it covers. Mac is deliberately not in here, because
+// Macdonald and MacDonald are both real spellings and the file cannot say
+// which one this is.
+function title( t ) {
+	let out = t.charAt( 0 ).toUpperCase() + t.slice( 1 ).toLowerCase();
+
+	out = out.replace( /([-'\u2019])([a-z])/g, ( _, sep, c ) => sep + c.toUpperCase() );
+
+	return out.replace( /^Mc([a-z])/, ( _, c ) => 'Mc' + c.toUpperCase() );
+}
+
+// What a course name says it is, in metres, for the two files that
+// declare every one of their courses as distance="0". Javelina 2017 is
+// one of them, and with nothing to sort on its 100K led its 100 Mile.
+// Only ever a fallback: where the file states a length, the file wins.
+function guessMetres( name ) {
+	const n = name.toLowerCase();
+
+	if ( /^(1\/2|half)\s*marathon$/.test( n ) ) return 21098;
+	if ( /^marathon$/.test( n ) ) return 42195;
+
+	const mi = n.match( /^([\d.]+)\s*(?:m|mi|miles?|miler)$/ );
+	if ( mi ) return Math.round( +mi[ 1 ] * 1609.344 );
+
+	const km = n.match( /^([\d.]+)\s*k(?:m|ilometers?)?$/ );
+	if ( km ) return Math.round( +km[ 1 ] * 1000 );
+
+	return 0;
+}
+
+function parseClax( xml ) {
+	const entrants = new Map();
+
+	for ( const m of xml.matchAll( /<E\b[^>]*\/>/g ) ) {
+		const a = claxAttrs( m[ 0 ] );
+		if ( a.d ) entrants.set( a.d, a );
+	}
+
+	// The course list carries each one's real length, which is what says
+	// whether an event has a premier distance or is one loop everybody
+	// runs. Same question the board answers with its own ordering.
+	const lengths = {};
+
+	for ( const m of xml.matchAll( /<Pcs\b[^>]*\/>/g ) ) {
+		const a = claxAttrs( m[ 0 ] );
+		if ( a.nom ) {
+			const c = courseName( a.nom );
+			lengths[ c ] = ( +a.distance || 0 ) || guessMetres( c );
+		}
+	}
+
+	const byCourse = {};
+	let seen = 0;
+
+	for ( const m of xml.matchAll( /<R\b[^>]*\/>/g ) ) {
+		const a = claxAttrs( m[ 0 ] );
+		const e = entrants.get( a.d );
+
+		if ( ! e ) continue;
+
+		const secs = claxSeconds( a.t );
+
+		if ( ! secs ) continue;
+
+		const name = claxName( e.n );
+
+		if ( ! name ) continue;
+
+		seen++;
+
+		const course = courseName( e.p || 'Results' );
+
+		( byCourse[ course ] ||= [] ).push( {
+			name,
+			sex: ( e.x || '' ).toUpperCase(),
+			secs,
+			time: claxTime( a.t ),
+			// Metres covered, on the events that count laps rather than
+			// finishes. Absent on everything else.
+			metres: a.ds ? +a.ds : null,
+		} );
+	}
+
+	const winners = [];
+
+	for ( const [ course, rows ] of Object.entries( byCourse ) ) {
+		// A team category is not a person. Fat Ox scores a "24Hr-2 Person"
+		// alongside its solo races, and its entrants are teams entered
+		// under a team name with a sex field that means nothing, so the
+		// winners came out as "GOGG MEN OF" and "FEET HAPPY".
+		if ( /\b(\d+\s*person|relay|team|duo|pairs?)\b/i.test( course ) ) continue;
+
+		// A fixed-time race says so in its own numbers: everybody stopped
+		// at the same moment having covered a different distance, so the
+		// metres vary and the clock does not rank anybody. Where every
+		// finisher covered the same course, the clock is the whole result.
+		const spread = new Set( rows.map( ( r ) => r.metres ) );
+		const byDistance = ! spread.has( null ) && spread.size > 1;
+
+		rows.sort( ( a, b ) => ( byDistance ? b.metres - a.metres : a.secs - b.secs ) );
+
+		const row = { distance: course };
+
+		for ( const r of rows ) {
+			const g = GENDERS[ r.sex.toLowerCase() ];
+
+			if ( ! g || row[ g ] ) continue;
+
+			row[ g ] = {
+				name: r.name,
+				time: byDistance ? `${ +( r.metres / 1609.344 ).toFixed( 2 ) } mi` : r.time,
+			};
+		}
+
+		if ( Object.keys( row ).length > 1 ) {
+			winners.push( { row, length: lengths[ course ] || 0, count: rows.length } );
+		}
+	}
+
+	if ( ! winners.length ) return null;
+
+	winners.sort( ( a, b ) => b.length - a.length );
+
+	// Premier only where one course is strictly the longest. A lap event
+	// runs every category over the same loop, so none of them is a top
+	// result to feature over the others.
+	const longest = winners[ 0 ].length;
+	const headline = winners.length === 1
+		|| ( longest > 0 && winners.filter( ( w ) => w.length === longest ).length === 1 );
+
+	return {
+		winners: winners.map( ( w ) => w.row ),
+		finishers: seen,
+		rows: Math.max( ...winners.map( ( w ) => w.count ) ),
+		headline,
+	};
+}
+
+// Waves are the same race started twice, not two races: Javelina's
+// "Jackass 31K Wave 2" is the only one in the archive, and left alone it
+// would stand as its own course record beside "Jackass 31K".
+const courseName = ( n ) => n.replace( /\s*wave\s*\d+\s*$/i, '' ).trim();
+
 // "Starters: 18 Finishers: 14 Finish Rate: 77.8%", where a file has it.
 function counts( html ) {
 	const t = text( html ).slice( 0, 600 );
@@ -323,12 +578,14 @@ async function main() {
 		let finishers = 0;
 		let rowsMax = 0;
 
-		for ( const file of row.archive ) {
-			const url = file.url;
+		let headline = null;
 
-			// A JS viewer loading a binary, and PDFs. Nothing to read.
-			if ( /ultracast/i.test( url ) || /\.pdf$/i.test( url ) ) continue;
-			if ( ! /aravaiparunning\.com/i.test( url ) ) continue;
+		for ( const file of row.archive ) {
+			const clax = /ultracast/i.test( file.url );
+			const url = clax ? claxUrl( file.url ) : file.url;
+
+			if ( ! url || /\.pdf$/i.test( url ) ) continue;
+			if ( ! clax && ! /aravaiparunning\.com/i.test( url ) ) continue;
 
 			let html;
 			try {
@@ -337,6 +594,22 @@ async function main() {
 				html = await r.text();
 			} catch ( e ) {
 				skipped.push( `${ row.name } ${ row.iso }: ${ file.label } ${ e.message }` );
+				continue;
+			}
+
+			// One Ultracast file is the whole event, every distance in it,
+			// where a static file is one distance and an edition has five.
+			// So it answers the premier-distance question itself, off the
+			// course lengths it carries, instead of the caller guessing it
+			// from how many files happened to be listed.
+			if ( clax ) {
+				const got = parseClax( html );
+				if ( ! got ) { skipped.push( `${ row.name } ${ row.iso }: ${ file.label } unparseable` ); continue; }
+
+				finishers += got.finishers;
+				rowsMax = Math.max( rowsMax, got.rows );
+				winners.push( ...got.winners );
+				headline = got.headline;
 				continue;
 			}
 
@@ -364,10 +637,11 @@ async function main() {
 				starters,
 				finishers,
 				rows: rowsMax,
-				// Only when one distance clearly leads. These files are one
-				// per distance with no ordering between them, so unlike the
-				// board there is nothing here that says which is premier.
-				headline: winners.length === 1,
+				// An Ultracast file states which distance leads, because it
+				// carries every course's real length. The static files are
+				// one distance each with no ordering between them, so there
+				// a lone file is the only thing that can lead.
+				headline: null === headline ? winners.length === 1 : headline,
 				winners,
 			} );
 		}
