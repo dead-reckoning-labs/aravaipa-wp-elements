@@ -1321,3 +1321,109 @@ function arv_race_start_rest_set( $request ) {
 
 	return array( 'status' => 'ok', 'stored' => arv_race_start_store_set( $decoded ) );
 }
+
+/**
+ * A short list of the next races, sized for the blog sidebar.
+ *
+ * The sidebar's job on a race site is to send a reader who is already
+ * reading about a race toward one they can still enter, and neither of
+ * the things that were in it did that: an Archives month dropdown and a
+ * Recent Comments list. [arv_articles_rail] covers recent writing, so
+ * this covers the calendar.
+ *
+ * Deliberately not the upcoming-races element. That one is a wide grid
+ * with a map, terrain filtering and schema output, none of which fits a
+ * 300px column, and its schema block would be a second, competing
+ * ItemList on any page that already carries the real one.
+ *
+ * Races whose date has passed are dropped rather than shown greyed out:
+ * arv_race_store_get() sorts by date ascending across all 90 stored
+ * races, so without this the list would open on whatever happened last
+ * spring.
+ *
+ * @param array $atts heading, limit.
+ * @return string
+ */
+function arv_races_next_render( $atts ) {
+	$limit = max( 1, (int) $atts['limit'] );
+	$today = current_time( 'Y-m-d' );
+	$races = arv_race_store_get();
+	$next  = array();
+
+	foreach ( $races as $race ) {
+		// A multi-day race is still upcoming on its middle days, so the
+		// end date decides when one leaves the list where there is one.
+		$over = ! empty( $race['end'] ) ? $race['end'] : $race['iso'];
+
+		if ( $over < $today ) {
+			continue;
+		}
+
+		$next[] = $race;
+
+		if ( count( $next ) >= $limit ) {
+			break;
+		}
+	}
+
+	if ( empty( $next ) ) {
+		return '';
+	}
+
+	$out = '<section class="arv-next-races">';
+
+	if ( '' !== trim( (string) $atts['heading'] ) ) {
+		$out .= '<h4 class="arv-next-races__head">' . esc_html( $atts['heading'] ) . '</h4>';
+	}
+
+	$out .= '<ul class="arv-next-races__list">';
+
+	foreach ( $next as $race ) {
+		$href = ! empty( $race['page'] ) ? $race['page'] : $race['register'];
+
+		$out .= '<li class="arv-next-races__item">'
+			. '<a class="arv-next-races__link" href="' . esc_url( $href ) . '">';
+
+		$out .= '<span class="arv-next-races__thumb">';
+
+		if ( ! empty( $race['image'] ) ) {
+			$out .= '<img src="' . esc_url( $race['image'] ) . '" alt="" loading="lazy" decoding="async" />';
+		}
+
+		$out .= '</span><span class="arv-next-races__body">';
+		$out .= '<span class="arv-next-races__date">' . esc_html( $race['display'] ) . '</span>';
+		$out .= '<span class="arv-next-races__name">' . esc_html( $race['name'] ) . '</span>';
+
+		if ( ! empty( $race['location'] ) ) {
+			$out .= '<span class="arv-next-races__where">' . esc_html( $race['location'] ) . '</span>';
+		}
+
+		$out .= '</span></a></li>';
+	}
+
+	$out .= '</ul>';
+	$out .= '<a class="arv-next-races__all" href="' . esc_url( home_url( '/races/' ) ) . '">'
+		. esc_html__( 'All upcoming races', 'aravaipa-elements' ) . '</a>';
+
+	return $out . '</section>';
+}
+
+/**
+ * [arv_races_next] for the blog sidebar.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_races_next_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'heading' => 'Next Races',
+			'limit'   => 5,
+		),
+		$atts,
+		'arv_races_next'
+	);
+
+	return arv_races_next_render( $atts );
+}
+add_shortcode( 'arv_races_next', 'arv_races_next_shortcode' );

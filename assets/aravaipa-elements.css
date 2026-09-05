@@ -9394,6 +9394,130 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 }
 
 /* ------------------------------------------------------------------ *
+ * Next races, in the blog sidebar.
+ *
+ * Same 68px tile and two-column grid as .arv-articles-rail directly
+ * above, on purpose: the two sit stacked in the same column, and a
+ * second, near-miss set of measurements would read as a mistake.
+ * ------------------------------------------------------------------ */
+
+.arv-next-races {
+	margin: 0 0 1.5rem;
+}
+
+.arv-next-races__head {
+	margin: 0 0 0.85rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--arv-ink, #272727);
+}
+
+.arv-next-races__list {
+	margin: 0 !important;
+	padding: 0 !important;
+	list-style: none !important;
+}
+
+.arv-next-races__item {
+	margin: 0 !important;
+	padding: 0 !important;
+	list-style: none !important;
+	border: 0 !important;
+}
+
+.arv-next-races__item + .arv-next-races__item {
+	border-top: 1px solid var(--arv-results-rule, #ebebeb) !important;
+}
+
+.arv-next-races__link {
+	display: grid;
+	grid-template-columns: 68px 1fr;
+	gap: 0.7rem;
+	align-items: center;
+	padding: 0.7rem 0;
+	text-decoration: none !important;
+	color: inherit;
+}
+
+.arv-next-races__link:hover .arv-next-races__name {
+	color: var(--arv-accent, #ff2a13);
+}
+
+/* Race logos are square artwork on white, not photographs, so these are
+   contained rather than cropped: object-fit: cover would cut the edge
+   off a wordmark. */
+.arv-next-races__thumb {
+	display: block;
+	position: relative;
+	width: 68px;
+	height: 68px;
+	overflow: hidden;
+	border-radius: 4px;
+	background: #f0f0f0;
+}
+
+.arv-next-races__thumb img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+	max-width: none;
+}
+
+.arv-next-races__body {
+	display: block;
+	min-width: 0;
+}
+
+.arv-next-races__date {
+	display: block;
+	margin-bottom: 0.15rem;
+	font-size: 0.66rem;
+	font-weight: 800;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-next-races__name {
+	display: block;
+	font-size: 0.86rem;
+	font-weight: 700;
+	line-height: 1.32;
+	color: var(--arv-ink, #272727);
+	transition: color 0.15s;
+}
+
+.arv-next-races__where {
+	display: block;
+	margin-top: 0.2rem;
+	font-size: 0.7rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--arv-results-muted, #7a7a7a);
+}
+
+.arv-next-races__all {
+	display: inline-block;
+	margin-top: 0.75rem;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+	text-decoration: none !important;
+}
+
+.arv-next-races__all:hover {
+	text-decoration: underline !important;
+}
+
+/* ------------------------------------------------------------------ *
  * A single product, embedded in a post.
  *
  * Photographs left, the pitch right, on a bordered card so it reads as

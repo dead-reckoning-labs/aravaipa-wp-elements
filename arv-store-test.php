@@ -6362,5 +6362,62 @@ delete_transient( 'arv_media_latest_posts' );
 t( 'nothing anywhere renders no hero',    '' === arv_media_hero_render() );
 
 
+// ---------------------------------------------------------------- //
+// [arv_races_next], the blog sidebar's race list.
+//
+// The whole point of the shortcode is that it shows races a reader can
+// still enter, and arv_race_store_get() hands it every stored race in
+// date order starting from the oldest. Get the filter wrong and the
+// sidebar silently advertises last spring.
+// ---------------------------------------------------------------- //
+
+$next_backup = $GLOBALS['posts'];
+$next_meta_backup = $GLOBALS['meta'];
+$GLOBALS['posts'] = array();
+$GLOBALS['meta']  = array();
+$GLOBALS['NOW']   = '2026-08-26';
+// The harness stubs add_action to a no-op, so the save_post hook that
+// clears the store's per-request memo in real WordPress never fires here.
+arv_race_store_flush_cache();
+
+arv_race_store_import(
+	// Pipe-delimited, the same shape race-rows-2026.txt carries: name, iso,
+	// display, distances (variable count), venue, location, register, page,
+	// image, end, live, closes, confirmed, guessed, lat, lng.
+	"Long Past | 2026-03-01 | March 1 | 50K | A Park | Phoenix, AZ | https://x.test/r | https://x.test/past | https://x.test/i.png |  | https://x.test/l | 2026-02-25 | 1 | 0 | 33.4 | -112.0\n"
+	. "Yesterday | 2026-08-25 | August 25 | 50K | A Park | Pine, AZ | https://x.test/r | https://x.test/yest | https://x.test/i.png |  | https://x.test/l | 2026-08-20 | 1 | 0 | 34.4 | -111.4\n"
+	. "Underway | 2026-08-24 | August 24 | 100 Mile | A Park | Flagstaff, AZ | https://x.test/r | https://x.test/now | https://x.test/i.png | 2026-08-27 | https://x.test/l | 2026-08-20 | 1 | 0 | 35.2 | -111.6\n"
+	. "Tomorrow | 2026-08-27 | August 27 | 50K | A Park | Tucson, AZ | https://x.test/r | https://x.test/tom | https://x.test/i.png |  | https://x.test/l | 2026-08-22 | 1 | 0 | 32.2 | -110.9\n"
+	. "Next Month | 2026-09-12 | September 12 | 100 Mile | A Park | Pine, AZ | https://x.test/r | https://x.test/next | https://x.test/i.png |  | https://x.test/l | 2026-09-07 | 1 | 0 | 34.4 | -111.4\n"
+);
+arv_race_store_flush_cache();
+
+$nx = arv_races_next_render( array( 'heading' => 'Next Races', 'limit' => 5 ) );
+
+t( 'a race that already happened is gone',   false === strpos( $nx, 'Long Past' ) );
+t( 'so is one that finished yesterday',      false === strpos( $nx, 'Yesterday' ) );
+t( 'a multi-day race mid-run still shows',   false !== strpos( $nx, 'Underway' ) );
+t( 'and so do the ones still to come',       false !== strpos( $nx, 'Tomorrow' ) && false !== strpos( $nx, 'Next Month' ) );
+t( 'soonest first',                          strpos( $nx, 'Underway' ) < strpos( $nx, 'Tomorrow' ) );
+t( 'the all-races link is there',            false !== strpos( $nx, '/races/' ) );
+
+// limit counts what survives the date filter, not what came back from the
+// store, or a run of old races would push every real one off the list.
+$nx1 = arv_races_next_render( array( 'heading' => '', 'limit' => 1 ) );
+t( 'limit 1 gives one race',                 1 === substr_count( $nx1, 'arv-next-races__item' ) );
+t( 'and it is the soonest, not the oldest',  false !== strpos( $nx1, 'Underway' ) );
+t( 'an empty heading renders no heading',    false === strpos( $nx1, 'arv-next-races__head' ) );
+
+// Nothing upcoming has to render nothing, not an empty bordered box.
+$GLOBALS['NOW'] = '2027-01-01';
+arv_race_store_flush_cache();
+t( 'nothing upcoming renders nothing',       '' === arv_races_next_render( array( 'heading' => 'Next Races', 'limit' => 5 ) ) );
+
+$GLOBALS['NOW']   = '2026-08-26';
+$GLOBALS['posts'] = $next_backup;
+$GLOBALS['meta']  = $next_meta_backup;
+arv_race_store_flush_cache();
+
+
 echo "\n$pass passed, $fail failed\n";
 exit( $fail > 0 ? 1 : 0 );
