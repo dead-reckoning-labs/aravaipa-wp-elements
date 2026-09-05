@@ -212,6 +212,16 @@ for (const item of items) {
 		name: item.item_data.name,
 		url,
 		image: images.get((item.item_data.image_ids || [])[0]) || item.item_data.ecom_image_uris?.[0] || '',
+		// Every photograph, not just the first. The shop grid only ever
+		// wanted one, but a single product embedded in a blog post is the
+		// whole listing, and the buckle holder alone has three: the piece,
+		// the engraving, and it holding an actual buckle. One of those is
+		// a product shot; the three together are the argument for buying.
+		images: (item.item_data.image_ids || [])
+			.map((id) => images.get(id))
+			.filter(Boolean)
+			.concat(item.item_data.ecom_image_uris || [])
+			.filter((u, i, a) => a.indexOf(u) === i),
 		desc: item.item_data.description_plaintext || '',
 		price: priced.length ? Math.min(...priced) : 0,
 		sold_out: variations.length > 0 && variations.every((v) => out.has(v.id)),

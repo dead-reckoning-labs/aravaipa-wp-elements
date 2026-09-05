@@ -9392,3 +9392,112 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	text-transform: uppercase;
 	color: var(--arv-results-muted, #7a7a7a);
 }
+
+/* ------------------------------------------------------------------ *
+ * A single product, embedded in a post.
+ *
+ * Photographs left, the pitch right, on a bordered card so it reads as
+ * an object placed in the article rather than as more article. Stacks on
+ * a phone, where a two-column split would leave both halves too narrow
+ * to be either a photograph or a paragraph.
+ * ------------------------------------------------------------------ */
+.arv-product {
+	display: grid;
+	grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+	gap: 1.5rem;
+	align-items: start;
+	margin: 2rem 0;
+	padding: 1.25rem;
+	border: 1px solid var(--arv-results-rule, #ebebeb);
+	border-radius: 6px;
+	background: #fafafa;
+}
+
+@media (max-width: 640px) {
+	.arv-product {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+}
+
+/* First shot large, the rest as a strip beneath it. A listing's other
+   angles are supporting evidence, not four equal hero images. */
+.arv-product__shots {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+}
+
+.arv-product__shots > .arv-product__shot:first-child {
+	grid-column: 1 / -1;
+}
+
+.arv-product__shot {
+	display: block;
+	position: relative;
+	padding-bottom: 100%;
+	overflow: hidden;
+	border-radius: 4px;
+	background: #fff;
+}
+
+.arv-product__shots > .arv-product__shot:first-child {
+	padding-bottom: 75%;
+}
+
+.arv-product__shot img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+	max-width: none;
+}
+
+.arv-product__name {
+	margin: 0 0 0.3rem;
+	font-size: 1.15rem;
+	line-height: 1.25;
+}
+
+.arv-product__price {
+	margin: 0 0 0.75rem;
+	font-size: 1.25rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--arv-ink, #272727);
+}
+
+.arv-product__desc {
+	margin: 0 0 1.1rem;
+	font-size: 0.9rem;
+	line-height: 1.5;
+	color: var(--arv-results-muted, #5c5c5c);
+}
+
+.arv-product__btn {
+	display: inline-block;
+	padding: 0.6rem 1.4rem;
+	border-radius: var(--arv-radius-chip, 4px);
+	background: var(--arv-accent, #ff2a13);
+	color: #fff !important;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	text-decoration: none !important;
+}
+
+.arv-product__btn:hover {
+	filter: brightness(0.92);
+}
+
+/* Still shown, never hidden: a post outlives the stock, and a card that
+   vanishes reads as a broken page. */
+.arv-product__btn--out {
+	background: #d8d8d8;
+	color: #5c5c5c !important;
+	cursor: default;
+}
