@@ -2300,30 +2300,65 @@ $arch = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 
 // something about the race). Neither ever encoded anything but hosting.
 $links_block = substr( $arch, strpos( $arch, 'arv-results__links' ) );
 $links_block = substr( $links_block, 0, strpos( $links_block, '</div>' ) );
-t( 'the archive files join the same row', false !== strpos( $links_block, '>100 Mile<' ) && false !== strpos( $links_block, '>100 KM<' ) );
+t( 'the archive files join the same row', false !== strpos( $links_block, 'link--file' ) );
 t( 'alongside the named service button',  false !== strpos( $links_block, '>UltraRunning<' ) );
 t( 'no separate labelled row exists',     false === strpos( $arch, 'arv-results__files' ) );
 t( 'and no left/right split either',      false === strpos( $arch, 'arv-results__archive"' ) );
 
-// A file labelled by the viewer software, not by the result. Sixty-nine
-// rows carry this, all but two of them the only file on their row, so
-// "Results" is the same honest answer an unlabelled file already gets.
+// Several files, so the distances stay: they are the only thing telling
+// one from another, and "Results" four times over says nothing.
+t( 'several files keep their distances',  false !== strpos( $links_block, '>100 Mile<' ) && false !== strpos( $links_block, '>100 KM<' ) );
+// Same control as the named buttons, not a smaller chip beside them: it was
+// inline-block at 0.2rem next to an inline-flex button with a 38px floor,
+// so the two sat at different heights with the text off centre.
+t( 'a file is the same control',          false !== strpos( $links_block, 'arv-results__link arv-results__link--file' ) );
+
+// One file for the whole edition is just "Results", whatever the label
+// says. A distance only earns its place when there is another distance to
+// tell it apart from; alone beside an UltraRunning button, "100 MILE" reads
+// as a filter on that button rather than the way into this race's results.
 arv_results_store_set( array(
-	array( 'name' => 'Fat Ox', 'iso' => '2019-11-29', 'display' => 'November 29',
-	       'archive' => array( array( 'label' => 'Ultracast', 'url' => 'http://ultracast.tv/?f=results/fo/2019/Fat Ox 2019.clax' ) ) ),
+	array( 'name' => 'Javelina Jundred', 'iso' => '2008-11-15', 'display' => 'November 15-16',
+	       'ultrarunning' => 'https://ultrarunning.com/calendar/event/javelina-jundred/race/1836/results',
+	       'archive' => array( array( 'label' => '100 Mile', 'url' => 'https://aravaiparunning.com/results/2008JJResults100m.htm' ) ) ),
 ) );
-$ultracast = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
-t( '"Ultracast" is not a real label',     false === strpos( $ultracast, '>Ultracast<' ) );
-t( 'it reads as Results instead',         false !== strpos( $ultracast, '>Results<' ) );
+$one_file = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'one file drops its distance',         false === strpos( $one_file, '>100 Mile<' ) );
+t( 'and reads as Results',                false !== strpos( $one_file, '>Results<' ) );
+// Ours before theirs: the file IS the result on these years, UltraRunning
+// is a copy of it, so it should not be the one sitting further left.
+t( 'the file leads the listings',         strpos( $one_file, 'link--file' ) < strpos( $one_file, 'link--ur' ) );
+
+// Labels that were never about the result either: the viewer or the timing
+// platform the scraper found the link inside. 72 of the 101 single-file
+// rows are one of these.
+foreach ( array( 'Ultracast', 'RaceResult', 'RunSignup' ) as $platform ) {
+	arv_results_store_set( array(
+		array( 'name' => 'Fat Ox', 'iso' => '2019-11-29', 'display' => 'November 29',
+		       'archive' => array( array( 'label' => $platform, 'url' => 'http://example.test/' . $platform ) ) ),
+	) );
+	$named = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+	t( "\"$platform\" is not a label either",  false === strpos( $named, '>' . $platform . '<' ) );
+}
+
+// The live board still leads where there is one: it is also ours, and on a
+// modern race it is what people came for.
+arv_results_store_set( array(
+	array( 'name' => 'Black Canyon', 'iso' => '2020-02-15', 'display' => 'February 15',
+	       'live' => 'https://live.aravaiparunning.com/#/black_canyon-2020',
+	       'archive' => array( array( 'label' => 'Ultracast', 'url' => 'http://example.test/bc2020' ) ) ),
+) );
+$both = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'the live board still leads',          strpos( $both, 'link--live' ) < strpos( $both, 'link--file' ) );
 
 // A race whose every link is already a named button adds nothing extra:
-// no empty archive chips, and the row still renders once, not twice.
+// no file chips, and the row still renders once, not twice.
 arv_results_store_set( array(
 	array( 'name' => 'Vertigo Night Runs', 'iso' => '2026-08-09', 'display' => 'August 9',
 	       'live' => 'https://live.aravaiparunning.com/#/vertigo_night_runs-2026' ),
 ) );
 $no_archive = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
-t( 'no files, no archive-link chip',     false === strpos( $no_archive, 'arv-results__archive-link' ) );
+t( 'no files, no file chip',             false === strpos( $no_archive, 'link--file' ) );
 t( 'one links row, not two',             1 === substr_count( $no_archive, 'class="arv-results__links"' ) );
 $GLOBALS['ARV_OPTIONS'] = array();
 
