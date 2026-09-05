@@ -2050,6 +2050,97 @@ t( 'nor no stats at all',               '' === arv_results_finisher_count( null 
 arv_stats_store_set( array( array( 'slug' => 'solo-2026', 'finishers' => 1 ) ) );
 t( 'one finisher reads singular',       false !== strpos( arv_results_finisher_count( arv_stats_store_find( 'https://live.aravaiparunning.com/#/solo-2026' ) ), '1 finisher<' ) );
 
+echo "\narchive stats: the years before the board:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+
+$archive_event = array(
+	'name'      => 'Mesquite Canyon Trail Runs',
+	'iso'       => '2010-03-20',
+	'finishers' => 62,
+	'starters'  => 71,
+	'headline'  => true,
+	'winners'   => array(
+		array(
+			'distance' => '50K',
+			'men'      => array( 'name' => 'Jason Griffiths', 'time' => '04:01:22' ),
+			'women'    => array( 'name' => 'Paulette Zillmer', 'time' => '05:31:41' ),
+		),
+	),
+);
+
+t( 'an archive edition stores',         1 === arv_archive_stats_store_set( array( $archive_event ) ) );
+
+$row = array( 'name' => 'Mesquite Canyon Trail Runs', 'iso' => '2010-03-20', 'live' => '' );
+t( 'and is found by name and date',     62 === arv_stats_for_row( $row )['finishers'] );
+t( 'with its winners intact',           'Jason Griffiths' === arv_stats_for_row( $row )['winners'][0]['men']['name'] );
+
+// The key is the race's own name, not a slug anybody has to keep in step
+// with it, so the case it was typed in cannot decide whether it matches.
+t( 'the name matches case-blind',       null !== arv_stats_for_row( array( 'name' => 'MESQUITE CANYON TRAIL RUNS', 'iso' => '2010-03-20' ) ) );
+t( 'a different date is a miss',        null === arv_stats_for_row( array( 'name' => 'Mesquite Canyon Trail Runs', 'iso' => '2011-03-12' ) ) );
+t( 'and so is a different race',        null === arv_stats_for_row( array( 'name' => 'Coldwater Rumble', 'iso' => '2010-03-20' ) ) );
+t( 'a nameless row finds nothing',      null === arv_stats_for_row( array( 'iso' => '2010-03-20' ) ) );
+t( 'nor does a dateless one',           null === arv_stats_for_row( array( 'name' => 'Mesquite Canyon Trail Runs' ) ) );
+
+// The reason these are two options and not one table keyed two ways. Both
+// stores replace their contents wholesale, which is right for each of them
+// on its own: each scraper walks its whole source every run, so absence
+// from that walk means the thing is gone. Share one option and the next
+// fetch-stats.mjs run, which walks Momentum and has never heard of a race
+// from 2010, deletes every archive edition as missing.
+arv_stats_store_set( array( array( 'slug' => 'coldwater_rumble-2026', 'finishers' => 400 ) ) );
+t( 'a board walk keeps the archive',    62 === arv_stats_for_row( $row )['finishers'] );
+arv_archive_stats_store_set( array( $archive_event ) );
+t( 'and an archive walk keeps the board', 400 === arv_stats_store_find( 'https://live.aravaiparunning.com/#/coldwater_rumble-2026' )['finishers'] );
+
+// Where a race has a board, the board is what timed it: better than a file
+// somebody saved afterwards, and the only one of the two that gets updated.
+arv_stats_store_set( array( array( 'slug' => 'mesquite-2010', 'finishers' => 999 ) ) );
+t( 'the board wins where there is one', 999 === arv_stats_for_row( array(
+	'name' => 'Mesquite Canyon Trail Runs',
+	'iso'  => '2010-03-20',
+	'live' => 'https://live.aravaiparunning.com/#/mesquite-2010',
+) )['finishers'] );
+t( 'a board with no stats still falls back', 62 === arv_stats_for_row( array(
+	'name' => 'Mesquite Canyon Trail Runs',
+	'iso'  => '2010-03-20',
+	'live' => 'https://live.aravaiparunning.com/#/nothing-here',
+) )['finishers'] );
+
+// Same cleaning as the board's own events, because it is literally the same
+// function: a winner with no time is not a winner, and counts floor at zero.
+arv_archive_stats_store_set( array( array(
+	'name'      => 'Half A Result',
+	'iso'       => '2012-01-01',
+	'finishers' => -3,
+	'winners'   => array( array( 'distance' => '50K', 'men' => array( 'name' => 'No Time Given', 'time' => '' ) ) ),
+) ) );
+$half = arv_stats_for_row( array( 'name' => 'Half A Result', 'iso' => '2012-01-01' ) );
+t( 'a timeless winner is dropped',      ! isset( $half['winners'] ) );
+t( 'and a negative count floors',       0 === $half['finishers'] );
+
+// A fixed-time race is won on distance, so its stored result is one. The
+// course-record table reads times and skips what will not parse, which is
+// the right answer: the record for a 24 hour is a distance to beat.
+arv_archive_stats_store_set( array( array(
+	'name'     => 'Across The Years',
+	'iso'      => '2015-12-28',
+	'headline' => true,
+	'winners'  => array( array(
+		'distance' => '24 Hour',
+		'women'    => array( 'name' => 'Eileen Torres', 'time' => '127.02 mi' ),
+	) ),
+) ) );
+$aty = arv_stats_for_row( array( 'name' => 'Across The Years', 'iso' => '2015-12-28' ) );
+t( 'a distance stores as the result',   '127.02 mi' === $aty['winners'][0]['women']['time'] );
+t( 'and it renders as written',         false !== strpos( arv_results_winners_block( $aty ), '127.02 mi' ) );
+t( 'but is no course record',           null === arv_results_time_seconds( '127.02 mi' ) );
+
+// Nothing to key on is nothing to store, rather than a row under "|".
+t( 'a nameless event is not stored',    0 === arv_archive_stats_store_set( array( array( 'iso' => '2010-03-20' ) ) ) );
+t( 'nor is a dateless one',             0 === arv_archive_stats_store_set( array( array( 'name' => 'Nowhen' ) ) ) );
+t( 'nor is junk',                       0 === arv_archive_stats_store_set( array( 'not an event', null, 7 ) ) );
+
 echo "\nresults stats: the marquee winners:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
 $block = arv_results_winners_block( array(

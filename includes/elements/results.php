@@ -1514,7 +1514,7 @@ function arv_results_race_groups_markup( $rows ) {
 		$out .= '<div class="arv-results__race-group" data-arv-results-race="'
 			. esc_attr( strtolower( $latest['name'] ) ) . '">';
 
-		$stats = arv_stats_store_find( $latest['live'] );
+		$stats = arv_stats_for_row( $latest );
 
 		$out .= '<div class="arv-results__latest">';
 		$out .= '<div class="arv-results__race-head">';
@@ -2254,7 +2254,7 @@ function arv_results_course_records( $editions ) {
 	$best = array();
 
 	foreach ( $editions as $edition ) {
-		$stats = arv_stats_store_find( $edition['live'] );
+		$stats = arv_stats_for_row( $edition );
 
 		if ( null === $stats || empty( $stats['winners'] ) ) {
 			continue;
@@ -2385,7 +2385,7 @@ function arv_results_editions_table( $editions ) {
 	$out .= '<h3 class="arv-results__records-head">' . esc_html( __( 'Every edition', 'aravaipa-elements' ) ) . '</h3>';
 
 	foreach ( $editions as $edition ) {
-		$stats = arv_stats_store_find( $edition['live'] );
+		$stats = arv_stats_for_row( $edition );
 
 		$out .= '<div class="arv-results__edition">';
 		$out .= '<div class="arv-results__latest">';
