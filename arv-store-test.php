@@ -1432,6 +1432,23 @@ t( 'it tracks a moved start time',      strtotime( '2026-08-30T00:00:00Z' ) === 
 // is no cutoff rather than a wrong one.
 t( 'no board means no cutoff',          0 === arv_race_cutoff_for( 'Black Bear Trail Race', null ) );
 
+// Unless the caller knows the start. Aravaipa does not time every race it
+// lists: Oli Kai is scored on RaceResult and has no board at all, so its
+// stored 9 hour cutoff was being read, found to have no gun to measure
+// from, and silently discarded. The race showed LIVE NOW for an hour after
+// it had finished. Every caller has already resolved the real start,
+// including the start-time override, so it can hand it over.
+$gun = strtotime( '2026-09-05T12:00:00Z' );
+t( 'a boardless race can still cut off', ( $gun + 12 * 3600 ) === arv_race_cutoff_for( 'Black Bear Trail Race', null, $gun ) );
+
+// The board still wins where there is one: this is a fallback, not a
+// second source of truth competing with the timing team's own number.
+t( 'the board start still takes priority', strtotime( '2026-08-29T22:00:00Z' ) === arv_race_cutoff_for( 'Black Bear Trail Race', $board, $gun ) );
+
+// And a start with no override is still no cutoff, rather than one
+// invented from whatever the caller happened to pass.
+t( 'no override means no cutoff still',  0 === arv_race_cutoff_for( 'Not A Race', null, $gun ) );
+
 // Nonsense is dropped on write rather than stored and applied later.
 arv_race_cutoff_store_set( array( 'Zero' => 0, 'Negative' => -3, 'Blank' => 5, '' => 9 ) );
 $kept = arv_race_cutoff_store_get();

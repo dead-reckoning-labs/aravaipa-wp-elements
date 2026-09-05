@@ -704,7 +704,7 @@ function arv_races_live_clock( $race ) {
 	$state = arv_races_live_state( $race, $board, $start_ts );
 
 	$cutoff_ts = function_exists( 'arv_race_cutoff_for' )
-		? arv_race_cutoff_for( $race['name'], $board )
+		? arv_race_cutoff_for( $race['name'], $board, $start_ts )
 		: 0;
 	$cutoff_ts = arv_results_backstop_cutoff( $cutoff_ts, gmdate( 'c', $start_ts ) );
 
@@ -749,7 +749,7 @@ function arv_races_live_state( $race, $board, $start_ts ) {
 	}
 
 	$cutoff_ts = function_exists( 'arv_race_cutoff_for' )
-		? arv_race_cutoff_for( $race['name'], $board )
+		? arv_race_cutoff_for( $race['name'], $board, $start_ts )
 		: 0;
 	$cutoff_ts = arv_results_backstop_cutoff( $cutoff_ts, gmdate( 'c', $start_ts ) );
 

@@ -1071,7 +1071,7 @@ function arv_results_week_status( $race ) {
 		$start = arv_results_start_iso( $race['iso'] );
 	}
 
-	$cutoff_ts = function_exists( 'arv_race_cutoff_for' ) ? arv_race_cutoff_for( $race['name'], $board ) : 0;
+	$cutoff_ts = function_exists( 'arv_race_cutoff_for' ) ? arv_race_cutoff_for( $race['name'], $board, strtotime( $start ) ) : 0;
 	$cutoff_ts = arv_results_backstop_cutoff( $cutoff_ts, $start );
 	$cutoff    = $cutoff_ts ? gmdate( 'c', $cutoff_ts ) : '';
 
