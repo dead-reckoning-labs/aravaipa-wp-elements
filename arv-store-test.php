@@ -34,6 +34,7 @@ function current_user_can( $c, $id = 0 ) { return true; }
 function __( $s, $d = '' ) { return $s; }
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function _n( $a, $b, $n, $d = '' ) { return 1 === (int) $n ? $a : $b; }
+function _x( $s, $ctx, $d = '' ) { return $s; }
 // WordPress groups thousands here. Modelled rather than stubbed to a bare
 // cast, because "1,470 finishers" is the string the page actually renders.
 function number_format_i18n( $n, $d = 0 ) { return number_format( (float) $n, (int) $d ); }
@@ -2050,6 +2051,52 @@ t( 'nor no stats at all',               '' === arv_results_finisher_count( null 
 arv_stats_store_set( array( array( 'slug' => 'solo-2026', 'finishers' => 1 ) ) );
 t( 'one finisher reads singular',       false !== strpos( arv_results_finisher_count( arv_stats_store_find( 'https://live.aravaiparunning.com/#/solo-2026' ) ), '1 finisher<' ) );
 
+echo "\nwinner lines: which one is which:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$line = arv_results_winners_block( array(
+	'headline' => true,
+	'winners'  => array( array(
+		'distance'  => '100 Mile',
+		'men'       => array( 'name' => 'Jeff Riley', 'time' => '16:48:32' ),
+		'women'     => array( 'name' => 'Jamie Donaldson', 'time' => '18:43:57' ),
+		'nonbinary' => array( 'name' => 'Riley Brady', 'time' => '19:02:11' ),
+	) ),
+) );
+
+// Two names side by side under no headings is a guess, and the names are
+// not always the tell. A badge is the smallest thing that answers it.
+t( 'the badge names the division',      false !== strpos( $line, '>M</span>' ) );
+t( 'women read F, not W',               false !== strpos( $line, '>F</span>' ) );
+t( 'and nonbinary reads NB, not X',     false !== strpos( $line, '>NB</span>' ) );
+t( 'never M1: every one of them won',   false === strpos( $line, 'M1' ) );
+
+// Drawn for sighted readers and hidden from a screen reader, which already
+// had the whole word and would otherwise hear both.
+t( 'the badge is hidden from a reader', false !== strpos( $line, 'arv-results__division arv-results__division--men" aria-hidden="true"' ) );
+t( 'the full word is still announced',  false !== strpos( $line, 'Nonbinary: ' ) );
+
+// The table has MEN and WOMEN at the tops of its columns. A badge in every
+// cell would repeat the heading the whole way down.
+$two = arv_results_winners_block( array(
+	'headline' => true,
+	'winners'  => array(
+		array(
+			'distance' => '100 Mile',
+			'men'      => array( 'name' => 'Jeff Riley', 'time' => '16:48:32' ),
+			'women'    => array( 'name' => 'Jamie Donaldson', 'time' => '18:43:57' ),
+		),
+		array(
+			'distance' => '100K',
+			'men'      => array( 'name' => 'Igor Campos', 'time' => '9:34:26' ),
+			'women'    => array( 'name' => 'Tracy Bowling', 'time' => '10:10:36' ),
+		),
+	),
+) );
+$table = substr( $two, strpos( $two, '<table' ) );
+t( 'the table still has its headings',  false !== strpos( $table, '>Women</th>' ) );
+t( 'and no badge inside it',            false === strpos( $table, 'arv-results__division' ) );
+t( 'while the peek above still has one', false !== strpos( substr( $two, 0, strpos( $two, '<table' ) ), 'arv-results__division' ) );
+
 echo "\narchive stats: the years before the board:\n";
 $GLOBALS['ARV_OPTIONS'] = array();
 
@@ -2398,7 +2445,15 @@ t( 'and no left/right split either',      false === strpos( $arch, 'arv-results_
 
 // Several files, so the distances stay: they are the only thing telling
 // one from another, and "Results" four times over says nothing.
-t( 'several files keep their distances',  false !== strpos( $links_block, '>100 Mile<' ) && false !== strpos( $links_block, '>100 KM<' ) );
+t( 'several files keep their distances',  false !== strpos( $links_block, '>100 Mile<' ) );
+
+// And they are spelled the way every other distance on the page is. These
+// labels were typed one edition at a time over eighteen years: Javelina is
+// stored as "100 Mile" on 2015 and "100 Miler" on 2016, "100K" on one row
+// and "100k" on the next. No single button was wrong. They were wrong next
+// to each other, which is the only way a reader ever sees them.
+t( 'and are spelled like everything else', false !== strpos( $links_block, '>100K<' ) );
+t( 'not as they happen to be stored',     false === strpos( $links_block, '>100 KM<' ) );
 // Same control as the named buttons, not a smaller chip beside them: it was
 // inline-block at 0.2rem next to an inline-flex button with a 38px floor,
 // so the two sat at different heights with the text off centre.

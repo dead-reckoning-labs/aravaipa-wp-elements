@@ -21,6 +21,7 @@ function cs_compose_values($v, ...$p) { return $v; }
 function cs_compose_controls($c, ...$p) { return $c; }
 function cs_partial_controls($n) { return array(); }
 function __($s, $d = '') { return $s; }
+function _x($s, $ctx, $d = '') { return $s; }
 function esc_html($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function esc_attr($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function esc_url($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
