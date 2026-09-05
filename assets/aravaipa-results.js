@@ -290,9 +290,42 @@
 			}
 		} );
 
+		// The newest year, PHP's own default when the URL names none. Kept
+		// so a click back to it can drop ?year= rather than write it out,
+		// which is what keeps /results/ itself as the canonical address for
+		// the year everyone actually lands on.
+		var defaultYear = yearButtons.length ? yearButtons[ 0 ].getAttribute( 'data-arv-results-year' ) : null;
+
+		function yearUrl( year ) {
+			var url = new URL( window.location.href );
+			if ( year === defaultYear ) {
+				url.searchParams.delete( 'year' );
+			} else {
+				url.searchParams.set( 'year', year );
+			}
+			return url.pathname + url.search + url.hash;
+		}
+
 		for ( var y = 0; y < yearButtons.length; y++ ) {
 			yearButtons[ y ].addEventListener( 'click', function () {
-				selectYear( this.getAttribute( 'data-arv-results-year' ) );
+				var year = this.getAttribute( 'data-arv-results-year' );
+				selectYear( year );
+				if ( window.history && window.history.pushState ) {
+					window.history.pushState( { arvResultsYear: year }, '', yearUrl( year ) );
+				}
+			} );
+		}
+
+		// Only a URL change moves the reader here, a year switch never
+		// reloads the page, so the browser's own back/forward would
+		// otherwise do nothing: the address bar updates but the panel on
+		// screen does not follow it.
+		if ( panels.length && window.history ) {
+			window.addEventListener( 'popstate', function () {
+				var year = new URLSearchParams( window.location.search ).get( 'year' ) || defaultYear;
+				if ( year ) {
+					selectYear( year );
+				}
 			} );
 		}
 	}

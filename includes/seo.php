@@ -702,3 +702,108 @@ function arv_results_race_seo_head() {
 	}
 }
 add_action( 'wp_head', 'arv_results_race_seo_head', 4 );
+
+/**
+ * Whether this request is the results archive open to one year via
+ * ?year=, and which year.
+ *
+ * The archive page is the one with `[arv_results]` in its content; the
+ * results-YYYY pages that came before it are built from a Cornerstone
+ * element instead and carry no shortcode to check, so this shortcode alone
+ * is enough to tell the two apart. Returns null off that page, with no
+ * ?year=, or with a year the store has never carried, which includes a
+ * request for the newest year: that one is already what /results/ itself
+ * shows, so it gets that plain canonical rather than a self-referencing one
+ * that would tell Google two URLs are two pages when they are one.
+ *
+ * @return string|null
+ */
+function arv_results_archive_seo_year() {
+	if ( ! function_exists( 'is_page' ) || ! is_page() || ! isset( $_GET['year'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return null;
+	}
+
+	$id = get_queried_object_id();
+
+	if ( ! $id ) {
+		return null;
+	}
+
+	$post = get_post( $id );
+
+	if ( ! $post || ! has_shortcode( (string) $post->post_content, 'arv_results' ) ) {
+		return null;
+	}
+
+	$year  = preg_replace( '/\D/', '', wp_unslash( $_GET['year'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$years = array();
+
+	foreach ( arv_results_store_get() as $row ) {
+		$y = substr( (string) $row['iso'], 0, 4 );
+		if ( preg_match( '/^\d{4}$/', $y ) ) {
+			$years[ $y ] = true;
+		}
+	}
+
+	if ( empty( $years ) || ! isset( $years[ $year ] ) ) {
+		return null;
+	}
+
+	krsort( $years );
+
+	// PHP casts a numeric string used as an array key to an int, so
+	// array_key_first() here hands back 2026, not "2026". Cast rather than
+	// loosen the comparison: this is the one place a stray "2026e0"-shaped
+	// value in $year would otherwise loose-compare equal to it.
+	return $year === (string) array_key_first( $years ) ? null : $year;
+}
+
+/**
+ * @param array $parts
+ * @return array
+ */
+function arv_results_archive_seo_title_parts( $parts ) {
+	if ( arv_seo_handled_elsewhere() ) {
+		return $parts;
+	}
+
+	$year = arv_results_archive_seo_year();
+
+	if ( null === $year ) {
+		return $parts;
+	}
+
+	/* translators: %s is a year. */
+	$parts['title'] = sprintf( __( '%s Results', 'aravaipa-elements' ), $year );
+
+	return $parts;
+}
+add_filter( 'document_title_parts', 'arv_results_archive_seo_title_parts' );
+
+/**
+ * ?year=2016 is its own page, not a filtered view of /results/, so it gets
+ * its own canonical instead of core's, which strips the query string and
+ * points every year at the same URL. The one exception is the newest year,
+ * handled in arv_results_archive_seo_year(): that one already IS /results/,
+ * so core's answer is left alone rather than "corrected" into a copy of
+ * itself with ?year= appended.
+ *
+ * Filtered directly rather than through Yoast/Rank Math's own canonical
+ * hooks, unlike the race pages: those exist specifically to override a
+ * wrong answer a plugin would otherwise commit to. A plugin that has not
+ * been told about ?year= yet has not committed to anything wrong, so there
+ * is nothing to correct, only a gap in core's own filter to fill.
+ *
+ * @param string $url
+ * @return string
+ */
+function arv_results_archive_seo_canonical( $url ) {
+	$year = arv_results_archive_seo_year();
+
+	if ( null === $year ) {
+		return $url;
+	}
+
+	return add_query_arg( 'year', $year, $url );
+}
+add_filter( 'get_canonical_url', 'arv_results_archive_seo_canonical' );

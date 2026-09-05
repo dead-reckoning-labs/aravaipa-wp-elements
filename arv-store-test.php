@@ -2154,6 +2154,81 @@ $GLOBALS['QUERY_VARS'] = array();
 t( 'as does the archive itself',        null === arv_results_race_context() );
 $GLOBALS['ARV_OPTIONS'] = array();
 
+echo "\nresults: ?year= opens the archive on that year:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2016-08-13', 'display' => 'August 13',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2016' ),
+) );
+
+$_GET['year'] = '2016';
+$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
+t( 'the requested year opens unhidden',  false !== strpos( $html, 'data-arv-results-year-panel="2016">' ) );
+t( 'and the other year starts hidden',   false !== strpos( $html, 'data-arv-results-year-panel="2026" hidden>' ) );
+t( 'its pill is marked selected',        false !== strpos( $html, 'data-arv-results-year="2016" aria-selected="true"' ) );
+
+// A year the store never carried, or none at all, falls back to the newest
+// rather than opening on nothing: that is what every page already did
+// before ?year= existed, and it stays true off the archive too.
+$_GET['year'] = '1999';
+$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
+t( 'an unknown year falls back to newest', false !== strpos( $html, 'data-arv-results-year-panel="2026">' ) );
+
+unset( $_GET['year'] );
+$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
+t( 'no year at all is the same fallback', false !== strpos( $html, 'data-arv-results-year-panel="2026">' ) );
+$GLOBALS['ARV_OPTIONS'] = array();
+
+echo "\nresults: the archive year gets its own title and canonical:\n";
+$seo_posts_backup = $GLOBALS['posts'] ?? array();
+$GLOBALS['IS_PAGE']    = true;
+$GLOBALS['QUERIED_ID'] = 9910;
+$GLOBALS['posts'][9910] = array( 'title' => 'Results', 'body' => '[arv_results]' );
+
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2016-08-13', 'display' => 'August 13',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2016' ),
+) );
+
+$_GET['year'] = '2016';
+t( 'the year itself resolves',           '2016' === arv_results_archive_seo_year() );
+t( 'the canonical carries the year',     'https://www.aravaiparunning.com/results/?year=2016' === arv_results_archive_seo_canonical( 'https://www.aravaiparunning.com/results/' ) );
+
+// The title filter is exercised for real further up this file: WPSEO_VERSION
+// is defined there and, being a constant, stays defined for the rest of the
+// run, so arv_seo_handled_elsewhere() is correctly true from here on and the
+// title defers rather than overriding, same as the race pages already do.
+t( 'and the title defers to a real plugin too', 'Results' === arv_results_archive_seo_title_parts( array( 'title' => 'Results' ) )['title'] );
+
+// The newest year already IS /results/ with no parameter, so it keeps
+// core's own canonical rather than "correcting" it into a copy of itself.
+$_GET['year'] = '2026';
+t( 'the newest year is left alone',      'https://www.aravaiparunning.com/results/' === arv_results_archive_seo_canonical( 'https://www.aravaiparunning.com/results/' ) );
+t( 'and gets no title override either',  'Results' === arv_results_archive_seo_title_parts( array( 'title' => 'Results' ) )['title'] );
+
+// A year the store has never carried claims nothing: there is no such page
+// to be canonical for.
+$_GET['year'] = '1999';
+t( 'an unverified year claims nothing',  'https://www.aravaiparunning.com/results/' === arv_results_archive_seo_canonical( 'https://www.aravaiparunning.com/results/' ) );
+
+// Off the archive page, or with no ?year= at all, this claims nothing:
+// the race pages tested above already own their own canonical.
+unset( $_GET['year'] );
+t( 'no ?year=, no opinion',              'https://www.aravaiparunning.com/results/' === arv_results_archive_seo_canonical( 'https://www.aravaiparunning.com/results/' ) );
+$_GET['year'] = '2016';
+$GLOBALS['posts'][9910]['body'] = '<p>Not the archive.</p>';
+t( 'nor does an unrelated page',         'https://www.aravaiparunning.com/results/' === arv_results_archive_seo_canonical( 'https://www.aravaiparunning.com/results/' ) );
+
+unset( $_GET['year'] );
+$GLOBALS['IS_PAGE']    = false;
+$GLOBALS['QUERIED_ID'] = 0;
+$GLOBALS['posts'] = $seo_posts_backup;
+$GLOBALS['ARV_OPTIONS'] = array();
+
 echo "\nresults: years on the expander:\n";
 t( 'years are listed newest first',     '2025, 2024, 2023' === arv_results_years( array(
 	array( 'iso' => '2025-08-09' ),
