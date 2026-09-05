@@ -1150,3 +1150,174 @@ function arv_race_waitlist_rest_set( $request ) {
 		200
 	);
 }
+
+/**
+ * A gun time this store otherwise has no way to know.
+ *
+ * The calendar keeps a date per race, never a time: arv_results_start_iso()
+ * says so directly, and its fallback is deliberately the site's own
+ * midnight rather than a guess at an hour. That is honest for the ~90% of
+ * races with no known start time, and wrong for a race whose director HAS
+ * told us one: Oli Kai starts at 8am in Chattanooga, not at midnight in
+ * Phoenix, and the countdown said otherwise because nothing in this plugin
+ * had anywhere to put "8am" or "Chattanooga is Eastern."
+ *
+ * A hand-maintained overlay, the same shape as the waitlist map and the
+ * producer notes beside it: race name => { time, tz }. The timezone is
+ * stored explicitly as an IANA identifier rather than derived from the
+ * race's own lat/lng, even though those are already on file. A longitude
+ * lookup is exactly the kind of thing that is confidently wrong at a
+ * boundary, and Chattanooga sits close enough to the Eastern/Central line
+ * that guessing would trade one silently-wrong assumption for another. An
+ * explicit zone, entered once per race, is never ambiguous, and PHP's own
+ * IANA database handles the one thing worth not hand-rolling: Arizona never
+ * observes daylight saving and Tennessee does, so the same "8:00" is a
+ * different UTC offset depending on the time of year, correctly, without
+ * this code having an opinion about it.
+ */
+define( 'ARV_RACE_START_OPTION', 'arv_race_starts' );
+
+/**
+ * The stored start-time map: race name => array( time => 'H:i', tz => IANA id ).
+ *
+ * @return array<string, array{time: string, tz: string}>
+ */
+function arv_race_start_store_get() {
+	$stored = get_option( ARV_RACE_START_OPTION, array() );
+
+	return is_array( $stored ) ? $stored : array();
+}
+
+/**
+ * Replace the stored start-time map wholesale, the same as the notes and
+ * waitlist maps beside it.
+ *
+ * Both fields are validated rather than trusted, because a bad value here
+ * does not fail loudly: an unparseable time or an unknown zone would
+ * otherwise reach DateTime and throw deep inside a page render. `H:i`
+ * exactly, and a zone PHP's own compiled tzdata actually recognises.
+ *
+ * @param array $map Race name => array( time => 'H:i', tz => IANA id ).
+ * @return int Number of entries stored.
+ */
+function arv_race_start_store_set( $map ) {
+	$clean = array();
+	$zones = DateTimeZone::listIdentifiers();
+
+	foreach ( (array) $map as $name => $entry ) {
+		$name = trim( (string) $name );
+
+		if ( '' === $name || ! is_array( $entry ) ) {
+			continue;
+		}
+
+		$time = isset( $entry['time'] ) ? trim( (string) $entry['time'] ) : '';
+		$tz   = isset( $entry['tz'] ) ? trim( (string) $entry['tz'] ) : '';
+
+		if ( ! preg_match( '/^([01]\d|2[0-3]):[0-5]\d$/', $time ) ) {
+			continue;
+		}
+
+		if ( ! in_array( $tz, $zones, true ) ) {
+			continue;
+		}
+
+		$clean[ $name ] = array(
+			'time' => $time,
+			'tz'   => $tz,
+		);
+	}
+
+	update_option( ARV_RACE_START_OPTION, $clean, false );
+
+	return count( $clean );
+}
+
+/**
+ * The known gun time for one race's edition, as a Unix timestamp.
+ *
+ * Null for the races this cannot answer for, which is most of them: no
+ * entry in the map, an iso the entry cannot be combined with, or (belt and
+ * suspenders past the validation in arv_race_start_store_set()) a zone
+ * DateTimeZone rejects. Callers already have a fallback for "not known" and
+ * this returning null is what tells them to use it, rather than this
+ * function guessing on their behalf.
+ *
+ * @param string $name Exact race name, matched the same way the producer
+ *                      notes map is: no fuzzing, no key normalisation.
+ * @param string $iso  Y-m-d.
+ * @return int|null
+ */
+function arv_race_start_override_ts( $name, $iso ) {
+	$starts = arv_race_start_store_get();
+	$entry  = isset( $starts[ $name ] ) ? $starts[ $name ] : null;
+
+	if ( ! $entry || empty( $entry['time'] ) || empty( $entry['tz'] ) ) {
+		return null;
+	}
+
+	try {
+		$dt = new DateTime( $iso . ' ' . $entry['time'], new DateTimeZone( $entry['tz'] ) );
+	} catch ( Exception $e ) {
+		return null;
+	}
+
+	return $dt->getTimestamp();
+}
+
+/**
+ * Register the start-time write route.
+ *
+ * Same edit_posts scoping as the note and waitlist routes beside it.
+ */
+function arv_race_start_register_rest_route() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/races/starts',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_race_start_rest_set',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+			'args'                => array(
+				'starts'  => array(
+					'required' => true,
+					'type'     => 'string',
+				),
+				'dry_run' => array(
+					'type'    => 'boolean',
+					'default' => false,
+				),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_race_start_register_rest_route' );
+
+/**
+ * POST /wp-json/aravaipa/v1/races/starts
+ *
+ * Body: starts is a JSON string, { "Race Name": { "time": "08:00", "tz": "America/New_York" } }.
+ * Same JSON-as-a-string shape as /races/notes, for the same reason: it
+ * survives a plain form-encoded POST, which is what curl sends by hand.
+ *
+ * @param WP_REST_Request $request
+ * @return array
+ */
+function arv_race_start_rest_set( $request ) {
+	$decoded = json_decode( (string) $request->get_param( 'starts' ), true );
+
+	if ( ! is_array( $decoded ) ) {
+		return array(
+			'status' => 'refused',
+			'reason' => 'starts is not a JSON object',
+		);
+	}
+
+	if ( $request->get_param( 'dry_run' ) ) {
+		return array( 'status' => 'dry_run', 'valid' => count( $decoded ) );
+	}
+
+	return array( 'status' => 'ok', 'stored' => arv_race_start_store_set( $decoded ) );
+}
