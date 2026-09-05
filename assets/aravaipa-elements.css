@@ -3956,7 +3956,10 @@
 .arv-results__link--us:visited,
 .arv-results__link--ur,
 .arv-results__link--ur:link,
-.arv-results__link--ur:visited {
+.arv-results__link--ur:visited,
+.arv-results__link--file,
+.arv-results__link--file:link,
+.arv-results__link--file:visited {
 	background: transparent;
 	border: 1px solid var(--arv-results-rule);
 	color: #272727;
@@ -3991,7 +3994,8 @@
 	}
 
 	a.arv-results__link--us:hover,
-	a.arv-results__link--ur:hover {
+	a.arv-results__link--ur:hover,
+	a.arv-results__link--file:hover {
 		background: #f4f4f4;
 		border-color: #c7c7c7;
 	}
@@ -4588,32 +4592,6 @@
    every chip, named service or archive file alike, sizes to its own label. */
 .arv-results__links .arv-results__link {
 	width: auto;
-}
-
-.arv-results__archive-link,
-.arv-results__archive-link:link,
-.arv-results__archive-link:visited {
-	display: inline-block;
-	padding: 0.2rem 0.5rem;
-	background: transparent;
-	border: 1px solid var(--arv-results-rule);
-	color: #4a4a4a;
-	font-size: var(--arv-fs-label);
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	text-decoration: none;
-	white-space: nowrap;
-	border-radius: var(--arv-radius-chip);
-	transition: background 0.15s ease, color 0.15s ease;
-}
-
-@media (hover: hover) {
-	a.arv-results__archive-link:hover {
-		background: var(--arv-teal);
-		border-color: var(--arv-teal);
-		color: #0d1211;
-	}
 }
 
 /* A race's own page: every edition, and what the race has ever done. */

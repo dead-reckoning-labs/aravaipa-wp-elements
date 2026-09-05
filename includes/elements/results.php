@@ -1922,7 +1922,14 @@ function arv_results_links( $row ) {
 		$primary[] = $slot[0];
 	}
 
-	$buttons = '';
+	// Split, so the archive files can sit between them. Aravaipa's own
+	// results lead the external listings, because on the years those files
+	// exist they ARE the result and UltraSignup and UltraRunning are copies
+	// of it. The live board still leads everything where there is one: it
+	// is also ours, and on a modern race it is the thing people came for.
+	$live_button = '';
+	$listings    = '';
+	$buttons     = '';
 
 	foreach ( $slots as $slot ) {
 		list( $url, $label, $kind ) = $slot;
@@ -1932,8 +1939,16 @@ function arv_results_links( $row ) {
 			continue;
 		}
 
-		$buttons .= '<a class="arv-results__link arv-results__link--' . esc_attr( $kind ) . '" href="'
+		$html = '<a class="arv-results__link arv-results__link--' . esc_attr( $kind ) . '" href="'
 			. esc_url( $url ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
+
+		if ( 'live' === $kind ) {
+			$live_button .= $html;
+		} else {
+			$listings .= $html;
+		}
+
+		$buttons .= $html;
 	}
 
 	$archive = arv_results_archive( $row, $primary );
@@ -1946,7 +1961,7 @@ function arv_results_links( $row ) {
 	}
 
 	return '<div class="arv-results__actions">'
-		. '<div class="arv-results__links">' . $buttons . $archive . '</div>'
+		. '<div class="arv-results__links">' . $live_button . $archive . $listings . '</div>'
 		. '</div>';
 }
 
@@ -2003,21 +2018,32 @@ function arv_results_archive( $row, $primary = array() ) {
 
 		$label = isset( $link['label'] ) ? trim( (string) $link['label'] ) : '';
 
-		// A file with no label of its own still needs a word on it. "Results"
-		// is what the page it came from called the ones it did not name.
+		// One file for the whole edition is just "Results", whatever the
+		// stored label happens to say. A distance is only worth drawing when
+		// there is another distance to tell it apart from: on a row with a
+		// single file, "100 MILE" beside an ULTRARUNNING button reads as a
+		// distance filter on that button rather than as the way into this
+		// race's own results, which is what it is. 101 rows are this shape.
 		//
-		// "Ultracast" is not that case: it is a label, just the wrong one.
-		// Sixty-nine rows have it, and it names the viewer the scraper found
-		// the link inside rather than anything about the result, which reads
-		// as a brand nobody asked about rather than a way into a result. All
-		// but two of those are the only file on their row, i.e. one result
-		// for the whole event, which is exactly what "Results" already means
-		// here for a link with no label at all, so the same fallback applies.
-		if ( '' === $label || 'Ultracast' === $label ) {
+		// It also quietly fixes the labels that were never about the result
+		// at all. "Ultracast", "RaceResult", "RunSignup" name the viewer or
+		// the timing platform the scraper happened to find the link inside,
+		// and between them they are 72 of those 101.
+		//
+		// Where a row has several files the labels stay, because then they
+		// are the only thing distinguishing one from another: 164 rows carry
+		// two to ten, and "Results" ten times over says nothing at all.
+		if ( 1 === count( $links ) || '' === $label ) {
 			$label = __( 'Results', 'aravaipa-elements' );
 		}
 
-		$chips[] = '<a class="arv-results__archive-link" href="' . esc_url( $link['url'] )
+		// Same element as the named buttons, not a smaller chip beside them.
+		// It was inline-block at 0.2rem padding and a smaller font next to
+		// an inline-flex button at 0.45rem with a 38px floor, so the two sat
+		// at different heights with the text off centre against each other.
+		// They are the same kind of thing, one link to one set of results,
+		// so they are the same control with a different colour.
+		$chips[] = '<a class="arv-results__link arv-results__link--file" href="' . esc_url( $link['url'] )
 			. '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>';
 	}
 
