@@ -43,6 +43,23 @@ if ( ! defined( 'ARV_RESULTS_LIVE_MERGE_GRACE' ) ) {
 	define( 'ARV_RESULTS_LIVE_MERGE_GRACE', 400 );
 }
 
+/**
+ * The query var the archive reads a year from.
+ *
+ * Namespaced, and it has to be: "year" is one of WordPress's own reserved
+ * query vars for date archives. /results/?year=2008 was parsed as a request
+ * for the 2008 date archive, found no posts published that year and returned
+ * a 404; ?year=2020 and ?year=2025 got redirected off to a date archive
+ * instead. Only ?year=2026 happened to work, which is exactly the kind of
+ * bug that looks fine on the one year you test.
+ *
+ * The photos element hit this same wall first and its own note says so, in
+ * includes/photos-store.php. Same fix, same prefix, for the same reason.
+ */
+if ( ! defined( 'ARV_RESULTS_YEAR_VAR' ) ) {
+	define( 'ARV_RESULTS_YEAR_VAR', 'arv_year' );
+}
+
 
 cs_register_element(
 	'aravaipa-results',
@@ -1177,13 +1194,13 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 	rsort( $years );
 
 	// The year in the URL, if there is one and it is a year this page
-	// actually has, so a link or a bookmark to ?year=2016 opens on 2016
-	// rather than on whatever the newest year happens to be by the time
-	// someone clicks it. Read directly rather than through a query var:
-	// this page is not behind the /race-results/ rewrite, it is the plain
-	// archive page WordPress already resolves on its own, so nothing
-	// registers this as a var for get_query_var() to return.
-	$requested = isset( $_GET['year'] ) ? preg_replace( '/\D/', '', wp_unslash( $_GET['year'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	// actually has, so a link or a bookmark opens on that year rather than
+	// on whatever the newest year happens to be by the time someone clicks
+	// it. Read directly rather than through a query var: this page is not
+	// behind the /race-results/ rewrite, it is the plain archive page
+	// WordPress already resolves on its own, so nothing registers this as a
+	// var for get_query_var() to return.
+	$requested = isset( $_GET[ ARV_RESULTS_YEAR_VAR ] ) ? preg_replace( '/\D/', '', wp_unslash( $_GET[ ARV_RESULTS_YEAR_VAR ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	$current   = in_array( $requested, $years, true ) ? $requested : $years[0];
 
 	// A row of years rather than a select. Nineteen of them is a lot to put
