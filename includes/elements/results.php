@@ -1175,7 +1175,16 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 	}
 
 	rsort( $years );
-	$current = $years[0];
+
+	// The year in the URL, if there is one and it is a year this page
+	// actually has, so a link or a bookmark to ?year=2016 opens on 2016
+	// rather than on whatever the newest year happens to be by the time
+	// someone clicks it. Read directly rather than through a query var:
+	// this page is not behind the /race-results/ rewrite, it is the plain
+	// archive page WordPress already resolves on its own, so nothing
+	// registers this as a var for get_query_var() to return.
+	$requested = isset( $_GET['year'] ) ? preg_replace( '/\D/', '', wp_unslash( $_GET['year'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$current   = in_array( $requested, $years, true ) ? $requested : $years[0];
 
 	// A row of years rather than a select. Nineteen of them is a lot to put
 	// behind a click: the archive going back to 2008 is most of what was
