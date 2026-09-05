@@ -290,11 +290,10 @@
 			}
 		} );
 
-		// Namespaced to match includes/elements/results.php: "year" is one of
-		// WordPress's own reserved query vars, and using it turned
-		// /results/?year=2008 into a request for the 2008 date archive, which
-		// 404s. See ARV_RESULTS_YEAR_VAR there for the full note.
-		var YEAR_VAR = 'arv_year';
+		// Matches ARV_RESULTS_YEAR_VAR in includes/elements/results.php, where
+		// the full note lives: not "year", which WordPress reserves for date
+		// archives and which 404d every year but the newest.
+		var YEAR_VAR = 'race_year';
 
 		// The newest year, PHP's own default when the URL names none. Kept
 		// so a click back to it can drop the parameter rather than write it
