@@ -383,3 +383,93 @@ function arv_articles_shortcode( $atts ) {
 	return arv_articles_render( $atts );
 }
 add_shortcode( 'arv_articles', 'arv_articles_shortcode' );
+
+/**
+ * The same posts, sized for a sidebar.
+ *
+ * The blog sidebar ran WordPress's own Recent Posts widget, which is a
+ * bare <ul> of titles and dates. On a site whose whole subject is
+ * photographs of people running through mountains, a text list is the one
+ * thing the sidebar could have been that carries none of that.
+ *
+ * Built here rather than swapped for core's Latest Posts block, which does
+ * support featured images but shows a blank where a post has none. Three
+ * of the twenty most recent posts have no featured image set, and
+ * arv_articles_items() already solves that by falling back to the first
+ * photograph in the body: 58 posts across the archive are only illustrated
+ * because of that fallback, so reusing it is the difference between a rail
+ * that looks finished and one with holes in it.
+ *
+ * @param array $atts heading, limit.
+ * @return string
+ */
+function arv_articles_rail_render( $atts ) {
+	$limit = max( 1, (int) $atts['limit'] );
+	$items = array_slice( arv_articles_items(), 0, $limit );
+
+	if ( empty( $items ) ) {
+		return '';
+	}
+
+	$out = '<section class="arv-articles-rail">';
+
+	if ( '' !== trim( (string) $atts['heading'] ) ) {
+		$out .= '<h4 class="arv-articles-rail__head">' . esc_html( $atts['heading'] ) . '</h4>';
+	}
+
+	$out .= '<ul class="arv-articles-rail__list">';
+
+	foreach ( $items as $item ) {
+		$out .= '<li class="arv-articles-rail__item">'
+			. '<a class="arv-articles-rail__link" href="' . esc_url( $item['url'] ) . '">';
+
+		// A tile either way. Without one the rows below it shift left and
+		// the rail stops reading as a list of the same kind of thing.
+		$out .= '<span class="arv-articles-rail__thumb">';
+
+		if ( '' !== $item['thumb'] ) {
+			$out .= '<img src="' . esc_url( $item['thumb'] ) . '" alt="" loading="lazy" decoding="async" />';
+		}
+
+		$out .= '</span>';
+
+		$out .= '<span class="arv-articles-rail__body">';
+
+		if ( ! empty( $item['cats'] ) ) {
+			$out .= '<span class="arv-articles-rail__cat">' . esc_html( $item['cats'][0] ) . '</span>';
+		}
+
+		$out .= '<span class="arv-articles-rail__title">' . esc_html( $item['title'] ) . '</span>';
+
+		$stamp = strtotime( $item['date'] );
+
+		if ( $stamp ) {
+			$out .= '<time class="arv-articles-rail__date" datetime="' . esc_attr( gmdate( 'Y-m-d', $stamp ) ) . '">'
+				. esc_html( gmdate( 'F j, Y', $stamp ) ) . '</time>';
+		}
+
+		$out .= '</span></a></li>';
+	}
+
+	return $out . '</ul></section>';
+}
+
+/**
+ * [arv_articles_rail] for the blog sidebar.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_articles_rail_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'heading' => 'Recent Posts',
+			'limit'   => 5,
+		),
+		$atts,
+		'arv_articles_rail'
+	);
+
+	return arv_articles_rail_render( $atts );
+}
+add_shortcode( 'arv_articles_rail', 'arv_articles_rail_shortcode' );

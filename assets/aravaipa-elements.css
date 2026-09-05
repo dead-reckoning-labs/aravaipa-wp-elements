@@ -9273,3 +9273,107 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	background: rgba(16, 32, 31, 0.85);
 	color: #fff;
 }
+
+/* ------------------------------------------------------------------ *
+ * Articles rail, the blog sidebar.
+ *
+ * Sits inside the theme's own widget markup, so everything is scoped and
+ * the resets are deliberate: the theme styles sidebar <ul> and <li> with
+ * bullets, borders and its own line-height, and a rail of photographs
+ * wants none of it.
+ * ------------------------------------------------------------------ */
+.arv-articles-rail__head {
+	margin: 0 0 0.85rem;
+	font-size: var(--arv-fs-label);
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--arv-ink, #272727);
+}
+
+.arv-articles-rail__list {
+	margin: 0 !important;
+	padding: 0 !important;
+	list-style: none !important;
+}
+
+.arv-articles-rail__item {
+	margin: 0 !important;
+	padding: 0 !important;
+	list-style: none !important;
+	border: 0 !important;
+}
+
+.arv-articles-rail__item + .arv-articles-rail__item {
+	border-top: 1px solid var(--arv-results-rule, #ebebeb) !important;
+}
+
+.arv-articles-rail__link {
+	display: grid;
+	grid-template-columns: 68px 1fr;
+	gap: 0.7rem;
+	align-items: start;
+	padding: 0.7rem 0;
+	text-decoration: none !important;
+	color: inherit;
+}
+
+.arv-articles-rail__link:hover .arv-articles-rail__title {
+	color: var(--arv-accent, #ff2a13);
+}
+
+/* Reserved whether or not there is a photograph, so a post with none
+   does not pull its own row out of line with the rest. */
+.arv-articles-rail__thumb {
+	display: block;
+	position: relative;
+	width: 68px;
+	height: 68px;
+	overflow: hidden;
+	border-radius: 4px;
+	background: #f0f0f0;
+}
+
+.arv-articles-rail__thumb img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+	max-width: none;
+}
+
+.arv-articles-rail__body {
+	display: block;
+	min-width: 0;
+}
+
+.arv-articles-rail__cat {
+	display: block;
+	margin-bottom: 0.15rem;
+	font-size: 0.66rem;
+	font-weight: 800;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-articles-rail__title {
+	display: block;
+	font-size: 0.86rem;
+	font-weight: 700;
+	line-height: 1.32;
+	color: var(--arv-ink, #272727);
+	transition: color 0.15s;
+}
+
+.arv-articles-rail__date {
+	display: block;
+	margin-top: 0.2rem;
+	font-size: 0.7rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--arv-results-muted, #7a7a7a);
+}
