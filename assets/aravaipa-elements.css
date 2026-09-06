@@ -4087,6 +4087,32 @@
    it: this is the primary way in (which year), search is a secondary
    narrowing of whichever year is showing. Absent on every other page, since
    results-YYYY and the year attribute have only ever had the one list. */
+/* The archive masthead. Sized off the heading token rather than the theme's
+   own h1, which is tuned for a hero over an image and lands twice this big
+   over a row of year buttons. */
+.arv-results__masthead {
+	margin: 0 0 1.25rem;
+}
+
+.arv-results__masthead-title {
+	margin: 0;
+	font-size: var(--arv-fs-heading);
+	font-weight: 800;
+	line-height: 1.1;
+	letter-spacing: -0.01em;
+	color: var(--arv-teal-deep);
+}
+
+.arv-results__masthead-meta {
+	margin: 0.35rem 0 0;
+	font-size: var(--arv-fs-body);
+	color: var(--arv-results-muted);
+}
+
+.arv-results__masthead-meta[hidden] {
+	display: none;
+}
+
 .arv-results__year-bar {
 	display: flex;
 	align-items: center;

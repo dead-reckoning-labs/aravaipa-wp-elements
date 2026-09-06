@@ -2640,7 +2640,7 @@ $_GET['race_year'] = '2016';
 $html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
 t( 'the requested year opens unhidden',  false !== strpos( $html, 'data-arv-results-year-panel="2016">' ) );
 t( 'and the other year starts hidden',   false !== strpos( $html, 'data-arv-results-year-panel="2026" hidden>' ) );
-t( 'its pill is marked selected',        false !== strpos( $html, 'data-arv-results-year="2016" aria-selected="true"' ) );
+t( 'its pill is marked selected',        1 === preg_match( '/data-arv-results-year="2016"[^>]*aria-selected="true"/', $html ) );
 
 // A year the store never carried, or none at all, falls back to the newest
 // rather than opening on nothing: that is what every page already did
@@ -2652,6 +2652,55 @@ t( 'an unknown year falls back to newest', false !== strpos( $html, 'data-arv-re
 unset( $_GET['race_year'] );
 $html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
 t( 'no year at all is the same fallback', false !== strpos( $html, 'data-arv-results-year-panel="2026">' ) );
+
+echo "\nresults: the archive names the year it is showing:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'archive' => array( array( 'label' => '50K', 'url' => 'https://aravaiparunning.com/results/bb26.htm' ) ) ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2016-08-13', 'display' => 'August 13',
+	       'archive' => array( array( 'label' => '50K', 'url' => 'https://aravaiparunning.com/results/bb16.htm' ) ) ),
+	array( 'name' => 'Sunset Scramble', 'iso' => '2016-04-02', 'display' => 'April 2',
+	       'archive' => array( array( 'label' => '10K', 'url' => 'https://aravaiparunning.com/results/ss16.htm' ) ) ),
+) );
+arv_archive_stats_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2016-08-13', 'finishers' => 120 ),
+	array( 'name' => 'Sunset Scramble', 'iso' => '2016-04-02', 'finishers' => 80 ),
+) );
+
+$_GET['race_year'] = '2016';
+$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
+t( 'the archive carries an h1',          false !== strpos( $html, '<h1 class="arv-results__masthead-title"' ) );
+t( 'and it names the year showing',      false !== strpos( $html, '>2016 Results</h1>' ) );
+t( 'the line under it counts that year', false !== strpos( $html, '2 races &middot; 200 finishers' )
+                                         || false !== strpos( $html, '2 races · 200 finishers' ) );
+t( 'every year pill carries its title',  false !== strpos( $html, 'data-arv-results-year-title="2026 Results"' ) );
+t( 'and its own counts',                 1 === preg_match( '/data-arv-results-year="2026"[^>]*data-arv-results-year-meta="1 race"/', $html ) );
+
+// An older edition of a race that also ran in the selected year is rendered
+// inside that year's panel, deliberately. Counting what the panel holds
+// would credit 2016 with a race from 2026.
+t( 'a prior edition is not counted',     false === strpos( $html, '3 races' ) );
+
+// Only the archive. A page already scoped to one year has a heading of its
+// own from the page itself, and a race page is not a year view at all.
+$flat = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'a plain results list has no h1',     false === strpos( $flat, 'arv-results__masthead' ) );
+
+$titled = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false',
+	'year_tabs' => 'true', 'heading' => 'Race Results' ) );
+t( 'nor does one given a heading',       false === strpos( $titled, 'arv-results__masthead' ) );
+
+unset( $_GET['race_year'] );
+
+// Back to the two row store the cases below were written against.
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2026-08-29', 'display' => 'August 29',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2026' ),
+	array( 'name' => 'Black Bear Trail Races', 'iso' => '2016-08-13', 'display' => 'August 13',
+	       'live' => 'https://live.aravaiparunning.com/#/black_bear-2016' ),
+) );
 
 // The name this shipped under for a few hours. A URL is a promise the
 // moment someone copies one out of an address bar, so the old spelling is
