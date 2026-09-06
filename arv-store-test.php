@@ -2747,10 +2747,10 @@ t( 'an unscoped list shows one card',    1 === substr_count( $index, 'class="arv
 
 unset( $_GET['race_year'] );
 
-// A search that reaches across years needs two things from the markup: a
-// stable key per race, so the same race showing in fifteen panels can be
-// told from fifteen races, and every name that race went by, so someone
-// typing what it was called in 2011 is not told it never existed.
+// A search that reaches across years reads one thing off the markup: every
+// name the race went by, so someone typing what it was called in 2011 is not
+// told it never existed. Which runnings match is then a question of which
+// cards exist, and there is one per running, one per panel.
 $GLOBALS['ARV_OPTIONS'] = array();
 arv_results_store_set( array(
 	array( 'name' => 'Black Canyon 100K', 'iso' => '2026-02-14', 'display' => 'February 14',
@@ -2762,12 +2762,14 @@ arv_results_store_set( array(
 $_GET['race_year'] = '2026';
 $renamed = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
 
-t( 'a race card carries a stable key',   false !== strpos( $renamed, 'data-arv-results-key="black canyon"' ) );
-t( 'and every name it went by',          false !== strpos( $renamed, 'data-arv-results-race="black canyon 100k | black canyon ultras"' ) );
+t( 'a card carries every name it went by', false !== strpos( $renamed, 'data-arv-results-race="black canyon 100k | black canyon ultras"' ) );
 
-// The same race in the older year's panel answers to the same key, which is
-// the whole point: that is how the search knows to show it once.
-t( 'the older panel agrees on the key',  2 === substr_count( $renamed, 'data-arv-results-key="black canyon"' ) );
+// One card per running, in the panel for the year it ran, so a search that
+// crosses years has a card to show for each of them. Both carry both names,
+// so either spelling finds both runnings.
+t( 'each running gets its own card',     2 === substr_count( $renamed, 'data-arv-results-race="black canyon 100k | black canyon ultras"' ) );
+t( 'one of them is the 2026 running',    false !== strpos( $renamed, 'February 14, 2026' ) );
+t( 'and one is the 2016 running',        false !== strpos( $renamed, 'February 13, 2016' ) );
 
 t( 'the search says it crosses years',   false !== strpos( $renamed, 'placeholder="Race name, any year"' ) );
 t( 'the masthead carries a search title', false !== strpos( $renamed, 'data-arv-results-all-title="Race Results"' ) );
