@@ -472,9 +472,23 @@ function arv_results_render( $data ) {
 	// the race rather than the edition, so one entry lights up every year of
 	// that race at once. A row that already has a link keeps it: the scraped
 	// one came off the page itself and is the more specific answer.
+	//
+	// "none" is the third state a row's own field can hold, and the fallback
+	// has to tell it apart from blank. McDowell Mountain Frenzy's one-off
+	// January 2010 running, a 25K/10 Mile/5K on a date the race has never
+	// repeated, shares a race key with the December edition that has a real
+	// UltraRunning page, so blank on the January row read as "not yet
+	// scraped" and picked up December's page for a race day UltraRunning
+	// never covered. Recorded once a human confirms the edition genuinely
+	// has none, so the fallback stops guessing for that one row without
+	// ever being told to stop guessing for every other blank one.
 	if ( function_exists( 'arv_results_ultrarunning_url' ) ) {
 		foreach ( $rows as $i => $row ) {
-			if ( '' === trim( (string) $row['ultrarunning'] ) ) {
+			$has = trim( (string) $row['ultrarunning'] );
+
+			if ( 'none' === $has ) {
+				$rows[ $i ]['ultrarunning'] = '';
+			} elseif ( '' === $has ) {
 				$rows[ $i ]['ultrarunning'] = arv_results_ultrarunning_url( $row['name'] );
 			}
 		}
