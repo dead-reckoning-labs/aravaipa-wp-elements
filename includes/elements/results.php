@@ -1521,6 +1521,61 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 }
 
 /**
+ * Every name each race has ever gone by, keyed by race.
+ *
+ * Read off the whole store rather than off whatever subset a panel is
+ * rendering. A year panel only carries editions up to its own year, so the
+ * 2016 panel's Black Canyon card knows the race as "Black Canyon Ultras" and
+ * has never heard of "Black Canyon 100K", the name it runs under now and the
+ * name somebody searching for it will type. Built once per request.
+ *
+ * @return array Race key => list of lowercase names, newest first.
+ */
+function arv_results_race_names() {
+	static $names = array();
+	static $built = null;
+
+	if ( ! function_exists( 'arv_results_store_get' ) || ! function_exists( 'arv_results_race_key' ) ) {
+		return array();
+	}
+
+	$store = arv_results_store_get();
+
+	// Keyed on the names the store holds rather than built once and kept.
+	// One page render calls this once per card and the store cannot change
+	// underneath it, but a process that renders twice against two different
+	// stores can and does: the test harness is exactly that, and a cache
+	// that ignored it answered the second render with the first one's races.
+	$signature = md5( serialize( array_column( $store, 'name' ) ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+
+	if ( $signature === $built ) {
+		return $names;
+	}
+
+	$built = $signature;
+	$names = array();
+
+	foreach ( $store as $row ) {
+		$key  = arv_results_race_key( isset( $row['name'] ) ? $row['name'] : '' );
+		$name = strtolower( trim( (string) ( isset( $row['name'] ) ? $row['name'] : '' ) ) );
+
+		if ( '' === $key || '' === $name ) {
+			continue;
+		}
+
+		if ( ! isset( $names[ $key ] ) ) {
+			$names[ $key ] = array();
+		}
+
+		if ( ! in_array( $name, $names[ $key ], true ) ) {
+			$names[ $key ][] = $name;
+		}
+	}
+
+	return $names;
+}
+
+/**
  * Race key to the race's own page on the site.
  *
  * Built from the race store, which is the only place a race's page URL lives.
@@ -1689,7 +1744,7 @@ function arv_results_race_groups_markup( $rows, $year = '' ) {
 	$dated = preg_match( '/^\d{4}$/', (string) $year );
 	$cards = array();
 
-	foreach ( $races as $race_key => $editions ) {
+	foreach ( $races as $editions ) {
 		$shown = array();
 
 		if ( $dated ) {
@@ -1706,7 +1761,6 @@ function arv_results_race_groups_markup( $rows, $year = '' ) {
 
 		foreach ( $shown as $edition ) {
 			$cards[] = array(
-				'key'      => $race_key,
 				'latest'   => $edition,
 				'editions' => $editions,
 			);
@@ -1742,7 +1796,6 @@ function arv_results_race_groups_markup( $rows, $year = '' ) {
 	foreach ( $cards as $card ) {
 		// The edition this card is for, and its name is the one to show: a
 		// race that was renamed is called whatever it is called now.
-		$race_key = $card['key'];
 		$editions = $card['editions'];
 		$latest   = $card['latest'];
 
@@ -1750,14 +1803,19 @@ function arv_results_race_groups_markup( $rows, $year = '' ) {
 		// The search reads this attribute, and a nineteen year archive has
 		// renamed enough races that someone typing what a race was called
 		// when they ran it would otherwise be told it does not exist.
-		$aka = array();
+		//
+		// Off the whole store, not off this panel's own editions: a panel
+		// carries nothing newer than its own year, so an older running of a
+		// renamed race would answer only to the name it had at the time and
+		// go missing from a search for what the race is called now.
+		$all_names = arv_results_race_names();
+		$race_key  = arv_results_race_key( $latest['name'] );
+		$aka       = isset( $all_names[ $race_key ] ) ? $all_names[ $race_key ] : array();
 
-		foreach ( $editions as $edition ) {
-			$spelling = strtolower( trim( (string) $edition['name'] ) );
+		$mine = strtolower( trim( (string) $latest['name'] ) );
 
-			if ( '' !== $spelling && ! in_array( $spelling, $aka, true ) ) {
-				$aka[] = $spelling;
-			}
+		if ( '' !== $mine && ! in_array( $mine, $aka, true ) ) {
+			array_unshift( $aka, $mine );
 		}
 
 		$this_month = arv_results_month_label( $latest['iso'] );
@@ -1775,13 +1833,8 @@ function arv_results_race_groups_markup( $rows, $year = '' ) {
 			$out .= '<h3 class="arv-results__month-head">' . esc_html( $month ) . '</h3>';
 		}
 
-		// The key as well as the names: the archive renders one card per
-		// race per year and the search crosses every year at once, so it
-		// needs something stable to tell "this race again" from "a second
-		// race", and the visible name is exactly what is not stable here.
 		$out .= '<div class="arv-results__race-group"'
-			. ' data-arv-results-race="' . esc_attr( implode( ' | ', $aka ) ) . '"'
-			. ' data-arv-results-key="' . esc_attr( $race_key ) . '">';
+			. ' data-arv-results-race="' . esc_attr( implode( ' | ', $aka ) ) . '">';
 
 		$stats = arv_stats_for_row( $latest );
 

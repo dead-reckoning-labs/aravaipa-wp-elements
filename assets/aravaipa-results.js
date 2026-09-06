@@ -12,7 +12,8 @@
  * by what it was called at the time finds it.
  *
  * Browsing is one year at a time, searching is not: a query is asked of the
- * whole archive and each race answers once, out of the newest year it ran.
+ * whole archive and answered with every running that matches it, each under
+ * the year it happened in.
  *
  * No dependencies, and it no-ops on any page without the element.
  */
@@ -55,13 +56,13 @@
 		// fifteen runnings, which is the archive telling a reader something
 		// false about its own contents.
 		//
-		// The pile-up this used to avoid is real and is handled rather than
-		// dodged. A year panel is not a slice of one list, it is
-		// arv_results_filter_year run fresh, so a race that ran fifteen times
-		// exists as fifteen cards, one per panel. Only the first is shown:
-		// panels run newest first, and the newest panel a race appears in
-		// already holds every earlier edition of it, so the card that wins is
-		// also the complete one.
+		// A race that ran fifteen times has fifteen cards, one in each year's
+		// panel, and they are not copies of each other: a panel holds only
+		// the runnings that happened in its own year, so each card is that
+		// year's race day with its own date, finishers and winners. A search
+		// shows all of them. Collapsing them to the newest one, which this
+		// did for a few releases, answered "does this race exist" when the
+		// question a search asks of an archive is "when did it run".
 		var activePanel = null;
 
 		for ( var ap = 0; ap < panels.length; ap++ ) {
@@ -96,8 +97,7 @@
 				everyCard.push( {
 					el: cards[ ec ],
 					panel: panels[ ep ],
-					names: cards[ ec ].getAttribute( 'data-arv-results-race' ) || '',
-					key: cards[ ec ].getAttribute( 'data-arv-results-key' ) || ''
+					names: cards[ ec ].getAttribute( 'data-arv-results-race' ) || ''
 				} );
 			}
 		}
@@ -177,19 +177,22 @@
 			var m;
 
 			if ( panels.length ) {
-				// One card per race while searching, whichever year it turns
-				// up in, and the whole of the chosen year otherwise.
-				var seen = {};
-
+				// Every running that matches, not one card per race. A year
+				// panel holds only the runnings that happened in that year,
+				// so the fifteen Javelina Jundred cards a search crosses are
+				// fifteen different races days, correctly dated, each under
+				// its own year: the race's history, which is what somebody
+				// searching an archive for it is looking for. Collapsing
+				// them to the newest one answered "does this race exist"
+				// when the question was "when did it run".
 				for ( i = 0; i < everyCard.length; i++ ) {
 					var card = everyCard[ i ];
 					var hit;
 
 					if ( searching ) {
-						hit = card.names.indexOf( q ) !== -1 && ! seen[ card.key ];
+						hit = card.names.indexOf( q ) !== -1;
 
 						if ( hit ) {
-							seen[ card.key ] = true;
 							shown++;
 						}
 					} else {
@@ -242,6 +245,8 @@
 			// Says which haystack it looked in, because the year buttons are
 			// still on screen and the honest reading of "no races match that"
 			// under a selected year is that it only looked at that one.
+			// Counted as results rather than races once it crosses years,
+			// because eighteen of them can be one race.
 			var everywhere = panels.length > 1;
 
 			if ( ! searching ) {
@@ -251,9 +256,10 @@
 				count.textContent = everywhere
 					? 'No races match that, in any year.'
 					: 'No races match that.';
+			} else if ( everywhere ) {
+				count.textContent = shown + ( 1 === shown ? ' result' : ' results' ) + ', all years';
 			} else {
-				count.textContent = shown + ( 1 === shown ? ' race' : ' races' )
-					+ ( everywhere ? ', all years' : '' );
+				count.textContent = shown + ( 1 === shown ? ' race' : ' races' );
 			}
 		}
 
