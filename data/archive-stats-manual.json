@@ -170,6 +170,79 @@
     }
    ],
    "source": "jamil, read off the results file by hand: it has no gender column"
+  },
+  {
+   "name": "Silverton Alpine",
+   "iso": "2011-08-27",
+   "finishers": 28,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Kilometer",
+     "men": {
+      "name": "Drew Gunn",
+      "time": "4:57:57"
+     },
+     "women": {
+      "name": "Leah Fein",
+      "time": "5:43:54"
+     }
+    },
+    {
+     "distance": "Marathon",
+     "men": {
+      "name": "David James",
+      "time": "4:06:36"
+     },
+     "women": {
+      "name": "Ivy Lefebvre",
+      "time": "5:17:30"
+     }
+    }
+   ],
+   "source": "pdftotext, read by hand: the only results file for this edition is a PDF this script cannot open"
+  },
+  {
+   "name": "Blue Ribbon Run (Timing Event)",
+   "iso": "2011-07-04",
+   "finishers": 162,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Nathan Coury",
+      "time": "37:31"
+     },
+     "women": {
+      "name": "Kenzie Grant",
+      "time": "44:21"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Ryan King",
+      "time": "20:49"
+     },
+     "women": {
+      "name": "Jackie Henderson",
+      "time": "21:27"
+     }
+    },
+    {
+     "distance": "2K",
+     "men": {
+      "name": "Jay Van Buren",
+      "time": "9:41"
+     },
+     "women": {
+      "name": "Summer Smith",
+      "time": "9:47"
+     }
+    }
+   ],
+   "source": "xlrd, read by hand: legacy binary .xls, no reader for that format here"
   }
  ]
 }
