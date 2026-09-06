@@ -21,10 +21,11 @@
  * the races, and an archived copy of a page listing race ids is as good as
  * a live one, because the ids do not change.
  *
- * A date with exactly one race id is taken. A date with several is not:
- * that is a race that ran two or more distances that day, UltraRunning
- * numbers each of them separately, and nothing here can tell which one the
- * row means. Those are reported rather than guessed at.
+ * A date with exactly one race id is taken as is. A date with several is a
+ * race that ran two or more distances that day, UltraRunning numbering
+ * each separately: the longest of them wins, going by the winning result's
+ * own apparent length (see apparentLength() below), and every one of these
+ * picks is reported so it can be checked rather than trusted blind.
  *
  *   node scripts/backfill-ultrarunning-years.mjs --map ur-map.json
  *   node scripts/backfill-ultrarunning-years.mjs --map ur-map.json --out patch.json
@@ -101,19 +102,79 @@ async function archivedEventPage( slug ) {
 	);
 }
 
-// Every "race id ran on this date" pair the page lists. The toolbar the
-// archive injects carries its own links, so the page proper is taken from
-// after it.
+// How long the winning result on this page's own scale says the race was.
+// "Top Result (M)" is a finish time, "4:37:15", for a race scored on
+// distance, and a number of miles, "100.142", for one scored on time: the
+// same split every file on aravaiparunning.com forces, on a page this
+// script cannot otherwise read at all. A longer finish time is treated as
+// a longer race rather than a slower one, which holds for picking the
+// longest of a day's several distances specifically: the pace gap between
+// a 50K's winner and a 50 Miler's is nowhere near the distance gap between
+// them, so the one who ran longest is reliably the one who ran farthest.
+// A finish time in seconds, when the result is one: "4:37:15" for a race
+// scored on distance. Never a fixed-time race's mileage, "100.142", which
+// this deliberately leaves at 0 rather than trying to read as a time.
+function apparentSeconds( result ) {
+	const s = result.trim();
+
+	if ( ! /^\d{1,3}:[0-5]\d(:[0-5]\d)?$/.test( s ) ) return 0;
+
+	return s.split( ':' ).reduce( ( a, p ) => a * 60 + +p, 0 );
+}
+
+// Miles covered, when the result is one: a bare number, "100.142", for a
+// race scored on time rather than distance. Never a finish time, which
+// parseFloat would otherwise read as just its leading digits, "4" out of
+// "4:37:15", a number with no relationship to how far anyone ran.
+function apparentMiles( result ) {
+	const s = result.trim();
+
+	if ( /:/.test( s ) ) return 0;
+
+	const n = parseFloat( s );
+	return Number.isFinite( n ) ? n : 0;
+}
+
+// Which of a day's several distances is the longest, in whichever unit its
+// own winning result is reported in. A second and a mile are not the same
+// axis, the same reason guessSeconds and guessMetres stay two functions in
+// fetch-archive-stats.mjs rather than one: Jackpot Ultras 2024 pairs a real
+// distance's finish time, "14:04:40" (50,680 seconds), against a fixed-time
+// race's mileage, "197.478", and 50,680 is not a longer race than 197.478
+// miles just because it is the bigger number. Where the day mixes the two
+// shapes, the fixed-time one wins outright: it is the marquee distance at
+// every Aravaipa event built this way (Desert Solstice's 24 Hour over its
+// own 100 Mile, Juniperwood's 48 Hour over its 50 Mile), not a shorter race
+// that happens to share a page with a longer one. Only when every result on
+// the day is the same shape does the raw number decide between them.
+function longestOf( ids ) {
+	const timed = [ ...ids ].filter( ( r ) => r[ 1 ].miles > 0 );
+	const pool = timed.length ? timed : [ ...ids ];
+	const key = timed.length ? 'miles' : 'seconds';
+
+	return [ ...pool ].sort( ( a, b ) => b[ 1 ][ key ] - a[ 1 ][ key ] );
+}
+
 function racesOn( html ) {
 	const page = html.split( '<!-- END WAYBACK TOOLBAR INSERT -->' ).pop();
 	const found = new Map();
 
-	for ( const m of page.matchAll( /href="[^"]*?\/race\/(\d+)\/results"[^>]*>\s*(\d\d)\/(\d\d)\/(\d\d)\s*</g ) ) {
-		const [ , id, mm, dd, yy ] = m;
+	for ( const tr of page.matchAll( /<tr>\s*<td>\s*<a[^>]*href="[^"]*?\/race\/(\d+)\/results"[^>]*>\s*(\d\d)\/(\d\d)\/(\d\d)\s*<\/a>[\s\S]*?<\/tr>/g ) ) {
+		const [ row, id, mm, dd, yy ] = tr;
 		const iso = `20${ yy }-${ mm }-${ dd }`;
 
-		if ( ! found.has( iso ) ) found.set( iso, new Set() );
-		found.get( iso ).add( id );
+		// Finishers, then Top Result (M), then Top Result (F): the three
+		// <td>s the row's own <a> is not inside.
+		const cells = [ ...row.matchAll( /<td>\s*([^<]*?)\s*<\/td>/g ) ].map( ( c ) => c[ 1 ].trim() );
+		const [ m, f ] = [ cells[ 1 ] || '', cells[ 2 ] || '' ];
+
+		const length = {
+			seconds: Math.max( apparentSeconds( m ), apparentSeconds( f ) ),
+			miles: Math.max( apparentMiles( m ), apparentMiles( f ) ),
+		};
+
+		if ( ! found.has( iso ) ) found.set( iso, new Map() );
+		found.get( iso ).set( id, length );
 	}
 
 	return found;
@@ -169,7 +230,7 @@ async function main() {
 	console.error( `${ bySlug.size } races on the map, ${ [ ...bySlug.values() ].flat().length } editions behind them\n` );
 
 	const patch = [];
-	const report = { noPage: [], unsure: [], ambiguous: [], already: 0, matched: 0, noDate: [] };
+	const report = { noPage: [], unsure: [], multi: [], already: 0, matched: 0, noDate: [] };
 	let done = 0;
 
 	for ( const [ slug, editions ] of bySlug ) {
@@ -197,14 +258,28 @@ async function main() {
 			if ( ! ids ) { report.noDate.push( `${ row.name } ${ row.iso }` ); continue; }
 
 			// Several ids on one date is a race that ran more than one
-			// distance that day, each numbered separately, and nothing here
-			// can say which one this row is about. Reported, not guessed.
-			if ( ids.size > 1 ) {
-				report.ambiguous.push( `${ row.name } ${ row.iso }: ${ [ ...ids ].join( ', ' ) }` );
-				continue;
-			}
+			// distance that day, each numbered separately. The longest of
+			// them wins, by longestOf()'s reading of each one's own winning
+			// result. Reported either way, so a pairing that turned on a tie
+			// or a missing result is visible rather than silent.
+			let id;
 
-			const id = [ ...ids ][ 0 ];
+			if ( 1 === ids.size ) {
+				id = [ ...ids.keys() ][ 0 ];
+			} else {
+				const ranked = longestOf( ids );
+				const show = ( r ) => `${ r[ 0 ] } (${ r[ 1 ].miles || r[ 1 ].seconds } ${ r[ 1 ].miles ? 'mi' : 's' })`;
+				id = ranked[ 0 ][ 0 ];
+
+				const rest = [ ...ids ].filter( ( r ) => r[ 0 ] !== id );
+				const key = ranked[ 0 ][ 1 ].miles ? 'miles' : 'seconds';
+				const tie = ranked.filter( ( r ) => r[ 1 ][ key ] === ranked[ 0 ][ 1 ][ key ] ).length > 1;
+				report.multi.push(
+					`${ row.name } ${ row.iso }: took ${ show( ranked[ 0 ] ) } over ${
+						rest.map( show ).join( ', ' )
+					}${ tie ? ' -- TIE, check this one' : '' }`
+				);
+			}
 
 			patch.push( {
 				name: row.name,
@@ -223,9 +298,9 @@ async function main() {
 		console.error( `${ report.unsure.length } could not be reached, worth another run: ${ report.unsure.join( ', ' ) }` );
 	}
 
-	console.error( `${ report.ambiguous.length } editions ran more than one distance that day, left alone:` );
-	for ( const a of report.ambiguous.slice( 0, 15 ) ) console.error( `  ${ a }` );
-	if ( report.ambiguous.length > 15 ) console.error( `  ... and ${ report.ambiguous.length - 15 } more` );
+	console.error( `${ report.multi.length } editions ran more than one distance that day, longest taken:` );
+	for ( const a of report.multi.slice( 0, 15 ) ) console.error( `  ${ a }` );
+	if ( report.multi.length > 15 ) console.error( `  ... and ${ report.multi.length - 15 } more` );
 
 	console.error( `${ report.noDate.length } editions are on no archived page for their race` );
 
