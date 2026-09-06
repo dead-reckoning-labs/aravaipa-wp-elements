@@ -2693,6 +2693,41 @@ t( 'nor does one given a heading',       false === strpos( $titled, 'arv-results
 
 unset( $_GET['race_year'] );
 
+echo "\nresults: a race that ran twice in a year shows both:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'McDowell Mountain Frenzy', 'iso' => '2010-12-11', 'display' => 'December 11',
+	       'archive' => array( array( 'label' => '50K', 'url' => 'https://aravaiparunning.com/results/mmf10dec.htm' ) ) ),
+	array( 'name' => 'McDowell Mountain Frenzy', 'iso' => '2010-01-23', 'display' => 'January 23',
+	       'archive' => array( array( 'label' => '25K', 'url' => 'https://aravaiparunning.com/results/mmf10jan.htm' ) ) ),
+	array( 'name' => 'McDowell Mountain Frenzy', 'iso' => '2009-01-24', 'display' => 'January 24',
+	       'archive' => array( array( 'label' => '25K', 'url' => 'https://aravaiparunning.com/results/mmf09.htm' ) ) ),
+) );
+
+$_GET['race_year'] = '2010';
+$twice = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
+$panel = substr( $twice, strpos( $twice, 'data-arv-results-year-panel="2010"' ) );
+$panel = substr( $panel, 0, strpos( $panel, 'data-arv-results-year-panel="2009"' ) );
+
+t( 'both runnings get a card',           2 === substr_count( $panel, 'class="arv-results__race-group"' ) );
+t( 'the December one is there',          false !== strpos( $panel, 'December 11, 2010' ) );
+t( 'and the January one',                false !== strpos( $panel, 'January 23, 2010' ) );
+t( 'each under its own month',           false !== strpos( $panel, 'December 2010' ) && false !== strpos( $panel, 'January 2010' ) );
+
+// December is the newer running and comes first, which is the order every
+// other year is already in.
+t( 'newest running leads the panel',     strpos( $panel, 'December 11, 2010' ) < strpos( $panel, 'January 23, 2010' ) );
+
+// The year before is the race's history, not 2010's, and stays out of it.
+t( 'an earlier year stays out',          false === strpos( $panel, 'January 24, 2009' ) );
+
+// A list with no year to scope it is an index of races, so it still shows
+// each race once, at its newest running.
+$index = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false' ) );
+t( 'an unscoped list shows one card',    1 === substr_count( $index, 'class="arv-results__race-group"' ) );
+
+unset( $_GET['race_year'] );
+
 // A search that reaches across years needs two things from the markup: a
 // stable key per race, so the same race showing in fifteen panels can be
 // told from fifteen races, and every name that race went by, so someone

@@ -1499,7 +1499,7 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 		$out .= '<div class="arv-results__year-panel" id="arv-results-panel-' . esc_attr( $y ) . '"'
 			. ' role="tabpanel" data-arv-results-year-panel="' . esc_attr( $y ) . '"'
 			. ( $y === $current ? '' : ' hidden' ) . '>';
-		$out .= arv_results_race_groups_markup( arv_results_filter_year( $rows, $y ) );
+		$out .= arv_results_race_groups_markup( arv_results_filter_year( $rows, $y ), $y );
 		$out .= '</div>';
 	}
 
@@ -1651,7 +1651,7 @@ function arv_results_same_race( $a, $b ) {
 	return array() === array_diff( $aw, $bw ) || array() === array_diff( $bw, $aw );
 }
 
-function arv_results_race_groups_markup( $rows ) {
+function arv_results_race_groups_markup( $rows, $year = '' ) {
 	$races = array();
 
 	foreach ( $rows as $row ) {
@@ -1661,6 +1661,54 @@ function arv_results_race_groups_markup( $rows ) {
 		}
 		$races[ $key ][] = $row;
 	}
+
+	// One card per race, dated by its newest edition, which is what an index
+	// of races wants. A year panel is not that: it is what happened in one
+	// year, and a race that ran twice that year ran twice. McDowell Mountain
+	// Frenzy ran in January 2010 and again that December, and taking only
+	// the newest left the January running nowhere on the archive of 2010 at
+	// all, results, winners, finishers and every link with it.
+	//
+	// Only the runnings inside the year, never the earlier editions this set
+	// also carries: those are the race's history, and they belong to the
+	// years they happened in.
+	$dated = preg_match( '/^\d{4}$/', (string) $year );
+	$cards = array();
+
+	foreach ( $races as $race_key => $editions ) {
+		$shown = array();
+
+		if ( $dated ) {
+			foreach ( $editions as $edition ) {
+				if ( substr( (string) $edition['iso'], 0, 4 ) === (string) $year ) {
+					$shown[] = $edition;
+				}
+			}
+		}
+
+		if ( empty( $shown ) ) {
+			$shown = array( $editions[0] );
+		}
+
+		foreach ( $shown as $edition ) {
+			$cards[] = array(
+				'key'      => $race_key,
+				'latest'   => $edition,
+				'editions' => $editions,
+			);
+		}
+	}
+
+	// Back into date order, because a second card for the same race belongs
+	// under its own month rather than beside the race's newest one. Ties
+	// keep the order the store gave them: usort has been stable since PHP
+	// 8.0 and the store is already sorted the way this page wants.
+	usort(
+		$cards,
+		function ( $a, $b ) {
+			return strcmp( (string) $b['latest']['iso'], (string) $a['latest']['iso'] );
+		}
+	);
 
 	// No back bar. It belonged to a "click a race, the year filters down to
 	// it" mode that older editions behind a native <details> replaced: the
@@ -1677,11 +1725,12 @@ function arv_results_race_groups_markup( $rows ) {
 	// that the answer to a question instead of a surprise.
 	$month = '';
 
-	foreach ( $races as $race_key => $editions ) {
-		// Newest edition first, and its name is the one to show: a race that
-		// was renamed is called whatever it is called now.
-		$latest = $editions[0];
-		$older  = array_slice( $editions, 1 );
+	foreach ( $cards as $card ) {
+		// The edition this card is for, and its name is the one to show: a
+		// race that was renamed is called whatever it is called now.
+		$race_key = $card['key'];
+		$editions = $card['editions'];
+		$latest   = $card['latest'];
 
 		// Every name this race has gone by, not only the one on the card.
 		// The search reads this attribute, and a nineteen year archive has
