@@ -315,6 +315,25 @@
     }
    ],
    "source": "jamil, gender read off the results file by hand: it is a placing list with no header and no gender column"
+  },
+  {
+   "name": "Javelina Jundred",
+   "iso": "2009-10-31",
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Dave James",
+      "time": "14:20:54"
+     },
+     "women": {
+      "name": "Beverley Abbs",
+      "time": "18:48:05"
+     }
+    }
+   ],
+   "source": "jamil, gender read off the results file by hand: it is a lap board with no gender column"
   }
  ]
 }
