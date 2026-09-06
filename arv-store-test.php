@@ -919,6 +919,25 @@ t( 'a blank row gains its link',             false !== strpos( $ur, 'black-canyo
 t( 'a row that already had one keeps it',    false !== strpos( $ur, 'already/race/999' ) );
 t( 'and is not overwritten by the map',      false === strpos( $ur, 'cocodona-250/race/44204' ) );
 
+// "none" is a fact about one edition, not a blank waiting on the scraper.
+// McDowell Mountain Frenzy's December running has a real UltraRunning page;
+// its one-off January running, a different date and different distances,
+// never had one, and blank on that row picked up December's page for a
+// race day UltraRunning never covered.
+arv_results_ultrarunning_store_set( array( 'McDowell Mountain Frenzy' => 'mcdowell-mountain-frenzy' ) );
+arv_results_store_set( array(
+	array( 'name' => 'McDowell Mountain Frenzy', 'iso' => '2010-12-11', 'display' => 'December 11',
+	       'archive' => array( array( 'label' => '50K', 'url' => 'https://aravaiparunning.com/results/mmf10dec.htm' ) ),
+	       'ultrasignup' => '', 'ultrarunning' => '' ),
+	array( 'name' => 'McDowell Mountain Frenzy', 'iso' => '2010-01-23', 'display' => 'January 23',
+	       'archive' => array( array( 'label' => '25K', 'url' => 'https://aravaiparunning.com/results/mmf10jan.htm' ) ),
+	       'ultrasignup' => '', 'ultrarunning' => 'none' ),
+) );
+$mmf = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false', 'year' => '2010' ) );
+t( 'the blank December row gains its link', false !== strpos( $mmf, 'href="https://ultrarunning.com/calendar/event/mcdowell-mountain-frenzy/race"' ) );
+// Exactly once: December's, and only December's.
+t( 'the none-marked January row keeps none', 1 === substr_count( $mmf, 'ultrarunning.com/calendar/event/mcdowell-mountain-frenzy' ) );
+
 arv_results_ultrarunning_store_set( array() );
 arv_results_store_set( array() );
 
