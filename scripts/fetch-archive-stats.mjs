@@ -799,6 +799,16 @@ function guessMetres( name ) {
 	const km = n.match( /^([\d.]+)\s*k(?:m|ilometers?)?$/ );
 	if ( km ) return Math.round( +km[ 1 ] * 1000 );
 
+	// Kendall Mountain Run 2012 and 2013 name their two distances "Kendall
+	// Mountain Run", the race's own name standing in for its one course
+	// with no distance written anywhere, and "K2 double", the same course
+	// run twice with no distance of its own to guess either. Neither has a
+	// unit this function can read, so both guessed 0 and tied, and a tie
+	// never becomes a headline. Not a real measurement, only enough of one
+	// to say a double is longer than whatever it is double of, which is
+	// true regardless of what that turns out to be.
+	if ( /\bdouble\b/.test( n ) ) return 1;
+
 	return 0;
 }
 
