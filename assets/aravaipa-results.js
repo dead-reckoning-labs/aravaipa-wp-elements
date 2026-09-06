@@ -5,9 +5,14 @@
  * this only ever hides and shows: nothing is fetched, and a search engine
  * sees the whole archive regardless of what anyone has typed.
  *
- * Matches on the race's own name only, not on the dates or the link labels,
+ * Matches on the race's own names only, not on the dates or the link labels,
  * because every race carries the same three link labels and "results" would
- * otherwise match all seventy-five of them.
+ * otherwise match all seventy-five of them. Names plural: a race renamed
+ * between editions answers to every spelling it has had, so looking one up
+ * by what it was called at the time finds it.
+ *
+ * Browsing is one year at a time, searching is not: a query is asked of the
+ * whole archive and each race answers once, out of the newest year it ran.
  *
  * No dependencies, and it no-ops on any page without the element.
  */
@@ -43,25 +48,35 @@
 		// The master page renders one full list per year, all but the
 		// current one starting hidden; every other page (results-YYYY, and
 		// the year attribute) has always rendered the single list it has.
-		// Search stays scoped to whichever list is actually on screen. It
-		// would be tempting to have a query reach across every year, but a
-		// year panel is not a slice of one list, it is arv_results_filter_year
-		// run fresh for that year, so a race that ran fifteen times exists as
-		// fifteen separate cards, one per panel, each opening onto that
-		// year's own "earlier editions". A search that crossed panels would
-		// surface the same race up to fifteen times side by side, which is
-		// the exact pile-up the disclosure exists to avoid, not a race
-		// nobody could find.
+		//
+		// A query reaches across every year of them. Browsing is a year at a
+		// time, but searching is not: typing a race name while 2009 happened
+		// to be showing answered "no races match that" about a race with
+		// fifteen runnings, which is the archive telling a reader something
+		// false about its own contents.
+		//
+		// The pile-up this used to avoid is real and is handled rather than
+		// dodged. A year panel is not a slice of one list, it is
+		// arv_results_filter_year run fresh, so a race that ran fifteen times
+		// exists as fifteen cards, one per panel. Only the first is shown:
+		// panels run newest first, and the newest panel a race appears in
+		// already holds every earlier edition of it, so the card that wins is
+		// also the complete one.
+		var activePanel = null;
+
+		for ( var ap = 0; ap < panels.length; ap++ ) {
+			if ( ! panels[ ap ].hidden ) {
+				activePanel = panels[ ap ];
+				break;
+			}
+		}
+
 		function activeList() {
 			if ( 0 === panels.length ) {
 				return root.querySelector( '[data-arv-results-list]' );
 			}
-			for ( var p = 0; p < panels.length; p++ ) {
-				if ( ! panels[ p ].hidden ) {
-					return panels[ p ].querySelector( '[data-arv-results-list]' );
-				}
-			}
-			return null;
+
+			return activePanel ? activePanel.querySelector( '[data-arv-results-list]' ) : null;
 		}
 
 		var list = activeList();
@@ -69,75 +84,152 @@
 			return;
 		}
 
+		// Every card on the page, panel by panel in the order they were
+		// rendered, resolved once. Which cards exist never changes; only
+		// which ones are showing does.
+		var everyCard = [];
+
+		for ( var ep = 0; ep < panels.length; ep++ ) {
+			var cards = panels[ ep ].querySelectorAll( '[data-arv-results-race]' );
+
+			for ( var ec = 0; ec < cards.length; ec++ ) {
+				everyCard.push( {
+					el: cards[ ec ],
+					panel: panels[ ep ],
+					names: cards[ ec ].getAttribute( 'data-arv-results-race' ) || '',
+					key: cards[ ec ].getAttribute( 'data-arv-results-key' ) || ''
+				} );
+			}
+		}
+
+		var everyMonth = panels.length
+			? root.querySelectorAll( '[data-arv-results-year-panel] [data-arv-results-month]' )
+			: root.querySelectorAll( '[data-arv-results-month]' );
+
 		var groups = list.querySelectorAll( '[data-arv-results-race]' );
 		var months = list.querySelectorAll( '[data-arv-results-month]' );
 
-		// Search narrow enough that every match can be opened without
-		// burying the page. Someone who typed a race name wants that race's
-		// history, and leaving it behind a second click is asking them to
-		// say what they want twice. Above this many matches the query is
-		// still a browse, and opening them all would be pages of it.
-		var AUTO_OPEN_MAX = 5;
+		// The masthead heading and the line under it, swapped as the reader
+		// moves: the page never reloads, so the <h1> would otherwise still
+		// read "2026 Results" over a list of 2010 races. Every string is
+		// written server side, so the browser only moves them and never
+		// composes one.
+		var masthead = root.querySelector( '.arv-results__masthead' );
+		var titleEl = root.querySelector( '[data-arv-results-title]' );
+		var metaEl = root.querySelector( '[data-arv-results-meta]' );
+		var allTitle = masthead ? masthead.getAttribute( 'data-arv-results-all-title' ) : '';
 
-		// Only ever re-closes what this opened. Anything the reader opened
-		// by hand is theirs and survives a search and a clear.
-		var autoOpened = [];
+		function syncMasthead( button, searching ) {
+			if ( titleEl ) {
+				if ( searching && allTitle ) {
+					titleEl.textContent = allTitle;
+				} else if ( ! searching && button ) {
+					titleEl.textContent = button.getAttribute( 'data-arv-results-year-title' ) ||
+						titleEl.textContent;
+				}
+			}
 
-		function setOpen( el, open ) {
-			var panel = el.querySelector( '[data-arv-results-editions-panel]' );
-			var btn = el.querySelector( '[data-arv-results-editions]' );
-			if ( ! panel ) {
-				return;
+			// A count of one year's races under a heading that is no longer
+			// about one year would be answering a question nobody asked, and
+			// the match count beside the search box is already the answer to
+			// the one they did.
+			if ( metaEl ) {
+				var meta = ( ! searching && button )
+					? button.getAttribute( 'data-arv-results-year-meta' )
+					: '';
+
+				metaEl.textContent = meta || '';
+				metaEl.hidden = ! meta;
 			}
-			if ( open ) {
-				if ( panel.hidden ) {
-					panel.hidden = false;
-					if ( btn ) {
-						btn.setAttribute( 'aria-expanded', 'true' );
-					}
-					autoOpened.push( el );
+		}
+
+		// While a query is up, the page is not showing a year: it is showing
+		// what matched, out of all of them. No year button is the selected
+		// one for as long as that is true, because leaving 2009 lit while the
+		// answer came out of 2016 is the confusion this whole change is
+		// about. Put back the moment the query clears.
+		function syncYearPills( searching ) {
+			var year = activePanel
+				? activePanel.getAttribute( 'data-arv-results-year-panel' )
+				: null;
+			var selected = null;
+
+			for ( var b = 0; b < yearButtons.length; b++ ) {
+				var mine = yearButtons[ b ].getAttribute( 'data-arv-results-year' ) === year;
+				var on = mine && ! searching;
+
+				yearButtons[ b ].classList.toggle( 'is-on', on );
+				yearButtons[ b ].setAttribute( 'aria-selected', on ? 'true' : 'false' );
+
+				if ( mine ) {
+					selected = yearButtons[ b ];
 				}
-				return;
 			}
-			var at = autoOpened.indexOf( el );
-			if ( at !== -1 ) {
-				panel.hidden = true;
-				if ( btn ) {
-					btn.setAttribute( 'aria-expanded', 'false' );
-				}
-				autoOpened.splice( at, 1 );
-			}
+
+			syncMasthead( selected, searching );
 		}
 
 		function apply() {
 			var q = input.value.trim().toLowerCase();
+			var searching = '' !== q;
 			var shown = 0;
-			var hits = [];
+			var i;
+			var m;
 
-			for ( var i = 0; i < groups.length; i++ ) {
-				var name = groups[ i ].getAttribute( 'data-arv-results-race' ) || '';
-				var hit = '' === q || name.indexOf( q ) !== -1;
-				groups[ i ].hidden = ! hit;
-				if ( hit ) {
-					shown++;
-					hits.push( groups[ i ] );
+			if ( panels.length ) {
+				// One card per race while searching, whichever year it turns
+				// up in, and the whole of the chosen year otherwise.
+				var seen = {};
+
+				for ( i = 0; i < everyCard.length; i++ ) {
+					var card = everyCard[ i ];
+					var hit;
+
+					if ( searching ) {
+						hit = card.names.indexOf( q ) !== -1 && ! seen[ card.key ];
+
+						if ( hit ) {
+							seen[ card.key ] = true;
+							shown++;
+						}
+					} else {
+						hit = ( card.panel === activePanel );
+					}
+
+					card.el.hidden = ! hit;
+				}
+
+				// A year with no match in it is not a year with no races. It
+				// goes away entirely rather than standing as an empty panel.
+				for ( var p = 0; p < panels.length; p++ ) {
+					panels[ p ].hidden = searching
+						? ! panels[ p ].querySelector( '[data-arv-results-race]:not([hidden])' )
+						: ( panels[ p ] !== activePanel );
+				}
+			} else {
+				for ( i = 0; i < groups.length; i++ ) {
+					var name = groups[ i ].getAttribute( 'data-arv-results-race' ) || '';
+					var single = ! searching || name.indexOf( q ) !== -1;
+					groups[ i ].hidden = ! single;
+
+					if ( single && searching ) {
+						shown++;
+					}
 				}
 			}
 
 			// A month heading with nothing under it reads as a month with no
 			// races in it, which is a different and wrong claim. Hidden with
-			// its races rather than left standing over the gap.
-			for ( var m = 0; m < months.length; m++ ) {
-				months[ m ].hidden = ! months[ m ].querySelector(
+			// its races rather than left standing over the gap. Across every
+			// panel, not only the open one: a search shows months out of any
+			// year and has to be able to put them back.
+			for ( m = 0; m < everyMonth.length; m++ ) {
+				everyMonth[ m ].hidden = ! everyMonth[ m ].querySelector(
 					'[data-arv-results-race]:not([hidden])'
 				);
 			}
 
-			var expand = '' !== q && shown > 0 && shown <= AUTO_OPEN_MAX;
-
-			for ( var k = 0; k < groups.length; k++ ) {
-				setOpen( groups[ k ], expand && ! groups[ k ].hidden );
-			}
+			syncYearPills( searching );
 
 			if ( clear ) {
 				clear.hidden = '' === input.value;
@@ -147,14 +239,21 @@
 				return;
 			}
 
-			if ( '' === q ) {
+			// Says which haystack it looked in, because the year buttons are
+			// still on screen and the honest reading of "no races match that"
+			// under a selected year is that it only looked at that one.
+			var everywhere = panels.length > 1;
+
+			if ( ! searching ) {
 				// Nothing has been asked yet, so there is nothing to report.
 				count.textContent = '';
 			} else if ( 0 === shown ) {
-				count.textContent = 'No races match that.';
+				count.textContent = everywhere
+					? 'No races match that, in any year.'
+					: 'No races match that.';
 			} else {
 				count.textContent = shown + ( 1 === shown ? ' race' : ' races' )
-					+ ( expand ? ', every edition shown' : '' );
+					+ ( everywhere ? ', all years' : '' );
 			}
 		}
 
@@ -207,62 +306,26 @@
 			}
 		}
 
-		// The masthead heading and the line under it, swapped on the year
-		// switch: the page never reloads, so the <h1> would otherwise still
-		// read "2026 Results" over a list of 2010 races. Both strings are
-		// written server side and carried on the year button, so the browser
-		// only moves them and never composes them.
-		var titleEl = root.querySelector( '[data-arv-results-title]' );
-		var metaEl = root.querySelector( '[data-arv-results-meta]' );
-
-		function syncMasthead( button ) {
-			if ( ! button ) {
-				return;
-			}
-
-			var title = button.getAttribute( 'data-arv-results-year-title' );
-			var meta = button.getAttribute( 'data-arv-results-year-meta' );
-
-			if ( titleEl && title ) {
-				titleEl.textContent = title;
-			}
-
-			if ( metaEl ) {
-				metaEl.textContent = meta || '';
-				metaEl.hidden = ! meta;
-			}
-		}
-
 		function selectYear( year ) {
 			syncWeekBlock( year );
 
 			for ( var p = 0; p < panels.length; p++ ) {
-				panels[ p ].hidden = panels[ p ].getAttribute( 'data-arv-results-year-panel' ) !== year;
-			}
-
-			for ( var b = 0; b < yearButtons.length; b++ ) {
-				var on = yearButtons[ b ].getAttribute( 'data-arv-results-year' ) === year;
-				yearButtons[ b ].classList.toggle( 'is-on', on );
-				yearButtons[ b ].setAttribute( 'aria-selected', on ? 'true' : 'false' );
-
-				if ( on ) {
-					syncMasthead( yearButtons[ b ] );
+				if ( panels[ p ].getAttribute( 'data-arv-results-year-panel' ) === year ) {
+					activePanel = panels[ p ];
 				}
 			}
+
+			// Which panels show, which pills are lit and what the masthead
+			// says all follow from activePanel, and apply() at the foot of
+			// this sets every one of them: a year switch is the same state
+			// with a different year in it, not a second way to arrange the
+			// page.
 
 			// A query typed against 2026 means nothing once the reader has
 			// switched to 2015; carrying it over would either hide a year that
 			// has no reason to be empty or leave a stale count reading "3
 			// races" under a list that was never searched.
 			input.value = '';
-			autoOpened.length = 0;
-			for ( var bb = 0; bb < panels.length; bb++ ) {
-				var pb = panels[ bb ].querySelector( '[data-arv-results-back]' );
-				if ( pb ) {
-					pb.hidden = true;
-				}
-			}
-
 			// The closures above were built over the year that was active when
 			// this input was first wired, so switching years has to repoint
 			// every one of them at the panel that is visible now, not the one
@@ -273,87 +336,6 @@
 
 			apply();
 		}
-
-		// Opening one race filters the year down to it. The editions are the
-		// page at that point rather than a nested list inside a row of other
-		// races, which is the whole difference between "expand a footnote"
-		// and "read this race's history".
-		// Resolved per call, not once: there is one back bar per year panel, so
-		// caching the first one found meant a race opened in 2015 unhid
-		// 2026's bar, inside a panel nobody can see, and the way out of the
-		// filtered view simply never appeared.
-		function activeBackBar() {
-			var list = activeList();
-			var panel = list ? list.closest( '[data-arv-results-year-panel]' ) : null;
-			return ( panel || root ).querySelector( '[data-arv-results-back]' );
-		}
-
-		function openRace( group ) {
-			var panel = group.querySelector( '[data-arv-results-editions-panel]' );
-			var btn = group.querySelector( '[data-arv-results-editions]' );
-
-			for ( var i = 0; i < groups.length; i++ ) {
-				groups[ i ].hidden = groups[ i ] !== group;
-			}
-			for ( var m = 0; m < months.length; m++ ) {
-				months[ m ].hidden = ! months[ m ].querySelector(
-					'[data-arv-results-race]:not([hidden])'
-				);
-			}
-			if ( panel ) {
-				panel.hidden = false;
-			}
-			if ( btn ) {
-				btn.setAttribute( 'aria-expanded', 'true' );
-			}
-			var bar = activeBackBar();
-			if ( bar ) {
-				bar.hidden = false;
-			}
-			if ( count ) {
-				count.textContent = '';
-			}
-		}
-
-		function closeRace() {
-			for ( var i = 0; i < groups.length; i++ ) {
-				var p = groups[ i ].querySelector( '[data-arv-results-editions-panel]' );
-				var b = groups[ i ].querySelector( '[data-arv-results-editions]' );
-				if ( p ) {
-					p.hidden = true;
-				}
-				if ( b ) {
-					b.setAttribute( 'aria-expanded', 'false' );
-				}
-			}
-			var bar = activeBackBar();
-			if ( bar ) {
-				bar.hidden = true;
-			}
-			autoOpened.length = 0;
-			apply();
-		}
-
-		root.addEventListener( 'click', function ( ev ) {
-			var btn = ev.target.closest ? ev.target.closest( '[data-arv-results-editions]' ) : null;
-			if ( btn ) {
-				var group = btn.closest( '[data-arv-results-race]' );
-				if ( group ) {
-					// Taking it a second time puts the year back, so the
-					// button is a toggle rather than a one-way door that
-					// only the back bar can undo.
-					if ( 'true' === btn.getAttribute( 'aria-expanded' ) ) {
-						closeRace();
-					} else {
-						openRace( group );
-					}
-				}
-				return;
-			}
-			if ( ev.target.closest && ev.target.closest( '.arv-results__back' ) ) {
-				closeRace();
-			}
-		} );
 
 		// Matches ARV_RESULTS_YEAR_VAR in includes/elements/results.php, where
 		// the full note lives: not "year", which WordPress reserves for date
