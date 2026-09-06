@@ -741,6 +741,43 @@ function arv_races_live_clock( $race ) {
  * @param int   $start_ts
  * @return string 'live' or 'soon'.
  */
+/**
+ * When a race actually starts: the board's clock, or a director's word.
+ *
+ * The board knows the gun time for a race Aravaipa times itself. For one
+ * scored somewhere else there is no board at all, and the only real start
+ * is the one a director gave us, which arv_race_start_override_ts() holds.
+ *
+ * Extracted because three places needed this order and only two had it.
+ * The race week block and its status line both resolved the override; the
+ * results list did not, so a boardless race fell through to "is it today"
+ * and read as happening now for the whole day. Oli Kai is scored on
+ * RaceResult, so it had no board, so it never got a start, so its nine
+ * hour cutoff had nothing to measure from and was never consulted.
+ *
+ * @param array      $race  Needs 'name' and 'iso'.
+ * @param array|null $board
+ * @return int 0 when neither source has an answer.
+ */
+function arv_race_start_ts( $race, $board ) {
+	if ( null !== $board && ! empty( $board['start'] ) ) {
+		return (int) strtotime( $board['start'] );
+	}
+
+	if ( function_exists( 'arv_race_start_override_ts' ) ) {
+		$override = arv_race_start_override_ts(
+			isset( $race['name'] ) ? $race['name'] : '',
+			isset( $race['iso'] ) ? $race['iso'] : ''
+		);
+
+		if ( null !== $override ) {
+			return (int) $override;
+		}
+	}
+
+	return 0;
+}
+
 function arv_races_live_state( $race, $board, $start_ts ) {
 	$now = arv_results_now();
 
@@ -766,7 +803,36 @@ function arv_races_live_state( $race, $board, $start_ts ) {
  * @return int
  */
 function arv_results_now() {
-	$now = function_exists( 'current_time' ) ? current_time( 'timestamp' ) : time(); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp
+	// A real instant, not current_time( 'timestamp' ).
+	//
+	// current_time( 'timestamp' ) returns the epoch shifted by the site's
+	// UTC offset, which on America/Phoenix is seven hours behind the actual
+	// moment. Every caller of this compares it against a true epoch: a
+	// board start or cutoff, which arrive as '2026-08-29T10:00:00.000Z' and
+	// go through strtotime(); or a director's gun time, which
+	// arv_race_start_override_ts() builds with DateTimeZone and returns
+	// from DateTime::getTimestamp(). Comparing the two frames made every
+	// race read as running for seven hours after it actually finished.
+	//
+	// That is the whole reason Oli Kai still said "Happening now" at nine
+	// at night with a nine hour cutoff stored and correct: 8am Eastern plus
+	// nine hours is 21:00 UTC, and the shifted clock did not reach 21:00
+	// until 04:00 UTC the next morning. Black Bear and Rock Hawk reading
+	// live the morning after they finished was the same seven hours.
+	//
+	// Date comparisons are unaffected: those go through
+	// arv_upcoming_races_today(), which asks current_time( 'Y-m-d' ) for a
+	// date string in site time and is the right call for "what day is it
+	// in Phoenix".
+	//
+	// current_time( 'timestamp', true ) rather than a bare time() so the
+	// instant stays something a caller can pin: the store test harness
+	// drives every clock state in this file through its current_time()
+	// stub, and a raw time() would make those tests unable to say when
+	// "now" is. The second argument is the whole fix, it asks for GMT.
+	$now = function_exists( 'current_time' )
+		? current_time( 'timestamp', true ) // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp
+		: time();
 
 	if ( is_numeric( $now ) ) {
 		return (int) $now;
