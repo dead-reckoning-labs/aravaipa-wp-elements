@@ -415,7 +415,10 @@ function winnersFromRows( header, rows ) {
  * no header row naming a runner or a finishing position at all. That is
  * not a defect in this reader: parseCellRows correctly finds no header,
  * because the file does not have one, and the real gap is that the file
- * never recorded gender for anyone in it.
+ * never recorded gender for anyone in it, so no winner can be named.
+ * A finisher count is still real information the file does carry, so
+ * bareListFinishers below reads that much out of it without pretending
+ * to know anyone's gender.
  * ------------------------------------------------------------------ */
 
 // A divider row under a fixed-width header, "----- --------- ------": not
@@ -435,6 +438,23 @@ function textCellRows( txt ) {
 				? line.split( '\t' ).map( ( c ) => c.trim() )
 				: line.split( /\s{2,}/ ).map( ( c ) => c.trim() )
 		);
+}
+
+// A row this reader can still count as a finisher even with no header to
+// read a name or a gender out of: "1. Brian Tinder" in one cell, a finish
+// time in the last. Two matching rows is the floor, not one, because a
+// single coincidental match (a distance heading that happens to end in
+// something time-shaped) is not a placing list.
+function bareListFinishers( cellRows ) {
+	const isPlaceName = ( s ) => /^\d+\.\s*\S/.test( s );
+	const isTime = ( s ) => /^\d{1,3}:\d{2}(?::\d{2})?$/.test( s );
+
+	const placings = cellRows.filter( ( cells ) => {
+		const trimmed = cells.map( ( c ) => c.trim() ).filter( Boolean );
+		return trimmed.length >= 2 && isPlaceName( trimmed[ 0 ] ) && isTime( trimmed[ trimmed.length - 1 ] );
+	} );
+
+	return placings.length >= 2 ? placings.length : 0;
 }
 
 /* ------------------------------------------------------------------ *
@@ -905,7 +925,7 @@ async function main() {
 			// so this is the one place that call happens regardless of
 			// source.
 			const groups = ( cellRows ? sections( cellRows ) : [ { label: '', rows: htmlCellRows( body ) } ] ).map(
-				( group ) => ( { label: group.label, ...parseCellRows( group.rows ) } )
+				( group ) => ( { label: group.label, raw: group.rows, ...parseCellRows( group.rows ) } )
 			);
 
 			// "Starters: 18 Finishers: 14" is a phrase Aravaipa's own
@@ -920,7 +940,19 @@ async function main() {
 
 			for ( const group of groups ) {
 				const got = winnersFromRows( group.header, group.rows );
-				if ( ! got ) continue;
+
+				if ( ! got ) {
+					// No header at all, e.g. Copper Basin Fatass 50K's hand-
+					// typed "1. Name    time" list: no gender to name a
+					// winner from, but the placings are still real finishers.
+					const bare = bareListFinishers( group.raw );
+					if ( bare ) {
+						fileHadAnything = true;
+						rowsMax = Math.max( rowsMax, bare );
+						keep( group.label || file.label || 'Results', bare, {} );
+					}
+					continue;
+				}
 
 				fileHadAnything = true;
 				rowsMax = Math.max( rowsMax, got.finishers );
