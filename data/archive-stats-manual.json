@@ -274,6 +274,47 @@
     }
    ],
    "source": "ultrasignup, read from the live grid in a real browser: this row links to ultrasignup.com directly rather than a local file, and this script only ever fetches aravaiparunning.com"
+  },
+  {
+   "name": "Copper Basin Fatass 50K",
+   "iso": "2009-10-17",
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Kilometer",
+     "men": {
+      "name": "Brian Tinder",
+      "time": "5:57"
+     },
+     "women": {
+      "name": "Jody Chase",
+      "time": "6:15"
+     }
+    },
+    {
+     "distance": "36 Kilometer",
+     "men": {
+      "name": "Mike Melchiors",
+      "time": "4:50"
+     },
+     "women": {
+      "name": "Rachel Jones",
+      "time": "4:48"
+     }
+    },
+    {
+     "distance": "17 Kilometer",
+     "men": {
+      "name": "Burke Painter",
+      "time": "3:38"
+     },
+     "women": {
+      "name": "Pati Coury",
+      "time": "2:45"
+     }
+    }
+   ],
+   "source": "jamil, gender read off the results file by hand: it is a placing list with no header and no gender column"
   }
  ]
 }
