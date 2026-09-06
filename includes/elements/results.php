@@ -533,6 +533,25 @@ function arv_results_render( $data ) {
 	$show_search = isset( $data['search'] ) ? $data['search'] : true;
 	$show_search = ! ( 'false' === $show_search || false === $show_search || '0' === $show_search );
 
+	// Read here rather than at the branch that uses them, because whether
+	// this is the year-picker archive decides what goes above the race week
+	// block, and that block is written before either branch is reached.
+	$race_slug = function_exists( 'get_query_var' ) ? (string) get_query_var( 'arv_race' ) : '';
+
+	$year_tabs = isset( $data['year_tabs'] ) ? $data['year_tabs'] : false;
+	$year_tabs = ! ( 'false' === $year_tabs || false === $year_tabs || '0' === $year_tabs );
+
+	// The archive's own masthead, and the only heading on it. This page had
+	// no <h1> at all: the browser tab said "2010 Results" and the page
+	// itself opened on a row of year buttons with nothing naming what they
+	// belonged to. Skipped where the element was given a heading of its
+	// own, so a page that already says what it is does not say it twice.
+	$yearly = ( '' === $year && $year_tabs && '' === $race_slug );
+
+	if ( $yearly && '' === $heading ) {
+		$out .= arv_results_masthead( $rows );
+	}
+
 	if ( $include_current ) {
 		$out .= arv_results_race_week( $today );
 	}
@@ -549,8 +568,7 @@ function arv_results_render( $data ) {
 	// A race page, when the URL named one. Checked before the year picker
 	// because /results/desert-solstice is not a year view narrowed down, it
 	// is a different page that happens to live under the same shortcode.
-	$race_slug = function_exists( 'get_query_var' ) ? (string) get_query_var( 'arv_race' ) : '';
-
+	// $race_slug is read further up, where the masthead needs it.
 	if ( '' !== $race_slug ) {
 		$race_key = arv_results_race_by_slug( $race_slug );
 
@@ -581,10 +599,7 @@ function arv_results_render( $data ) {
 		return $out . '</div></div>';
 	}
 
-	$year_tabs = isset( $data['year_tabs'] ) ? $data['year_tabs'] : false;
-	$year_tabs = ! ( 'false' === $year_tabs || false === $year_tabs || '0' === $year_tabs );
-
-	if ( '' === $year && $year_tabs ) {
+	if ( $yearly ) {
 		$out .= arv_results_by_race_yearly( $rows, $show_search );
 	} else {
 		$out .= arv_results_by_race( $rows, $show_search );
@@ -1233,6 +1248,165 @@ function arv_results_by_race( $rows, $show_search ) {
 }
 
 /**
+ * Every year this store has races in, newest first.
+ *
+ * The year buttons and the masthead both need this list and both used to
+ * derive it, which is one derivation too many for a page where the two have
+ * to agree on which year is showing.
+ *
+ * @param array $rows
+ * @return array
+ */
+function arv_results_year_list( $rows ) {
+	$years = array();
+
+	foreach ( $rows as $row ) {
+		$y = substr( (string) $row['iso'], 0, 4 );
+		if ( preg_match( '/^\d{4}$/', $y ) && ! in_array( $y, $years, true ) ) {
+			$years[] = $y;
+		}
+	}
+
+	rsort( $years );
+
+	return $years;
+}
+
+/**
+ * How many races each year held, and how many people finished them.
+ *
+ * Counted off the editions that actually ran in a year, not off the rows a
+ * year's panel renders: arv_results_filter_year deliberately keeps every
+ * earlier running of a race that appears in the selected year, so counting
+ * what that returns would credit 2010 with a race from 2008 and say so out
+ * loud under a heading that reads "2010".
+ *
+ * One pass for every year at once rather than one pass per year. The stats
+ * lookup per row is the expensive half and there are nineteen years of them.
+ *
+ * @param array $rows
+ * @return array Year => array( races, finishers ).
+ */
+function arv_results_year_totals( $rows ) {
+	$totals = array();
+
+	foreach ( $rows as $row ) {
+		$y = substr( (string) $row['iso'], 0, 4 );
+
+		if ( ! preg_match( '/^\d{4}$/', $y ) ) {
+			continue;
+		}
+
+		if ( ! isset( $totals[ $y ] ) ) {
+			$totals[ $y ] = array(
+				'races'     => 0,
+				'finishers' => 0,
+			);
+		}
+
+		$totals[ $y ]['races']++;
+
+		$stats = function_exists( 'arv_stats_for_row' ) ? arv_stats_for_row( $row ) : null;
+
+		if ( null !== $stats && ! empty( $stats['finishers'] ) ) {
+			$totals[ $y ]['finishers'] += (int) $stats['finishers'];
+		}
+	}
+
+	return $totals;
+}
+
+/**
+ * One year's totals as the line that sits under the heading.
+ *
+ * Finishers only where they are known. The archive's older years are still
+ * missing counts for some races and a couple have none at all, and "12
+ * races, 0 finishers" reads as a fact about the races rather than about
+ * what was recorded of them.
+ *
+ * @param array $totals Output of arv_results_year_totals().
+ * @param string $year
+ * @return string
+ */
+function arv_results_year_line( $totals, $year ) {
+	if ( ! isset( $totals[ $year ] ) ) {
+		return '';
+	}
+
+	$races = (int) $totals[ $year ]['races'];
+	$done  = (int) $totals[ $year ]['finishers'];
+
+	$parts = array(
+		sprintf(
+			// translators: %s is a count of races.
+			_n( '%s race', '%s races', $races, 'aravaipa-elements' ),
+			number_format_i18n( $races )
+		),
+	);
+
+	if ( $done > 0 ) {
+		$parts[] = sprintf(
+			// translators: %s is a count of finishers.
+			_n( '%s finisher', '%s finishers', $done, 'aravaipa-elements' ),
+			number_format_i18n( $done )
+		);
+	}
+
+	return implode( ' · ', $parts );
+}
+
+/**
+ * One year's heading, as the browser tab already writes it.
+ *
+ * @param string $year
+ * @return string
+ */
+function arv_results_year_title( $year ) {
+	// translators: %s is a four digit year.
+	return sprintf( __( '%s Results', 'aravaipa-elements' ), $year );
+}
+
+/**
+ * The archive's masthead: what year is showing, and how big it was.
+ *
+ * An <h1> because the page had none. Cornerstone renders this element into
+ * a page whose own title is not printed anywhere in the template, so the
+ * archive went out with a heading in the tab, a heading in the breadcrumb,
+ * and nothing between the site header and a row of year buttons.
+ *
+ * The year switch is client side and never reloads, so the title and the
+ * line under it are swapped by aravaipa-results.js from strings carried on
+ * the year buttons themselves. Rendered here for whichever year the request
+ * asked for, so the markup a crawler sees already matches its own URL.
+ *
+ * @param array $rows Unfiltered, newest first.
+ * @return string
+ */
+function arv_results_masthead( $rows ) {
+	$years = arv_results_year_list( $rows );
+
+	if ( empty( $years ) ) {
+		return '';
+	}
+
+	$requested = arv_results_requested_year();
+	$current   = in_array( $requested, $years, true ) ? $requested : $years[0];
+	$totals    = arv_results_year_totals( $rows );
+	$line      = arv_results_year_line( $totals, $current );
+
+	$out  = '<header class="arv-results__masthead">';
+	$out .= '<h1 class="arv-results__masthead-title" data-arv-results-title>'
+		. esc_html( arv_results_year_title( $current ) ) . '</h1>';
+
+	$out .= '<p class="arv-results__masthead-meta" data-arv-results-meta'
+		. ( '' === $line ? ' hidden' : '' ) . '>' . esc_html( $line ) . '</p>';
+
+	$out .= '</header>';
+
+	return $out;
+}
+
+/**
  * The master page: one year at a time, newest first.
  *
  * A single flat list already exists for a page that is itself scoped to one
@@ -1258,20 +1432,11 @@ function arv_results_by_race( $rows, $show_search ) {
  * @return string
  */
 function arv_results_by_race_yearly( $rows, $show_search ) {
-	$years = array();
-
-	foreach ( $rows as $row ) {
-		$y = substr( (string) $row['iso'], 0, 4 );
-		if ( preg_match( '/^\d{4}$/', $y ) && ! in_array( $y, $years, true ) ) {
-			$years[] = $y;
-		}
-	}
+	$years = arv_results_year_list( $rows );
 
 	if ( empty( $years ) ) {
 		return arv_results_by_race( $rows, $show_search );
 	}
-
-	rsort( $years );
 
 	// The year in the URL, if there is one and it is a year this page
 	// actually has, so a link or a bookmark opens on that year rather than
@@ -1294,11 +1459,19 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 		. esc_html( __( 'Year', 'aravaipa-elements' ) ) . '</span>'
 		. '<div class="arv-results__years" role="tablist" aria-labelledby="arv-results-year-label">';
 
+	// Each button carries its own year's masthead strings. Switching years
+	// never reloads, so the heading above has to be rewritten in the browser,
+	// and the alternative to putting the words here is nineteen hidden
+	// headings in the markup or a second store for the client to read.
+	$totals = arv_results_year_totals( $rows );
+
 	foreach ( $years as $y ) {
 		$on = ( $y === $current );
 		$out .= '<button type="button" role="tab"'
 			. ' class="arv-results__year' . ( $on ? ' is-on' : '' ) . '"'
 			. ' data-arv-results-year="' . esc_attr( $y ) . '"'
+			. ' data-arv-results-year-title="' . esc_attr( arv_results_year_title( $y ) ) . '"'
+			. ' data-arv-results-year-meta="' . esc_attr( arv_results_year_line( $totals, $y ) ) . '"'
 			. ' aria-selected="' . ( $on ? 'true' : 'false' ) . '"'
 			. ' aria-controls="arv-results-panel-' . esc_attr( $y ) . '">'
 			. esc_html( $y ) . '</button>';

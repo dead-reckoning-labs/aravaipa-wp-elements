@@ -178,14 +178,58 @@
 		// below has never touched it.
 		var weekBlock = root.querySelector( '.arv-results__week' );
 
+		// A race that is running right now, rather than one that is merely in
+		// this week's block. The server writes the state class at render, and
+		// the clock rewrites the marker every second after that, so a page
+		// cached before the gun still answers this correctly once it is open.
+		function raceIsLive() {
+			if ( ! weekBlock ) {
+				return false;
+			}
+
+			return !! weekBlock.querySelector( '.arv-results__week-race--live' ) ||
+				!! weekBlock.querySelector( '[data-arv-results-live]:not([hidden])' );
+		}
+
 		// "Race week" above a list of 2008 results answers a question the
 		// reader did not ask, and pushes the year they did ask for down the
 		// page. Shown on the view the page opens on, where someone arriving
 		// mid weekend wants exactly that, and dropped once they have chosen
 		// a past year on purpose.
+		//
+		// Except while a race is actually underway. A live board is worth
+		// interrupting an archive visit for in a way that "here is what
+		// finished last Saturday" is not, and the reader who came to look up
+		// 2014 during Javelina is exactly the reader who wants to know.
 		function syncWeekBlock( year ) {
 			if ( weekBlock && defaultYear ) {
-				weekBlock.hidden = ( year !== defaultYear );
+				weekBlock.hidden = ( year !== defaultYear ) && ! raceIsLive();
+			}
+		}
+
+		// The masthead heading and the line under it, swapped on the year
+		// switch: the page never reloads, so the <h1> would otherwise still
+		// read "2026 Results" over a list of 2010 races. Both strings are
+		// written server side and carried on the year button, so the browser
+		// only moves them and never composes them.
+		var titleEl = root.querySelector( '[data-arv-results-title]' );
+		var metaEl = root.querySelector( '[data-arv-results-meta]' );
+
+		function syncMasthead( button ) {
+			if ( ! button ) {
+				return;
+			}
+
+			var title = button.getAttribute( 'data-arv-results-year-title' );
+			var meta = button.getAttribute( 'data-arv-results-year-meta' );
+
+			if ( titleEl && title ) {
+				titleEl.textContent = title;
+			}
+
+			if ( metaEl ) {
+				metaEl.textContent = meta || '';
+				metaEl.hidden = ! meta;
 			}
 		}
 
@@ -200,6 +244,10 @@
 				var on = yearButtons[ b ].getAttribute( 'data-arv-results-year' ) === year;
 				yearButtons[ b ].classList.toggle( 'is-on', on );
 				yearButtons[ b ].setAttribute( 'aria-selected', on ? 'true' : 'false' );
+
+				if ( on ) {
+					syncMasthead( yearButtons[ b ] );
+				}
 			}
 
 			// A query typed against 2026 means nothing once the reader has
