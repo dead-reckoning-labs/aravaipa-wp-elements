@@ -4318,6 +4318,16 @@
 	margin-top: 1.75rem;
 }
 
+/* Same trap .arv-results__race-group[hidden] below already documents, and
+   the one the month headings actually fell into: the theme carries an
+   HTML5 shim setting `section { display: block }`, an author rule, which
+   beats the browser's own `[hidden] { display: none }` whatever the
+   specificity. The races inside a filtered-out month hid correctly, being
+   divs, and the month heading stood over the gap they left. */
+.arv-results__month-group[hidden] {
+	display: none;
+}
+
 .arv-results__race-group {
 	padding: 1rem 0;
 	border-bottom: 1px solid var(--arv-results-rule);
@@ -4782,39 +4792,6 @@
 
 .arv-results__editions-all {
 	margin-top: 1.5rem;
-}
-
-.arv-results__back-bar {
-	margin-bottom: 1rem;
-}
-
-.arv-results__back {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.4rem;
-	padding: 0.4rem 0.8rem;
-	border: 1px solid var(--arv-results-rule);
-	border-radius: var(--arv-radius-chip);
-	background: #fff;
-	color: inherit;
-	font-family: inherit;
-	font-size: var(--arv-fs-label);
-	font-weight: 700;
-	letter-spacing: 1px;
-	text-transform: uppercase;
-	text-decoration: none;
-	cursor: pointer;
-}
-
-@media (hover: hover) {
-	.arv-results__back:hover {
-		border-color: var(--arv-teal);
-	}
-}
-
-.arv-results__back:focus-visible {
-	outline: 2px solid var(--arv-teal);
-	outline-offset: 2px;
 }
 
 /* One edition is a block, not a flex row.

@@ -2693,6 +2693,37 @@ t( 'nor does one given a heading',       false === strpos( $titled, 'arv-results
 
 unset( $_GET['race_year'] );
 
+// A search that reaches across years needs two things from the markup: a
+// stable key per race, so the same race showing in fifteen panels can be
+// told from fifteen races, and every name that race went by, so someone
+// typing what it was called in 2011 is not told it never existed.
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_results_store_set( array(
+	array( 'name' => 'Black Canyon 100K', 'iso' => '2026-02-14', 'display' => 'February 14',
+	       'archive' => array( array( 'label' => '100K', 'url' => 'https://aravaiparunning.com/results/bc26.htm' ) ) ),
+	array( 'name' => 'Black Canyon Ultras', 'iso' => '2016-02-13', 'display' => 'February 13',
+	       'archive' => array( array( 'label' => '100K', 'url' => 'https://aravaiparunning.com/results/bc16.htm' ) ) ),
+) );
+
+$_GET['race_year'] = '2026';
+$renamed = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year_tabs' => 'true' ) );
+
+t( 'a race card carries a stable key',   false !== strpos( $renamed, 'data-arv-results-key="black canyon"' ) );
+t( 'and every name it went by',          false !== strpos( $renamed, 'data-arv-results-race="black canyon 100k | black canyon ultras"' ) );
+
+// The same race in the older year's panel answers to the same key, which is
+// the whole point: that is how the search knows to show it once.
+t( 'the older panel agrees on the key',  2 === substr_count( $renamed, 'data-arv-results-key="black canyon"' ) );
+
+t( 'the search says it crosses years',   false !== strpos( $renamed, 'placeholder="Race name, any year"' ) );
+t( 'the masthead carries a search title', false !== strpos( $renamed, 'data-arv-results-all-title="Race Results"' ) );
+
+// Not on a page that only has one year to search.
+$one = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'layout' => 'race', 'upcoming' => 'false', 'year' => '2016' ) );
+t( 'a single year box says race name',   false !== strpos( $one, 'placeholder="Race name"' ) );
+
+unset( $_GET['race_year'] );
+
 // Back to the two row store the cases below were written against.
 $GLOBALS['ARV_OPTIONS'] = array();
 arv_results_store_set( array(

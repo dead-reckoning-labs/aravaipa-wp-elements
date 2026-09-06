@@ -1217,13 +1217,21 @@ function arv_results_month_label( $iso ) {
  * @param bool  $show_search
  * @return string
  */
-function arv_results_search_markup() {
+function arv_results_search_markup( $all_years = false ) {
+	// Says where it looks, on the one page where that is a question. A year
+	// is selected and the years are right there as buttons, so a box reading
+	// only "Race name" invites the reading that it searches the year showing,
+	// which is what it used to do and what nobody expected of it.
+	$placeholder = $all_years
+		? __( 'Race name, any year', 'aravaipa-elements' )
+		: __( 'Race name', 'aravaipa-elements' );
+
 	return '<div class="arv-results__search">'
 		. '<label class="arv-results__search-label" for="arv-results-q">'
 		. esc_html( __( 'Search races', 'aravaipa-elements' ) ) . '</label>'
 		. '<span class="arv-results__search-field">'
 		. '<input class="arv-results__search-input" id="arv-results-q" type="search" autocomplete="off"'
-		. ' placeholder="' . esc_attr( __( 'Race name', 'aravaipa-elements' ) ) . '" data-arv-results-search />'
+		. ' placeholder="' . esc_attr( $placeholder ) . '" data-arv-results-search />'
 		// Our own clear button rather than the one type="search" gives
 		// you: WebKit's only appears once there is text and is a small
 		// unlabelled target, and Firefox draws none at all. This one is
@@ -1394,7 +1402,11 @@ function arv_results_masthead( $rows ) {
 	$totals    = arv_results_year_totals( $rows );
 	$line      = arv_results_year_line( $totals, $current );
 
-	$out  = '<header class="arv-results__masthead">';
+	// The heading the search swaps in. A query reaches across every year, so
+	// "2009 Results" over a list that answered it out of 2016 would be the
+	// one thing on the page saying something untrue.
+	$out  = '<header class="arv-results__masthead" data-arv-results-all-title="'
+		. esc_attr__( 'Race Results', 'aravaipa-elements' ) . '">';
 	$out .= '<h1 class="arv-results__masthead-title" data-arv-results-title>'
 		. esc_html( arv_results_year_title( $current ) ) . '</h1>';
 
@@ -1480,7 +1492,7 @@ function arv_results_by_race_yearly( $rows, $show_search ) {
 	$out .= '</div></div>';
 
 	if ( $show_search ) {
-		$out .= arv_results_search_markup();
+		$out .= arv_results_search_markup( true );
 	}
 
 	foreach ( $years as $y ) {
@@ -1650,18 +1662,12 @@ function arv_results_race_groups_markup( $rows ) {
 		$races[ $key ][] = $row;
 	}
 
-	// Shown only while a single race is open. Server-rendered hidden rather
-	// than built in JavaScript so the control exists before the script runs
-	// and cannot end up orphaned if it does not.
-	$out  = '<div class="arv-results__back-bar" data-arv-results-back hidden>';
-	$out .= '<button type="button" class="arv-results__back">'
-		. '<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
-		. '<path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-		. '</svg>'
-		. esc_html( __( 'All races', 'aravaipa-elements' ) ) . '</button>';
-	$out .= '</div>';
-
-	$out .= '<div class="arv-results__races" data-arv-results-list>';
+	// No back bar. It belonged to a "click a race, the year filters down to
+	// it" mode that older editions behind a native <details> replaced: the
+	// control it belonged to has not been in the markup for releases, so the
+	// bar could never be shown, and it was rendering hidden on every panel
+	// of every year regardless.
+	$out = '<div class="arv-results__races" data-arv-results-list>';
 
 	// Grouped under the month of its newest edition, the way the calendar
 	// already groups the season. Seventy-four races in one unbroken column
@@ -1671,11 +1677,25 @@ function arv_results_race_groups_markup( $rows ) {
 	// that the answer to a question instead of a surprise.
 	$month = '';
 
-	foreach ( $races as $editions ) {
+	foreach ( $races as $race_key => $editions ) {
 		// Newest edition first, and its name is the one to show: a race that
 		// was renamed is called whatever it is called now.
 		$latest = $editions[0];
 		$older  = array_slice( $editions, 1 );
+
+		// Every name this race has gone by, not only the one on the card.
+		// The search reads this attribute, and a nineteen year archive has
+		// renamed enough races that someone typing what a race was called
+		// when they ran it would otherwise be told it does not exist.
+		$aka = array();
+
+		foreach ( $editions as $edition ) {
+			$spelling = strtolower( trim( (string) $edition['name'] ) );
+
+			if ( '' !== $spelling && ! in_array( $spelling, $aka, true ) ) {
+				$aka[] = $spelling;
+			}
+		}
 
 		$this_month = arv_results_month_label( $latest['iso'] );
 
@@ -1692,8 +1712,13 @@ function arv_results_race_groups_markup( $rows ) {
 			$out .= '<h3 class="arv-results__month-head">' . esc_html( $month ) . '</h3>';
 		}
 
-		$out .= '<div class="arv-results__race-group" data-arv-results-race="'
-			. esc_attr( strtolower( $latest['name'] ) ) . '">';
+		// The key as well as the names: the archive renders one card per
+		// race per year and the search crosses every year at once, so it
+		// needs something stable to tell "this race again" from "a second
+		// race", and the visible name is exactly what is not stable here.
+		$out .= '<div class="arv-results__race-group"'
+			. ' data-arv-results-race="' . esc_attr( implode( ' | ', $aka ) ) . '"'
+			. ' data-arv-results-key="' . esc_attr( $race_key ) . '">';
 
 		$stats = arv_stats_for_row( $latest );
 
