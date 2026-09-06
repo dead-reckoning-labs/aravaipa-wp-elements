@@ -484,9 +484,16 @@ function arv_results_render( $data ) {
 	// ever being told to stop guessing for every other blank one.
 	if ( function_exists( 'arv_results_ultrarunning_url' ) ) {
 		foreach ( $rows as $i => $row ) {
-			$has = trim( (string) $row['ultrarunning'] );
+			$has = strtolower( trim( (string) $row['ultrarunning'] ) );
 
-			if ( 'none' === $has ) {
+			// "http://none" is the same answer, badly stored: esc_url_raw()
+			// used to run over this field before it knew "none" was a word
+			// and not a URL, and turned every one of them into a hostname
+			// that does not exist. arv_results_clean_ultrarunning() keeps
+			// the word whole now; this reads what the old spelling left
+			// behind so a row already holding it stops rendering a button
+			// that goes nowhere.
+			if ( 'none' === $has || 'http://none' === $has ) {
 				$rows[ $i ]['ultrarunning'] = '';
 			} elseif ( '' === $has ) {
 				$rows[ $i ]['ultrarunning'] = arv_results_ultrarunning_url( $row['name'] );

@@ -938,6 +938,32 @@ t( 'the blank December row gains its link', false !== strpos( $mmf, 'href="https
 // Exactly once: December's, and only December's.
 t( 'the none-marked January row keeps none', 1 === substr_count( $mmf, 'ultrarunning.com/calendar/event/mcdowell-mountain-frenzy' ) );
 
+// "none" is a word, not a URL, and the store has to keep it whole: run
+// through esc_url_raw() it became "http://none", so a row that meant "no
+// link" rendered a button pointing at a hostname that does not exist.
+arv_results_ultrarunning_store_set( array( 'McDowell Mountain Frenzy' => 'mcdowell-mountain-frenzy' ) );
+arv_results_store_set( array(
+	array( 'name' => 'McDowell Mountain Frenzy', 'iso' => '2010-01-23', 'display' => 'January 23',
+	       'archive' => array( array( 'label' => '25K', 'url' => 'https://aravaiparunning.com/results/mmf10jan.htm' ) ),
+	       'ultrarunning' => 'none' ),
+) );
+$kept = arv_results_store_get();
+t( 'the store keeps "none" whole',        'none' === $kept[0]['ultrarunning'] );
+
+$nolink = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false', 'year' => '2010' ) );
+t( 'and it renders no link at all',      false === strpos( $nolink, 'ultrarunning.com' ) );
+t( 'least of all a broken one',          false === strpos( $nolink, 'href="none"' ) && false === strpos( $nolink, 'http://none' ) );
+
+// What the old spelling left in the store is read as the same answer, so a
+// row already holding it stops rendering a button that goes nowhere.
+arv_results_store_set( array(
+	array( 'name' => 'McDowell Mountain Frenzy', 'iso' => '2010-01-23', 'display' => 'January 23',
+	       'archive' => array( array( 'label' => '25K', 'url' => 'https://aravaiparunning.com/results/mmf10jan.htm' ) ),
+	       'ultrarunning' => 'http://none' ),
+) );
+$mangled = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false', 'year' => '2010' ) );
+t( 'the mangled spelling is the same', false === strpos( $mangled, 'http://none' ) );
+
 arv_results_ultrarunning_store_set( array() );
 arv_results_store_set( array() );
 
