@@ -785,6 +785,26 @@ function guessMetres( name ) {
 	return 0;
 }
 
+// A duration, for the one kind of race this file's distance names cannot
+// give guessMetres: 72 Hour, 48 Hour, 24 Hour, all genuine race lengths and
+// none of them a distance until somebody runs one. Kept apart from
+// guessMetres rather than folded into it, because a metre and a second are
+// not the same axis and an event that mixes the two, a real distance race
+// held alongside a fixed-time one, has no honest way to rank a 24 Hour
+// against a 50 Mile on either scale. Consulted only where every distance in
+// the event is this shape and there is nothing else to rank against.
+function guessSeconds( name ) {
+	const n = name.toLowerCase();
+
+	const day = n.match( /^([\d.]+)\s*days?$/ );
+	if ( day ) return +day[ 1 ] * 86400;
+
+	const hr = n.match( /^([\d.]+)\s*(?:hour|hr)s?$/ );
+	if ( hr ) return +hr[ 1 ] * 3600;
+
+	return 0;
+}
+
 function parseClax( xml ) {
 	const entrants = new Map();
 
@@ -1106,8 +1126,22 @@ starters += c.starters;
 			// named for says which one that is here as plainly as a
 			// clax file's own Pcs table does.
 			if ( null === headline && winners.length > 1 ) {
+				// Across the Years and Silverton 1000 name every one of their
+				// distances by the clock, never the ground: "72 Hour, 48
+				// Hour, 24 Hour" all guess 0m on the scale below, a tie that
+				// never resolves to a headline, "Winners, 3 distances" and
+				// nothing shown where every other year on the page leads
+				// with a result. Ranked by the clock instead, but only where
+				// the whole event is that shape: guessSeconds only enters an
+				// event that mixes a real distance in with a fixed-time one
+				// over guessMetres's dead heat, because a second and a metre
+				// are not the same axis and there is no honest way to rank a
+				// 24 Hour against that race's own 50 Mile on either one.
+				const allTimed = winners.every( ( w ) => guessSeconds( w.distance || '' ) > 0 );
+				const guess = allTimed ? guessSeconds : guessMetres;
+
 				winners.forEach( ( w ) => {
-					w._m = guessMetres( w.distance || '' );
+					w._m = guess( w.distance || '' );
 				} );
 				winners.sort( ( a, b ) => b._m - a._m );
 
