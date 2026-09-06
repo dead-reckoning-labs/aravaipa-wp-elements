@@ -243,6 +243,37 @@
     }
    ],
    "source": "xlrd, read by hand: legacy binary .xls, no reader for that format here"
+  },
+  {
+   "name": "Black Canyon Ultras",
+   "iso": "2016-02-13",
+   "finishers": 245,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100K",
+     "men": {
+      "name": "Sage Canaday",
+      "time": "7:52:26"
+     },
+     "women": {
+      "name": "Amy Sproston",
+      "time": "10:09:34"
+     }
+    },
+    {
+     "distance": "60K",
+     "men": {
+      "name": "Michael Versteeg",
+      "time": "5:17:21"
+     },
+     "women": {
+      "name": "Keely Henninger",
+      "time": "5:26:28"
+     }
+    }
+   ],
+   "source": "ultrasignup, read from the live grid in a real browser: this row links to ultrasignup.com directly rather than a local file, and this script only ever fetches aravaiparunning.com"
   }
  ]
 }
