@@ -143,6 +143,50 @@
 			}
 		}
 
+		// The year row scrolls sideways and no longer draws a scrollbar to
+		// say so: on macOS that bar is painted over the content rather than
+		// beside it, and it landed across the bottom edge of the buttons.
+		// The row fades at whichever end still has years behind it instead,
+		// which unlike the scrollbar says so to everyone rather than only to
+		// readers who have set their scrollbars to always show.
+		var yearStrip = root.querySelector( '.arv-results__years' );
+
+		function syncYearFade() {
+			if ( ! yearStrip ) {
+				return;
+			}
+
+			// A pixel of slack at each end: a fractional scroll position is
+			// enough to leave an edge faded over nothing.
+			yearStrip.classList.toggle( 'is-cut-left', yearStrip.scrollLeft > 1 );
+			yearStrip.classList.toggle(
+				'is-cut-right',
+				yearStrip.scrollLeft + yearStrip.clientWidth < yearStrip.scrollWidth - 1
+			);
+		}
+
+		// The selected year, dragged into view. A deep link to
+		// ?race_year=2008 opens on the oldest year the archive has, which is
+		// the far end of a row that starts at this year: the panel below was
+		// right and the button for it was off the edge of the screen.
+		function showSelectedYear( button, behavior ) {
+			if ( ! button || ! yearStrip || ! button.scrollIntoView ) {
+				return;
+			}
+
+			// Measured off the rendered boxes rather than offsetLeft, which
+			// is relative to whichever ancestor happens to be positioned and
+			// is not the scrolling row: read that way, a year sitting in
+			// plain sight can measure as out of view and drag the whole row
+			// under the reader for nothing.
+			var row = yearStrip.getBoundingClientRect();
+			var pill = button.getBoundingClientRect();
+
+			if ( pill.left < row.left || pill.right > row.right ) {
+				button.scrollIntoView( { block: 'nearest', inline: 'center', behavior: behavior || 'auto' } );
+			}
+		}
+
 		// While a query is up, the page is not showing a year: it is showing
 		// what matched, out of all of them. No year button is the selected
 		// one for as long as that is true, because leaving 2009 lit while the
@@ -167,6 +211,7 @@
 			}
 
 			syncMasthead( selected, searching );
+			syncYearFade();
 		}
 
 		function apply() {
@@ -369,10 +414,30 @@
 		// not only on a click.
 		syncWeekBlock( new URLSearchParams( window.location.search ).get( YEAR_VAR ) || defaultYear );
 
+		// The fade follows the row, and the row is a different width on every
+		// screen and after every resize.
+		if ( yearStrip ) {
+			yearStrip.addEventListener( 'scroll', syncYearFade, { passive: true } );
+			window.addEventListener( 'resize', syncYearFade );
+		}
+
+		syncYearFade();
+
+		// The year the page opened on, brought into view without animating
+		// it: on load there is nothing to follow, only a row that should
+		// already be showing the year underneath it.
+		for ( var sel = 0; sel < yearButtons.length; sel++ ) {
+			if ( yearButtons[ sel ].classList.contains( 'is-on' ) ) {
+				showSelectedYear( yearButtons[ sel ] );
+				break;
+			}
+		}
+
 		for ( var y = 0; y < yearButtons.length; y++ ) {
 			yearButtons[ y ].addEventListener( 'click', function () {
 				var year = this.getAttribute( 'data-arv-results-year' );
 				selectYear( year );
+				showSelectedYear( this, 'smooth' );
 				if ( window.history && window.history.pushState ) {
 					window.history.pushState( { arvResultsYear: year }, '', yearUrl( year ) );
 				}
