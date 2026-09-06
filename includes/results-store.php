@@ -103,6 +103,32 @@ function arv_results_store_get() {
 }
 
 /**
+ * A row's own UltraRunning field, which is a URL or the word "none".
+ *
+ * "none" says this edition was checked and genuinely has no page of its
+ * own, so the race-keyed fallback should not fill one in for it (see the
+ * caller in includes/elements/results.php). It is not a URL, and running
+ * it through esc_url_raw() the way the real URLs go turned it into
+ * "http://none": a row that meant "no link" rendered a button pointing at
+ * a hostname that does not exist. Kept whole here instead.
+ *
+ * The mangled spelling is accepted too, because it is what the one row
+ * using this has held since the day it was written.
+ *
+ * @param mixed $value
+ * @return string
+ */
+function arv_results_clean_ultrarunning( $value ) {
+	$value = trim( (string) $value );
+
+	if ( in_array( strtolower( $value ), array( 'none', 'http://none' ), true ) ) {
+		return 'none';
+	}
+
+	return esc_url_raw( $value );
+}
+
+/**
  * Replace the stored results wholesale.
  *
  * A full replace, like the waitlist map and for a related reason: the
@@ -151,7 +177,7 @@ function arv_results_store_set( $rows ) {
 			'display'      => isset( $row['display'] ) ? trim( (string) $row['display'] ) : '',
 			'live'         => isset( $row['live'] ) ? esc_url_raw( trim( (string) $row['live'] ) ) : '',
 			'ultrasignup'  => isset( $row['ultrasignup'] ) ? esc_url_raw( trim( (string) $row['ultrasignup'] ) ) : '',
-			'ultrarunning' => isset( $row['ultrarunning'] ) ? esc_url_raw( trim( (string) $row['ultrarunning'] ) ) : '',
+			'ultrarunning' => arv_results_clean_ultrarunning( isset( $row['ultrarunning'] ) ? $row['ultrarunning'] : '' ),
 			'archive'      => $archive,
 		);
 
