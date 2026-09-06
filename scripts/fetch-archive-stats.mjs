@@ -130,6 +130,20 @@ function parseCellRows( cellRows ) {
 			continue;
 		}
 
+		// The table has ended, and what follows is a different one. Buckeye
+		// Endurance Runs prints its four result tables and then six
+		// thousand lines of per-runner lap splits, every lap table headed
+		// "Lap Time Split Miles KM" and none of them naming a runner. Read
+		// as finishers, because they come after a header and have cells in
+		// them, that edition reported 6,288 of them.
+		//
+		// Two result columns and no runner named anywhere is a header for
+		// something that is not people. One result column is a runner
+		// called Miles.
+		if ( header && ! lower.some( isNameHead ) && lower.filter( isResultHead ).length > 1 ) {
+			break;
+		}
+
 		// Everything after the header is offered as a finisher. Not only
 		// the rows that look like one: the Tushars files pad their header
 		// out to twenty-five cells and their finishers to ten, so a row
@@ -447,17 +461,83 @@ function winnersFromRows( header, rows ) {
 // it, which is a finisher this file did not have.
 const isRule = ( line ) => /^-{2,}(?:\s+-{2,})*$/.test( line );
 
+// The rule is also a ruler. Each run of hyphens in it is exactly as wide as
+// the column above it, which is the only reliable way to read Buckeye
+// Endurance Runs' file: its columns are a single space apart in two places,
+// "Place Name" in the header and "26:34:00 Male" in every row, so splitting
+// on runs of whitespace reads five columns as three and loses the name and
+// the gender together. Every distance section in that file carries its own
+// header and its own rule, so this is re-read per section rather than once.
+function ruleSpans( line ) {
+	const spans = [];
+	const runs = /-+/g;
+	let run;
+
+	while ( ( run = runs.exec( line ) ) ) {
+		spans.push( [ run.index, run.index + run[ 0 ].length ] );
+	}
+
+	return spans.length > 1 ? spans : null;
+}
+
+// Whether a line is laid out on those columns: every gap between them is
+// blank in it, or the line stops before reaching that far. A distance
+// heading sitting between two sections is not, and falls back to the
+// whitespace split, which is what keeps it the single cell
+// isDistanceHeading has to see to recognise it.
+function fitsSpans( line, spans ) {
+	for ( let i = 1; i < spans.length; i++ ) {
+		if ( spans[ i - 1 ][ 1 ] >= line.length ) return true;
+		if ( '' !== line.slice( spans[ i - 1 ][ 1 ], spans[ i ][ 0 ] ).trim() ) return false;
+	}
+
+	return true;
+}
+
+function cutSpans( line, spans ) {
+	return spans.map( ( [ from, to ], i ) =>
+		( i === spans.length - 1 ? line.slice( from ) : line.slice( from, to ) ).trim()
+	);
+}
+
 function textCellRows( txt ) {
-	return txt
-		.split( /\r?\n/ )
-		.map( ( line ) => line.trim() )
-		.filter( Boolean )
-		.filter( ( line ) => ! isRule( line ) )
-		.map( ( line ) =>
-			line.includes( '\t' )
-				? line.split( '\t' ).map( ( c ) => c.trim() )
-				: line.split( /\s{2,}/ ).map( ( c ) => c.trim() )
-		);
+	const loose = ( line ) =>
+		line.includes( '\t' )
+			? line.split( '\t' ).map( ( c ) => c.trim() )
+			: line.trim().split( /\s{2,}/ ).map( ( c ) => c.trim() );
+
+	// Trailing space only. The leading space is a column position in a
+	// fixed-width file (" 1" is place 1, right-aligned in a five wide
+	// column) and trimming it here would move every column left of where
+	// the rule says it is.
+	const lines = txt.split( /\r?\n/ ).map( ( line ) => line.replace( /\s+$/, '' ) ).filter( ( line ) => line.trim() );
+
+	const out = [];
+	let spans = null;
+
+	lines.forEach( ( line, i ) => {
+		if ( isRule( line.trim() ) ) {
+			spans = ruleSpans( line );
+
+			// The header is the line above the rule that measures it, and it
+			// was read a moment ago without those measurements. Read again
+			// now that they exist. By index, not by searching for the rule:
+			// every section of this file carries the same rule, so looking
+			// it up by its text would re-cut the first section's header
+			// every time and leave the rest as they were.
+			const header = i > 0 ? lines[ i - 1 ] : undefined;
+
+			if ( spans && out.length && undefined !== header && fitsSpans( header, spans ) ) {
+				out[ out.length - 1 ] = cutSpans( header, spans );
+			}
+
+			return;
+		}
+
+		out.push( spans && fitsSpans( line, spans ) ? cutSpans( line, spans ) : loose( line ) );
+	} );
+
+	return out;
 }
 
 // A row this reader can still count as a finisher even with no header to
