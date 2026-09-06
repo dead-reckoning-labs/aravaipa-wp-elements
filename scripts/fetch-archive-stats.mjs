@@ -76,7 +76,12 @@ const text = ( html ) => decode( html.replace( /<[^>]+>/g, ' ' ) ).replace( /\s+
 
 // A finish time, not a lap count and not an age. Accepts H:MM:SS, HH:MM:SS
 // and MM:SS, which is what a 5K prints.
-const isTime = ( v ) => /^\d{1,3}:[0-5]\d(:[0-5]\d)?$/.test( ( v || '' ).trim() );
+// Millisecond precision, tolerated but not kept: Silverton 1000 exports its
+// lap timing straight off a stopwatch, "12:30:55.138", and every other race
+// on the site reports to the second. Accepted here so a real time is not
+// thrown out for carrying more precision than usual, trimmed in resultOf
+// below so the winner still reads like every other winner on the page.
+const isTime = ( v ) => /^\d{1,3}:[0-5]\d(:[0-5]\d)?(\.\d+)?$/.test( ( v || '' ).trim() );
 
 const isPlaceHead = ( h ) => h.includes( 'place' ) || [ 'pos', 'position', 'rank', 'pic' ].includes( h );
 const isNameHead = ( h ) =>
@@ -107,8 +112,21 @@ function parseCellRows( cellRows ) {
 		// "Last" with no "name" in either. Requiring the exact words found
 		// no header in those files at all, and a file with no header is a
 		// file this reads nothing out of.
-		if ( ! header && lower.some( isNameHead ) && ( lower.some( isPlaceHead ) || lower.some( isResultHead ) ) ) {
-			header = lower;
+		const hasPlaceOrResult = lower.some( isPlaceHead ) || lower.some( isResultHead );
+
+		// Javelina Jundred 2010's lap board labels "Pos", "Gender", "Age",
+		// "State", "Start" and every lap, and never labels the one column
+		// every row still has a name in: "Pos, , Gender, Age, State, Start,
+		// Lap 1, ...". A single unlabeled column beside an otherwise real
+		// header is that column, not a blank cell nobody filled in on
+		// purpose. Bounded to exactly one blank so a genuinely empty filler
+		// row above the real header, which has nothing labeled at all,
+		// never qualifies as one.
+		const blanks = lower.filter( ( h ) => '' === h ).length;
+		const impliedName = 1 === blanks && lower.length > 3 && hasPlaceOrResult && ! lower.some( isNameHead );
+
+		if ( ! header && ( lower.some( isNameHead ) || impliedName ) && hasPlaceOrResult ) {
+			header = impliedName ? lower.map( ( h ) => ( '' === h ? 'name' : h ) ) : lower;
 			continue;
 		}
 
@@ -330,7 +348,9 @@ function scoredOnDistance( rows, col ) {
 function resultOf( cells, col ) {
 	if ( col.time !== -1 && ! col.byDistance ) {
 		const time = ( cells[ col.time ] || '' ).trim();
-		return isTime( time ) ? time : '';
+		// The fraction isTime tolerates above is not worth printing: every
+		// other winner on the site reads "12:30:55", not "12:30:55.138".
+		return isTime( time ) ? time.replace( /\.\d+$/, '' ) : '';
 	}
 
 	for ( const [ i, unit ] of [ [ col.miles, 'mi' ], [ col.km, 'km' ], [ col.laps, 'laps' ] ] ) {
