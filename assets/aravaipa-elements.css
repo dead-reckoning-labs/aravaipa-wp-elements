@@ -4120,6 +4120,8 @@
 	margin-top: 0.5rem;
 }
 
+
+
 .arv-results__year-label {
 	flex: 0 0 auto;
 	font-size: var(--arv-fs-label);
@@ -4130,14 +4132,57 @@
 
 /* Scrolls sideways rather than wrapping. Nineteen years wrapped into three
    ragged rows reads as a wall of numbers; one line that runs off the edge
-   reads as a range, which is what it is. */
+   reads as a range, which is what it is.
+
+   No scrollbar of its own: the fade above says the same thing without
+   drawing a grey bar through the bottom of the buttons, and a row of
+   nineteen chips that a reader can drag, swipe, wheel or tab through does
+   not need one to be discoverable. */
 .arv-results__years {
 	display: flex;
 	gap: 0.3rem;
 	overflow-x: auto;
-	scrollbar-width: thin;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 	padding-bottom: 0.2rem;
 	-webkit-overflow-scrolling: touch;
+}
+
+.arv-results__years::-webkit-scrollbar {
+	display: none;
+}
+
+/* "There is more this way", in place of the scrollbar that used to say it.
+   A macOS overlay scrollbar is painted on top of content rather than
+   beside it, so the one this row grew on scroll landed across the bottom
+   edge of the year buttons themselves.
+
+   Masked rather than covered with a gradient of the page's own background:
+   a mask fades whichever edge is actually cut off, at the row's edges
+   rather than the bar's, so the "YEAR" label beside it is never faded and
+   nothing has to know how wide that label is. Each edge clears itself the
+   moment that end of the row is reached, which the scrollbar never did:
+   it only ever appeared at all for readers who have set their scrollbars
+   to always show. */
+.arv-results__years.is-cut-right {
+	-webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+	mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+}
+
+.arv-results__years.is-cut-left {
+	-webkit-mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+	mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+}
+
+.arv-results__years.is-cut-left.is-cut-right {
+	-webkit-mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
+	mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
+}
+
+/* The one place a reader cannot drag or swipe to: a deep link straight to
+   ?race_year=2008 opens with its own year off the right hand end. */
+.arv-results__year {
+	scroll-margin-inline: 2.5rem;
 }
 
 .arv-results__year {
