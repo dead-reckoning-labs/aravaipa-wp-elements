@@ -334,6 +334,148 @@
     }
    ],
    "source": "jamil, gender read off the results file by hand: it is a lap board with no gender column"
+  },
+  {
+   "name": "Javelina Jundred",
+   "iso": "2022-10-29",
+   "finishers": 401,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Dakota Jones",
+      "time": "12:58:02"
+     },
+     "women": {
+      "name": "Devon Yanko",
+      "time": "14:36:10"
+     }
+    }
+   ],
+   "source": "ultrasignup, read from the live grid in a real browser"
+  },
+  {
+   "name": "Rough Canyon Trail Runs",
+   "iso": "2022-10-08",
+   "finishers": 15,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Adam Vadeboncoeur",
+      "time": "7:10:15"
+     },
+     "women": {
+      "name": "Careth Arnold",
+      "time": "8:45:38"
+     }
+    }
+   ],
+   "source": "ultrasignup, read from the live grid in a real browser"
+  },
+  {
+   "name": "Pikes Peak APEX",
+   "iso": "2022-09-25",
+   "finishers": 18,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Graham Shalvoy",
+      "time": "4:31:32"
+     },
+     "women": {
+      "name": "Mary Sketch Bryant",
+      "time": "4:51:37"
+     }
+    }
+   ],
+   "source": "ultrasignup, read from the live grid in a real browser"
+  },
+  {
+   "name": "Flagstaff Sky Peaks",
+   "iso": "2022-09-24",
+   "finishers": 49,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Miler",
+     "men": {
+      "name": "Jonathan Kuplack",
+      "time": "7:56:41"
+     },
+     "women": {
+      "name": "Kendra Eerdmans",
+      "time": "10:20:24"
+     }
+    }
+   ],
+   "source": "ultrasignup, read from the live grid in a real browser; the Momentum timing link on this row (event 198) no longer loads any data"
+  },
+  {
+   "name": "Javelina Jangover",
+   "iso": "2022-09-17",
+   "finishers": 27,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "75K",
+     "men": {
+      "name": "Nick Coury",
+      "time": "5:49:17"
+     },
+     "women": {
+      "name": "Melissa Kennedy",
+      "time": "10:06:00"
+     }
+    }
+   ],
+   "source": "ultrasignup, read from the live grid in a real browser"
+  },
+  {
+   "name": "Flagstaff Sky Race",
+   "iso": "2017-10-06",
+   "finishers": 139,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "55K",
+     "men": {
+      "name": "Tim Freriks",
+      "time": "5:24:34"
+     },
+     "women": {
+      "name": "Kristi Knecht",
+      "time": "6:36:30"
+     }
+    },
+    {
+     "distance": "39K",
+     "men": {
+      "name": "David Sinclair",
+      "time": "3:54:14"
+     },
+     "women": {
+      "name": "Kathryn Ross",
+      "time": "4:58:22"
+     }
+    },
+    {
+     "distance": "Vertical Km",
+     "men": {
+      "name": "David Sinclair",
+      "time": "49:44"
+     },
+     "women": {
+      "name": "Rya Berrigan",
+      "time": "1:15:47"
+     }
+    }
+   ],
+   "source": "ultrasignup, read from the live grid in a real browser"
   }
  ]
 }
