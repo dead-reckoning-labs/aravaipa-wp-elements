@@ -202,15 +202,18 @@ function sections( cellRows ) {
 	return out.filter( ( s ) => s.rows.length );
 }
 
-// Which column holds what, by name rather than position.
-function columns( header ) {
+// Which column holds what, by name rather than position. Rows are passed
+// alongside the header for the one candidate below that the header text
+// cannot settle on its own.
+function columns( header, rows ) {
 	// Every test is tried against the header cell as written and against
 	// it with the spaces taken out, because two of these files were saved
 	// from a spreadsheet that wrapped its own headings and they say
-	// "gend er" and "stat e".
+	// "gend er" and "stat e". The index is offered too, for the one test
+	// that has to look past the header at what its own column holds.
 	const find = ( ...tests ) => {
 		for ( const test of tests ) {
-			const i = header.findIndex( ( h ) => test( h ) || test( h.replace( /\s+/g, '' ) ) );
+			const i = header.findIndex( ( h, idx ) => test( h, idx ) || test( h.replace( /\s+/g, '' ), idx ) );
 			if ( i !== -1 ) return i;
 		}
 		return -1;
@@ -261,7 +264,21 @@ function columns( header ) {
 			// "Finish Mile 101.4", "100k Split". The last of them is the
 			// finish, and the ones before it are splits, so only the last
 			// column qualifies.
-			( h ) => h === header[ header.length - 1 ] && /^(finish|100k split|mile |lap )/.test( h )
+			//
+			// Trusted only once the column's own values back it up. A
+			// header naming a checkpoint by the distance it sits at says
+			// nothing about what is actually in the column under it: the
+			// Javelina boards put a clock there, "16:37:53", and Desert
+			// Solstice's near-identical "Finish Miles" puts the mileage
+			// itself, "130.92 Miles", the exact number its own name
+			// promised. Both match this same header shape; only reading
+			// the rows tells them apart. Without this, "Finish Miles"
+			// was claimed as a time column ahead of the real miles column
+			// beside it, failed to look like one on every row, and Desert
+			// Solstice's 24 Hour reported zero finishers from a file that
+			// parses cleanly once this defers to it.
+			( h, i ) => h === header[ header.length - 1 ] && /^(finish|100k split|mile |lap )/.test( h )
+				&& ( rows || [] ).some( ( r ) => isTime( ( r[ i ] || '' ).trim() ) )
 		),
 		// What a fixed-time race is won on. There is no finishing time to
 		// report for a 24 hour: everybody who is still there at the end
@@ -396,7 +413,7 @@ function winnersFrom( html ) {
 function winnersFromRows( header, rows ) {
 	if ( ! header || ! rows.length ) return null;
 
-	const col = columns( header );
+	const col = columns( header, rows );
 	if ( col.first === -1 && col.name === -1 ) return null;
 	if ( col.time === -1 && col.miles === -1 && col.km === -1 && col.laps === -1 ) return null;
 
@@ -796,10 +813,21 @@ function guessMetres( name ) {
 function guessSeconds( name ) {
 	const n = name.toLowerCase();
 
-	const day = n.match( /^([\d.]+)\s*days?$/ );
+	// Steep Camp abbreviates the same way Silverton 1000 does, "5d, 3d, 2d,
+	// 1d" beside its own "12h, 6h": bare "d" needed the same trust bare "h"
+	// gets below, or the days lost to 0 and the file's two shortest heats,
+	// the only labels left with anything on this scale, took the headline
+	// instead of its longest.
+	const day = n.match( /^([\d.]+)\s*(?:day|d)s?$/ );
 	if ( day ) return +day[ 1 ] * 86400;
 
-	const hr = n.match( /^([\d.]+)\s*(?:hour|hr)s?$/ );
+	// Silverton 1000 abbreviates every one of its shorter heats down to the
+	// bare letter, "72H, 48H, 24H, 12H, 6H", the same convention guessMetres
+	// already reads "50M" as 50 miles under. Without it every one of those
+	// guessed 0s alongside "6 Day", the same length as each other by that
+	// scale, and only sorted correctly by the accident of the file listing
+	// them longest first already.
+	const hr = n.match( /^([\d.]+)\s*(?:hour|hr|h)s?$/ );
 	if ( hr ) return +hr[ 1 ] * 3600;
 
 	return 0;
@@ -1131,25 +1159,41 @@ starters += c.starters;
 				// Hour, 24 Hour" all guess 0m on the scale below, a tie that
 				// never resolves to a headline, "Winners, 3 distances" and
 				// nothing shown where every other year on the page leads
-				// with a result. Ranked by the clock instead, but only where
-				// the whole event is that shape: guessSeconds only enters an
-				// event that mixes a real distance in with a fixed-time one
-				// over guessMetres's dead heat, because a second and a metre
-				// are not the same axis and there is no honest way to rank a
-				// 24 Hour against that race's own 50 Mile on either one.
-				const allTimed = winners.every( ( w ) => guessSeconds( w.distance || '' ) > 0 );
-				const guess = allTimed ? guessSeconds : guessMetres;
-
+				// with a result.
+				//
+				// A fixed-time distance outranks a real one wherever both
+				// exist at the same event, not only where every distance is
+				// fixed-time. Desert Solstice runs a 24 Hour and offers a
+				// 100 Mile cutoff inside it; Juniperwood Ranch Runs runs a
+				// 48 Hour and offers a 50 Mile and a Marathon inside it. The
+				// cutoff distance is the shorter option within the fixed-
+				// time race, not a longer race that happens to share a page
+				// with it, and Aravaipa's own read of both is that the
+				// clock is what the event is, so it leads. Every winner is
+				// ranked by the clock where it has one and by the ground
+				// otherwise, which puts any fixed-time distance present
+				// ahead of any real one without comparing the two directly:
+				// a real distance's guessSeconds is 0, lower than any
+				// fixed-time race actually run.
 				winners.forEach( ( w ) => {
-					w._m = guess( w.distance || '' );
+					const secs = guessSeconds( w.distance || '' );
+					w._m = secs > 0 ? secs : guessMetres( w.distance || '' );
+					w._timed = secs > 0;
 				} );
-				winners.sort( ( a, b ) => b._m - a._m );
 
-				const longest = winners[ 0 ]._m;
-				headline = longest > 0 && winners.filter( ( w ) => w._m === longest ).length === 1;
+				// Metres and seconds still cannot be compared to each other
+				// directly, only used to break a tie within whichever one a
+				// distance is actually measured in: sorted timed-first, and
+				// by magnitude within each group.
+				winners.sort( ( a, b ) => ( b._timed - a._timed ) || ( b._m - a._m ) );
+
+				const longest = winners[ 0 ];
+				headline = longest._m > 0
+					&& winners.filter( ( w ) => w._timed === longest._timed && w._m === longest._m ).length === 1;
 
 				winners.forEach( ( w ) => {
 					delete w._m;
+					delete w._timed;
 				} );
 			}
 
