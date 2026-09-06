@@ -131,8 +131,18 @@ const DATE_RE = /^[A-Z][a-z]+\s+\d{1,2}(?:st|nd|rd|th)?\b.*20\d\d\s*$/;
 //
 // Leaving RaceResult out cost Javelina Jundred 2021 its only result link,
 // which is the kind of gap that looks like the race simply had none.
+//
+// Not every static result file lives under /results/. Ten of them were
+// uploaded through the media library instead and sit under
+// /wp-content/uploads/<year>/<month>/, which this rejected outright: Cave
+// Creek Thriller and Flagstaff Sky Race 2015, Running Lungs 2015, and the
+// combined Whiskey Man & Whiskey Woman standings for 2017. All ten are
+// live, and all ten were reachable only from the old year pages. Narrowed
+// to .htm and .html so this admits result files and not the entire media
+// library, which is mostly photographs and PDFs.
 function isResultLink(href) {
   return /\/results\//.test(href)
+    || /\/wp-content\/uploads\/[^"']*\.html?(?:$|[?#])/i.test(href)
     || /ultrasignup\.com\/results/.test(href)
     || /raceresult\.com/.test(href)
     || /runsignup\.com/.test(href)
