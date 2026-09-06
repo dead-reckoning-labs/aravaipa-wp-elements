@@ -129,6 +129,47 @@
     }
    ],
    "source": "ultrasignup-browser"
+  },
+  {
+   "name": "Copper Basin 50K",
+   "iso": "2010-04-10",
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Kilometer",
+     "men": {
+      "name": "Matt Hage",
+      "time": "5:59"
+     },
+     "women": {
+      "name": "Jody Chase",
+      "time": "6:04"
+     }
+    },
+    {
+     "distance": "36 Kilometer",
+     "men": {
+      "name": "Boone Ebel",
+      "time": "3:24"
+     },
+     "women": {
+      "name": "Becca Pace",
+      "time": "4:49"
+     }
+    },
+    {
+     "distance": "19 Kilometer",
+     "men": {
+      "name": "Donovan Sarka",
+      "time": "2:35"
+     },
+     "women": {
+      "name": "Paulette Zillmer",
+      "time": "2:18"
+     }
+    }
+   ],
+   "source": "jamil, read off the results file by hand: it has no gender column"
   }
  ]
 }
