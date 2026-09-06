@@ -299,12 +299,20 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 		// inches above, correctly said COMPLETED. That block was already
 		// reading the board's real clock; this was reading a date.
 		$board    = function_exists( 'arv_live_store_find' ) ? arv_live_store_find( $race['live'] ) : null;
-		$start_ts = ( null !== $board && '' !== $board['start'] ) ? strtotime( $board['start'] ) : 0;
+		$start_ts = function_exists( 'arv_race_start_ts' ) ? arv_race_start_ts( $race, $board ) : 0;
 
-		// No board entry means no real clock to read, so fall back to the
-		// date: a race whose day it is, is happening. That is what this did
-		// for everything before, and for a race the board has never carried
-		// it remains the only answer available.
+		// Neither a board nor a director's gun time means no real clock to
+		// read, so fall back to the date: a race whose day it is, is
+		// happening. That is what this did for everything before, and for a
+		// race with no clock from either source it remains the only answer
+		// available.
+		//
+		// This used to read the board alone, which is not the same test: a
+		// race scored off the board has no board start, scored zero here,
+		// and skipped straight to the date. Oli Kai sat on this page saying
+		// "Happening now" nine hours after it finished, with a nine hour
+		// cutoff stored, because nothing on this path ever looked for a
+		// start to measure that cutoff from.
 		$current = $start_ts
 			? ( 'live' === arv_races_live_state( $race, $board, $start_ts ) )
 			: ( $race['iso'] === $today || ( '' !== $race['end'] && $race['iso'] <= $today && $today <= $race['end'] ) );

@@ -1001,6 +1001,77 @@ $GLOBALS['NOW_TS'] = strtotime( '2026-08-29T08:00:00Z' );
 $before = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'and before the gun it is not',    false === strpos( arv_test_archive_only( $before ), 'arv-results__flag' ) );
 
+// The same three states for a race with NO board at all.
+//
+// This is the case the board tests above cannot reach and the one that
+// actually shipped broken. Oli Kai is scored on RaceResult, so nothing
+// ever writes a board row for it, so this path had no start to measure
+// from: it skipped the clock entirely, fell through to "is it today", and
+// said "Happening now" for the whole calendar day. Jamil saw it still
+// claiming to be happening nine hours after the race finished, on the
+// same page whose race week block said COMPLETED.
+//
+// Everything it needs is stored: a director's 8am Eastern gun time and a
+// nine hour cutoff. Both were already correct on the live site while the
+// page was wrong, which is what makes this a wiring bug rather than a
+// data one.
+// Black Bear ran the same day, so it needs a clock too or it falls back to
+// the date and leaves a flag on the page these assertions are looking for
+// the absence of.
+arv_live_store_set( array() );
+arv_race_start_store_set( array(
+	'Rock Hawk Trail Races'  => array( 'time' => '08:00', 'tz' => 'America/New_York' ),
+	'Black Bear Trail Races' => array( 'time' => '08:00', 'tz' => 'America/New_York' ),
+) );
+arv_race_cutoff_store_set( array(
+	'Rock Hawk Trail Races'  => 9,
+	'Black Bear Trail Races' => 9,
+) );
+
+// 08:00 America/New_York on race day is 12:00Z, so the cutoff is 21:00Z.
+t( 'the boardless start resolves to the gun time',
+	strtotime( '2026-08-29T12:00:00Z' ) === arv_race_start_ts( array( 'name' => 'Rock Hawk Trail Races', 'iso' => '2026-08-29' ), null ) );
+t( 'and the cutoff nine hours past it',
+	strtotime( '2026-08-29T21:00:00Z' ) === arv_race_cutoff_for( 'Rock Hawk Trail Races', null, strtotime( '2026-08-29T12:00:00Z' ) ) );
+
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T15:00:00Z' );   // three hours in
+$nb_during = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'no board, mid race, it is flagged',
+	false !== strpos( arv_test_archive_only( $nb_during ), 'arv-results__flag' ) );
+
+// The assertion that was false before this fix. Same calendar day, past
+// the stored cutoff: a date comparison says yes and the race is over.
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T23:00:00Z' );
+$nb_after = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'no board, past its cutoff, it is not',
+	false === strpos( arv_test_archive_only( $nb_after ), 'arv-results__flag' ) );
+
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T08:00:00Z' );
+$nb_before = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'no board, before the gun, it is not',
+	false === strpos( arv_test_archive_only( $nb_before ), 'arv-results__flag' ) );
+
+// Nothing stored anywhere still falls back to the date, which for a race
+// nobody has told us anything about is the only answer available.
+arv_race_start_store_set( array() );
+arv_race_cutoff_store_set( array() );
+t( 'with no clock from any source there is no start',
+	0 === arv_race_start_ts( array( 'name' => 'Rock Hawk Trail Races', 'iso' => '2026-08-29' ), null ) );
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T23:00:00Z' );
+$nb_none = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'and the date decides again',
+	false !== strpos( arv_test_archive_only( $nb_none ), 'arv-results__flag' ) );
+
+// The board still wins where there is one, so adding the override lookup
+// cannot change a board-timed race.
+arv_race_start_store_set( array( 'Rock Hawk Trail Races' => array( 'time' => '23:30', 'tz' => 'America/New_York' ) ) );
+t( 'a board start beats a stored gun time',
+	strtotime( '2026-08-29T12:00:00Z' ) === arv_race_start_ts(
+		array( 'name' => 'Rock Hawk Trail Races', 'iso' => '2026-08-29' ),
+		array( 'start' => '2026-08-29T12:00:00.000Z', 'cutoff' => '' )
+	) );
+arv_race_start_store_set( array() );
+
 arv_live_store_set( array() );
 $GLOBALS['NOW']    = '2026-08-30';
 $GLOBALS['NOW_TS'] = null;
