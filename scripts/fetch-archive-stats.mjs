@@ -44,6 +44,7 @@
  * Credentials from ARAVAIPA_WP_URL / _ADMIN_USER / _ADMIN_APP_PASSWORD.
  */
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { inflateRawSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -83,13 +84,17 @@ const isNameHead = ( h ) =>
 const isResultHead = ( h ) =>
 	/time|finish|miles|kilometers|laps|distance/.test( h ) || [ 'km', 'total tm' ].includes( h );
 
-function parseTable( html ) {
+// Header detection and row collection, given rows already split into
+// cells. Shared by every source: an HTML <tr>, a Word table row and a line
+// of a plain-text file are three different things to extract a row of
+// cells FROM, but identical once they are one, and a results file written
+// by hand does not spell its header the same way twice no matter which of
+// the three it happens to be saved as.
+function parseCellRows( cellRows ) {
 	const rows = [];
 	let header = null;
 
-	for ( const tr of html.match( /<tr[\s\S]*?<\/tr>/gi ) || [] ) {
-		const cells = ( tr.match( /<t[dh][\s\S]*?<\/t[dh]>/gi ) || [] ).map( ( c ) => text( c ) );
-
+	for ( const cells of cellRows ) {
 		if ( ! cells.length ) continue;
 
 		const lower = cells.map( ( c ) => c.toLowerCase() );
@@ -122,6 +127,49 @@ function parseTable( html ) {
 	return { header, rows };
 }
 
+function htmlCellRows( html ) {
+	return ( html.match( /<tr[\s\S]*?<\/tr>/gi ) || [] ).map(
+		( tr ) => ( tr.match( /<t[dh][\s\S]*?<\/t[dh]>/gi ) || [] ).map( ( c ) => text( c ) )
+	);
+}
+
+function parseTable( html ) {
+	return parseCellRows( htmlCellRows( html ) );
+}
+
+// A row that names a distance and nothing else, rather than a header or a
+// finisher: exactly one non-empty cell, and that cell reads as a course
+// length. Only a source that bundles every distance of a race into one
+// document ever produces one. Silverton Alpine Marathon 2009 is a single
+// .docx with the Marathon's table and the 50K's table one below the other,
+// each led by a row like this ("Marathon - 7am August 29, 2009") that is
+// otherwise indistinguishable from a stray blank row.
+function isDistanceHeading( cells ) {
+	const only = cells.map( ( c ) => c.trim() ).filter( Boolean );
+
+	return 1 === only.length && /^\d+(?:\.\d+)?\s?(?:miles?|km?|kilometers?)\b|^marathon\b/i.test( only[ 0 ] );
+}
+
+// Cuts a flat, in-order list of rows into one group per distance heading
+// found in them. A source with no heading in it at all, which is every
+// source but the two above, produces the one section everything falls
+// into, label '': the caller already has a label for that case, from the
+// archive entry the whole file was read from.
+function sections( cellRows ) {
+	const out = [ { label: '', rows: [] } ];
+
+	for ( const cells of cellRows ) {
+		if ( isDistanceHeading( cells ) ) {
+			out.push( { label: cells.find( Boolean ).trim().replace( /\s*[-\u2013].*$/, '' ), rows: [] } );
+			continue;
+		}
+
+		out[ out.length - 1 ].rows.push( cells );
+	}
+
+	return out.filter( ( s ) => s.rows.length );
+}
+
 // Which column holds what, by name rather than position.
 function columns( header ) {
 	// Every test is tried against the header cell as written and against
@@ -136,9 +184,32 @@ function columns( header ) {
 		return -1;
 	};
 
+	const last = find( ( h ) => h === 'last name' || h === 'lastname', ( h ) => h === 'last' );
+
+	// Every index the header calls "First" or "First Name", not only the
+	// first one. Whiskey Man & Woman 2017 heads its unlabelled place
+	// column "First" by mistake instead of "Place": "First, First, Last,
+	// Gender, Age, ...", first name in the second column and nothing
+	// naming the first at all. find()'s first-match-wins reads the place
+	// number as somebody's first name and nameOf() prints "1 Muchna". A
+	// real file never repeats this label, so there is only ever one
+	// candidate to choose from and this changes nothing for it; picking
+	// whichever candidate sits immediately before Last, which is where a
+	// first name actually sits relative to a last name, is what tells the
+	// genuine column apart from the typo on the one file that has both.
+	const firstCandidates = [];
+	header.forEach( ( h, i ) => {
+		if ( 'first name' === h || 'first' === h || 'firstname' === h.replace( /\s+/g, '' ) ) {
+			firstCandidates.push( i );
+		}
+	} );
+	const first = firstCandidates.length > 1 && -1 !== last
+		? ( firstCandidates.find( ( i ) => i === last - 1 ) ?? firstCandidates[ 0 ] )
+		: ( firstCandidates.length ? firstCandidates[ 0 ] : -1 );
+
 	return {
-		first: find( ( h ) => h === 'first name', ( h ) => h === 'first' ),
-		last: find( ( h ) => h === 'last name' || h === 'lastname', ( h ) => h === 'last' ),
+		first,
+		last,
 		// Some years print one column instead of two, and the lap
 		// scoreboards print it surname first.
 		name: find( ( h ) => h === 'name' || h === 'runner' || h === 'athlete' ),
@@ -164,8 +235,22 @@ function columns( header ) {
 		// report for a 24 hour: everybody who is still there at the end
 		// stops at the same moment, and the shortest clock in the file
 		// belongs to whoever quit earliest.
-		miles: find( ( h ) => h === 'miles' || h === 'finish miles' || h === 'distance' ),
-		km: find( ( h ) => h === 'km' || h === 'finish km' || h === 'kilometers' ),
+		// A substring fallback after the exact names, for a header a
+		// spreadsheet export wrote out in full: "Official finish distance
+		// in miles" is what the Across the Years text exports actually
+		// carry, present in the file next to a Net Time column that reads
+		// 24:00:00 for every single finisher of a 24 hour race alike.
+		// Without a miles column to prefer instead, scoredOnDistance() had
+		// no distance column to fall back to either, and correctly-ranked
+		// winners were reported as if they had each run exactly one clock.
+		miles: find(
+			( h ) => h === 'miles' || h === 'finish miles' || h === 'distance',
+			( h ) => h.includes( 'mile' )
+		),
+		km: find(
+			( h ) => h === 'km' || h === 'finish km' || h === 'kilometers',
+			( h ) => h.includes( 'kilometer' )
+		),
 		laps: find( ( h ) => h === 'laps' ),
 		// The overall finishing position. Never the per-division ones:
 		// "gender place" reads 1 for the first woman as well as the first
@@ -211,6 +296,16 @@ function nameOf( cells, col ) {
 //
 // One inversion is a typo in a results file from 2013. A run of them is a
 // different sport.
+//
+// A spreadsheet export of a fixed-time race gives itself away a second
+// way an out-of-order finish list cannot: the Across the Years text
+// exports carry a "Net time" column that is not a finishing time at all,
+// it is the event's own duration, printed identically for all 46 finishers
+// of the 24 hour because that is literally how long the race ran. Flat
+// rather than out of order, so the inversion count above is zero and finds
+// nothing wrong with it, and every winner was reported as having run
+// exactly one clock. A real finishing time varies runner to runner; one
+// that does not is the same tell in a different shape.
 function scoredOnDistance( rows, col ) {
 	if ( col.time === -1 ) return true;
 	if ( col.miles === -1 && col.km === -1 && col.laps === -1 ) return false;
@@ -221,6 +316,8 @@ function scoredOnDistance( rows, col ) {
 		.map( ( t ) => t.split( ':' ).reduce( ( a, p ) => a * 60 + +p, 0 ) );
 
 	if ( secs.length < 4 ) return false;
+
+	if ( new Set( secs ).size === 1 ) return true;
 
 	let inversions = 0;
 	for ( let i = 1; i < secs.length; i++ ) if ( secs[ i ] < secs[ i - 1 ] ) inversions++;
@@ -254,6 +351,15 @@ const GENDERS = {
 
 function winnersFrom( html ) {
 	const { header, rows } = parseTable( html );
+
+	return winnersFromRows( header, rows );
+}
+
+// The core of the above, given rows already split into cells rather than
+// HTML. Split out so a Word table and a plain-text file can be scored the
+// same way an HTML one always has been, without either of them pretending
+// to be markup first.
+function winnersFromRows( header, rows ) {
 	if ( ! header || ! rows.length ) return null;
 
 	const col = columns( header );
@@ -289,6 +395,132 @@ function winnersFrom( html ) {
 	for ( const g of Object.keys( best ) ) delete best[ g ].rank;
 
 	return { winners: best, finishers: seen };
+}
+
+/* ------------------------------------------------------------------ *
+ * Plain text (.txt)
+ *
+ * Five files, two shapes. Across the Years exports a tab-separated table
+ * per distance straight from a spreadsheet, header included. Buckeye
+ * Endurance Runs is one file for the whole race, fixed-width columns lined
+ * up with spaces and a dashed rule under the header, four distances one
+ * after another with nothing but a bare heading line between them.
+ *
+ * Neither is markup, so parseTable never saw either: this reads the same
+ * rows-of-cells shape out of lines instead of <tr> tags, then everything
+ * from parseCellRows on is identical to an HTML file.
+ *
+ * Not every .txt in the archive is one of these two. Copper Basin Fatass
+ * 50K is a hand-typed placing list, "1. Brian Tinder          5:57", with
+ * no header row naming a runner or a finishing position at all. That is
+ * not a defect in this reader: parseCellRows correctly finds no header,
+ * because the file does not have one, and the real gap is that the file
+ * never recorded gender for anyone in it.
+ * ------------------------------------------------------------------ */
+
+// A divider row under a fixed-width header, "----- --------- ------": not
+// a header, not a finisher, and if split like every other line it produces
+// a row of hyphens that happens to be exactly as wide as the header beside
+// it, which is a finisher this file did not have.
+const isRule = ( line ) => /^-{2,}(?:\s+-{2,})*$/.test( line );
+
+function textCellRows( txt ) {
+	return txt
+		.split( /\r?\n/ )
+		.map( ( line ) => line.trim() )
+		.filter( Boolean )
+		.filter( ( line ) => ! isRule( line ) )
+		.map( ( line ) =>
+			line.includes( '\t' )
+				? line.split( '\t' ).map( ( c ) => c.trim() )
+				: line.split( /\s{2,}/ ).map( ( c ) => c.trim() )
+		);
+}
+
+/* ------------------------------------------------------------------ *
+ * Word (.docx)
+ *
+ * One file. Silverton Alpine Marathon 2009 was scored with a Word document
+ * instead of a web page, which nothing here could open at all: not a
+ * results file so much as a results file shaped like a spreadsheet shaped
+ * like a document, two tables of it, Marathon then 50K, one below the
+ * other with a bare heading row between them the same way Buckeye's text
+ * file separates its distances.
+ *
+ * A .docx is a zip archive with the document's own text at
+ * word/document.xml inside it, deflate-compressed the way every entry in a
+ * zip ordinarily is. Node's zlib can inflate that once the archive is
+ * found in the file, so this reads the zip directory by hand rather than
+ * add a dependency for the one file in the whole corpus that needs one.
+ * ------------------------------------------------------------------ */
+
+// The end-of-central-directory record, searched from the tail because a
+// real archive can carry a comment of unknown length after it and the
+// signature is the only fixed point.
+function zipEntries( buf ) {
+	const EOCD = 0x06054b50;
+	let eocd = -1;
+
+	for ( let i = buf.length - 22; i >= 0 && i >= buf.length - 22 - 65536; i-- ) {
+		if ( buf.readUInt32LE( i ) === EOCD ) { eocd = i; break; }
+	}
+
+	if ( -1 === eocd ) return [];
+
+	const count = buf.readUInt16LE( eocd + 10 );
+	let offset = buf.readUInt32LE( eocd + 16 );
+	const entries = [];
+
+	for ( let i = 0; i < count; i++ ) {
+		if ( buf.readUInt32LE( offset ) !== 0x02014b50 ) break;
+
+		const method = buf.readUInt16LE( offset + 10 );
+		const compSize = buf.readUInt32LE( offset + 20 );
+		const nameLen = buf.readUInt16LE( offset + 28 );
+		const extraLen = buf.readUInt16LE( offset + 30 );
+		const commentLen = buf.readUInt16LE( offset + 32 );
+		const localOffset = buf.readUInt32LE( offset + 42 );
+		const name = buf.toString( 'utf8', offset + 46, offset + 46 + nameLen );
+
+		entries.push( { name, method, compSize, localOffset } );
+		offset += 46 + nameLen + extraLen + commentLen;
+	}
+
+	return entries;
+}
+
+function zipRead( buf, entry ) {
+	const nameLen = buf.readUInt16LE( entry.localOffset + 26 );
+	const extraLen = buf.readUInt16LE( entry.localOffset + 28 );
+	const dataStart = entry.localOffset + 30 + nameLen + extraLen;
+	const data = buf.subarray( dataStart, dataStart + entry.compSize );
+
+	// Method 0 is stored, uncompressed; 8 is deflate, which is what every
+	// zip tool defaults to and the only other method worth handling for one
+	// file. inflateRawSync because a zip entry's deflate stream carries
+	// none of the zlib header gzip and zlib both add of their own.
+	return 0 === entry.method ? data : inflateRawSync( data );
+}
+
+function docxRows( buf ) {
+	const entries = zipEntries( buf );
+	const doc = entries.find( ( e ) => 'word/document.xml' === e.name );
+	if ( ! doc ) return [];
+
+	const xml = zipRead( buf, doc ).toString( 'utf8' );
+
+	// Every row in the document, table cells and all, regardless of how
+	// deeply one table happens to be nested in another: Word lays this
+	// particular file out with a table-within-a-table for its header
+	// banner, and reading only top-level rows would mean bracket-matching
+	// <w:tbl> correctly around that nesting for no reason, since a row's
+	// own cells say everything the row means on their own.
+	return ( xml.match( /<w:tr[ >][\s\S]*?<\/w:tr>/g ) || [] ).map( ( tr ) =>
+		( tr.match( /<w:tc[\s\S]*?<\/w:tc>/g ) || [] ).map( ( tc ) => {
+			const runs = tc.match( /<w:t[^>]*>([\s\S]*?)<\/w:t>/g ) || [];
+			return decode( runs.map( ( r ) => r.replace( /<[^>]+>/g, '' ) ).join( '' ) ).trim();
+		} )
+	);
 }
 
 /* ------------------------------------------------------------------ *
@@ -582,6 +814,35 @@ async function main() {
 
 		let headline = null;
 
+		// The same file, fetched twice under two URLs. Cave Creek Thriller
+		// 2015 lists every one of its four distances once from /results/,
+		// the original host, and once more from /wp-content/uploads/,
+		// where the same race day was uploaded a second time through the
+		// media library. Checked once a file is in hand rather than by
+		// URL, which a media-library duplicate does not share with its
+		// original at all.
+		const seenBodies = new Set();
+
+		// The same distance, from two files that disagree rather than
+		// match. Two of Cave Creek Thriller's four duplicate pairs are the
+		// same file byte for byte and seenBodies above catches those; the
+		// 24K pair is not, the /results/ copy has 75 finishers and the
+		// uploads copy 73, missing a runner mid-pack the other one has.
+		// Neither file says it is the draft, so this cannot know which one
+		// is the real result, only that a file which is complete claims
+		// more finishers than one that is missing some of them: kept per
+		// distance here rather than summed across every file that offers
+		// one, so the same race is not counted once as itself and once
+		// again as an incomplete copy of itself.
+		const byDistance = new Map();
+
+		function keep( label, groupFinishers, groupWinners ) {
+			const prev = byDistance.get( label );
+			if ( ! prev || groupFinishers > prev.finishers ) {
+				byDistance.set( label, { finishers: groupFinishers, winners: groupWinners } );
+			}
+		}
+
 		for ( const file of row.archive ) {
 			const clax = /ultracast/i.test( file.url );
 			const url = clax ? claxUrl( file.url ) : file.url;
@@ -589,15 +850,24 @@ async function main() {
 			if ( ! url || /\.pdf$/i.test( url ) ) continue;
 			if ( ! clax && ! /aravaiparunning\.com/i.test( url ) ) continue;
 
-			let html;
+			// A .docx is a zip and has to come back as bytes, or the fetch
+			// would attempt to decode it as text and hand the zip's own
+			// binary layout to code that reads XML out of it.
+			const isDocx = /\.docx$/i.test( url );
+
+			let body;
 			try {
 				const r = await fetch( url, { headers: { 'User-Agent': UA } } );
 				if ( ! r.ok ) { skipped.push( `${ row.name } ${ row.iso }: ${ file.label } HTTP ${ r.status }` ); continue; }
-				html = await r.text();
+				body = isDocx ? Buffer.from( await r.arrayBuffer() ) : await r.text();
 			} catch ( e ) {
 				skipped.push( `${ row.name } ${ row.iso }: ${ file.label } ${ e.message }` );
 				continue;
 			}
+
+			const bodySig = isDocx ? body.toString( 'base64' ) : body.replace( /\r/g, '' ).trim();
+			if ( seenBodies.has( bodySig ) ) continue;
+			seenBodies.add( bodySig );
 
 			// One Ultracast file is the whole event, every distance in it,
 			// where a static file is one distance and an edition has five.
@@ -605,9 +875,14 @@ async function main() {
 			// course lengths it carries, instead of the caller guessing it
 			// from how many files happened to be listed.
 			if ( clax ) {
-				const got = parseClax( html );
+				const got = parseClax( body );
 				if ( ! got ) { skipped.push( `${ row.name } ${ row.iso }: ${ file.label } unparseable` ); continue; }
 
+				// One clax file is the whole event, every distance in it,
+				// so there is nothing else within this row it could be a
+				// duplicate of: pushed straight in rather than through
+				// byDistance, which exists for the static-file branch
+				// below finding the same distance in more than one file.
 				finishers += got.finishers;
 				rowsMax = Math.max( rowsMax, got.rows );
 				winners.push( ...got.winners );
@@ -615,16 +890,67 @@ async function main() {
 				continue;
 			}
 
-			const got = winnersFrom( html );
-			if ( ! got ) { skipped.push( `${ row.name } ${ row.iso }: ${ file.label } unparseable` ); continue; }
+			// Almost every file here is one distance, and sections() gives
+			// it back exactly that: the one group everything falls into,
+			// label ''. Silverton Alpine's .docx and Buckeye's .txt are the
+			// two exceptions this exists for, each one file naming every
+			// distance of the race in it, so this is run whether or not a
+			// file turns out to need it rather than special-cased to the
+			// two that do.
+			const cellRows = isDocx ? docxRows( body ) : /\.txt$/i.test( url ) ? textCellRows( body ) : null;
 
-			const c = counts( html );
-			starters += c.starters;
-			finishers += c.finishers || got.finishers;
-			rowsMax = Math.max( rowsMax, got.finishers );
+			// Every group but a bundled file's is { label: '', rows: <raw> },
+			// one entry, everything in it: parseCellRows still has to run to
+			// find that group's own header, an HTML file's header included,
+			// so this is the one place that call happens regardless of
+			// source.
+			const groups = ( cellRows ? sections( cellRows ) : [ { label: '', rows: htmlCellRows( body ) } ] ).map(
+				( group ) => ( { label: group.label, ...parseCellRows( group.rows ) } )
+			);
 
-			if ( Object.keys( got.winners ).length ) {
-				winners.push( { distance: file.label || 'Results', ...got.winners } );
+			// "Starters: 18 Finishers: 14" is a phrase Aravaipa's own
+			// generated scoreboard pages print in their first few hundred
+			// characters, an HTML convention and not one a hand-typed .txt
+			// or a Word document ever carries, so it is only worth asking
+			// an HTML file for it, and only once per file rather than once
+			// per distance group inside it: nothing here bundles more than
+			// one distance behind that phrase.
+			const c = cellRows ? { starters: 0, finishers: 0 } : counts( body );
+			let fileHadAnything = false;
+
+			for ( const group of groups ) {
+				const got = winnersFromRows( group.header, group.rows );
+				if ( ! got ) continue;
+
+				fileHadAnything = true;
+				rowsMax = Math.max( rowsMax, got.finishers );
+
+				const label = group.label || file.label || 'Results';
+
+				// The file's own stated total where the groups did not
+				// already split it out label by label: a bundled file
+				// (Silverton Alpine's .docx, Buckeye's .txt) reports one
+				// count per group already, and asking the whole file's
+				// header for that count as well would credit it to
+				// whichever of the two groups happened to run last.
+				const groupFinishers = groups.length > 1 ? got.finishers : ( c.finishers || got.finishers );
+
+				keep( label, groupFinishers, got.winners );
+			}
+
+			if ( ! fileHadAnything ) { skipped.push( `${ row.name } ${ row.iso }: ${ file.label } unparseable` ); continue; }
+
+starters += c.starters;
+		}
+
+		// Flattened once every file has been read, rather than added to as
+		// each one comes in: keep() may still be replacing a worse entry
+		// for a distance seen earlier in the same row's file list right up
+		// until the last file is read.
+		for ( const [ label, entry ] of byDistance ) {
+			finishers += entry.finishers;
+			if ( Object.keys( entry.winners ).length ) {
+				winners.push( { distance: label, ...entry.winners } );
 			}
 		}
 
