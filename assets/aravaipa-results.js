@@ -174,7 +174,24 @@
 			apply();
 		}
 
+		// Lives above the year pills rather than inside a panel, so the loop
+		// below has never touched it.
+		var weekBlock = root.querySelector( '.arv-results__week' );
+
+		// "Race week" above a list of 2008 results answers a question the
+		// reader did not ask, and pushes the year they did ask for down the
+		// page. Shown on the view the page opens on, where someone arriving
+		// mid weekend wants exactly that, and dropped once they have chosen
+		// a past year on purpose.
+		function syncWeekBlock( year ) {
+			if ( weekBlock && defaultYear ) {
+				weekBlock.hidden = ( year !== defaultYear );
+			}
+		}
+
 		function selectYear( year ) {
+			syncWeekBlock( year );
+
 			for ( var p = 0; p < panels.length; p++ ) {
 				panels[ p ].hidden = panels[ p ].getAttribute( 'data-arv-results-year-panel' ) !== year;
 			}
@@ -310,6 +327,11 @@
 			}
 			return url.pathname + url.search + url.hash;
 		}
+
+		// The server renders the right panel for ?race_year=2015 without any
+		// of this running, so the block has to be squared up on load too and
+		// not only on a click.
+		syncWeekBlock( new URLSearchParams( window.location.search ).get( YEAR_VAR ) || defaultYear );
 
 		for ( var y = 0; y < yearButtons.length; y++ ) {
 			yearButtons[ y ].addEventListener( 'click', function () {

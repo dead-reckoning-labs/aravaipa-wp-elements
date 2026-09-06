@@ -4889,6 +4889,15 @@
    everything below it, so it reads as the live thing rather than as the
    first row of the list. */
 
+/* Nothing here claims `display`, so the browser's own
+   `[hidden] { display: none }` is enough today. Stated anyway, because an
+   author rule on this selector would silently beat that default and the
+   year filter would go on setting `hidden` with nothing happening: the
+   exact failure .arv-calendar__row[hidden] below already exists for. */
+.arv-results__week[hidden] {
+	display: none;
+}
+
 .arv-results__week {
 	margin-top: 1.5rem;
 	padding: 1.1rem 1.25rem 1.25rem;
