@@ -1180,23 +1180,46 @@ starters += c.starters;
 	// entries twice in one session before this file existed. Merged in
 	// every run, after parsing and before posting, so a re-run can never
 	// drop them again.
+	//
+	// A second case lives in the same file: a race whose file this script
+	// reads correctly as far as it goes, but which never recorded gender at
+	// all, so a real finisher count comes out of it and no winner ever can.
+	// Copper Basin 50K 2010 is a Name/splits/Finish table with no gender
+	// column, and Copper Basin Fatass 50K 2009 is a hand-typed placing list
+	// with no header at all: this script computes both finisher counts
+	// honestly, and a human reading the source file is the only way either
+	// one gets a winner. Patched in rather than replaced outright, so the
+	// finisher count keeps coming from the script, which reads the file
+	// itself and cannot drift, and never from a hand-typed snapshot of it.
 	const __dir = dirname( fileURLToPath( import.meta.url ) );
 	const manualPath = join( __dir, '..', 'data', 'archive-stats-manual.json' );
 
 	if ( existsSync( manualPath ) ) {
 		const manual = JSON.parse( readFileSync( manualPath, 'utf8' ) ).events || [];
-		const seen = new Set( events.map( ( e ) => `${ e.name.trim().toLowerCase() }|${ e.iso }` ) );
+		const byKey = new Map( events.map( ( e ) => [ `${ e.name.trim().toLowerCase() }|${ e.iso }`, e ] ) );
 		let added = 0;
+		let patched = 0;
 
 		for ( const e of manual ) {
 			const key = `${ e.name.trim().toLowerCase() }|${ e.iso }`;
-			if ( ! seen.has( key ) ) {
+			const existing = byKey.get( key );
+
+			if ( ! existing ) {
 				events.push( e );
 				added++;
+				continue;
+			}
+
+			if ( ! existing.winners.length && ( e.winners || [] ).length ) {
+				existing.winners = e.winners;
+				existing.headline = e.headline;
+				patched++;
 			}
 		}
 
-		console.error( `${ added } hand-researched edition(s) merged in from data/archive-stats-manual.json` );
+		console.error(
+			`${ added } hand-researched edition(s) merged in, ${ patched } patched with hand-read winners, from data/archive-stats-manual.json`
+		);
 	}
 
 	if ( opt( '--out' ) ) {
