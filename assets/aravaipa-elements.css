@@ -1964,8 +1964,19 @@
 	   "Register" and "Live Results" go somewhere the row does not. */
 	.arv-calendar__info { display: none; }
 
-	/* With one button left there is no need for it to own a whole line. */
+	/* With one button left there is no need for it to own a whole line. Both
+	   rules below are written for a dated row and would otherwise strand an
+	   archived one: that row has no arv-calendar__action to save the
+	   wrapper, and its name is not a link the way a dated row's is, so the
+	   Race Info rule above hiding on the assumption that tapping the row
+	   still gets you there would leave nothing on the row that does. */
 	.arv-calendar__actions:not(:has(.arv-calendar__action)) { display: none; }
+	.arv-calendar__row--hiatus .arv-calendar__actions {
+		display: flex;
+	}
+	.arv-calendar__row--hiatus .arv-calendar__info {
+		display: inline-flex;
+	}
 	.arv-calendar__info,
 	.arv-calendar__action {
 		min-height: 36px;
@@ -1995,9 +2006,11 @@
 	opacity: 0.65;
 }
 
-/* No date column at all, so the body starts where a dated row's logo would.
-   Left as a plain block rather than faked with an empty spacer: these rows
-   are a different kind of thing and reading slightly differently is correct. */
+/* No date column, so the row starts at the logo (where one is on file) or
+   straight at the name. Muted rather than full strength, the one thing
+   left saying "this is not a row you can register from" now that it
+   otherwise matches a dated row's shape: a logo, a location, buttons on
+   the right. */
 .arv-calendar__row--hiatus {
 	opacity: 0.75;
 }
