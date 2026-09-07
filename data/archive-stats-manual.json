@@ -669,6 +669,48 @@
 				}
 			],
 			"source": "raceresult, read from the MF Results view in a real browser; every mens figure cross-checks against UltraRunning race/21824-21827"
+		},
+		{
+			"name": "Tucson Marathon",
+			"iso": "2024-12-15",
+			"finishers": 2515,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "Marathon",
+					"men": {
+						"name": "Riley Nedrow",
+						"time": "2:12:47"
+					},
+					"women": {
+						"name": "Obsie Birru",
+						"time": "2:38:30"
+					}
+				},
+				{
+					"distance": "Half Marathon",
+					"men": {
+						"name": "William Pidduck",
+						"time": "1:08:28"
+					},
+					"women": {
+						"name": "Rachel Hannah",
+						"time": "1:13:05"
+					}
+				},
+				{
+					"distance": "50K",
+					"men": {
+						"name": "Simon Leblanc",
+						"time": "2:54:31"
+					},
+					"women": {
+						"name": "Madison Hart",
+						"time": "3:42:21"
+					}
+				}
+			],
+			"source": "athlinks, read from the live results in a real browser (Jamil supplied the event link)"
 		}
 	]
 }
