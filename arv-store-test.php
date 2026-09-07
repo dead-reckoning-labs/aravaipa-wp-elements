@@ -4778,6 +4778,58 @@ t( 'an episode with no audio file is dropped', null === $parsed2 );
 t( 'garbage is not a feed',               null === arv_podcasts_parse_feed( '<not><xml' ) );
 t( 'an empty body is not a feed',         null === arv_podcasts_parse_feed( '' ) );
 
+echo "\npodcasts, which image belongs to an episode:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+$cover = 'https://cdn.example/show-logo.jpg';
+$show  = array( 'artwork' => $cover, 'key' => 's', 'title' => 'A Show' );
+
+// Anchor writes the show's logo into every item, so "the field is filled
+// in" is true for every episode and says nothing. Only a value that
+// differs from the show's own artwork is the episode's own.
+$echoed = array( 'guid' => 'g1', 'artwork' => $cover );
+t( 'the show logo echoed into an item is not episode art',
+	$cover === arv_podcast_episode_artwork( $echoed, $show, array() ) );
+
+$real = array( 'guid' => 'g2', 'artwork' => 'https://cdn.example/episode-art.jpg' );
+t( 'real art in the feed is kept',
+	'https://cdn.example/episode-art.jpg' === arv_podcast_episode_artwork( $real, $show, array() ) );
+
+// The feed's own art outranks a matched thumbnail: the author set it in the
+// podcast host, and it cannot be wrong about which episode it belongs to.
+t( 'and it beats a matched thumbnail',
+	'https://cdn.example/episode-art.jpg' === arv_podcast_episode_artwork(
+		$real, $show, array( 'g2' => 'https://i.ytimg.com/thumb.jpg' )
+	) );
+
+t( 'a matched thumbnail fills in for the logo',
+	'https://i.ytimg.com/thumb.jpg' === arv_podcast_episode_artwork(
+		$echoed, $show, array( 'g1' => 'https://i.ytimg.com/thumb.jpg' )
+	) );
+
+t( 'an unmatched episode keeps the logo',
+	$cover === arv_podcast_episode_artwork( $echoed, $show, array( 'other' => 'https://i.ytimg.com/x.jpg' ) ) );
+
+t( 'an episode with no artwork at all still gets the logo',
+	$cover === arv_podcast_episode_artwork( array( 'guid' => 'g3' ), $show, array() ) );
+
+echo "\npodcasts, the art store:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+t( 'a map stores',                        2 === arv_podcast_art_set( array(
+	'g1' => 'https://i.ytimg.com/a.jpg',
+	'g2' => 'https://i.ytimg.com/b.jpg',
+) ) );
+t( 'and reads back',                      'https://i.ytimg.com/a.jpg' === arv_podcast_art_get()['g1'] );
+t( 'an entry with no image is dropped',   1 === arv_podcast_art_set( array(
+	'g1' => 'https://i.ytimg.com/a.jpg',
+	'g2' => '',
+) ) );
+t( 'an entry with no guid is dropped',    1 === arv_podcast_art_set( array(
+	'g1' => 'https://i.ytimg.com/a.jpg',
+	''   => 'https://i.ytimg.com/b.jpg',
+) ) );
+t( 'the store replaces rather than merges', 1 === count( arv_podcast_art_get() ) );
+t( 'an empty post empties it',            0 === arv_podcast_art_set( array() ) );
+
 echo "\npodcasts, durations:\n";
 t( 'H:MM:SS to ISO 8601',                 'PT1H5M9S' === arv_podcasts_iso_duration( '01:05:09' ) );
 t( 'MM:SS to ISO 8601',                   'PT51M5S' === arv_podcasts_iso_duration( '51:05' ) );
