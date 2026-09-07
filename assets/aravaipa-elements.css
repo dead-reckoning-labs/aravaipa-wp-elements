@@ -9108,20 +9108,49 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	text-decoration: none;
 }
 
+/* These rows have linked to Mountain Outpost since they were built, and
+   read as plain text: white, bold, no underline, no colour, in a list
+   whose other rows look identical. The only tell was the cursor, which a
+   phone does not have. An underline at rest is the affordance; it is the
+   one thing on the row that says the name is a way out of the page. */
 .arv-watch__upcoming-name {
 	font-size: var(--arv-fs-name);
 	font-weight: 700;
 	color: #fff;
+	text-decoration: underline;
+	text-decoration-color: rgba(255, 255, 255, 0.35);
+	text-underline-offset: 3px;
 }
 
 .arv-watch__upcoming-link:hover .arv-watch__upcoming-name,
 .arv-watch__upcoming-link:focus-visible .arv-watch__upcoming-name {
 	color: #4ade80;
+	text-decoration-color: #4ade80;
+}
+
+/* The date and the countdown stack on the right of the row, so the row
+   keeps the one shape it had: name on the left, when on the right. */
+.arv-watch__upcoming-meta {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.1rem;
+	text-align: right;
 }
 
 .arv-watch__upcoming-when {
 	font-size: var(--arv-fs-meta);
 	color: rgba(244, 244, 244, 0.7);
+}
+
+/* Quieter than the date above it: the date is the fact, this is the gloss
+   on it, and at equal weight the two competed. */
+.arv-watch__upcoming-countdown {
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #4ade80;
 }
 
 /* WordPress's own convention, defined here rather than assumed: the theme

@@ -781,10 +781,15 @@ function arv_watch_upcoming() {
 		$has_page = arv_watch_outpost_exists( $event['slug'] );
 
 		$out[] = array(
-			'name' => $event['name'],
-			'from' => gmdate( 'Y-m-d', $stamp ),
-			'url'  => $has_page ? arv_watch_outpost_url( $event['slug'] ) : '',
-			'live' => $event['live'],
+			'name'  => $event['name'],
+			'from'  => gmdate( 'Y-m-d', $stamp ),
+			// The moment itself, kept alongside the date the row prints.
+			// The countdown ticks to the actual start time: Javelina goes
+			// on air at 13:00 UTC, and counting to midnight instead would
+			// be wrong by most of a day on the day it matters most.
+			'start' => gmdate( 'c', $stamp ),
+			'url'   => $has_page ? arv_watch_outpost_url( $event['slug'] ) : '',
+			'live'  => $event['live'],
 		);
 	}
 
@@ -822,6 +827,64 @@ function arv_watch_upcoming_when( $row ) {
 	$same_year = gmdate( 'Y', $from ) === gmdate( 'Y', $to );
 
 	return gmdate( $same_year ? 'F j' : 'F j, Y', $from ) . ' to ' . gmdate( 'F j, Y', $to );
+}
+
+/**
+ * How long until a broadcast starts, in words.
+ *
+ * Rendered on the server so the row reads correctly before any JavaScript
+ * runs and for anyone who never gets it, then ticked by
+ * aravaipa-countdown.js from the same start time. The two produce the same
+ * string from the same rules, so the value does not visibly change when
+ * the script takes over.
+ *
+ * Coarse on purpose, and coarser the further out it is: a race six weeks
+ * away is "in 6 weeks", not a running clock nobody watches. It tightens to
+ * hours inside a day and minutes inside an hour, which is when the number
+ * is actually something a reader would act on.
+ *
+ * @param string $start ISO 8601 start time.
+ * @param int    $now   Comparison timestamp, for tests.
+ * @return string
+ */
+function arv_watch_countdown_words( $start, $now = 0 ) {
+	$stamp = strtotime( (string) $start );
+
+	if ( ! $stamp ) {
+		return '';
+	}
+
+	$now  = $now ? (int) $now : ( function_exists( 'current_time' ) ? current_time( 'timestamp', true ) : time() );
+	$left = $stamp - $now;
+
+	// Already started. The caller shows "Live now" for a broadcast actually
+	// on air; this only has to not print a negative countdown beside it.
+	if ( $left <= 0 ) {
+		return '';
+	}
+
+	if ( $left < HOUR_IN_SECONDS ) {
+		$mins = max( 1, (int) round( $left / MINUTE_IN_SECONDS ) );
+		/* translators: %d: minutes until a broadcast starts. */
+		return sprintf( _n( 'in %d minute', 'in %d minutes', $mins, 'aravaipa-elements' ), $mins );
+	}
+
+	if ( $left < DAY_IN_SECONDS ) {
+		$hours = (int) floor( $left / HOUR_IN_SECONDS );
+		/* translators: %d: hours until a broadcast starts. */
+		return sprintf( _n( 'in %d hour', 'in %d hours', $hours, 'aravaipa-elements' ), $hours );
+	}
+
+	$days = (int) floor( $left / DAY_IN_SECONDS );
+
+	if ( $days < 14 ) {
+		/* translators: %d: days until a broadcast starts. */
+		return sprintf( _n( 'in %d day', 'in %d days', $days, 'aravaipa-elements' ), $days );
+	}
+
+	$weeks = (int) round( $days / 7 );
+	/* translators: %d: weeks until a broadcast starts. */
+	return sprintf( _n( 'in %d week', 'in %d weeks', $weeks, 'aravaipa-elements' ), $weeks );
 }
 
 /**
@@ -877,8 +940,30 @@ function arv_watch_upcoming_render() {
 			? esc_html__( 'Watch on Mountain Outpost', 'aravaipa-elements' )
 			: esc_html( arv_watch_upcoming_when( $row ) );
 
-		if ( '' !== $when ) {
-			$out .= '<span class="arv-watch__upcoming-when">' . $when . '</span>';
+		// The date and, under it, how far off it is. A broadcast already on
+		// air has no countdown to give: it is counted down to zero, and the
+		// "Live now" flag beside its name is the whole answer.
+		$countdown = $row['live'] || empty( $row['start'] )
+			? ''
+			: arv_watch_countdown_words( $row['start'] );
+
+		if ( '' !== $when || '' !== $countdown ) {
+			$out .= '<span class="arv-watch__upcoming-meta">';
+
+			if ( '' !== $when ) {
+				$out .= '<span class="arv-watch__upcoming-when">' . $when . '</span>';
+			}
+
+			if ( '' !== $countdown ) {
+				// data-arv-countdown-until is read by aravaipa-countdown.js,
+				// which rewrites this text on a timer. Without the script
+				// the server's own answer stands, correct as of page load.
+				$out .= '<span class="arv-watch__upcoming-countdown"'
+					. ' data-arv-countdown-until="' . esc_attr( $row['start'] ) . '">'
+					. esc_html( $countdown ) . '</span>';
+			}
+
+			$out .= '</span>';
 		}
 
 		$out .= '</li>';
