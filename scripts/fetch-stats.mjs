@@ -55,8 +55,40 @@ const WORKERS = Number( opt( '--workers', '8' ) );
  * error. The board's own participant stamps agree: subtracting them on a
  * timed event yields the last lap, which is why these came out as winning
  * times of about three minutes before this check existed.
+ *
+ * A timed race is not skipped, though. It is scored the way it is actually
+ * run: by how far someone got, in timedWinnersOf() below.
  */
 const isTimedRace = ( race ) => race.isTimed === true;
+
+/**
+ * How long a timed race runs, in hours.
+ *
+ * Read from the race's own name rather than its cutoff. The cutoff is the
+ * moment the course closes, which is not the same number: Chase the Moon's
+ * "12HR Solo" carries a cutoff thirteen hours after its start, because the
+ * board leaves an hour for a runner already out on a loop to bring it home.
+ * Ranking on that would put a twelve hour race above a real thirteen hour
+ * one, and the name is the thing the race is actually called.
+ *
+ * Every spelling the board uses across the archive is one number followed
+ * by hr/hrs/hour/hours in any case: "24 Hour", "12HR Solo", "6hrs",
+ * "48hrs", "USATF 24HR". The cutoff is the fallback for anything that
+ * names no duration at all.
+ */
+function timedHours( race ) {
+	const named = String( race.name || '' ).match( /(\d+)\s*(?:hr|hrs|hour|hours)\b/i );
+
+	if ( named ) {
+		return Number( named[ 1 ] );
+	}
+
+	if ( race.cutoff && race.startTime ) {
+		return ( new Date( race.cutoff ) - new Date( race.startTime ) ) / 3600000;
+	}
+
+	return 0;
+}
 
 /**
  * The fastest a human can cover ground, in metres per second, rounded up
@@ -179,6 +211,169 @@ function winnerOf( race, field ) {
 }
 
 /**
+ * Divisions that are bike races, which this site does not report.
+ *
+ * Aravaipa Rides and Aravaipa Running are separate things and the running
+ * archive should not carry the riding, but the timing board does not
+ * separate them: Royal Gorge Groove times its ride and its run under one
+ * event, so its 2026 board carries "36 Mile Solo" and "36 Mile Duo" beside
+ * the 50K and the 30K.
+ *
+ * Named per event rather than guessed at. "Solo" is not a bike word here:
+ * Chase the Moon's "12HR Solo" and "6HR Solo" are foot races, and a rule
+ * keying on it would silently drop them. The board gives nothing else to
+ * separate the two at Royal Gorge, so the four are listed, from Jamil.
+ *
+ * A division that says "Bike" is one wherever it appears, which needs no
+ * list.
+ */
+const RIDE_DIVISIONS = {
+	'royal_gorge_groove': [
+		'36 Mile Solo',
+		'36 Mile Duo',
+		'18 Mile Solo',
+		'12 Mile Solo',
+	],
+};
+
+/**
+ * Whether one division of one event is a bike race.
+ *
+ * @param {string} slug  The event slug, which carries its year.
+ * @param {string} name  The division name.
+ * @return {boolean}
+ */
+function isRide( slug, name ) {
+	if ( /\bbikes?\b/i.test( String( name || '' ) ) ) {
+		return true;
+	}
+
+	// Matched on the event rather than the exact slug so a list written
+	// once covers every year of that race, which is how these are set up
+	// year after year.
+	for ( const [ race, divisions ] of Object.entries( RIDE_DIVISIONS ) ) {
+		if ( String( slug || '' ).startsWith( race ) && divisions.includes( name ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Whether a race's name states how far it is rather than how long it runs.
+ *
+ * "100 Mile", "Sat 60K", "Sun 33K" are distances. "24 Hour", "6hrs",
+ * "6 Day", "12H" are durations, and a duration written with a unit that
+ * starts with an H is why the two are tested together rather than
+ * separately: "12H" would otherwise read as a distance of 12 somethings.
+ *
+ * Names carrying no number at all fall through as durations, which is the
+ * safe side of the line: "Last Person Standing" and "Loop" are both scored
+ * on ground covered.
+ *
+ * @param {string} name
+ * @return {boolean}
+ */
+function statesADistance( name ) {
+	const s = String( name || '' );
+
+	if ( /\d\s*(?:h|hr|hrs|hour|hours|day|days|min|mins)\b/i.test( s ) ) {
+		return false;
+	}
+
+	return /\d\s*(?:mile|miler|miles|km|k)\b/i.test( s );
+}
+
+/**
+ * The winner of one division of a timed race: the one who covered most.
+ *
+ * A timed race has no finish line to subtract stamps across. Everyone runs
+ * the same six or twenty-four hours and the result is ground covered, so
+ * this reports a distance where winnerOf() reports a time. The archive
+ * already stores fixed-time results that way, "63.6 mi" in the same field
+ * a real distance's race puts "4:37:15" into, so nothing downstream has to
+ * learn a new shape.
+ *
+ * Ranked on the board's own genderPlace rather than on lapCount here.
+ * Checked against every timed race on the archive and the two agree on
+ * every one of them, and where they ever disagree the board is the side
+ * holding the tie rules, the DNF flags and the partial-lap decisions that
+ * this has no way to see.
+ *
+ * race.distance on a timed race is the lap, not the total: its splits run
+ * 0 to distance around one loop. Total covered is that many laps of it.
+ *
+ * @param {object} race
+ * @param {Array}  field Finishers in that race, already filtered to one division.
+ */
+function timedWinnerOf( race, field ) {
+	// A race whose name states a distance is a distance race, whatever the
+	// board's isTimed flag says. Several are lap-counted because they are
+	// run on a loop, and Fat Ox's "100 Mile" is one: 101 laps of its 1590m
+	// loop comes to 99.8, so reporting ground covered would print "99.8 mi"
+	// beside a race called 100 Mile and read as finishing a fifth of a mile
+	// short. What that race wants is a winning time, which the board does
+	// not hold for it, and no answer beats a wrong one.
+	if ( statesADistance( race.name ) ) {
+		return null;
+	}
+
+	const first = field.filter( ( p ) => 1 === p.genderPlace )[ 0 ];
+
+	if ( ! first || ! race.distance ) {
+		return null;
+	}
+
+	const laps = Number( first.lapCount || 0 );
+
+	// Nobody completed a lap, so there is no distance to report. Rare, but
+	// a 3 Hour with a long loop can end this way, and "0.0 mi" beside a
+	// name reads as a timing fault rather than as what happened.
+	if ( laps < 1 ) {
+		return null;
+	}
+
+	const name = `${ first.firstName || '' } ${ first.lastName || '' }`
+		.replace( /\s+/g, ' ' )
+		.trim();
+
+	if ( ! name ) {
+		return null;
+	}
+
+	// One decimal, the same precision the archive's existing fixed-time
+	// results carry. A tenth of a mile is inside one lap on every loop the
+	// board runs, so more digits would be false precision.
+	return { name, time: `${ ( ( laps * race.distance ) / 1609.344 ).toFixed( 1 ) } mi` };
+}
+
+/**
+ * Every division's winner for one timed race, or null if none resolved.
+ *
+ * @param {object} race
+ * @param {Array}  field Everyone in that race.
+ */
+function timedWinnersOf( race, field ) {
+	const row = { distance: race.name || '' };
+	let any = false;
+
+	for ( const [ key, code ] of DIVISIONS ) {
+		const winner = timedWinnerOf(
+			race,
+			field.filter( ( p ) => p.gender === code )
+		);
+
+		if ( winner ) {
+			row[ key ] = winner;
+			any = true;
+		}
+	}
+
+	return any ? row : null;
+}
+
+/**
  * Every division's winner for one distance, or null if none resolved.
  *
  * @param {object} race
@@ -235,8 +430,36 @@ function summarise( event ) {
 		.filter( ( r ) => r.distance && ! isTimedRace( r ) )
 		.sort( ( a, b ) => b.distance - a.distance );
 
-	const winners = scored
-		.map( ( race ) => winnersOf( race, byRace.get( race.id ) || [] ) )
+	// Timed races, longest duration first. Sorting these by r.distance
+	// would sort by lap length, which says nothing: Hotfoot Hamster runs
+	// its 6, 12 and 24 hour races over the same 500m loop, so all three
+	// would tie at 500 and the order would fall to whatever the board
+	// happened to list first.
+	const timed = [ ...races ]
+		.filter( ( r ) => r.distance && isTimedRace( r ) )
+		.sort( ( a, b ) => timedHours( b ) - timedHours( a ) );
+
+	// Timed above real-distance where an event runs both. This is the same
+	// call scripts/backfill-ultrarunning-years.mjs documents for the same
+	// pairing: at every Aravaipa event built this way the fixed-time race
+	// is the marquee, not a shorter race sharing the page with a longer
+	// one. Desert Solstice bills its 24 Hour over its own 100 Mile, and
+	// Fat Ox its 48 Hour over its 100 Mile.
+	//
+	// The two cannot be sorted against each other on any shared number:
+	// one is measured in hours and the other in metres, and 24 is not
+	// smaller than 160934. Ordering them by kind is the only honest
+	// answer, and it happens to be the right one.
+	const ranked = [ ...timed, ...scored ].filter(
+		( r ) => ! isRide( event.slug, r.name )
+	);
+
+	const winners = ranked
+		.map( ( race ) =>
+			isTimedRace( race )
+				? timedWinnersOf( race, byRace.get( race.id ) || [] )
+				: winnersOf( race, byRace.get( race.id ) || [] )
+		)
 		.filter( Boolean );
 
 	// Whether the longest distance is the event's premier race, or just the
@@ -248,11 +471,20 @@ function summarise( event ) {
 	// This only gates the headline. The table below it still lists every
 	// distance, because "who won the six hour solo" is a real answer even
 	// where "who won the event" is not.
+	// Measured within whichever kind leads, since the ratio only means
+	// something between two numbers on the same axis. An event whose
+	// longest is a timed race compares durations, which are named in whole
+	// hours and never land inside ten per cent of each other, so a 24 Hour
+	// over a 12 Hour is a headline and a lone 6 Hour is too.
+	const lead = ranked[ 0 ];
+	const sameKind = lead && isTimedRace( lead ) ? timed : scored;
+	const measure = lead && isTimedRace( lead ) ? timedHours : ( r ) => r.distance;
+
 	const headline =
-		scored.length === 1 ||
-		( scored.length > 1 &&
-			scored[ 0 ].distance >=
-				scored[ 1 ].distance * DISTINCT_LONGEST_RATIO );
+		1 === sameKind.length ||
+		( sameKind.length > 1 &&
+			measure( sameKind[ 0 ] ) >=
+				measure( sameKind[ 1 ] ) * DISTINCT_LONGEST_RATIO );
 
 	// How many entrants the board lists on arrival, which is what the embedded
 	// frame is sized to. It shows one distance at a time and opens on the
@@ -266,7 +498,7 @@ function summarise( event ) {
 	// pixels of empty board under every page on arrival to spare a nested
 	// scrollbar on a deliberate second action. Switching distance is no worse
 	// than it is today; the view everyone lands on is fixed.
-	const listed = scored.length ? scored[ 0 ] : races[ 0 ];
+	const listed = ranked.length ? ranked[ 0 ] : races[ 0 ];
 	const rows = listed ? ( byRace.get( listed.id ) || [] ).length : 0;
 
 	return {
