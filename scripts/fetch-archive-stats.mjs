@@ -923,12 +923,24 @@ function parseClax( xml, keep = () => true ) {
 
 	winners.sort( ( a, b ) => b.length - a.length );
 
-	// Premier only where one course is strictly the longest. A lap event
-	// runs every category over the same loop, so none of them is a top
-	// result to feature over the others.
+	// Premier only where one course is strictly the longest.
+	//
+	// Where the lengths tie this cannot answer it, and null says so rather
+	// than false, so the caller asks the labels instead. A fixed-time race
+	// is the case: Fat Ox runs its 48Hrs, 24Hrs and 12Hrs over one loop, so
+	// all three carry the same course length here and tie, and the tie read
+	// as "no distance leads" hid all three winners behind a bare "Winners, 3
+	// distances" where every other row on the page names one. A 48 hour is
+	// plainly the premier race over a 12 hour; the loop they share is not
+	// what separates them and their own labels are.
+	//
+	// Still false, via rankWinners, where the labels tie too. A lap event
+	// whose categories are all the same length really has no top result to
+	// feature over the others, which is what this was right about.
 	const longest = winners[ 0 ].length;
-	const headline = winners.length === 1
+	const decided = winners.length === 1
 		|| ( longest > 0 && winners.filter( ( w ) => w.length === longest ).length === 1 );
+	const headline = decided ? true : null;
 
 	return {
 		winners: winners.map( ( w ) => w.row ),

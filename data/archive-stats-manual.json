@@ -611,6 +611,59 @@
 				}
 			],
 			"source": "athlinks, read from the live results in a real browser (Jamil supplied the event link)"
+		},
+		{
+			"name": "Across The Years",
+			"iso": "2019-12-28",
+			"finishers": 0,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "6 Day",
+					"men": {
+						"name": "Pete Kostelnick",
+						"time": "444.26 mi"
+					},
+					"women": {
+						"name": "Marcia Rasmussen",
+						"time": "342.62 mi"
+					}
+				},
+				{
+					"distance": "72 Hour",
+					"men": {
+						"name": "Steve Walters",
+						"time": "221.08 mi"
+					},
+					"women": {
+						"name": "Dennene Huntley",
+						"time": "235.75 mi"
+					}
+				},
+				{
+					"distance": "48 Hour",
+					"men": {
+						"name": "Thomas Jackson",
+						"time": "174.98 mi"
+					},
+					"women": {
+						"name": "Juli Aistars",
+						"time": "158.21 mi"
+					}
+				},
+				{
+					"distance": "24 Hour",
+					"men": {
+						"name": "Chris Pope",
+						"time": "141.45 mi"
+					},
+					"women": {
+						"name": "Chavet Breslin",
+						"time": "117.35 mi"
+					}
+				}
+			],
+			"source": "ultrarunning, races 24772 (144 Hours), 24771, 24770 and 24769, read through a text proxy because ultrarunning.com blocks direct requests. No Ultracast file exists for this edition: the viewer URL answers 200 for any filename it is given, so a guessed path looked real until it 404d as a raw file. Finishers left at 0, which renders as no count at all, because UltraRunning lists only finishers over 26.2 miles: 369 across the four distances is a floor, not the count, and would read as fact beside 2018's real 474."
 		}
 	]
 }
