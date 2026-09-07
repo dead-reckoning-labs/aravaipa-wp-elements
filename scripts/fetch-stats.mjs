@@ -189,26 +189,8 @@ async function getJson( url ) {
  * @param {object} entrant
  * @return {object|null}
  */
-function entrantResult( race, entrant ) {
-	// A participant's own start stamp where there is one, the gun where there
-	// is not. Twelve events on the archive are gun-start races and record no
-	// per-runner start at all, so requiring one threw away every winner they
-	// had: Westminster, Waugoshance, Two Hearted, Whiskey Basin and the rest.
-	// Wave start first of the two fallbacks, since a race that sets one is
-	// saying this runner's gun was not the race's gun.
-	const start = entrant.st || entrant.waveStartTime || race.startTime;
-
-	if ( ! start || ! entrant.ft ) {
-		return null;
-	}
-
-	const seconds = ( new Date( entrant.ft ) - new Date( start ) ) / 1000;
-	const floor = Math.max(
-		MIN_WIN_SECONDS,
-		( race.distance || 0 ) / IMPOSSIBLE_PACE_MS
-	);
-
-	if ( ! ( seconds >= floor && seconds <= MAX_WIN_SECONDS ) ) {
+function entrantResult( race, entrant, gunIsSound ) {
+	if ( ! entrant.ft ) {
 		return null;
 	}
 
@@ -222,7 +204,104 @@ function entrantResult( race, entrant ) {
 		return null;
 	}
 
-	return { name, seconds };
+	const floor = Math.max(
+		MIN_WIN_SECONDS,
+		( race.distance || 0 ) / IMPOSSIBLE_PACE_MS
+	);
+
+	// A participant's own start stamp first, then a wave's, then the gun,
+	// and the first of the three that yields a possible race is the one
+	// taken rather than the first that merely exists.
+	//
+	// It used to be the first that existed, full stop, and a single bad
+	// stamp then cost the whole result. Rock Hawk 2025's 50K men's winner
+	// carries an st of 13:55 against a race that started at 12:00, an hour
+	// and fifty-five minutes of it already run, so subtracting it read as
+	// a 1:53 fifty kilometres, quicker than anyone has covered the
+	// distance, and the check below correctly threw it out. His actual
+	// 3:49:13 was sitting right there in the gun time the whole while:
+	// place two ran 4:42, so he did win, and the row said nobody had.
+	//
+	// Wave start ahead of the gun, since a race that sets one is saying
+	// this runner's gun was not the race's gun.
+	const candidates = [ entrant.st, entrant.waveStartTime ];
+
+	// The gun, on two different footings depending on what this runner has
+	// of their own.
+	//
+	// A runner with no start stamp at all is a gun start and the gun is
+	// simply their start: twelve events on the archive record none, and
+	// Royal Gorge's 36 Mile Duo has half a field like it. Nothing is being
+	// overridden there, so nothing needs to justify it.
+	//
+	// A runner who has a stamp that produced an impossible race is a
+	// different question, because using the gun then means overruling what
+	// the board recorded for them. Worth doing where the rest of the race
+	// times cleanly and this is one bad stamp, which is Rock Hawk 2025's
+	// 50K. Not worth doing where nothing in the race times cleanly, which
+	// is Fat Ox: it scores 50K as a milestone inside a continuous
+	// multi-day loop, so every finish stamp on it is a lap scan minutes
+	// after its own start, and measuring one of those from the gun gives
+	// 21:55:38, a number that clears every bound below while describing
+	// nothing that happened.
+	if ( ! entrant.st || gunIsSound ) {
+		candidates.push( race.startTime );
+	}
+
+	for ( const start of candidates ) {
+		if ( ! start ) {
+			continue;
+		}
+
+		const seconds = ( new Date( entrant.ft ) - new Date( start ) ) / 1000;
+
+		if ( seconds >= floor && seconds <= MAX_WIN_SECONDS ) {
+			return { name, seconds };
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Whether a race's gun time can stand in for a runner's own start stamp.
+ *
+ * Yes in two cases, and they are different from each other. A race that
+ * records no per-runner start at all is a gun start and the gun is simply
+ * the right answer: twelve events on the archive are this, Westminster,
+ * Waugoshance, Two Hearted, Whiskey Basin among them, and requiring a
+ * stamp they never had threw away every winner they scored. A race that
+ * does record starts and gets a possible race out of at least one of them
+ * is a race whose timing works, where one runner's bad stamp is one bad
+ * stamp rather than the shape of the data.
+ *
+ * No in the third case, which is the one this exists for: a race that
+ * records starts and gets nothing possible out of any of them is not
+ * timed the way it appears to be. Fat Ox's distance races are milestones
+ * inside a continuous loop, so every finish stamp on them sits minutes
+ * after its own start, and a gun-time fallback would turn each into a
+ * plausible-looking number that is not a finishing time.
+ *
+ * @param {object} race
+ * @param {Array}  field Everyone in that race.
+ * @return {boolean}
+ */
+function startsAreSound( race, field ) {
+	const stamped = field.filter( ( p ) => p.st && p.ft );
+
+	if ( ! stamped.length ) {
+		return true;
+	}
+
+	const floor = Math.max(
+		MIN_WIN_SECONDS,
+		( race.distance || 0 ) / IMPOSSIBLE_PACE_MS
+	);
+
+	return stamped.some( ( p ) => {
+		const seconds = ( new Date( p.ft ) - new Date( p.st ) ) / 1000;
+		return seconds >= floor && seconds <= MAX_WIN_SECONDS;
+	} );
 }
 
 /**
@@ -242,7 +321,7 @@ function winnerOf( race, field ) {
 		a.genderPlace <= b.genderPlace ? a : b
 	);
 
-	const result = entrantResult( race, first );
+	const result = entrantResult( race, first, startsAreSound( race, field ) );
 
 	return result && { name: result.name, time: hms( result.seconds ) };
 }
@@ -439,7 +518,11 @@ function waveGroupWinnersOf( mergedRace, byRace ) {
 				continue;
 			}
 
-			const result = entrantResult( wave, field[ 0 ] );
+			const result = entrantResult(
+				wave,
+				field[ 0 ],
+				startsAreSound( wave, byRace.get( wave.id ) || [] )
+			);
 
 			if ( result && ( ! best || result.seconds < best.seconds ) ) {
 				best = result;
