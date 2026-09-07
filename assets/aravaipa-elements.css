@@ -5551,37 +5551,31 @@
 	color: #0d1211;
 }
 
-/* Who won, one line, directly under the bar. Sits in the same content
-   column as everything else and reads as a caption to the board below it,
-   which is what stops it looking like the table that used to be here.
+/* Who won, folded into the dark masthead rather than a strip of its own
+   beneath it. A winner and a finisher count are the same kind of fact as
+   the date and the location line just above them, not a second section,
+   and this answers before the iframe below has had a chance to: that frame
+   is a nested scroll region and can be slow to paint.
    Named .arv-live__result rather than .arv-live__headline: that name was
    already the bar's own title-and-badge wrapper, above. */
 .arv-live__result {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	gap: 0.2rem 0.6rem;
-	max-width: 1200px;
-	margin: 0 auto;
-	padding: 0.75rem 1.25rem 0;
-	font-size: var(--arv-fs-body);
-	color: var(--arv-ink, #272727);
+	gap: 0.15rem 0.6rem;
+	margin: 0.3rem 0 0;
+	font-size: var(--arv-fs-meta);
+	color: rgba(244, 244, 244, 0.62);
 }
 
 .arv-live__result-win {
 	font-weight: 700;
+	color: #f4f4f4;
 }
 
 /* The count is context for the names, not a result of its own. */
 .arv-live__result-count {
-	color: #6d6d6d;
-}
-
-@media (max-width: 619px) {
-	.arv-live__result {
-		padding-left: 1rem;
-		padding-right: 1rem;
-	}
+	color: rgba(244, 244, 244, 0.62);
 }
 
 /* The words below the frame stay in the content column. */

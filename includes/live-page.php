@@ -377,8 +377,7 @@ function arv_live_page_render( $args = array() ) {
 
 	$out = '<section class="arv-live" aria-label="' . esc_attr__( 'Live results', 'aravaipa-elements' ) . '">';
 
-	$out .= arv_live_bar( $name, $edition, $meta, $editions, $show );
-	$out .= arv_live_result_line( $stats );
+	$out .= arv_live_bar( $name, $edition, $meta, $editions, $show, $stats );
 	$out .= arv_live_frame( $show, $height, $name );
 
 	$out .= '</section>';
@@ -452,7 +451,7 @@ function arv_live_social( $meta ) {
  * @param string     $show Board slug being shown.
  * @return string
  */
-function arv_live_bar( $name, $edition, $meta, $editions, $show ) {
+function arv_live_bar( $name, $edition, $meta, $editions, $show, $stats = null ) {
 	$heading = '' !== $name ? $name : __( 'Live Results', 'aravaipa-elements' );
 	$year    = $edition ? substr( $edition['iso'], 0, 4 ) : '';
 
@@ -499,6 +498,13 @@ function arv_live_bar( $name, $edition, $meta, $editions, $show ) {
 	if ( ! empty( $bits ) ) {
 		$out .= '<p class="arv-live__meta">' . esc_html( implode( ' · ', $bits ) ) . '</p>';
 	}
+
+	// Folded into the dark masthead rather than its own light strip beneath
+	// it: a winner and a finisher count are the same kind of fact as the
+	// date and the location just above them, not a second section. It also
+	// answers before the iframe below it has had a chance to, since that
+	// frame is a nested scroll region that can be slow to paint.
+	$out .= arv_live_result_line( $stats );
 
 	$out .= '</div>';
 
