@@ -62,6 +62,23 @@ const WORKERS = Number( opt( '--workers', '8' ) );
 const isTimedRace = ( race ) => race.isTimed === true;
 
 /**
+ * Whether a race is a team or relay entry rather than an individual one.
+ *
+ * A relay's duration is not the same fact about the day as a solo race's:
+ * Chase the Moon's "3 Per Team" and "5 Per Team" run the same twelve hours
+ * as its "12HR Solo" by the board's own bookkeeping, since a team relay
+ * with no stated duration of its own inherits the event's cutoff the same
+ * way a solo race without one would. That tie is real on paper and wrong
+ * in what it is claiming: three unrelated things measuring twelve hours
+ * is not the same as the runner-up genuinely being ten per cent behind
+ * the winner, which is what the headline check two paragraphs down is
+ * actually asking. Kept out of that one comparison; still listed in the
+ * winners table below it, since "who won the 5 Per Team relay" is a real
+ * answer this event owes a real answer to.
+ */
+const isTeamRace = ( race ) => /\bteam\b/i.test( race.name || '' );
+
+/**
  * How long a timed race runs, in hours.
  *
  * Read from the race's own name rather than its cutoff. The cutoff is the
@@ -609,7 +626,20 @@ function summarise( event ) {
 	// twenty-four hours and the winner is whoever covered most ground, so
 	// subtracting stamps gives the last lap: these read as winning times of
 	// about three minutes before this existed.
-	const scored = [ ...races ]
+	// Bike divisions are dropped before anything else touches them, not
+	// just before the winners list. Royal Gorge Groove 2026's board runs
+	// two ride distances at the identical GPS-measured length, "36 Mile
+	// Solo" and "36 Mile Duo", both longer than every real running
+	// distance on the card. Left in scored below, those two tie for
+	// longest against each other, the ratio check two paragraphs down
+	// reads that tie as "no distinct premier distance," and the row lost
+	// its name preview despite 50K clearly being the real headline once
+	// the rides are gone. The bug this fixes and the fix from earlier
+	// today share a cause: a filter applied to the output is one filter
+	// too late for anything the output's own ranking still depends on.
+	const divisions = races.filter( ( r ) => ! isRide( event.slug, r.name ) );
+
+	const scored = [ ...divisions ]
 		.filter( ( r ) => r.distance && ! isTimedRace( r ) )
 		.sort( ( a, b ) => b.distance - a.distance );
 
@@ -618,7 +648,7 @@ function summarise( event ) {
 	// its 6, 12 and 24 hour races over the same 500m loop, so all three
 	// would tie at 500 and the order would fall to whatever the board
 	// happened to list first.
-	const timed = [ ...races ]
+	const timed = [ ...divisions ]
 		.filter( ( r ) => r.distance && isTimedRace( r ) )
 		.sort( ( a, b ) => timedHours( b ) - timedHours( a ) );
 
@@ -633,9 +663,7 @@ function summarise( event ) {
 	// one is measured in hours and the other in metres, and 24 is not
 	// smaller than 160934. Ordering them by kind is the only honest
 	// answer, and it happens to be the right one.
-	const ranked = [ ...timed, ...scored ].filter(
-		( r ) => ! isRide( event.slug, r.name )
-	);
+	const ranked = [ ...timed, ...scored ];
 
 	const winners = ranked
 		.map( ( race ) =>
@@ -665,11 +693,18 @@ function summarise( event ) {
 	const sameKind = lead && isTimedRace( lead ) ? timed : scored;
 	const measure = lead && isTimedRace( lead ) ? timedHours : ( r ) => r.distance;
 
+	// Team races excluded from deciding the gate, not from sameKind itself:
+	// an event that is only ever run as a relay, with no individual entry
+	// at all, still deserves the ordinary one-race-means-headline rule
+	// rather than being forced through a pool that filtering would leave
+	// empty.
+	const solo = sameKind.filter( ( r ) => ! isTeamRace( r ) );
+	const gate = solo.length ? solo : sameKind;
+
 	const headline =
-		1 === sameKind.length ||
-		( sameKind.length > 1 &&
-			measure( sameKind[ 0 ] ) >=
-				measure( sameKind[ 1 ] ) * DISTINCT_LONGEST_RATIO );
+		1 === gate.length ||
+		( gate.length > 1 &&
+			measure( gate[ 0 ] ) >= measure( gate[ 1 ] ) * DISTINCT_LONGEST_RATIO );
 
 	// How many entrants the board lists on arrival, which is what the embedded
 	// frame is sized to. It shows one distance at a time and opens on the
@@ -683,7 +718,7 @@ function summarise( event ) {
 	// pixels of empty board under every page on arrival to spare a nested
 	// scrollbar on a deliberate second action. Switching distance is no worse
 	// than it is today; the view everyone lands on is fixed.
-	const listed = ranked.length ? ranked[ 0 ] : races[ 0 ];
+	const listed = ranked.length ? ranked[ 0 ] : divisions[ 0 ];
 	const rows = listed ? ( byRace.get( listed.id ) || [] ).length : 0;
 
 	return {
