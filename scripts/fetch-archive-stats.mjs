@@ -47,6 +47,7 @@ import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { inflateRawSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { guessMetres, guessSeconds, rankWinners } from './lib/distances.mjs';
 
 const args = process.argv.slice( 2 );
 const flag = ( n ) => args.includes( n );
@@ -787,30 +788,6 @@ function title( t ) {
 // declare every one of their courses as distance="0". Javelina 2017 is
 // one of them, and with nothing to sort on its 100K led its 100 Mile.
 // Only ever a fallback: where the file states a length, the file wins.
-function guessMetres( name ) {
-	const n = name.toLowerCase();
-
-	if ( /^(1\/2|half)\s*marathon$/.test( n ) ) return 21098;
-	if ( /^marathon$/.test( n ) ) return 42195;
-
-	const mi = n.match( /^([\d.]+)\s*(?:m|mi|miles?|miler)$/ );
-	if ( mi ) return Math.round( +mi[ 1 ] * 1609.344 );
-
-	const km = n.match( /^([\d.]+)\s*k(?:m|ilometers?)?$/ );
-	if ( km ) return Math.round( +km[ 1 ] * 1000 );
-
-	// Kendall Mountain Run 2012 and 2013 name their two distances "Kendall
-	// Mountain Run", the race's own name standing in for its one course
-	// with no distance written anywhere, and "K2 double", the same course
-	// run twice with no distance of its own to guess either. Neither has a
-	// unit this function can read, so both guessed 0 and tied, and a tie
-	// never becomes a headline. Not a real measurement, only enough of one
-	// to say a double is longer than whatever it is double of, which is
-	// true regardless of what that turns out to be.
-	if ( /\bdouble\b/.test( n ) ) return 1;
-
-	return 0;
-}
 
 // A duration, for the one kind of race this file's distance names cannot
 // give guessMetres: 72 Hour, 48 Hour, 24 Hour, all genuine race lengths and
@@ -820,28 +797,6 @@ function guessMetres( name ) {
 // held alongside a fixed-time one, has no honest way to rank a 24 Hour
 // against a 50 Mile on either scale. Consulted only where every distance in
 // the event is this shape and there is nothing else to rank against.
-function guessSeconds( name ) {
-	const n = name.toLowerCase();
-
-	// Steep Camp abbreviates the same way Silverton 1000 does, "5d, 3d, 2d,
-	// 1d" beside its own "12h, 6h": bare "d" needed the same trust bare "h"
-	// gets below, or the days lost to 0 and the file's two shortest heats,
-	// the only labels left with anything on this scale, took the headline
-	// instead of its longest.
-	const day = n.match( /^([\d.]+)\s*(?:day|d)s?$/ );
-	if ( day ) return +day[ 1 ] * 86400;
-
-	// Silverton 1000 abbreviates every one of its shorter heats down to the
-	// bare letter, "72H, 48H, 24H, 12H, 6H", the same convention guessMetres
-	// already reads "50M" as 50 miles under. Without it every one of those
-	// guessed 0s alongside "6 Day", the same length as each other by that
-	// scale, and only sorted correctly by the accident of the file listing
-	// them longest first already.
-	const hr = n.match( /^([\d.]+)\s*(?:hour|hr|h)s?$/ );
-	if ( hr ) return +hr[ 1 ] * 3600;
-
-	return 0;
-}
 
 /**
  * Which of a shared file's courses belong to the event asking for them.
@@ -968,12 +923,24 @@ function parseClax( xml, keep = () => true ) {
 
 	winners.sort( ( a, b ) => b.length - a.length );
 
-	// Premier only where one course is strictly the longest. A lap event
-	// runs every category over the same loop, so none of them is a top
-	// result to feature over the others.
+	// Premier only where one course is strictly the longest.
+	//
+	// Where the lengths tie this cannot answer it, and null says so rather
+	// than false, so the caller asks the labels instead. A fixed-time race
+	// is the case: Fat Ox runs its 48Hrs, 24Hrs and 12Hrs over one loop, so
+	// all three carry the same course length here and tie, and the tie read
+	// as "no distance leads" hid all three winners behind a bare "Winners, 3
+	// distances" where every other row on the page names one. A 48 hour is
+	// plainly the premier race over a 12 hour; the loop they share is not
+	// what separates them and their own labels are.
+	//
+	// Still false, via rankWinners, where the labels tie too. A lap event
+	// whose categories are all the same length really has no top result to
+	// feature over the others, which is what this was right about.
 	const longest = winners[ 0 ].length;
-	const headline = winners.length === 1
+	const decided = winners.length === 1
 		|| ( longest > 0 && winners.filter( ( w ) => w.length === longest ).length === 1 );
+	const headline = decided ? true : null;
 
 	return {
 		winners: winners.map( ( w ) => w.row ),
@@ -994,6 +961,74 @@ function counts( html ) {
 	const s = t.match( /Starters:\s*(\d+)/i );
 	const f = t.match( /Finishers:\s*(\d+)/i );
 	return { starters: s ? +s[ 1 ] : 0, finishers: f ? +f[ 1 ] : 0 };
+}
+
+/**
+ * Fold a file of editions into the parsed set.
+ *
+ * An edition this script found nothing for is added outright. One it found a
+ * finisher count but no winners for keeps its count and takes the winners: a
+ * count read out of the static file cannot drift, and a count that came from
+ * anywhere else can, so the copy never replaces it.
+ *
+ * `replaces` names a source this file outranks, and only then is an edition
+ * that already has winners overwritten. It exists so the ordering of these
+ * calls is not what decides which source wins, because ordering is invisible
+ * at the point it matters and gets it wrong quietly.
+ *
+ * @param {Array<object>} events            Editions parsed from the static files.
+ * @param {string} path                     JSON file of the shape { events: [...] }.
+ * @param {string} label                    What to call the source when reporting.
+ * @param {{replaces?: string}} [opts]      A source label this file may overwrite.
+ * @return {void}
+ */
+function mergeInto( events, path, label, opts = {} ) {
+	if ( ! existsSync( path ) ) return;
+
+	const incoming = JSON.parse( readFileSync( path, 'utf8' ) ).events || [];
+	const key = ( e ) => `${ String( e.name || '' ).trim().toLowerCase() }|${ e.iso }`;
+	const byKey = new Map( events.map( ( e ) => [ key( e ), e ] ) );
+
+	let added = 0;
+	let patched = 0;
+	let replaced = 0;
+
+	for ( const e of incoming ) {
+		const existing = byKey.get( key( e ) );
+
+		if ( ! existing ) {
+			e.__from = label;
+			events.push( e );
+			byKey.set( key( e ), e );
+			added++;
+			continue;
+		}
+
+		if ( ! ( e.winners || [] ).length ) continue;
+
+		if ( ! existing.winners.length ) {
+			existing.winners = e.winners;
+			existing.headline = e.headline;
+			patched++;
+			continue;
+		}
+
+		if ( opts.replaces && existing.__from === opts.replaces ) {
+			existing.winners = e.winners;
+			existing.headline = e.headline;
+			existing.finishers = e.finishers;
+			existing.starters = e.starters;
+			existing.rows = e.rows;
+			existing.__from = label;
+			replaced++;
+		}
+	}
+
+	console.error(
+		`${ added } edition(s) merged in, ${ patched } patched with winners` +
+		( replaced ? `, ${ replaced } replacing ${ opts.replaces }` : '' ) +
+		`, from ${ label }`
+	);
 }
 
 async function main() {
@@ -1196,47 +1231,7 @@ starters += c.starters;
 			// named for says which one that is here as plainly as a
 			// clax file's own Pcs table does.
 			if ( null === headline && winners.length > 1 ) {
-				// Across the Years and Silverton 1000 name every one of their
-				// distances by the clock, never the ground: "72 Hour, 48
-				// Hour, 24 Hour" all guess 0m on the scale below, a tie that
-				// never resolves to a headline, "Winners, 3 distances" and
-				// nothing shown where every other year on the page leads
-				// with a result.
-				//
-				// A fixed-time distance outranks a real one wherever both
-				// exist at the same event, not only where every distance is
-				// fixed-time. Desert Solstice runs a 24 Hour and offers a
-				// 100 Mile cutoff inside it; Juniperwood Ranch Runs runs a
-				// 48 Hour and offers a 50 Mile and a Marathon inside it. The
-				// cutoff distance is the shorter option within the fixed-
-				// time race, not a longer race that happens to share a page
-				// with it, and Aravaipa's own read of both is that the
-				// clock is what the event is, so it leads. Every winner is
-				// ranked by the clock where it has one and by the ground
-				// otherwise, which puts any fixed-time distance present
-				// ahead of any real one without comparing the two directly:
-				// a real distance's guessSeconds is 0, lower than any
-				// fixed-time race actually run.
-				winners.forEach( ( w ) => {
-					const secs = guessSeconds( w.distance || '' );
-					w._m = secs > 0 ? secs : guessMetres( w.distance || '' );
-					w._timed = secs > 0;
-				} );
-
-				// Metres and seconds still cannot be compared to each other
-				// directly, only used to break a tie within whichever one a
-				// distance is actually measured in: sorted timed-first, and
-				// by magnitude within each group.
-				winners.sort( ( a, b ) => ( b._timed - a._timed ) || ( b._m - a._m ) );
-
-				const longest = winners[ 0 ];
-				headline = longest._m > 0
-					&& winners.filter( ( w ) => w._timed === longest._timed && w._m === longest._m ).length === 1;
-
-				winners.forEach( ( w ) => {
-					delete w._m;
-					delete w._timed;
-				} );
+				headline = rankWinners( winners );
 			}
 
 			events.push( {
@@ -1278,35 +1273,46 @@ starters += c.starters;
 	// finisher count keeps coming from the script, which reads the file
 	// itself and cannot drift, and never from a hand-typed snapshot of it.
 	const __dir = dirname( fileURLToPath( import.meta.url ) );
-	const manualPath = join( __dir, '..', 'data', 'archive-stats-manual.json' );
 
-	if ( existsSync( manualPath ) ) {
-		const manual = JSON.parse( readFileSync( manualPath, 'utf8' ) ).events || [];
-		const byKey = new Map( events.map( ( e ) => [ `${ e.name.trim().toLowerCase() }|${ e.iso }`, e ] ) );
-		let added = 0;
-		let patched = 0;
+	// The same merge, for the years UltraSignup was the system of record.
+	//
+	// 2020 to 2022 sits between the static files this script reads and the
+	// timing board fetch-stats.mjs walks: the in-house scoring had stopped
+	// publishing files and the board did not exist yet. So this script finds
+	// nothing for those years and neither does that one, and 51 editions
+	// showed a date and two outbound links while 2019 and 2023 either side
+	// of them showed winners.
+	//
+	// scripts/fetch-ultrasignup-stats.mjs reads them and writes the file
+	// merged here. Merged rather than posted on its own for the reason
+	// stated above: /stats/archive replaces its option wholesale, so two
+	// scripts posting to it means whichever ran last is all that survives.
+	//
+	// Ordered before the hand-researched file below, and filling gaps only,
+	// so the precedence runs static file, then UltraSignup, then a human:
+	// the file is what the race published at the time, UltraSignup is a
+	// second-hand copy of it, and a person who went and read the source is
+	// the only one of the three who can be told they were wrong.
+	mergeInto( events, join( __dir, '..', 'data', 'ultrasignup-stats.json' ), 'UltraSignup' );
 
-		for ( const e of manual ) {
-			const key = `${ e.name.trim().toLowerCase() }|${ e.iso }`;
-			const existing = byKey.get( key );
+	// A person who went and read the source outranks a scraper that read it
+	// for them, so the hand file replaces an UltraSignup entry outright
+	// rather than only filling a gap in one. Without that it would not
+	// outrank anything: an edition UltraSignup had already added is neither
+	// absent nor short of winners, so both of the gap-filling branches miss
+	// it and the hand entry is silently discarded. That is the wrong way
+	// round for the one file on this list a human maintains by hand, and it
+	// would fail exactly when it mattered, the day UltraSignup is wrong
+	// about something and someone writes down the right answer.
+	mergeInto(
+		events,
+		join( __dir, '..', 'data', 'archive-stats-manual.json' ),
+		'data/archive-stats-manual.json',
+		{ replaces: 'UltraSignup' }
+	);
 
-			if ( ! existing ) {
-				events.push( e );
-				added++;
-				continue;
-			}
-
-			if ( ! existing.winners.length && ( e.winners || [] ).length ) {
-				existing.winners = e.winners;
-				existing.headline = e.headline;
-				patched++;
-			}
-		}
-
-		console.error(
-			`${ added } hand-researched edition(s) merged in, ${ patched } patched with hand-read winners, from data/archive-stats-manual.json`
-		);
-	}
+	// A private marker, not part of the stored shape.
+	for ( const e of events ) delete e.__from;
 
 	if ( opt( '--out' ) ) {
 		writeFileSync( opt( '--out' ), JSON.stringify( events, null, 1 ) );

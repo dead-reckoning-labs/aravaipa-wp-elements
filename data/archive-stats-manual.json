@@ -1,5 +1,5 @@
 {
-	"_readme": "Editions this script cannot discover on its own: no local file, no Ultracast entry, nothing fetch-archive-stats.mjs can walk to. Sourced by hand and merged into every run's output before it posts, so a re-run of the script can never drop them the way a plain wholesale POST to /stats/archive would.",
+	"_readme": "Editions this script cannot discover on its own: no local file, no Ultracast entry, nothing fetch-archive-stats.mjs can walk to. Sourced by hand and merged into every run's output before it posts, so a re-run of the script can never drop them the way a plain wholesale POST to /stats/archive would. Five 2022 editions were removed from this file when scripts/fetch-ultrasignup-stats.mjs was added: each was a hand transcription of one distance's grid off UltraSignup, made because nothing read UltraSignup at the time, and the scraper now reads every distance of the same source and agrees with all five headline winners to the second.",
 	"events": [
 		{
 			"name": "Mogollon Monster",
@@ -336,106 +336,6 @@
 			"source": "jamil, gender read off the results file by hand: it is a lap board with no gender column"
 		},
 		{
-			"name": "Javelina Jundred",
-			"iso": "2022-10-29",
-			"finishers": 401,
-			"headline": true,
-			"winners": [
-				{
-					"distance": "100 Mile",
-					"men": {
-						"name": "Dakota Jones",
-						"time": "12:58:02"
-					},
-					"women": {
-						"name": "Devon Yanko",
-						"time": "14:36:10"
-					}
-				}
-			],
-			"source": "ultrasignup, read from the live grid in a real browser"
-		},
-		{
-			"name": "Rough Canyon Trail Runs",
-			"iso": "2022-10-08",
-			"finishers": 15,
-			"headline": true,
-			"winners": [
-				{
-					"distance": "50 Mile",
-					"men": {
-						"name": "Adam Vadeboncoeur",
-						"time": "7:10:15"
-					},
-					"women": {
-						"name": "Careth Arnold",
-						"time": "8:45:38"
-					}
-				}
-			],
-			"source": "ultrasignup, read from the live grid in a real browser"
-		},
-		{
-			"name": "Pikes Peak APEX",
-			"iso": "2022-09-25",
-			"finishers": 18,
-			"headline": true,
-			"winners": [
-				{
-					"distance": "50K",
-					"men": {
-						"name": "Graham Shalvoy",
-						"time": "4:31:32"
-					},
-					"women": {
-						"name": "Mary Sketch Bryant",
-						"time": "4:51:37"
-					}
-				}
-			],
-			"source": "ultrasignup, read from the live grid in a real browser"
-		},
-		{
-			"name": "Flagstaff Sky Peaks",
-			"iso": "2022-09-24",
-			"finishers": 49,
-			"headline": true,
-			"winners": [
-				{
-					"distance": "50 Miler",
-					"men": {
-						"name": "Jonathan Kuplack",
-						"time": "7:56:41"
-					},
-					"women": {
-						"name": "Kendra Eerdmans",
-						"time": "10:20:24"
-					}
-				}
-			],
-			"source": "ultrasignup, read from the live grid in a real browser; the Momentum timing link on this row (event 198) no longer loads any data"
-		},
-		{
-			"name": "Javelina Jangover",
-			"iso": "2022-09-17",
-			"finishers": 27,
-			"headline": true,
-			"winners": [
-				{
-					"distance": "75K",
-					"men": {
-						"name": "Nick Coury",
-						"time": "5:49:17"
-					},
-					"women": {
-						"name": "Melissa Kennedy",
-						"time": "10:06:00"
-					}
-				}
-			],
-			"source": "ultrasignup, read from the live grid in a real browser"
-		},
-		{
 			"name": "Flagstaff Sky Race",
 			"iso": "2017-10-06",
 			"finishers": 139,
@@ -711,6 +611,196 @@
 				}
 			],
 			"source": "athlinks, read from the live results in a real browser (Jamil supplied the event link)"
+		},
+		{
+			"name": "Across The Years",
+			"iso": "2019-12-28",
+			"finishers": 0,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "6 Day",
+					"men": {
+						"name": "Pete Kostelnick",
+						"time": "444.26 mi"
+					},
+					"women": {
+						"name": "Marcia Rasmussen",
+						"time": "342.62 mi"
+					}
+				},
+				{
+					"distance": "72 Hour",
+					"men": {
+						"name": "Steve Walters",
+						"time": "221.08 mi"
+					},
+					"women": {
+						"name": "Dennene Huntley",
+						"time": "235.75 mi"
+					}
+				},
+				{
+					"distance": "48 Hour",
+					"men": {
+						"name": "Thomas Jackson",
+						"time": "174.98 mi"
+					},
+					"women": {
+						"name": "Juli Aistars",
+						"time": "158.21 mi"
+					}
+				},
+				{
+					"distance": "24 Hour",
+					"men": {
+						"name": "Chris Pope",
+						"time": "141.45 mi"
+					},
+					"women": {
+						"name": "Chavet Breslin",
+						"time": "117.35 mi"
+					}
+				}
+			],
+			"source": "ultrarunning, races 24772 (144 Hours), 24771, 24770 and 24769, read through a text proxy because ultrarunning.com blocks direct requests. No Ultracast file exists for this edition: the viewer URL answers 200 for any filename it is given, so a guessed path looked real until it 404d as a raw file. Finishers left at 0, which renders as no count at all, because UltraRunning lists only finishers over 26.2 miles: 369 across the four distances is a floor, not the count, and would read as fact beside 2018's real 474."
+		},
+		{
+			"name": "Javelina Jundred",
+			"iso": "2020-10-29",
+			"finishers": 309,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Tim Tollefson",
+						"time": "13:28:04"
+					},
+					"women": {
+						"name": "Nicole Bitter",
+						"time": "15:17:47"
+					}
+				},
+				{
+					"distance": "100K",
+					"men": {
+						"name": "Andrew Belus",
+						"time": "8:02:09"
+					},
+					"women": {
+						"name": "Lisa Roberts",
+						"time": "8:56:01"
+					}
+				},
+				{
+					"distance": "31K",
+					"men": {
+						"name": "Jared Elerick",
+						"time": "2:21:16"
+					},
+					"women": {
+						"name": "Amber Zimmerman",
+						"time": "2:21:18"
+					}
+				}
+			],
+			"source": "raceresult, my.raceresult.com/161493, read from the Overall Results view of each of the three distances in a real browser: the '1st woman' beat the '1st man' on time in the 31K (2:21:16 vs 2:21:18) so both are read off overall place, not off a per-gender tab. Finishers are the three distances' overall-results row counts, 66+83+160."
+		},
+		{
+			"name": "Javelina Jundred",
+			"iso": "2021-10-30",
+			"finishers": 641,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Arlen Glick",
+						"time": "13:14:51"
+					},
+					"women": {
+						"name": "Camille Herron",
+						"time": "14:03:23"
+					}
+				},
+				{
+					"distance": "100K",
+					"men": {
+						"name": "Tyler Andrews",
+						"time": "8:49:09"
+					},
+					"women": {
+						"name": "Cat Bradley",
+						"time": "9:45:13"
+					}
+				},
+				{
+					"distance": "31K",
+					"men": {
+						"name": "Ruairi Moynihan",
+						"time": "2:10:56"
+					},
+					"women": {
+						"name": "Mary Denholm",
+						"time": "2:39:08"
+					}
+				}
+			],
+			"source": "raceresult, my.raceresult.com/184969, read from the Overall Results view of each of the three distances in a real browser. Finishers are the three distances' overall-results row counts, 156+193+292."
+		},
+		{
+			"name": "Across The Years",
+			"iso": "2025-12-28",
+			"finishers": 262,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "6 Day",
+					"men": {
+						"name": "Justin Montague",
+						"time": "481.111 mi"
+					},
+					"women": {
+						"name": "Melissa Montague",
+						"time": "406.335 mi"
+					}
+				},
+				{
+					"distance": "72 Hour",
+					"men": {
+						"name": "James Nalley",
+						"time": "213.043 mi"
+					},
+					"women": {
+						"name": "Dennene Huntley",
+						"time": "222.919 mi"
+					}
+				},
+				{
+					"distance": "48 Hour",
+					"men": {
+						"name": "Cole Crosby",
+						"time": "224.330 mi"
+					},
+					"women": {
+						"name": "Amy Mower",
+						"time": "141.088 mi"
+					}
+				},
+				{
+					"distance": "24 Hour",
+					"men": {
+						"name": "Nicholas Steel",
+						"time": "105.816 mi"
+					},
+					"women": {
+						"name": "Aden-Shiloh Broyles",
+						"time": "121.336 mi"
+					}
+				}
+			],
+			"source": "raceresult, my.raceresult.com/377012, read from the Overall Results view of the four headline distances in a real browser, the same four this archive has carried for 2016 through 2019; the event's other twelve entries (100K, 100 Mile, 200 Miler, 12 Hour, 6 Hour, Last Person Standing and six per-day marathons) are not read here, matching those years. Not sourced from the live board despite this row carrying a live link: board id 465 lists all 599 participants with ft=null and lapCount=0 across the board, a dead timing record rather than a formatting quirk, so the fixed-time scoring added for Fat Ox and Hotfoot Hamster has nothing to compute from. Finishers are the four distances' overall-results row counts, 90+33+54+85, not the event's full 599 registrants."
 		}
 	]
 }

@@ -567,6 +567,43 @@ function arv_results_distance_label( $distance ) {
 	return $label;
 }
 
+/**
+ * Whether at least one of an edition's winners is scored over a real ground
+ * or clock distance, rather than every one of them being some other kind of
+ * category entirely.
+ *
+ * March of the Fallen is a ruck march: everybody walks the same course, and
+ * what is labeled a "distance" on it is how much weight they carried,
+ * "45 Lbs", "Heavyweight", "Litter", "Unknown". Shown with the vocabulary a
+ * hundred other rows use for an actual distance, "Winners, 4 distances"
+ * reads as though picking the wrong one of four routes were possible, and
+ * a reader who opens it to see which is longest finds nothing that answers
+ * that question, because none of them is one.
+ *
+ * True already covers everything else on the archive: a headline event's
+ * own distance, a lap race whose categories tie at the same course length,
+ * Blue Ribbon Run's "10K/5K/2K" run together as one string. Only a row
+ * where nothing at all measures as a distance says no.
+ *
+ * @param array $winners
+ * @return bool
+ */
+function arv_stats_has_real_distance( $winners ) {
+	foreach ( (array) $winners as $row ) {
+		$label = arv_results_distance_label( isset( $row['distance'] ) ? $row['distance'] : '' );
+
+		if ( preg_match( '/\d+(?:\.\d+)?\s*(?:K|Mile|Hour|Day)\b/i', $label ) ) {
+			return true;
+		}
+
+		if ( preg_match( '/^(?:Marathon|Half Marathon|Vertical K)$/i', $label ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /* ------------------------------------------------------------------ *
  * Race-clock pieces, moved here from the Results element.
  *

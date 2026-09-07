@@ -2058,6 +2058,25 @@ function arv_results_winners_block( $stats ) {
 		return '<p class="arv-results__winners">' . arv_results_winner_line( $top ) . '</p>';
 	}
 
+	// A headline row is already a real distance, since guessMetres and
+	// guessSeconds are what decided it led; the check below only matters
+	// for the no-headline branch, where "Winners, N distances" would
+	// otherwise call a ruck march's weight classes distances.
+	$is_distances = $has_headline || arv_stats_has_real_distance( $winners );
+	$count_label  = $is_distances
+		? sprintf(
+			// translators: %d is a count of distances.
+			_n( '%d distance', '%d distances', count( $winners ), 'aravaipa-elements' ),
+			count( $winners )
+		)
+		: sprintf(
+			// translators: %d is a count of categories, for an event scored
+			// on something other than distance, e.g. a ruck march's weight
+			// classes.
+			_n( '%d category', '%d categories', count( $winners ), 'aravaipa-elements' ),
+			count( $winners )
+		);
+
 	$divisions = arv_stats_divisions_present( $winners );
 
 	$out  = '<details class="arv-results__winners-all">';
@@ -2089,29 +2108,13 @@ function arv_results_winners_block( $stats ) {
 			. '</span>';
 	} else {
 		$out .= esc_html( __( 'Winners', 'aravaipa-elements' ) )
-			. '<span class="arv-results__older-years">'
-			. esc_html(
-				sprintf(
-					// translators: %d is a count of distances.
-					_n( '%d distance', '%d distances', count( $winners ), 'aravaipa-elements' ),
-					count( $winners )
-				)
-			)
-			. '</span>';
+			. '<span class="arv-results__older-years">' . esc_html( $count_label ) . '</span>';
 	}
 
 	$out .= '</span>';
 	$out .= '<span class="arv-results__winners-shut">'
 		. esc_html( __( 'Winners', 'aravaipa-elements' ) )
-		. '<span class="arv-results__older-years">'
-		. esc_html(
-			sprintf(
-				// translators: %d is a count of distances.
-				_n( '%d distance', '%d distances', count( $winners ), 'aravaipa-elements' ),
-				count( $winners )
-			)
-		)
-		. '</span></span>';
+		. '<span class="arv-results__older-years">' . esc_html( $count_label ) . '</span></span>';
 
 	$out .= '</summary>';
 
@@ -2120,7 +2123,9 @@ function arv_results_winners_block( $stats ) {
 	// layout that makes the columns line up in the first place.
 	$out .= '<div class="arv-results__winners-scroll">';
 	$out .= '<table class="arv-results__winners-table"><thead><tr>'
-		. '<th scope="col">' . esc_html( __( 'Distance', 'aravaipa-elements' ) ) . '</th>';
+		. '<th scope="col">'
+		. esc_html( $is_distances ? __( 'Distance', 'aravaipa-elements' ) : __( 'Category', 'aravaipa-elements' ) )
+		. '</th>';
 
 	foreach ( $divisions as $division ) {
 		$out .= '<th scope="col">' . esc_html( arv_results_division_label( $division ) ) . '</th>';

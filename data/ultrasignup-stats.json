@@ -1,0 +1,3189 @@
+{
+ "events": [
+  {
+   "name": "Tucson Marathon",
+   "iso": "2023-12-10",
+   "starters": 70,
+   "finishers": 70,
+   "rows": 70,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Ferdinand Airault",
+      "time": "3:20:55"
+     },
+     "women": {
+      "name": "Tara Kaur",
+      "time": "3:42:57"
+     }
+    }
+   ],
+   "source": "ultrasignup did=111853"
+  },
+  {
+   "name": "Jackpot Ultras",
+   "iso": "2023-03-03",
+   "starters": 275,
+   "finishers": 220,
+   "rows": 54,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "48 Hour",
+     "men": {
+      "name": "Jeff Garmire",
+      "time": "200.9168 mi"
+     },
+     "women": {
+      "name": "Rachel Entrekin",
+      "time": "190.5932 mi"
+     }
+    },
+    {
+     "distance": "24 Hour",
+     "men": {
+      "name": "Tim Higham",
+      "time": "122.3976 mi"
+     },
+     "women": {
+      "name": "Ellen Lagerman",
+      "time": "87.7568 mi"
+     }
+    },
+    {
+     "distance": "12 Hour",
+     "men": {
+      "name": "Wyatt Hockmeyer",
+      "time": "62.3535 mi"
+     },
+     "women": {
+      "name": "Allison Cromwell",
+      "time": "53.1159 mi"
+     }
+    },
+    {
+     "distance": "6 Hour",
+     "men": {
+      "name": "Jordan Camastro",
+      "time": "41.569 mi"
+     },
+     "women": {
+      "name": "Sarah Mirey",
+      "time": "40.4836 mi"
+     }
+    },
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Joel Gartenberg",
+      "time": "19:51:03"
+     },
+     "women": {
+      "name": "Erin Maruoka",
+      "time": "22:20:04"
+     }
+    },
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "David Drebsky",
+      "time": "9:23:59"
+     },
+     "women": {
+      "name": "Michelle Hurn",
+      "time": "7:56:52"
+     }
+    },
+    {
+     "distance": "100 Mile Short Course",
+     "men": {
+      "name": "Chris Collier",
+      "time": "22:33:02"
+     },
+     "women": {
+      "name": "Elizabeth Hermans",
+      "time": "22:04:04"
+     }
+    },
+    {
+     "distance": "100 Mile USATF National Championship",
+     "men": {
+      "name": "Jonah Backstrom",
+      "time": "14:11:03"
+     },
+     "women": {
+      "name": "Sierra Degroff",
+      "time": "15:59:56"
+     }
+    }
+   ],
+   "source": "ultrasignup did=102893"
+  },
+  {
+   "name": "Rough Canyon Trail Runs",
+   "iso": "2022-10-08",
+   "starters": 134,
+   "finishers": 129,
+   "rows": 50,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Adam Vadeboncoeur",
+      "time": "7:10:15"
+     },
+     "women": {
+      "name": "Careth Arnold",
+      "time": "8:45:38"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Ryan Sullivan",
+      "time": "4:09:21"
+     },
+     "women": {
+      "name": "Courtney Dauwalter",
+      "time": "4:24:50"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Jeremy Duncan",
+      "time": "1:36:35"
+     },
+     "women": {
+      "name": "Jaime Simmons",
+      "time": "1:53:16"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Mike Sorum",
+      "time": "48:42"
+     },
+     "women": {
+      "name": "Dorothy Elder",
+      "time": "49:25"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Joseph Byram",
+      "time": "22:36"
+     },
+     "women": {
+      "name": "Fiona Mauer",
+      "time": "24:19"
+     }
+    }
+   ],
+   "source": "ultrasignup did=94354"
+  },
+  {
+   "name": "Pikes Peak APEX",
+   "iso": "2022-09-25",
+   "starters": 73,
+   "finishers": 72,
+   "rows": 32,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Graham Shalvoy",
+      "time": "4:31:32"
+     },
+     "women": {
+      "name": "Mary Sketch Bryant",
+      "time": "4:51:37"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Jake Littlehales",
+      "time": "37:22"
+     },
+     "women": {
+      "name": "Leanne Abel",
+      "time": "1:00:15"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Grant Maller",
+      "time": "26:43"
+     },
+     "women": {
+      "name": "Merlin Almstedt",
+      "time": "33:47"
+     }
+    }
+   ],
+   "source": "ultrasignup did=95480"
+  },
+  {
+   "name": "Javelina Jangover",
+   "iso": "2022-09-17",
+   "starters": 376,
+   "finishers": 355,
+   "rows": 114,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "75K",
+     "men": {
+      "name": "Nick Coury",
+      "time": "5:49:17"
+     },
+     "women": {
+      "name": "Melissa Kennedy",
+      "time": "10:06:00"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Joe Corcione",
+      "time": "4:08:45"
+     },
+     "women": {
+      "name": "Brianna Grigsby",
+      "time": "4:16:34"
+     }
+    },
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Bryce Brooks",
+      "time": "1:44:18"
+     },
+     "women": {
+      "name": "Lindsey Katherine",
+      "time": "2:12:19"
+     }
+    },
+    {
+     "distance": "15K",
+     "men": {
+      "name": "Daniel Luedders",
+      "time": "1:06:26"
+     },
+     "women": {
+      "name": "Gina Sando",
+      "time": "1:14:21"
+     }
+    },
+    {
+     "distance": "7K",
+     "men": {
+      "name": "Cole Fahrenbruch",
+      "time": "31:39"
+     },
+     "women": {
+      "name": "Courtney Clifford",
+      "time": "40:56"
+     }
+    }
+   ],
+   "source": "ultrasignup did=90668"
+  },
+  {
+   "name": "Mogollon Monster",
+   "iso": "2022-09-10",
+   "starters": 238,
+   "finishers": 181,
+   "rows": 108,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Carlos Ruibal",
+      "time": "22:48:52"
+     },
+     "women": {
+      "name": "Leora Wallace",
+      "time": "29:48:26"
+     }
+    },
+    {
+     "distance": "42K",
+     "men": {
+      "name": "Brian King",
+      "time": "4:42:07"
+     },
+     "women": {
+      "name": "Mamiko Berger",
+      "time": "5:27:24"
+     }
+    }
+   ],
+   "source": "ultrasignup did=89011"
+  },
+  {
+   "name": "Kendall Mountain Run",
+   "iso": "2022-07-10",
+   "starters": 265,
+   "finishers": 259,
+   "rows": 224,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "12 Mile",
+     "men": {
+      "name": "Noah Williams",
+      "time": "1:40:40"
+     },
+     "women": {
+      "name": "Lindsey McDonald",
+      "time": "2:10:26"
+     }
+    },
+    {
+     "distance": "11K",
+     "men": {
+      "name": "Justin Walker",
+      "time": "1:04:56"
+     },
+     "women": {
+      "name": "Sara Woodward",
+      "time": "1:06:20"
+     }
+    }
+   ],
+   "source": "ultrasignup did=87645"
+  },
+  {
+   "name": "Hypnosis Night Runs",
+   "iso": "2022-06-18",
+   "starters": 307,
+   "finishers": 281,
+   "rows": 116,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Joel Thurston",
+      "time": "5:56:47"
+     },
+     "women": {
+      "name": "Kelly Shaer",
+      "time": "6:41:07"
+     }
+    },
+    {
+     "distance": "36K",
+     "men": {
+      "name": "Derrick Loud",
+      "time": "4:16:53"
+     },
+     "women": {
+      "name": "Tracy Campagnano",
+      "time": "3:55:45"
+     }
+    },
+    {
+     "distance": "22K",
+     "men": {
+      "name": "Bryce Brooks",
+      "time": "1:42:24"
+     },
+     "women": {
+      "name": "Lindsey Katherine",
+      "time": "2:20:36"
+     }
+    },
+    {
+     "distance": "15K",
+     "men": {
+      "name": "Daniel Luedders",
+      "time": "1:13:16"
+     },
+     "women": {
+      "name": "Brianna Hudson",
+      "time": "1:27:40"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "Travis Keefe",
+      "time": "30:12"
+     },
+     "women": {
+      "name": "Isabella Jennex",
+      "time": "35:27"
+     }
+    }
+   ],
+   "source": "ultrasignup did=90651"
+  },
+  {
+   "name": "Adrenaline Night Runs",
+   "iso": "2022-05-21",
+   "starters": 489,
+   "finishers": 420,
+   "rows": 129,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Alex Russell",
+      "time": "4:40:04"
+     },
+     "women": {
+      "name": "Ellen Lagerman",
+      "time": "5:29:14"
+     }
+    },
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Pedro Gomes",
+      "time": "1:49:33"
+     },
+     "women": {
+      "name": "Georgia Porter",
+      "time": "1:54:36"
+     }
+    },
+    {
+     "distance": "15K",
+     "men": {
+      "name": "Roy Pierson",
+      "time": "1:07:21"
+     },
+     "women": {
+      "name": "Gina Sando",
+      "time": "1:16:34"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Sam Griffen",
+      "time": "40:16"
+     },
+     "women": {
+      "name": "Katie Tullmann",
+      "time": "52:22"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "Cole Fahrenbruch",
+      "time": "27:20"
+     },
+     "women": {
+      "name": "Andi Cowley",
+      "time": "36:23"
+     }
+    }
+   ],
+   "source": "ultrasignup did=90646"
+  },
+  {
+   "name": "Cocodona 250",
+   "iso": "2022-05-02",
+   "starters": 240,
+   "finishers": 148,
+   "rows": 148,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "250 Mile",
+     "men": {
+      "name": "Joe McConaughy",
+      "time": "59:28:54"
+     },
+     "women": {
+      "name": "Annie Hughes",
+      "time": "71:10:22"
+     }
+    }
+   ],
+   "source": "ultrasignup did=85868"
+  },
+  {
+   "name": "Whiskey Basin Trail Runs",
+   "iso": "2022-04-23",
+   "starters": 591,
+   "finishers": 569,
+   "rows": 173,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "91K",
+     "men": {
+      "name": "Drew Frehs",
+      "time": "8:59:57"
+     },
+     "women": {
+      "name": "Ailsa Macdonald",
+      "time": "8:54:12"
+     }
+    },
+    {
+     "distance": "60K",
+     "men": {
+      "name": "Michael Sallinger",
+      "time": "5:51:11"
+     },
+     "women": {
+      "name": "Natalie Sandoval",
+      "time": "5:21:35"
+     }
+    },
+    {
+     "distance": "33K",
+     "men": {
+      "name": "Matt Belus",
+      "time": "2:12:19"
+     },
+     "women": {
+      "name": "Tara Kaur",
+      "time": "2:38:22"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Richard Sanchez",
+      "time": "1:33:54"
+     },
+     "women": {
+      "name": "Janelle Lincks",
+      "time": "1:38:57"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "David Carson",
+      "time": "45:35"
+     },
+     "women": {
+      "name": "Tracey Kaiser",
+      "time": "56:08"
+     }
+    }
+   ],
+   "source": "ultrasignup did=90211"
+  },
+  {
+   "name": "Sinister Night Runs",
+   "iso": "2022-04-16",
+   "starters": 384,
+   "finishers": 332,
+   "rows": 109,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "54K",
+     "men": {
+      "name": "Avinoam Maier",
+      "time": "4:57:34"
+     },
+     "women": {
+      "name": "Brianna Grigsby",
+      "time": "4:59:05"
+     }
+    },
+    {
+     "distance": "27K",
+     "men": {
+      "name": "Rob Warnick",
+      "time": "2:14:24"
+     },
+     "women": {
+      "name": "Bekah Wilson- Sommers",
+      "time": "3:08:56"
+     }
+    },
+    {
+     "distance": "18K",
+     "men": {
+      "name": "Daniel Luedders",
+      "time": "1:26:34"
+     },
+     "women": {
+      "name": "Melissa Ostaszewski",
+      "time": "1:28:55"
+     }
+    },
+    {
+     "distance": "9K",
+     "men": {
+      "name": "Andy Krebs",
+      "time": "42:36"
+     },
+     "women": {
+      "name": "Allison Cates",
+      "time": "47:34"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "Sam Griffen",
+      "time": "24:11"
+     },
+     "women": {
+      "name": "Felicity Macdonald",
+      "time": "31:17"
+     }
+    }
+   ],
+   "source": "ultrasignup did=90640"
+  },
+  {
+   "name": "Mesquite Canyon",
+   "iso": "2022-03-05",
+   "starters": 492,
+   "finishers": 458,
+   "rows": 149,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Frederick Farmer",
+      "time": "8:36:54"
+     },
+     "women": {
+      "name": "Ashley Durstine",
+      "time": "10:26:47"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Aaron Barber",
+      "time": "4:44:04"
+     },
+     "women": {
+      "name": "Sarah Hodges",
+      "time": "6:25:47"
+     }
+    },
+    {
+     "distance": "30K",
+     "men": {
+      "name": "Nicolas Glatt",
+      "time": "2:35:22"
+     },
+     "women": {
+      "name": "Kristina Randrup",
+      "time": "2:41:36"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Richard Sanchez",
+      "time": "1:29:27"
+     },
+     "women": {
+      "name": "Janelle Lincks",
+      "time": "1:32:00"
+     }
+    },
+    {
+     "distance": "8K",
+     "men": {
+      "name": "Matthew Hamilton",
+      "time": "27:31"
+     },
+     "women": {
+      "name": "Tracy Campagnano",
+      "time": "30:45"
+     }
+    },
+    {
+     "distance": "Kid's Fun Run",
+     "men": {
+      "name": "Anaiah Danaher",
+      "time": "10:05"
+     },
+     "women": {
+      "name": "Sienna Cedillos",
+      "time": "10:19"
+     }
+    }
+   ],
+   "source": "ultrasignup did=85476"
+  },
+  {
+   "name": "Copper Corridor",
+   "iso": "2022-02-26",
+   "starters": 335,
+   "finishers": 331,
+   "rows": 102,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Nick Coury",
+      "time": "3:55:42"
+     },
+     "women": {
+      "name": "Jessica Roberts",
+      "time": "4:18:53"
+     }
+    },
+    {
+     "distance": "32K",
+     "men": {
+      "name": "Tanner Hallihan",
+      "time": "2:29:33"
+     },
+     "women": {
+      "name": "Ailsa Macdonald",
+      "time": "2:25:26"
+     }
+    },
+    {
+     "distance": "17K",
+     "men": {
+      "name": "Collier Kempton",
+      "time": "1:06:01"
+     },
+     "women": {
+      "name": "Jaime Kreft",
+      "time": "1:22:49"
+     }
+    },
+    {
+     "distance": "12K",
+     "men": {
+      "name": "Geoffrey Foote",
+      "time": "1:10:09"
+     },
+     "women": {
+      "name": "Jzsanette Cullen",
+      "time": "1:00:09"
+     }
+    }
+   ],
+   "source": "ultrasignup did=88764"
+  },
+  {
+   "name": "McDowell Mountain Frenzy",
+   "iso": "2021-12-04",
+   "starters": 606,
+   "finishers": 579,
+   "rows": 164,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Adam Gloyeske",
+      "time": "7:49:36"
+     },
+     "women": {
+      "name": "Jo Ann Saab",
+      "time": "8:45:49"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Caleb Olson",
+      "time": "3:36:20"
+     },
+     "women": {
+      "name": "Brianna Grigsby",
+      "time": "4:29:23"
+     }
+    },
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Eric Ghelfi",
+      "time": "1:40:41"
+     },
+     "women": {
+      "name": "Ailsa Macdonald",
+      "time": "1:52:48"
+     }
+    },
+    {
+     "distance": "10 Mile",
+     "men": {
+      "name": "Chuck Peterson",
+      "time": "1:10:00"
+     },
+     "women": {
+      "name": "Elyssa Bell",
+      "time": "1:19:18"
+     }
+    },
+    {
+     "distance": "5 Mile",
+     "men": {
+      "name": "Cole Fahrenbruch",
+      "time": "39:31"
+     },
+     "women": {
+      "name": "Tracy Campagnano",
+      "time": "41:16"
+     }
+    }
+   ],
+   "source": "ultrasignup did=84700"
+  },
+  {
+   "name": "Punisher Night Runs",
+   "iso": "2021-11-13",
+   "starters": 69,
+   "finishers": 66,
+   "rows": 30,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "30K",
+     "men": {
+      "name": "Pedro Gomez",
+      "time": "2:10:11"
+     },
+     "women": {
+      "name": "Madison Herrington",
+      "time": "3:24:20"
+     }
+    },
+    {
+     "distance": "20K",
+     "men": {
+      "name": "Scott Barrows",
+      "time": "1:27:54"
+     },
+     "women": {
+      "name": "Felicia Floyd",
+      "time": "2:04:42"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Andy Clink",
+      "time": "41:18"
+     },
+     "women": {
+      "name": "Maggie Guterl",
+      "time": "53:18"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Benson Briles",
+      "time": "26:00"
+     },
+     "women": {
+      "name": "Jordan Hower",
+      "time": "32:44"
+     }
+    }
+   ],
+   "source": "ultrasignup did=86394"
+  },
+  {
+   "name": "Javelina Jangover Night Runs",
+   "iso": "2021-09-25",
+   "starters": 358,
+   "finishers": 333,
+   "rows": 117,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "75K",
+     "men": {
+      "name": "Ryan Zmierski",
+      "time": "7:44:40"
+     },
+     "women": {
+      "name": "Jenny Maier",
+      "time": "9:52:39"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Charlie Ware",
+      "time": "3:31:57"
+     },
+     "women": {
+      "name": "Brianna Grigsby",
+      "time": "4:27:24"
+     }
+    },
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Matt Halverson",
+      "time": "1:47:21"
+     },
+     "women": {
+      "name": "Nicole Lane",
+      "time": "1:44:42"
+     }
+    },
+    {
+     "distance": "15K",
+     "men": {
+      "name": "Andrew Builder",
+      "time": "1:14:38"
+     },
+     "women": {
+      "name": "Melanie Spitalny",
+      "time": "1:18:29"
+     }
+    },
+    {
+     "distance": "7K",
+     "men": {
+      "name": "Devin Sharps",
+      "time": "28:43"
+     },
+     "women": {
+      "name": "Kimberlee Bradford",
+      "time": "42:07"
+     }
+    }
+   ],
+   "source": "ultrasignup did=84204"
+  },
+  {
+   "name": "Tushars Mountain Runs",
+   "iso": "2021-07-31",
+   "starters": 388,
+   "finishers": 331,
+   "rows": 99,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100K",
+     "men": {
+      "name": "Shawn Smith",
+      "time": "12:36:19"
+     },
+     "women": {
+      "name": "Laura Stamp",
+      "time": "15:55:41"
+     }
+    },
+    {
+     "distance": "70K",
+     "men": {
+      "name": "Eli White",
+      "time": "8:46:58"
+     },
+     "women": {
+      "name": "Leah Yingling",
+      "time": "10:07:41"
+     }
+    },
+    {
+     "distance": "26.2 Mile",
+     "men": {
+      "name": "Craig Hunt",
+      "time": "4:29:59"
+     },
+     "women": {
+      "name": "Olivia Amber",
+      "time": "5:13:03"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Alex Ladd",
+      "time": "2:05:36"
+     },
+     "women": {
+      "name": "Portia Menlove",
+      "time": "2:25:30"
+     }
+    }
+   ],
+   "source": "ultrasignup did=82247"
+  },
+  {
+   "name": "Kendall Mountain Run",
+   "iso": "2021-07-10",
+   "starters": 345,
+   "finishers": 337,
+   "rows": 300,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "12 Mile",
+     "men": {
+      "name": "Cam Smith",
+      "time": "1:41:04"
+     },
+     "women": {
+      "name": "Lauren Gregory",
+      "time": "1:52:40"
+     }
+    },
+    {
+     "distance": "11K",
+     "men": {
+      "name": "Sam Marino",
+      "time": "1:07:18"
+     },
+     "women": {
+      "name": "Sarah Rebick",
+      "time": "1:14:38"
+     }
+    }
+   ],
+   "source": "ultrasignup did=78610"
+  },
+  {
+   "name": "Hypnosis Night Runs",
+   "iso": "2021-06-19",
+   "starters": 229,
+   "finishers": 225,
+   "rows": 80,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "54K",
+     "men": {
+      "name": "Vince Paikowski",
+      "time": "6:00:36"
+     },
+     "women": {
+      "name": "Kelly Shaer",
+      "time": "10:09:53"
+     }
+    },
+    {
+     "distance": "34K",
+     "men": {
+      "name": "Nathan Shafferman",
+      "time": "4:24:16"
+     },
+     "women": {
+      "name": "Sabrina Huelga",
+      "time": "6:26:52"
+     }
+    },
+    {
+     "distance": "20K",
+     "men": {
+      "name": "Pedro Gomes",
+      "time": "1:41:21"
+     },
+     "women": {
+      "name": "Amanda Leblanc",
+      "time": "2:38:59"
+     }
+    },
+    {
+     "distance": "14K",
+     "men": {
+      "name": "Mike McLean",
+      "time": "1:20:39"
+     },
+     "women": {
+      "name": "Stefanie Bradley",
+      "time": "1:38:45"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "Devin Sharps",
+      "time": "29:37"
+     },
+     "women": {
+      "name": "Cassie Pickens",
+      "time": "37:41"
+     }
+    }
+   ],
+   "source": "ultrasignup did=84186"
+  },
+  {
+   "name": "Pinal Peak Trail Runs",
+   "iso": "2021-05-29",
+   "starters": 97,
+   "finishers": 95,
+   "rows": 95,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Nicholas Hilton",
+      "time": "4:13:04"
+     },
+     "women": {
+      "name": "Natalie Sandoval",
+      "time": "5:13:11"
+     }
+    }
+   ],
+   "source": "ultrasignup did=84016"
+  },
+  {
+   "name": "Cocodona 250",
+   "iso": "2021-05-03",
+   "starters": 173,
+   "finishers": 108,
+   "rows": 108,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "250 Mile",
+     "men": {
+      "name": "Michael Versteeg",
+      "time": "72:50:25"
+     },
+     "women": {
+      "name": "Maggie Guterl",
+      "time": "85:30:38"
+     }
+    }
+   ],
+   "source": "ultrasignup did=77411"
+  },
+  {
+   "name": "Sinister Night Runs",
+   "iso": "2021-04-24",
+   "starters": 346,
+   "finishers": 334,
+   "rows": 111,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "54K",
+     "men": {
+      "name": "Brian Peterson",
+      "time": "5:23:05"
+     },
+     "women": {
+      "name": "Sabrina Huelga",
+      "time": "7:22:25"
+     }
+    },
+    {
+     "distance": "27K",
+     "men": {
+      "name": "Caleb Ryan",
+      "time": "2:17:27"
+     },
+     "women": {
+      "name": "Brittany Biggs",
+      "time": "2:52:43"
+     }
+    },
+    {
+     "distance": "18K",
+     "men": {
+      "name": "Benjamin Hearon",
+      "time": "1:19:13"
+     },
+     "women": {
+      "name": "Elyssa Bell",
+      "time": "1:31:17"
+     }
+    },
+    {
+     "distance": "9K",
+     "men": {
+      "name": "David Carson",
+      "time": "40:16"
+     },
+     "women": {
+      "name": "Tracy Campagnano",
+      "time": "46:21"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "Naaman Smith",
+      "time": "30:00"
+     },
+     "women": {
+      "name": "Molly Watts",
+      "time": "33:15"
+     }
+    }
+   ],
+   "source": "ultrasignup did=84173"
+  },
+  {
+   "name": "Whiskey Basin Trail Runs",
+   "iso": "2021-04-17",
+   "starters": 716,
+   "finishers": 684,
+   "rows": 181,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "91K",
+     "men": {
+      "name": "Nick Coury",
+      "time": "8:04:52"
+     },
+     "women": {
+      "name": "Meghan Slavin",
+      "time": "10:37:20"
+     }
+    },
+    {
+     "distance": "60K",
+     "men": {
+      "name": "Joey Defeo",
+      "time": "4:58:15"
+     },
+     "women": {
+      "name": "Courtney Coppinger",
+      "time": "5:12:24"
+     }
+    },
+    {
+     "distance": "33K",
+     "men": {
+      "name": "Peter Davidson",
+      "time": "2:12:56"
+     },
+     "women": {
+      "name": "Alex Potter",
+      "time": "2:44:28"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Bryce Brooks",
+      "time": "1:42:08"
+     },
+     "women": {
+      "name": "Erin Lostracco",
+      "time": "1:54:40"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Cody Dotson",
+      "time": "54:16"
+     },
+     "women": {
+      "name": "Jamie Minerich",
+      "time": "1:07:41"
+     }
+    }
+   ],
+   "source": "ultrasignup did=81915"
+  },
+  {
+   "name": "Dam Good Run",
+   "iso": "2021-04-11",
+   "starters": 558,
+   "finishers": 552,
+   "rows": 241,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "40K",
+     "men": {
+      "name": "Nick Coury",
+      "time": "3:05:32"
+     },
+     "women": {
+      "name": "Allyssa Jones",
+      "time": "3:46:48"
+     }
+    },
+    {
+     "distance": "26K",
+     "men": {
+      "name": "Travis Dean",
+      "time": "1:50:39"
+     },
+     "women": {
+      "name": "Tessa Chesser",
+      "time": "2:10:20"
+     }
+    },
+    {
+     "distance": "13K",
+     "men": {
+      "name": "Yuval Zarai",
+      "time": "56:56"
+     },
+     "women": {
+      "name": "Abbie Tuomi",
+      "time": "56:57"
+     }
+    },
+    {
+     "distance": "4 Mile",
+     "men": {
+      "name": "Haden Pittson",
+      "time": "26:29"
+     },
+     "women": {
+      "name": "Shaelyn Honahni",
+      "time": "33:04"
+     }
+    },
+    {
+     "distance": "2 Mile",
+     "men": {
+      "name": "Owen Dueck",
+      "time": "18:15"
+     },
+     "women": {
+      "name": "Laurie Payton",
+      "time": "20:12"
+     }
+    }
+   ],
+   "source": "ultrasignup did=81143"
+  },
+  {
+   "name": "Crown King Scramble",
+   "iso": "2021-03-27",
+   "starters": 218,
+   "finishers": 201,
+   "rows": 201,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Stephen Kersh",
+      "time": "3:51:00"
+     },
+     "women": {
+      "name": "Kim Dobson",
+      "time": "4:31:44"
+     }
+    }
+   ],
+   "source": "ultrasignup did=80823"
+  },
+  {
+   "name": "Mesquite Canyon",
+   "iso": "2021-03-06",
+   "starters": 621,
+   "finishers": 590,
+   "rows": 176,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Keith Coombs",
+      "time": "9:16:05"
+     },
+     "women": {
+      "name": "Saiko Uchida",
+      "time": "10:08:11"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Tyler Sprague",
+      "time": "4:26:33"
+     },
+     "women": {
+      "name": "Soleil Gaylord",
+      "time": "5:05:26"
+     }
+    },
+    {
+     "distance": "30K",
+     "men": {
+      "name": "Jason Troxler",
+      "time": "2:30:39"
+     },
+     "women": {
+      "name": "Courtney Coppinger",
+      "time": "2:36:28"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Yuval Zarai",
+      "time": "1:38:10"
+     },
+     "women": {
+      "name": "Abbie Tuomi",
+      "time": "1:41:29"
+     }
+    },
+    {
+     "distance": "8K",
+     "men": {
+      "name": "Cole Troxler",
+      "time": "29:19"
+     },
+     "women": {
+      "name": "Breanna Teschner",
+      "time": "31:42"
+     }
+    },
+    {
+     "distance": "Kid's Fun Run",
+     "men": {
+      "name": "Tanner Dunn",
+      "time": "11:49"
+     },
+     "women": {
+      "name": "Melea Psota",
+      "time": "13:56"
+     }
+    }
+   ],
+   "source": "ultrasignup did=79557"
+  },
+  {
+   "name": "Copper Corridor",
+   "iso": "2021-02-27",
+   "starters": 250,
+   "finishers": 248,
+   "rows": 74,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Drew Frehs",
+      "time": "3:50:35"
+     },
+     "women": {
+      "name": "Krystin Mullins",
+      "time": "4:58:13"
+     }
+    },
+    {
+     "distance": "33K",
+     "men": {
+      "name": "Luke Taylor",
+      "time": "2:22:21"
+     },
+     "women": {
+      "name": "Jade Belzberg",
+      "time": "2:29:01"
+     }
+    },
+    {
+     "distance": "18K",
+     "men": {
+      "name": "Collier Kempton",
+      "time": "1:10:26"
+     },
+     "women": {
+      "name": "Katherine Phillips",
+      "time": "1:25:39"
+     }
+    },
+    {
+     "distance": "12K",
+     "men": {
+      "name": "Coleton Rogers",
+      "time": "52:38"
+     },
+     "women": {
+      "name": "Ivy Kusler",
+      "time": "1:08:58"
+     }
+    }
+   ],
+   "source": "ultrasignup did=82866"
+  },
+  {
+   "name": "Elephant Mountain",
+   "iso": "2021-02-06",
+   "starters": 516,
+   "finishers": 503,
+   "rows": 112,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Brett Dubois",
+      "time": "8:09:38"
+     },
+     "women": {
+      "name": "Kristina Pattison",
+      "time": "9:58:58"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Adam Kimble",
+      "time": "4:18:53"
+     },
+     "women": {
+      "name": "Kelly Teeselink",
+      "time": "5:59:34"
+     }
+    },
+    {
+     "distance": "35K",
+     "men": {
+      "name": "Matthew Hamilton",
+      "time": "2:47:25"
+     },
+     "women": {
+      "name": "Alex Potter",
+      "time": "3:11:13"
+     }
+    },
+    {
+     "distance": "22K",
+     "men": {
+      "name": "Luke Watkins",
+      "time": "1:39:20"
+     },
+     "women": {
+      "name": "Abbie Tuomi",
+      "time": "1:42:44"
+     }
+    },
+    {
+     "distance": "12K",
+     "men": {
+      "name": "Jay Jump",
+      "time": "56:26"
+     },
+     "women": {
+      "name": "Melanie Spitalny",
+      "time": "1:12:11"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "David Carson",
+      "time": "28:34"
+     },
+     "women": {
+      "name": "Tracy Campagnano",
+      "time": "30:39"
+     }
+    }
+   ],
+   "source": "ultrasignup did=78090"
+  },
+  {
+   "name": "Cave Creek Thriller",
+   "iso": "2020-12-19",
+   "starters": 294,
+   "finishers": 292,
+   "rows": 92,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Nate Meiners",
+      "time": "3:59:45"
+     },
+     "women": {
+      "name": "Lisa Roberts",
+      "time": "4:25:44"
+     }
+    },
+    {
+     "distance": "24K",
+     "men": {
+      "name": "Benjamin Hearon",
+      "time": "1:42:06"
+     },
+     "women": {
+      "name": "Megan Kupres",
+      "time": "1:58:11"
+     }
+    },
+    {
+     "distance": "11K",
+     "men": {
+      "name": "Marcos Gonzalez",
+      "time": "45:26"
+     },
+     "women": {
+      "name": "Lindsey Katherine",
+      "time": "1:04:22"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Andy Clink",
+      "time": "23:59"
+     },
+     "women": {
+      "name": "Lori Vasquez",
+      "time": "35:55"
+     }
+    }
+   ],
+   "source": "ultrasignup did=76667"
+  },
+  {
+   "name": "Thrasher Night Runs",
+   "iso": "2020-12-19",
+   "starters": 79,
+   "finishers": 78,
+   "rows": 28,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "33K",
+     "men": {
+      "name": "Derrick Lytle",
+      "time": "3:01:20"
+     },
+     "women": {
+      "name": "Katie Kendrex",
+      "time": "4:48:10"
+     }
+    },
+    {
+     "distance": "22K",
+     "men": {
+      "name": "Scott Barrows",
+      "time": "1:55:47"
+     },
+     "women": {
+      "name": "Tracy Campagnano",
+      "time": "2:01:09"
+     }
+    },
+    {
+     "distance": "11K",
+     "men": {
+      "name": "Steven Fletcher",
+      "time": "53:25"
+     },
+     "women": {
+      "name": "Julie Hanson",
+      "time": "1:03:33"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "David Carson",
+      "time": "25:24"
+     },
+     "women": {
+      "name": "Alex Potter",
+      "time": "34:24"
+     }
+    }
+   ],
+   "source": "ultrasignup did=76663"
+  },
+  {
+   "name": "Desert Solstice",
+   "iso": "2020-12-12",
+   "starters": 40,
+   "finishers": 40,
+   "rows": 22,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "24 Hour",
+     "men": {
+      "name": "Nick Coury",
+      "time": "155.41 mi"
+     },
+     "women": {
+      "name": "Marisa Lizak",
+      "time": "142.64 mi"
+     }
+    },
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Olivier Leblond",
+      "time": "12:41:57"
+     },
+     "women": {
+      "name": "Marisa Lizak",
+      "time": "14:44:42"
+     }
+    }
+   ],
+   "source": "ultrasignup did=75067"
+  },
+  {
+   "name": "Frenzy Hills",
+   "iso": "2020-12-06",
+   "starters": 68,
+   "finishers": 67,
+   "rows": 25,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Albert Wimer",
+      "time": "7:26:41"
+     },
+     "women": {
+      "name": "Holly Hovious",
+      "time": "10:08:52"
+     }
+    },
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Erin Morley",
+      "time": "3:31:51"
+     },
+     "women": {
+      "name": "Jan Carlson",
+      "time": "4:41:07"
+     }
+    },
+    {
+     "distance": "25 Mile",
+     "men": {
+      "name": "Mark Allen",
+      "time": "1:47:59"
+     },
+     "women": {
+      "name": "Sandra Meyers",
+      "time": "2:19:44"
+     }
+    },
+    {
+     "distance": "10 Mile",
+     "men": {
+      "name": "Mark Haughwout",
+      "time": "50:53"
+     },
+     "women": {
+      "name": "Christina Cuka",
+      "time": "58:25"
+     }
+    }
+   ],
+   "source": "ultrasignup did=76847"
+  },
+  {
+   "name": "Mayhem Night Runs",
+   "iso": "2020-12-05",
+   "starters": 66,
+   "finishers": 66,
+   "rows": 30,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Ryan Arkie",
+      "time": "2:08:52"
+     },
+     "women": {
+      "name": "Laura Noll",
+      "time": "2:20:53"
+     }
+    },
+    {
+     "distance": "10 Mile",
+     "men": {
+      "name": "Joseph O'Rourke",
+      "time": "1:39:47"
+     },
+     "women": {
+      "name": "Amber Reano",
+      "time": "1:41:44"
+     }
+    },
+    {
+     "distance": "5 Mile",
+     "men": {
+      "name": "Noah Watkins",
+      "time": "45:43"
+     },
+     "women": {
+      "name": "Tina Feger",
+      "time": "1:00:53"
+     }
+    }
+   ],
+   "source": "ultrasignup did=76678"
+  },
+  {
+   "name": "McDowell Mountain Frenzy",
+   "iso": "2020-12-05",
+   "starters": 593,
+   "finishers": 575,
+   "rows": 174,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Ruairi Moynihan",
+      "time": "8:13:28"
+     },
+     "women": {
+      "name": "Dana Rohloff",
+      "time": "10:05:13"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Andrew Belus",
+      "time": "3:36:49"
+     },
+     "women": {
+      "name": "Elizabeth Lyles",
+      "time": "4:10:19"
+     }
+    },
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Joey Defeo",
+      "time": "1:36:10"
+     },
+     "women": {
+      "name": "Corinne Shalvoy",
+      "time": "1:55:14"
+     }
+    },
+    {
+     "distance": "10 Mile",
+     "men": {
+      "name": "Yuval Zarai",
+      "time": "1:10:08"
+     },
+     "women": {
+      "name": "Des Clarke",
+      "time": "1:23:38"
+     }
+    },
+    {
+     "distance": "5 Mile",
+     "men": {
+      "name": "Brian Pasero",
+      "time": "38:04"
+     },
+     "women": {
+      "name": "Lindsey Katherine",
+      "time": "47:42"
+     }
+    }
+   ],
+   "source": "ultrasignup did=76693"
+  },
+  {
+   "name": "Lone Cactus",
+   "iso": "2020-11-21",
+   "starters": 82,
+   "finishers": 82,
+   "rows": 82,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "In Person Lone Cactus",
+     "men": {
+      "name": "Brian Bondy",
+      "time": "129.3 mi"
+     },
+     "women": {
+      "name": "Kelly Young",
+      "time": "112.6 mi"
+     }
+    }
+   ],
+   "source": "ultrasignup did=80168"
+  },
+  {
+   "name": "Vulture Mine",
+   "iso": "2020-11-21",
+   "starters": 99,
+   "finishers": 99,
+   "rows": 31,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "12 Hour",
+     "men": {
+      "name": "Gene Seymour",
+      "time": "53 mi"
+     },
+     "women": {
+      "name": "Laura Hunter",
+      "time": "42.4 mi"
+     }
+    },
+    {
+     "distance": "6 Hour",
+     "men": {
+      "name": "Steve Wagner",
+      "time": "31.8 mi"
+     },
+     "women": {
+      "name": "Summer Igo",
+      "time": "26.5 mi"
+     }
+    },
+    {
+     "distance": "Half Marathon",
+     "men": {
+      "name": "Dan Kuch",
+      "time": "1:29:52"
+     },
+     "women": {
+      "name": "Melissa Johnson",
+      "time": "3:03:03"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Derek Baker",
+      "time": "1:02:04"
+     },
+     "women": {
+      "name": "Kelly Koehler",
+      "time": "1:12:11"
+     }
+    },
+    {
+     "distance": "24 Hour Solo",
+     "men": {
+      "name": "John Maroushek",
+      "time": "106 mi"
+     },
+     "women": {
+      "name": "Lori Bastman",
+      "time": "84.8 mi"
+     }
+    }
+   ],
+   "source": "ultrasignup did=80170"
+  },
+  {
+   "name": "Tonto Mountain",
+   "iso": "2020-11-15",
+   "starters": 36,
+   "finishers": 33,
+   "rows": 13,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Miler Bike",
+     "men": {
+      "name": "Clay Adams",
+      "time": "4:10:51"
+     }
+    },
+    {
+     "distance": "30 Miler Bike",
+     "men": {
+      "name": "Jake Conn",
+      "time": "3:30:38"
+     },
+     "women": {
+      "name": "Tracy Sobers",
+      "time": "6:54:38"
+     }
+    },
+    {
+     "distance": "20 Miler Bike",
+     "men": {
+      "name": "Darrel McHugh",
+      "time": "1:21:58"
+     },
+     "women": {
+      "name": "Nadia Gornic",
+      "time": "3:17:26"
+     }
+    },
+    {
+     "distance": "10 Miler Bike",
+     "men": {
+      "name": "Joe Shea",
+      "time": "44:31"
+     },
+     "women": {
+      "name": "Lauren Leuck",
+      "time": "57:24"
+     }
+    }
+   ],
+   "source": "ultrasignup did=70460"
+  },
+  {
+   "name": "Pass Mountain",
+   "iso": "2020-11-14",
+   "starters": 290,
+   "finishers": 278,
+   "rows": 100,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Chad Beyer",
+      "time": "4:20:55"
+     },
+     "women": {
+      "name": "Kasey Sutherlin",
+      "time": "4:55:39"
+     }
+    },
+    {
+     "distance": "26K",
+     "men": {
+      "name": "Dan Watson",
+      "time": "1:44:51"
+     },
+     "women": {
+      "name": "Anneke Durkan",
+      "time": "2:07:02"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Yuval Zarai",
+      "time": "39:28"
+     },
+     "women": {
+      "name": "Abbie Tuomi",
+      "time": "40:13"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Michael Schneider",
+      "time": "20:33"
+     },
+     "women": {
+      "name": "Camryn Delancey",
+      "time": "29:39"
+     }
+    }
+   ],
+   "source": "ultrasignup did=76683"
+  },
+  {
+   "name": "Vertigo Night Runs",
+   "iso": "2020-10-03",
+   "starters": 67,
+   "finishers": 64,
+   "rows": 28,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "52K",
+     "men": {
+      "name": "James Breyfogle",
+      "time": "6:22:20"
+     },
+     "women": {
+      "name": "Randi Larson",
+      "time": "8:57:36"
+     }
+    },
+    {
+     "distance": "31K",
+     "men": {
+      "name": "David Sadorf",
+      "time": "4:23:42"
+     }
+    },
+    {
+     "distance": "20K",
+     "men": {
+      "name": "Cole Fahrenbruch",
+      "time": "2:09:56"
+     },
+     "women": {
+      "name": "Nicole Wedemeyer",
+      "time": "3:08:06"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Steven Fletcher",
+      "time": "50:15"
+     },
+     "women": {
+      "name": "Catriona Forrest",
+      "time": "1:05:58"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "Jonathaan Baldridge",
+      "time": "28:03"
+     },
+     "women": {
+      "name": "Kimberlee Bradford",
+      "time": "35:48"
+     }
+    }
+   ],
+   "source": "ultrasignup did=79052"
+  },
+  {
+   "name": "Jangover Night Runs",
+   "iso": "2020-09-26",
+   "starters": 120,
+   "finishers": 118,
+   "rows": 33,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Nick Coury",
+      "time": "3:34:57"
+     },
+     "women": {
+      "name": "Melody McMenamy",
+      "time": "5:16:15"
+     }
+    },
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Ryan Kiewiet",
+      "time": "1:59:02"
+     },
+     "women": {
+      "name": "Stephanie Duross",
+      "time": "2:23:17"
+     }
+    },
+    {
+     "distance": "15K",
+     "men": {
+      "name": "Yuval Zarai",
+      "time": "1:01:42"
+     },
+     "women": {
+      "name": "Jordon Rivera",
+      "time": "1:32:49"
+     }
+    },
+    {
+     "distance": "7K",
+     "men": {
+      "name": "Andy Clink",
+      "time": "30:29"
+     },
+     "women": {
+      "name": "Angie Newbold",
+      "time": "47:32"
+     }
+    }
+   ],
+   "source": "ultrasignup did=74767"
+  },
+  {
+   "name": "Jangover Night Rides",
+   "iso": "2020-09-25",
+   "starters": 20,
+   "finishers": 16,
+   "rows": 7,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "6 Hour",
+     "men": {
+      "name": "Trevor Walker",
+      "time": "62.1 mi"
+     },
+     "women": {
+      "name": "Amy Rasor",
+      "time": "46.6 mi"
+     }
+    },
+    {
+     "distance": "15.5 Mile",
+     "men": {
+      "name": "Kevin Behrendt",
+      "time": "0:58:23"
+     }
+    },
+    {
+     "distance": "12 hr solo",
+     "men": {
+      "name": "Riley Barclay",
+      "time": "124.3 mi"
+     }
+    }
+   ],
+   "source": "ultrasignup did=79198"
+  },
+  {
+   "name": "Dam Good Run",
+   "iso": "2020-09-20",
+   "starters": 198,
+   "finishers": 192,
+   "rows": 80,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "40K",
+     "men": {
+      "name": "Jeff Scaturro",
+      "time": "4:10:26"
+     },
+     "women": {
+      "name": "Erin Dial-Duran",
+      "time": "4:21:08"
+     }
+    },
+    {
+     "distance": "26K",
+     "men": {
+      "name": "Arthur Degraw",
+      "time": "1:45:38"
+     },
+     "women": {
+      "name": "Erika Ervin",
+      "time": "2:48:53"
+     }
+    },
+    {
+     "distance": "13K",
+     "men": {
+      "name": "Lance Rici",
+      "time": "59:39"
+     },
+     "women": {
+      "name": "Krystin Bridges",
+      "time": "1:12:19"
+     }
+    },
+    {
+     "distance": "4 Mile",
+     "men": {
+      "name": "Isaac Easley",
+      "time": "35:09"
+     },
+     "women": {
+      "name": "Emilee Spear",
+      "time": "40:52"
+     }
+    },
+    {
+     "distance": "2 Mile",
+     "men": {
+      "name": "Cole Fahrenbruch",
+      "time": "14:07"
+     },
+     "women": {
+      "name": "Juda McGannon",
+      "time": "17:37"
+     }
+    }
+   ],
+   "source": "ultrasignup did=69342"
+  },
+  {
+   "name": "Mogollon Monster 105K",
+   "iso": "2020-09-12",
+   "starters": 33,
+   "finishers": 23,
+   "rows": 23,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "105K",
+     "men": {
+      "name": "Andy Chrysler",
+      "time": "13:27:29"
+     },
+     "women": {
+      "name": "Brianna Grigsby",
+      "time": "15:50:15"
+     }
+    }
+   ],
+   "source": "ultrasignup did=79050"
+  },
+  {
+   "name": "Flagstaff Extreme Big Pine",
+   "iso": "2020-09-05",
+   "starters": 112,
+   "finishers": 97,
+   "rows": 48,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "54K",
+     "men": {
+      "name": "Mark Brower",
+      "time": "5:37:49"
+     },
+     "women": {
+      "name": "Lisa Roberts",
+      "time": "4:51:11"
+     }
+    },
+    {
+     "distance": "27K",
+     "men": {
+      "name": "Ruairi Moynihan",
+      "time": "1:50:28"
+     },
+     "women": {
+      "name": "Caitlin Vogelsberg",
+      "time": "2:33:21"
+     }
+    },
+    {
+     "distance": "13K",
+     "men": {
+      "name": "Mike Thomas",
+      "time": "1:11:13"
+     },
+     "women": {
+      "name": "Jean Marie Rieck",
+      "time": "1:08:48"
+     }
+    }
+   ],
+   "source": "ultrasignup did=71385"
+  },
+  {
+   "name": "Blackout Night Runs",
+   "iso": "2020-09-04",
+   "starters": 31,
+   "finishers": 28,
+   "rows": 15,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "13K",
+     "men": {
+      "name": "Geoffrey Foote",
+      "time": "1:23:07"
+     },
+     "women": {
+      "name": "Heather McKirdy",
+      "time": "1:10:34"
+     }
+    },
+    {
+     "distance": "6K",
+     "men": {
+      "name": "Jonah Denison",
+      "time": "27:34"
+     },
+     "women": {
+      "name": "Laura Noll",
+      "time": "32:24"
+     }
+    }
+   ],
+   "source": "ultrasignup did=71389"
+  },
+  {
+   "name": "Tushars Mountain Runs",
+   "iso": "2020-08-01",
+   "starters": 413,
+   "finishers": 343,
+   "rows": 110,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100K",
+     "men": {
+      "name": "Jimmy Elam",
+      "time": "11:38:27"
+     },
+     "women": {
+      "name": "Meredith Edwards",
+      "time": "15:11:17"
+     }
+    },
+    {
+     "distance": "70K",
+     "men": {
+      "name": "Andrew Butterworth",
+      "time": "9:01:43"
+     },
+     "women": {
+      "name": "Caitlin Jones",
+      "time": "11:21:53"
+     }
+    },
+    {
+     "distance": "26.2 Mile",
+     "men": {
+      "name": "Caleb Olson",
+      "time": "4:38:59"
+     },
+     "women": {
+      "name": "Janelle Smiley",
+      "time": "5:43:02"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Craig Hunt",
+      "time": "1:48:38"
+     },
+     "women": {
+      "name": "Alycia Hill",
+      "time": "2:20:51"
+     }
+    }
+   ],
+   "source": "ultrasignup did=71757"
+  },
+  {
+   "name": "Kendall Mountain Runs",
+   "iso": "2020-07-12",
+   "starters": 160,
+   "finishers": 160,
+   "rows": 145,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "12 Mile",
+     "men": {
+      "name": "Seth Demoor",
+      "time": "1:37:59"
+     },
+     "women": {
+      "name": "Allie Avatar",
+      "time": "2:02:03"
+     }
+    },
+    {
+     "distance": "11K",
+     "men": {
+      "name": "Sawyer Flinders",
+      "time": "1:40:43"
+     },
+     "women": {
+      "name": "Elizabeth Caldwell",
+      "time": "1:29:46"
+     }
+    }
+   ],
+   "source": "ultrasignup did=71545"
+  },
+  {
+   "name": "Silverton Alpine Marathons",
+   "iso": "2020-07-11",
+   "starters": 174,
+   "finishers": 170,
+   "rows": 77,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Scott Schrader",
+      "time": "4:19:32"
+     },
+     "women": {
+      "name": "Maria Sylte",
+      "time": "5:16:25"
+     }
+    },
+    {
+     "distance": "Marathon",
+     "men": {
+      "name": "Drew Frehs",
+      "time": "3:33:24"
+     },
+     "women": {
+      "name": "Brittany Charboneau",
+      "time": "3:35:30"
+     }
+    },
+    {
+     "distance": "8 Mile",
+     "men": {
+      "name": "Benjamin Hearon",
+      "time": "51:37"
+     },
+     "women": {
+      "name": "Hayley Pollack",
+      "time": "1:11:00"
+     }
+    }
+   ],
+   "source": "ultrasignup did=70208"
+  },
+  {
+   "name": "Summertime Binge",
+   "iso": "2020-06-27",
+   "starters": 300,
+   "finishers": 300,
+   "rows": 210,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "10 Day",
+     "men": {
+      "name": "Michael Rosenthal",
+      "time": "283.61 mi"
+     },
+     "women": {
+      "name": "Devon Yanko",
+      "time": "327.22 mi"
+     }
+    },
+    {
+     "distance": "24 Hour",
+     "men": {
+      "name": "Bertram Johnson",
+      "time": "100.22 mi"
+     },
+     "women": {
+      "name": "Pam Reed",
+      "time": "100 mi"
+     }
+    },
+    {
+     "distance": "12 Hour",
+     "men": {
+      "name": "Yannick Vezina",
+      "time": "65 mi"
+     },
+     "women": {
+      "name": "Melissa Johnson",
+      "time": "51.21 mi"
+     }
+    },
+    {
+     "distance": "6 Hour",
+     "men": {
+      "name": "Jason Midlock",
+      "time": "40.72 mi"
+     },
+     "women": {
+      "name": "Ingrid Lid",
+      "time": "39.37 mi"
+     }
+    }
+   ],
+   "source": "ultrasignup did=77738"
+  },
+  {
+   "name": "Mesquite Canyon",
+   "iso": "2020-03-07",
+   "starters": 477,
+   "finishers": 449,
+   "rows": 139,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "Matthew Warriner",
+      "time": "9:03:10"
+     },
+     "women": {
+      "name": "Holly Hovious",
+      "time": "11:51:28"
+     }
+    },
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Arrick Nietert",
+      "time": "4:32:28"
+     },
+     "women": {
+      "name": "Angela Shartel",
+      "time": "5:40:26"
+     }
+    },
+    {
+     "distance": "30K",
+     "men": {
+      "name": "Clinton Barrett",
+      "time": "2:39:12"
+     },
+     "women": {
+      "name": "Sasha Gollish",
+      "time": "2:36:22"
+     }
+    },
+    {
+     "distance": "1/2 Marathon",
+     "men": {
+      "name": "Brandon Southall",
+      "time": "1:34:29"
+     },
+     "women": {
+      "name": "Jessica Medeiros",
+      "time": "1:52:54"
+     }
+    },
+    {
+     "distance": "8K",
+     "men": {
+      "name": "Matthew Freel",
+      "time": "29:34"
+     },
+     "women": {
+      "name": "Chancey Krantz",
+      "time": "33:06"
+     }
+    },
+    {
+     "distance": "Kid's Fun Run",
+     "men": {
+      "name": "Alexander Huth",
+      "time": "13:00"
+     },
+     "women": {
+      "name": "Abeygail Hajeski",
+      "time": "15:09"
+     }
+    }
+   ],
+   "source": "ultrasignup did=69336"
+  },
+  {
+   "name": "Copper Corridor",
+   "iso": "2020-02-29",
+   "starters": 369,
+   "finishers": 369,
+   "rows": 132,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Danny Harper",
+      "time": "4:43:26"
+     },
+     "women": {
+      "name": "Rachel Dockendorf",
+      "time": "5:35:12"
+     }
+    },
+    {
+     "distance": "33K",
+     "men": {
+      "name": "Evan Williams",
+      "time": "2:17:29"
+     },
+     "women": {
+      "name": "Caroline Bartelme",
+      "time": "2:54:53"
+     }
+    },
+    {
+     "distance": "18K",
+     "men": {
+      "name": "Steven Terry",
+      "time": "1:22:49"
+     },
+     "women": {
+      "name": "Caitlin Vogelsberg",
+      "time": "1:35:43"
+     }
+    },
+    {
+     "distance": "12K",
+     "men": {
+      "name": "Jay Jump",
+      "time": "49:14"
+     },
+     "women": {
+      "name": "Sarah Sullivan",
+      "time": "1:02:41"
+     }
+    }
+   ],
+   "source": "ultrasignup did=75304"
+  },
+  {
+   "name": "Black Canyon",
+   "iso": "2020-02-15",
+   "starters": 923,
+   "finishers": 777,
+   "rows": 541,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100K",
+     "men": {
+      "name": "Hayden Hawks",
+      "time": "7:55:33"
+     },
+     "women": {
+      "name": "Run Camille",
+      "time": "9:21:27"
+     }
+    },
+    {
+     "distance": "60K",
+     "men": {
+      "name": "Patrick Rabuzzi",
+      "time": "5:01:27"
+     },
+     "women": {
+      "name": "Meagan Hayashi",
+      "time": "5:36:49"
+     }
+    }
+   ],
+   "source": "ultrasignup did=67039"
+  },
+  {
+   "name": "San Tan Scramble",
+   "iso": "2020-01-04",
+   "starters": 564,
+   "finishers": 558,
+   "rows": 129,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Charlie Ware",
+      "time": "3:42:25"
+     },
+     "women": {
+      "name": "Michelle Hawk",
+      "time": "5:12:49"
+     }
+    },
+    {
+     "distance": "26K",
+     "men": {
+      "name": "Dan Watson",
+      "time": "1:54:26"
+     },
+     "women": {
+      "name": "Laura Reyburn",
+      "time": "2:26:13"
+     }
+    },
+    {
+     "distance": "17K",
+     "men": {
+      "name": "Yuval Zarai",
+      "time": "1:16:16"
+     },
+     "women": {
+      "name": "Tiaree Towler",
+      "time": "1:20:01"
+     }
+    },
+    {
+     "distance": "9K",
+     "men": {
+      "name": "Arthur Degraw",
+      "time": "34:33"
+     },
+     "women": {
+      "name": "Alicia Morton",
+      "time": "44:34"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Alex Mack",
+      "time": "24:21"
+     },
+     "women": {
+      "name": "Kristine Valen",
+      "time": "28:08"
+     }
+    },
+    {
+     "distance": "Kids Run",
+     "men": {
+      "name": "Brady Nield",
+      "time": "8:50"
+     },
+     "women": {
+      "name": "Malia Salcido",
+      "time": "8:53"
+     }
+    }
+   ],
+   "source": "ultrasignup did=69324"
+  },
+  {
+   "name": "Desert Solstice Track Invitational",
+   "iso": "2019-12-14",
+   "starters": 31,
+   "finishers": 31,
+   "rows": 21,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "24 Hour",
+     "men": {
+      "name": "Rolfe Schmidt",
+      "time": "145.8 mi"
+     },
+     "women": {
+      "name": "Marisa Lizak",
+      "time": "148.08 mi"
+     }
+    },
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Mark Hammond",
+      "time": "12:35:53"
+     },
+     "women": {
+      "name": "Marisa Lizak",
+      "time": "14:50:44"
+     }
+    }
+   ],
+   "source": "ultrasignup did=67256"
+  },
+  {
+   "name": "Pass Mountain Trail Runs",
+   "iso": "2019-11-16",
+   "starters": 532,
+   "finishers": 446,
+   "rows": 167,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50K",
+     "men": {
+      "name": "Michael Carson",
+      "time": "4:04:09"
+     },
+     "women": {
+      "name": "Ailsa Macdonald",
+      "time": "4:08:43"
+     }
+    },
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Jay Jump",
+      "time": "1:47:05"
+     },
+     "women": {
+      "name": "Courtney Coppinger",
+      "time": "2:00:09"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Vasile Samartinean",
+      "time": "42:20"
+     },
+     "women": {
+      "name": "Megan Kupres",
+      "time": "42:32"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Charles Miller",
+      "time": "22:46"
+     },
+     "women": {
+      "name": "Addison Wingo",
+      "time": "30:27"
+     }
+    }
+   ],
+   "source": "ultrasignup did=67516"
+  },
+  {
+   "name": "Punisher Night Runs",
+   "iso": "2019-11-16",
+   "starters": 138,
+   "finishers": 112,
+   "rows": 44,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "30K",
+     "men": {
+      "name": "Matt Tobey",
+      "time": "2:13:24"
+     },
+     "women": {
+      "name": "Amy Hanley",
+      "time": "3:07:39"
+     }
+    },
+    {
+     "distance": "20K",
+     "men": {
+      "name": "Eric Rios",
+      "time": "1:32:25"
+     },
+     "women": {
+      "name": "Jamie Bellian",
+      "time": "2:01:51"
+     }
+    },
+    {
+     "distance": "10K",
+     "men": {
+      "name": "Jesus Garcia",
+      "time": "49:01"
+     },
+     "women": {
+      "name": "Felicity McDonald",
+      "time": "54:16"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Andy Clink",
+      "time": "24:19"
+     },
+     "women": {
+      "name": "Casey Mattix",
+      "time": "32:55"
+     }
+    }
+   ],
+   "source": "ultrasignup did=67502"
+  },
+  {
+   "name": "Desert Solstice",
+   "iso": "2018-12-08",
+   "starters": 56,
+   "finishers": 56,
+   "rows": 33,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "24 Hour",
+     "men": {
+      "name": "Jake Jackson",
+      "time": "157.589 mi"
+     },
+     "women": {
+      "name": "Run Camille",
+      "time": "162.919 mi"
+     }
+    },
+    {
+     "distance": "100 Mile",
+     "men": {
+      "name": "Zach Bitter",
+      "time": "13:23:12"
+     },
+     "women": {
+      "name": "Run Camille",
+      "time": "13:25:00"
+     }
+    }
+   ],
+   "source": "ultrasignup did=56631"
+  },
+  {
+   "name": "Flagstaff Sky Race",
+   "iso": "2017-10-06",
+   "starters": 197,
+   "finishers": 139,
+   "rows": 63,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "55K",
+     "men": {
+      "name": "Tim Freriks",
+      "time": "5:24:34"
+     },
+     "women": {
+      "name": "Kristi Knecht",
+      "time": "6:36:30"
+     }
+    },
+    {
+     "distance": "39K",
+     "men": {
+      "name": "David Sinclair",
+      "time": "3:54:14"
+     },
+     "women": {
+      "name": "Kathryn Ross",
+      "time": "4:58:22"
+     }
+    },
+    {
+     "distance": "Vertical Km",
+     "men": {
+      "name": "David Sinclair",
+      "time": "49:44"
+     },
+     "women": {
+      "name": "Rya Berrigan",
+      "time": "1:15:47"
+     }
+    }
+   ],
+   "source": "ultrasignup did=46929"
+  },
+  {
+   "name": "Black Canyon Ultras",
+   "iso": "2016-02-13",
+   "starters": 339,
+   "finishers": 245,
+   "rows": 181,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "100K",
+     "men": {
+      "name": "Sage Canaday",
+      "time": "7:52:26"
+     },
+     "women": {
+      "name": "Amy Sproston",
+      "time": "10:09:34"
+     }
+    },
+    {
+     "distance": "60K",
+     "men": {
+      "name": "Michael Versteeg",
+      "time": "5:17:21"
+     },
+     "women": {
+      "name": "Keely Henninger",
+      "time": "5:26:28"
+     }
+    }
+   ],
+   "source": "ultrasignup did=34087"
+  },
+  {
+   "name": "Flagstaff Sky Race",
+   "iso": "2015-10-02",
+   "starters": 135,
+   "finishers": 135,
+   "rows": 63,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "55K",
+     "men": {
+      "name": "Daniel Kraft",
+      "time": "5:49:22"
+     },
+     "women": {
+      "name": "Ashley Erba",
+      "time": "6:47:52"
+     }
+    },
+    {
+     "distance": "39K",
+     "men": {
+      "name": "Martin Anthamatten",
+      "time": "3:59:15"
+     },
+     "women": {
+      "name": "Megan Kimmel",
+      "time": "4:29:42"
+     }
+    },
+    {
+     "distance": "Vertical Km",
+     "men": {
+      "name": "Torstein Tengsareid",
+      "time": "42:47"
+     },
+     "women": {
+      "name": "Anna Mae Flynn",
+      "time": "57:37"
+     }
+    }
+   ],
+   "source": "ultrasignup did=31876"
+  },
+  {
+   "name": "McDowell Mountain Frenzy",
+   "iso": "2010-01-23",
+   "starters": 155,
+   "finishers": 155,
+   "rows": 57,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "25K",
+     "men": {
+      "name": "Ian Moore",
+      "time": "1:44:45"
+     },
+     "women": {
+      "name": "Angie Kell-Robertson",
+      "time": "2:01:58"
+     }
+    },
+    {
+     "distance": "10 Mile",
+     "men": {
+      "name": "Cam Hill",
+      "time": "1:10:45"
+     },
+     "women": {
+      "name": "Susan Barrows",
+      "time": "1:20:14"
+     }
+    },
+    {
+     "distance": "5K",
+     "men": {
+      "name": "Paul Nyman",
+      "time": "22:17"
+     },
+     "women": {
+      "name": "Kim Smith",
+      "time": "24:35"
+     }
+    }
+   ],
+   "source": "ultrasignup did=6439"
+  }
+ ]
+}
