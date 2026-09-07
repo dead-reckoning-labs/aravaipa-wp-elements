@@ -6777,8 +6777,15 @@
 	box-sizing: inherit;
 }
 
+/* 1200px, matching the sub-nav above it and every other section on these
+   six pages (Broadcasts, Films, Film Tours, Articles, the Latest feed).
+   Was 1100px, its own width shared with nothing else here, which put its
+   four cards 50px further right than the Latest feed directly above them
+   on the same page. Podcasts stays narrower (900px): that page is a
+   centered list of shows and episodes, not a left-anchored grid, and was
+   never part of this rail. */
 .arv-media-hub__inner {
-	max-width: 1100px;
+	max-width: 1200px;
 	margin: 0 auto;
 	padding: 2rem 1.25rem 2.5rem;
 }
@@ -8153,10 +8160,19 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	box-sizing: inherit;
 }
 
+/* 2rem on top, matching every other section under the media sub-nav
+   (Broadcasts, Films, Film Tours, Podcasts, the Media hub). Was 2.5rem,
+   the one page sitting further from the nav than the rest. */
 .arv-articles__inner {
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 2.5rem 1.25rem 3rem;
+	padding: 2rem 1.25rem 3rem;
+}
+
+@media (max-width: 767px) {
+	.arv-articles__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
 }
 
 .arv-articles__heading {
@@ -8353,13 +8369,24 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	box-sizing: inherit;
 }
 
-/* Tighter on top than the 2.5rem the other sections use. Those were spaced
-   for a large centred heading that no longer prints, so the old padding
-   left the cards floating well below the sub-nav with nothing in the gap. */
+/* 2rem on top, matching Broadcasts, Films, Podcasts and the Media hub: the
+   gap under the sub-nav reads the same on every page a reader can click
+   between. Was 1.4rem, tightened on the reasoning that the other sections
+   sat at 2.5rem, spaced for a large centred heading that no longer prints
+   on any of them. That comparison was wrong on its own premise: most of
+   them were already at 2rem, so this was the one page sitting closer to
+   the nav than the rest rather than matching a majority that existed only
+   on paper. */
 .arv-tours__inner {
 	max-width: 1200px;
 	margin: 0 auto;
-	padding: 1.4rem 1.25rem 3rem;
+	padding: 2rem 1.25rem 3rem;
+}
+
+@media (max-width: 767px) {
+	.arv-tours__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
 }
 
 .arv-tours__heading {
