@@ -154,12 +154,62 @@ async function getJson( url ) {
 }
 
 /**
- * The first finisher of one division of one race, or null.
+ * One entrant's own result, as seconds rather than a formatted string, or
+ * null.
  *
- * Null rather than a best guess at every step. A place with no finish stamp,
- * a stamp pair that subtracts to something no race lasts, a participant with
- * no name: each of those is the board telling us it does not have this
- * result, and an archive row is better carrying no winner than a wrong one.
+ * Extracted from what was the whole of winnerOf(), so a merged multi-wave
+ * distance (raceOfWaves() below) can compare several entrants' raw seconds
+ * against each other before formatting only the one that wins. Formatting
+ * early would have meant parsing "1:59:43" back apart to compare it.
+ *
+ * Null rather than a best guess at every step. A place with no finish
+ * stamp, a stamp pair that subtracts to something no race lasts, a
+ * participant with no name: each of those is the board telling us it does
+ * not have this result, and an archive row is better carrying no winner
+ * than a wrong one.
+ *
+ * @param {object} race
+ * @param {object} entrant
+ * @return {object|null}
+ */
+function entrantResult( race, entrant ) {
+	// A participant's own start stamp where there is one, the gun where there
+	// is not. Twelve events on the archive are gun-start races and record no
+	// per-runner start at all, so requiring one threw away every winner they
+	// had: Westminster, Waugoshance, Two Hearted, Whiskey Basin and the rest.
+	// Wave start first of the two fallbacks, since a race that sets one is
+	// saying this runner's gun was not the race's gun.
+	const start = entrant.st || entrant.waveStartTime || race.startTime;
+
+	if ( ! start || ! entrant.ft ) {
+		return null;
+	}
+
+	const seconds = ( new Date( entrant.ft ) - new Date( start ) ) / 1000;
+	const floor = Math.max(
+		MIN_WIN_SECONDS,
+		( race.distance || 0 ) / IMPOSSIBLE_PACE_MS
+	);
+
+	if ( ! ( seconds >= floor && seconds <= MAX_WIN_SECONDS ) ) {
+		return null;
+	}
+
+	// Collapsed, not just trimmed: a trailing space inside firstName renders
+	// as "Michael  Versteeg" with a visible gap otherwise.
+	const name = `${ entrant.firstName || '' } ${ entrant.lastName || '' }`
+		.replace( /\s+/g, ' ' )
+		.trim();
+
+	if ( ! name ) {
+		return null;
+	}
+
+	return { name, seconds };
+}
+
+/**
+ * The first finisher of one division of one race, or null.
  *
  * @param {object} race
  * @param {Array}  field Finishers in that race, already filtered to one division.
@@ -175,39 +225,28 @@ function winnerOf( race, field ) {
 		a.genderPlace <= b.genderPlace ? a : b
 	);
 
-	// A participant's own start stamp where there is one, the gun where there
-	// is not. Twelve events on the archive are gun-start races and record no
-	// per-runner start at all, so requiring one threw away every winner they
-	// had: Westminster, Waugoshance, Two Hearted, Whiskey Basin and the rest.
-	// Wave start first of the two fallbacks, since a race that sets one is
-	// saying this runner's gun was not the race's gun.
-	const start = first.st || first.waveStartTime || race.startTime;
+	const result = entrantResult( race, first );
 
-	if ( ! start || ! first.ft ) {
-		return null;
-	}
+	return result && { name: result.name, time: hms( result.seconds ) };
+}
 
-	const seconds = ( new Date( first.ft ) - new Date( start ) ) / 1000;
-	const floor = Math.max(
-		MIN_WIN_SECONDS,
-		( race.distance || 0 ) / IMPOSSIBLE_PACE_MS
-	);
-
-	if ( ! ( seconds >= floor && seconds <= MAX_WIN_SECONDS ) ) {
-		return null;
-	}
-
-	// Collapsed, not just trimmed: a trailing space inside firstName renders
-	// as "Michael  Versteeg" with a visible gap otherwise.
-	const name = `${ first.firstName || '' } ${ first.lastName || '' }`
-		.replace( /\s+/g, ' ' )
-		.trim();
-
-	if ( ! name ) {
-		return null;
-	}
-
-	return { name, time: hms( seconds ) };
+/**
+ * Whether a board slug is one year's running of a named event.
+ *
+ * A plain startsWith() was tried first and matched too much: the slug for
+ * Royal Gorge Groove's own separate Rides-branded event,
+ * "royal_gorge_groove_rides-2022", starts with "royal_gorge_groove" too, so
+ * a config entry meant for the mixed run-and-ride event silently reached
+ * into an unrelated one and stripped it down to whatever divisions were
+ * left. Requiring the dash the year always follows is the fix: no event
+ * name on the board contains one of its own.
+ *
+ * @param {string} slug
+ * @param {string} event
+ * @return {boolean}
+ */
+function sameEvent( slug, event ) {
+	return String( slug || '' ).startsWith( `${ event }-` );
 }
 
 /**
@@ -252,12 +291,151 @@ function isRide( slug, name ) {
 	// once covers every year of that race, which is how these are set up
 	// year after year.
 	for ( const [ race, divisions ] of Object.entries( RIDE_DIVISIONS ) ) {
-		if ( String( slug || '' ).startsWith( race ) && divisions.includes( name ) ) {
+		if ( sameEvent( slug, race ) && divisions.includes( name ) ) {
 			return true;
 		}
 	}
 
 	return false;
+}
+
+/**
+ * Events the board splits into pace waves rather than into distances.
+ *
+ * Race the Cog starts its riders in Elite, Intermediate and Chill waves
+ * per distance rather than all at once, so the board carries three race
+ * objects per distance instead of one: "Elite wave", "Intermediate wave"
+ * and "Chill pace wave" for the 2.75 mile Summit Climb, a "Roundtripper"
+ * three of the same for the 5.5 mile Devil's Shingle. None of the six is
+ * named after the distance and none alone is the event's real result, so
+ * scored as six separate races this reported six imaginary distances and
+ * the site had no name to call any of them, which is why it had shown no
+ * winners for this race at all.
+ *
+ * Matched in order, first one wins, so a label naming the more specific
+ * pattern belongs above a broader one. "Roundtripper" appears in every
+ * spelling the board has used across four years ("Roundtripper - Chill",
+ * "Devil's Shingle Roundtripper - Chill Wave"); the fallback below it
+ * catches the other distance's three waves by requiring the one word every
+ * spelling of them has shared just as consistently, "wave", so a division
+ * this race adds later that names neither would be left alone rather than
+ * folded into a group it was never part of.
+ */
+const WAVE_GROUPS = {
+	race_the_cog: [
+		{ label: "Devil's Shingle Roundtripper", match: ( n ) => /roundtripper/i.test( n ) },
+		{ label: 'Summit Climb', match: ( n ) => /wave/i.test( n ) },
+	],
+};
+
+/**
+ * Collapse an event's pace-wave races into one race object per real
+ * distance, each carrying every wave's field combined.
+ *
+ * A merged race keeps no single startTime of its own: the three waves it
+ * replaces started at three different times, which is the entire reason
+ * they exist, and entrantResult() already reads each participant's own
+ * start stamp before ever falling back to the race's. Distance is the
+ * largest a member wave reports, so a wave recorded a few metres short by
+ * GPS noise cannot make the whole group read shorter than it is.
+ *
+ * Races this event runs that match no group (there are none today, but a
+ * future added distance would) pass through unchanged.
+ *
+ * @param {string} slug
+ * @param {Array}  races
+ * @param {Map}    byRace
+ * @return {{races: Array, byRace: Map}}
+ */
+function groupWaves( slug, races, byRace ) {
+	const groups = Object.entries( WAVE_GROUPS ).find( ( [ race ] ) =>
+		sameEvent( slug, race )
+	);
+
+	if ( ! groups ) {
+		return { races, byRace };
+	}
+
+	const merged = [];
+	const mergedByRace = new Map( byRace );
+	const grouped = new Set();
+
+	for ( const { label, match } of groups[ 1 ] ) {
+		const members = races.filter(
+			( r ) => ! grouped.has( r.id ) && match( r.name || '' )
+		);
+
+		if ( ! members.length ) {
+			continue;
+		}
+
+		members.forEach( ( r ) => grouped.add( r.id ) );
+
+		const id = `wave-group:${ label }`;
+		const field = members.flatMap( ( r ) => byRace.get( r.id ) || [] );
+
+		mergedByRace.set( id, field );
+		merged.push( {
+			id,
+			name: label,
+			distance: Math.max( ...members.map( ( r ) => r.distance || 0 ) ),
+			isTimed: false,
+			// Each member's own entrants already carry the fastest possible
+			// per-wave winner in genderPlace 1; raceOfWaves() below compares
+			// those against each other rather than re-deriving a place
+			// across the merged field, which the board never ranked as one.
+			waveMembers: members,
+		} );
+	}
+
+	const untouched = races.filter( ( r ) => ! grouped.has( r.id ) );
+
+	return { races: [ ...untouched, ...merged ], byRace: mergedByRace };
+}
+
+/**
+ * Every division's winner for one merged pace-wave distance, or null.
+ *
+ * Each member wave's own genderPlace 1 is that wave's fastest, by the
+ * board's own scoring; this only has to pick the fastest of those two or
+ * three against each other, which entrantResult()'s seconds make a plain
+ * comparison rather than a re-derivation of anything the board already
+ * decided.
+ *
+ * @param {object} mergedRace A race object from groupWaves(), carrying waveMembers.
+ * @param {Map}    byRace
+ * @return {object|null}
+ */
+function waveGroupWinnersOf( mergedRace, byRace ) {
+	const row = { distance: mergedRace.name };
+	let any = false;
+
+	for ( const [ key, code ] of DIVISIONS ) {
+		let best = null;
+
+		for ( const wave of mergedRace.waveMembers ) {
+			const field = ( byRace.get( wave.id ) || [] ).filter(
+				( p ) => p.gender === code && 1 === p.genderPlace
+			);
+
+			if ( ! field.length ) {
+				continue;
+			}
+
+			const result = entrantResult( wave, field[ 0 ] );
+
+			if ( result && ( ! best || result.seconds < best.seconds ) ) {
+				best = result;
+			}
+		}
+
+		if ( best ) {
+			row[ key ] = { name: best.name, time: hms( best.seconds ) };
+			any = true;
+		}
+	}
+
+	return any ? row : null;
 }
 
 /**
@@ -404,15 +582,20 @@ function winnersOf( race, field ) {
  */
 function summarise( event ) {
 	const participants = event.participants || [];
-	const races = event.races || [];
 
-	const byRace = new Map();
+	const byRaceRaw = new Map();
 	for ( const p of participants ) {
-		if ( ! byRace.has( p.raceId ) ) {
-			byRace.set( p.raceId, [] );
+		if ( ! byRaceRaw.has( p.raceId ) ) {
+			byRaceRaw.set( p.raceId, [] );
 		}
-		byRace.get( p.raceId ).push( p );
+		byRaceRaw.get( p.raceId ).push( p );
 	}
+
+	// A handful of events (Race the Cog today) split into pace waves rather
+	// than into distances, so this stands in for event.races and byRaceRaw
+	// everywhere below: an event with no wave groups gets both back
+	// unchanged.
+	const { races, byRace } = groupWaves( event.slug, event.races || [], byRaceRaw );
 
 	const finishers = participants.filter( ( p ) => p.ft ).length;
 
@@ -456,7 +639,9 @@ function summarise( event ) {
 
 	const winners = ranked
 		.map( ( race ) =>
-			isTimedRace( race )
+			race.waveMembers
+				? waveGroupWinnersOf( race, byRace )
+				: isTimedRace( race )
 				? timedWinnersOf( race, byRace.get( race.id ) || [] )
 				: winnersOf( race, byRace.get( race.id ) || [] )
 		)
