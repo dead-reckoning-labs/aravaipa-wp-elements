@@ -269,7 +269,19 @@ function arv_media_hub_render( $args = array() ) {
 		$out .= '</span></a>';
 	}
 
-	return $out . '</div></div></section>';
+	$out .= '</div></div></section>';
+
+	// The channel block rides on the hub rather than being placed in the
+	// builder beside it. The hub is the last thing on the Media page and
+	// the four cards above are the site's own curated slice of the
+	// channel, so "and there is a lot more of this on YouTube" belongs
+	// immediately after them. Placed by hand it would be one edit away
+	// from ending up on a page where it makes no argument at all.
+	if ( function_exists( 'arv_youtube_render' ) ) {
+		$out .= arv_youtube_render();
+	}
+
+	return $out;
 }
 
 /**

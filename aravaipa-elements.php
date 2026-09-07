@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.99.10
+ * Version:           0.99.11
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.99.10' );
+define( 'ARV_ELEMENTS_VERSION', '0.99.11' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -107,6 +107,12 @@ require_once ARV_ELEMENTS_PATH . 'includes/media-seo.php';
 // Podcasts, Photos, Articles. Loaded unconditionally because it registers
 // a shortcode, same as the stores above it.
 require_once ARV_ELEMENTS_PATH . 'includes/media-subnav.php';
+
+// The YouTube channel block. Above the hub rather than below it, because
+// the hub calls arv_youtube_render() at the end of its own output and a
+// function_exists guard that is always false is not a guard, it is a
+// feature that silently never ships.
+require_once ARV_ELEMENTS_PATH . 'includes/youtube-store.php';
 
 // The Media hub: cards for the above plus Photos and the blog. Loaded
 // unconditionally for the same reason as the three stores above it.
