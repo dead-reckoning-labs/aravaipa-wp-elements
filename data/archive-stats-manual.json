@@ -518,6 +518,51 @@
 				}
 			],
 			"source": "chronotrack, read from the live results in a real browser"
+		},
+		{
+			"name": "Silverton 1000",
+			"iso": "2010-08-28",
+			"finishers": 17,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "6 Day",
+					"men": {
+						"name": "Rick Cheever",
+						"time": "200.0 mi"
+					},
+					"women": {
+						"name": "Ivy Lefebvre",
+						"time": "100.0 mi"
+					}
+				},
+				{
+					"distance": "72 Hour",
+					"men": {
+						"name": "Garrett Mulrooney",
+						"time": "151.0 mi"
+					}
+				},
+				{
+					"distance": "48 Hour",
+					"men": {
+						"name": "Jean-Jacques d’Aquin",
+						"time": "87.0 mi"
+					},
+					"women": {
+						"name": "Coleen Voeks",
+						"time": "105.0 mi"
+					}
+				},
+				{
+					"distance": "24 Hour",
+					"men": {
+						"name": "Bob Combs",
+						"time": "32.0 mi"
+					}
+				}
+			],
+			"source": "ultrarunning, read through a text proxy while Wayback was down and Cloudflare was blocking direct reads"
 		}
 	]
 }
