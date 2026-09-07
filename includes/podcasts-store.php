@@ -27,6 +27,137 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Episode artwork this plugin resolved for itself, keyed by episode guid.
+ *
+ * Every one of these shows is published as video as well as audio, and each
+ * episode has real artwork: a still from the video, made for that episode.
+ * None of it reaches the RSS. Anchor writes the show's own square logo into
+ * every item's <itunes:image> whether the episode has its own art or not,
+ * so the feed cannot even be asked the question, and Spotify will not list
+ * a show's episodes to a logged-out reader. The result was 49 episodes on
+ * the media page under three logos.
+ *
+ * The same videos are on the Aravaipa Running YouTube channel with those
+ * thumbnails on them, so that is where these come from.
+ * scripts/fetch-podcast-art.mjs does the matching and posts the result;
+ * this option is only ever the answer, never the guessing, which is the
+ * point. A wrong thumbnail on a real episode is worse than a logo, and it
+ * is the kind of wrong nobody would report, so the match is made once,
+ * offline, against a whole channel, and written down where it can be read
+ * back and checked rather than recomputed per render against whatever the
+ * feed happens to say that hour.
+ */
+define( 'ARV_PODCAST_ART_OPTION', 'arv_podcast_art' );
+
+/**
+ * The stored guid => image map.
+ *
+ * @return array<string, string>
+ */
+function arv_podcast_art_get() {
+	$stored = get_option( ARV_PODCAST_ART_OPTION, array() );
+
+	return is_array( $stored ) ? $stored : array();
+}
+
+/**
+ * Replace the stored map.
+ *
+ * Wholesale, like every other store here: the script walks all three feeds
+ * and the whole channel every run, so an episode missing from that walk is
+ * an episode whose match no longer holds, and keeping it would be keeping a
+ * thumbnail nothing still stands behind.
+ *
+ * @param array $map guid => image url.
+ * @return int How many survived cleaning.
+ */
+function arv_podcast_art_set( $map ) {
+	$clean = array();
+
+	foreach ( (array) $map as $guid => $url ) {
+		$guid = trim( (string) $guid );
+		$url  = esc_url_raw( trim( (string) $url ) );
+
+		// Both halves have to be real. A guid with no image cannot be
+		// looked up, and an image with no guid belongs to no episode.
+		if ( '' === $guid || '' === $url ) {
+			continue;
+		}
+
+		$clean[ $guid ] = $url;
+	}
+
+	update_option( ARV_PODCAST_ART_OPTION, $clean, false );
+
+	// The feed cache holds the artwork this map feeds into, so leaving it
+	// alone means a post that changes nothing visible for up to an hour.
+	delete_transient( 'arv_podcasts' );
+
+	return count( $clean );
+}
+
+/**
+ * Read and write routes for the art map.
+ */
+function arv_podcast_art_register_rest_routes() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/podcasts/art',
+		array(
+			'methods'             => 'GET',
+			'callback'            => function () {
+				return new WP_REST_Response( array( 'art' => arv_podcast_art_get() ), 200 );
+			},
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
+	);
+
+	register_rest_route(
+		'aravaipa/v1',
+		'/podcasts/art',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'arv_podcast_art_rest_set',
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_podcast_art_register_rest_routes' );
+
+/**
+ * POST /wp-json/aravaipa/v1/podcasts/art
+ *
+ * Body: { "art": { "<guid>": "<image url>", ... }, "dry_run": bool }
+ *
+ * @param WP_REST_Request $request
+ * @return array
+ */
+function arv_podcast_art_rest_set( $request ) {
+	$body = $request->get_json_params();
+	$map  = isset( $body['art'] ) && is_array( $body['art'] ) ? $body['art'] : array();
+
+	if ( ! empty( $body['dry_run'] ) ) {
+		return array(
+			'status'  => 'dry_run',
+			'current' => count( arv_podcast_art_get() ),
+			'valid'   => count( array_filter( $map ) ),
+		);
+	}
+
+	$previous = count( arv_podcast_art_get() );
+
+	return array(
+		'status'   => 'ok',
+		'stored'   => arv_podcast_art_set( $map ),
+		'previous' => $previous,
+	);
+}
+
+/**
  * Aravaipa's shows: label, RSS feed, and the platform ids for a subscribe
  * link on each.
  *
@@ -294,6 +425,46 @@ function arv_podcasts_display_duration( $raw ) {
 }
 
 /**
+ * Which image belongs to one episode, in order of who knows best.
+ *
+ * The episode's own <itunes:image>, where it is genuinely its own, comes
+ * first: that is the author saying so in the podcast host, and it is the
+ * one source that cannot be wrong about which episode it belongs to.
+ *
+ * "Genuinely its own" needs checking, which is the whole reason this is a
+ * function. Anchor does not leave an item's image empty when an episode has
+ * no art of its own; it writes the show's logo into every item. So the
+ * obvious test, whether the field is filled in, is true 49 times out of 49
+ * and answers nothing. Comparing it against the show's own artwork is what
+ * actually separates the two, and it is exact rather than fuzzy: both are
+ * the same string from the same feed when they are the same picture.
+ *
+ * The matched YouTube thumbnail comes second, for the episodes where that
+ * leaves nothing. Then the show's logo, so a card is never blank.
+ *
+ * @param array                 $episode One parsed episode.
+ * @param array                 $show    Its show.
+ * @param array<string, string> $art     The stored guid => image map.
+ * @return string
+ */
+function arv_podcast_episode_artwork( $episode, $show, $art ) {
+	$own   = isset( $episode['artwork'] ) ? (string) $episode['artwork'] : '';
+	$cover = isset( $show['artwork'] ) ? (string) $show['artwork'] : '';
+
+	if ( '' !== $own && $own !== $cover ) {
+		return $own;
+	}
+
+	$guid = isset( $episode['guid'] ) ? (string) $episode['guid'] : '';
+
+	if ( '' !== $guid && ! empty( $art[ $guid ] ) ) {
+		return (string) $art[ $guid ];
+	}
+
+	return '' !== $own ? $own : $cover;
+}
+
+/**
  * Every episode across every show, newest first, each carrying its show's
  * key and title.
  *
@@ -303,17 +474,14 @@ function arv_podcasts_display_duration( $raw ) {
 function arv_podcasts_all( $shows ) {
 	$all = array();
 
+	$art = arv_podcast_art_get();
+
 	foreach ( $shows as $show ) {
 		foreach ( $show['episodes'] as $episode ) {
 			$episode['show_key']   = $show['key'];
 			$episode['show_title'] = $show['title'];
 
-			// An episode with its own artwork keeps it; one without falls
-			// back to the show's, so a card never renders with no image at
-			// all just because this particular upload skipped it.
-			if ( '' === $episode['artwork'] ) {
-				$episode['artwork'] = $show['artwork'];
-			}
+			$episode['artwork'] = arv_podcast_episode_artwork( $episode, $show, $art );
 
 			$all[] = $episode;
 		}
@@ -613,13 +781,13 @@ function arv_podcasts_show_render( $args = array() ) {
 
 	$out .= '<ul class="arv-podcasts__episodes">';
 
+	$art = arv_podcast_art_get();
+
 	foreach ( $show['episodes'] as $episode ) {
 		$episode['show_key']   = $show['key'];
 		$episode['show_title'] = $show['title'];
 
-		if ( '' === $episode['artwork'] ) {
-			$episode['artwork'] = $show['artwork'];
-		}
+		$episode['artwork'] = arv_podcast_episode_artwork( $episode, $show, $art );
 
 		$out .= arv_podcasts_episode_row( $episode, false );
 	}
