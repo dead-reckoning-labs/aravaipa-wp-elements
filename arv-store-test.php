@@ -3250,6 +3250,13 @@ t( 'and only that distance',            false === strpos( $page, 'Matthew Reynol
 t( 'it is one line, not a table',       false === strpos( $page, '<table' ) );
 t( 'and readable with the tags off',    false !== strpos( strip_tags( $page ), 'Jarrod Beauregard' ) );
 
+// Folded into the dark masthead rather than its own strip below it: a
+// winner and a finisher count read as the same kind of fact as the date and
+// location line just above them, not a second section, and it answers
+// before the iframe, a nested scroll region, has had a chance to paint.
+t( 'the result line lives inside the bar', strpos( $page, 'Jarrod Beauregard' ) < strpos( $page, 'arv-live__frame' ) );
+t( 'directly after the date and location', strpos( $page, 'arv-live__meta' ) < strpos( $page, 'Jarrod Beauregard' ) );
+
 // A lap event runs every category over the same loop, so its distances come
 // back within metres of each other and "who won the event" is not a question
 // with an answer. The scraper already decides this; the headline honours it
