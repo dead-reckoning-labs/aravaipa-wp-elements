@@ -5381,6 +5381,35 @@ t( 'an unknown platform renders nothing', '' === arv_media_follow_render( 'tikto
 
 
 
+echo "\nthe archived-events (hiatus) list:\n";
+
+$arv_hiatus_full = arv_season_calendar_hiatus(
+	"Rough Canyon Trail Runs | Grand Junction, CO | https://example.com/logo.png | https://example.com/rough-canyon/ | https://example.com/race-results/rough-canyon/"
+);
+t( 'name is present',              false !== strpos( $arv_hiatus_full, 'Rough Canyon Trail Runs' ) );
+t( 'location is present',          false !== strpos( $arv_hiatus_full, 'Grand Junction, CO' ) );
+t( 'logo renders as an img',       false !== strpos( $arv_hiatus_full, '<img src="https://example.com/logo.png"' ) );
+t( 'Race Info links to the page',  false !== strpos( $arv_hiatus_full, 'href="https://example.com/rough-canyon/">Race Info' ) );
+t( 'Past Results links to it',     false !== strpos( $arv_hiatus_full, 'href="https://example.com/race-results/rough-canyon/">Past Results' ) );
+// The name is not a link: two destinations means no single anchor can
+// wrap the row the way a dated row's does, on pain of one anchor nested
+// inside another, which is invalid HTML browsers tear apart.
+t( 'the name is not inside a link', 1 !== preg_match( '/<a[^>]*>[^<]*Rough Canyon[^<]*<\/a>/', $arv_hiatus_full ) );
+
+$arv_hiatus_bare = arv_season_calendar_hiatus( 'Pinal Peak Trail Runs' );
+t( 'a name alone still renders',   false !== strpos( $arv_hiatus_bare, 'Pinal Peak Trail Runs' ) );
+t( 'no logo means no img tag',     false === strpos( $arv_hiatus_bare, '<img' ) );
+t( 'no urls means no actions',     false === strpos( $arv_hiatus_bare, 'arv-calendar__actions' ) );
+
+$arv_hiatus_info_only = arv_season_calendar_hiatus( 'Durango Skyline Trail Runs | Durango, CO | | https://example.com/durango/' );
+t( 'Race Info alone still shows',  false !== strpos( $arv_hiatus_info_only, 'Race Info' ) );
+t( 'no Past Results without one',  false === strpos( $arv_hiatus_info_only, 'Past Results' ) );
+
+t( 'blank input renders nothing',  '' === arv_season_calendar_hiatus( '' ) );
+t( 'a blank name is skipped',      '' === arv_season_calendar_hiatus( ' | Somewhere, AZ' ) );
+
+
+
 echo "\nthe YouTube channel block:\n";
 
 // Google rounds any count over a thousand to three significant figures

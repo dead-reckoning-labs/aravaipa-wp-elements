@@ -516,7 +516,16 @@ function arv_season_calendar_action( $race, $today ) {
  * of them should be told to a runner as a hiatus, so the call is made here
  * by a person rather than guessed at by the generator.
  *
- * @param string $raw One per line: Name | URL (optional) | note (optional).
+ * Two links rather than one, because a retired race and its results are two
+ * different pages here: the landing page never grew a results section of
+ * its own, and the results archive is not the place to read what the race
+ * once was. An anchor cannot hold another anchor, so the row went from one
+ * link wrapping the whole thing to a name that is not a link at all, with
+ * both destinations as their own button on the right, the same shape a
+ * dated row's Race Info button already is.
+ *
+ * @param string $raw One per line: Name | Location | Logo URL | Race Info URL | Past Results URL.
+ *                     Location, Logo and either URL may be blank.
  * @return string
  */
 function arv_season_calendar_hiatus( $raw ) {
@@ -533,18 +542,42 @@ function arv_season_calendar_hiatus( $raw ) {
 			continue;
 		}
 
-		$url  = trim( arv_cell( $row, 1 ) );
-		$note = trim( arv_cell( $row, 2 ) );
+		$where   = trim( arv_cell( $row, 1 ) );
+		$logo    = trim( arv_cell( $row, 2 ) );
+		$info    = trim( arv_cell( $row, 3 ) );
+		$results = trim( arv_cell( $row, 4 ) );
 
-		$inner  = '<span class="arv-calendar__name">' . esc_html( $name ) . '</span>';
-		$inner .= '' !== $note ? '<span class="arv-calendar__where">' . esc_html( $note ) . '</span>' : '';
-
-		// A hiatus race with no page left to point at is still worth listing,
-		// just not as a link to nowhere.
 		$out .= '<div class="arv-calendar__row arv-calendar__row--hiatus">';
-		$out .= '' !== $url
-			? '<a class="arv-calendar__main" href="' . esc_url( $url ) . '"><span class="arv-calendar__body">' . $inner . '</span><span class="arv-calendar__arrow" aria-hidden="true">&rarr;</span></a>'
-			: '<span class="arv-calendar__main"><span class="arv-calendar__body">' . $inner . '</span></span>';
+
+		// Left blank rather than filled with a placeholder mark: most of
+		// these predate the site's own logo library, and a hand-drawn
+		// blank square would claim to be art where there is none, which
+		// is worse than the row simply starting at the name the way it
+		// always has where nothing is on file.
+		if ( '' !== $logo ) {
+			$out .= '<span class="arv-calendar__logo"><img src="' . esc_url( $logo ) . '" alt="" loading="lazy" decoding="async" /></span>';
+		}
+
+		$out .= '<span class="arv-calendar__body">';
+		$out .= '<span class="arv-calendar__name">' . esc_html( $name ) . '</span>';
+		if ( '' !== $where ) {
+			$out .= '<span class="arv-calendar__where">' . esc_html( $where ) . '</span>';
+		}
+		$out .= '</span>';
+
+		if ( '' !== $info || '' !== $results ) {
+			$out .= '<span class="arv-calendar__actions">';
+			if ( '' !== $results ) {
+				$out .= '<a class="arv-calendar__info" href="' . esc_url( $results ) . '">'
+					. esc_html__( 'Past Results', 'aravaipa-elements' ) . '</a>';
+			}
+			if ( '' !== $info ) {
+				$out .= '<a class="arv-calendar__info" href="' . esc_url( $info ) . '">'
+					. esc_html__( 'Race Info', 'aravaipa-elements' ) . '</a>';
+			}
+			$out .= '</span>';
+		}
+
 		$out .= '</div>';
 	}
 
