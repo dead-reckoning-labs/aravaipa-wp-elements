@@ -6976,12 +6976,24 @@
 	border-color: rgba(255, 255, 255, 0.3);
 }
 
-.arv-podcasts__show-art {
-	width: 96px;
-	height: 96px;
+/* Framed, unlike the film posters and broadcast stills elsewhere in the
+   media section. Those are wide, dark, high-contrast images that hold
+   their own edge against the background. Podcast cover art is a square
+   from a podcast host, often light or white to the very edge, and
+   unframed it stops reading as artwork on a card and starts reading as a
+   pale rectangle punched out of one. The ring is what gives it an edge
+   the art itself does not supply. */
+.arv-podcasts__show-art,
+.arv-podcasts__ep-art {
 	border-radius: var(--arv-radius);
 	object-fit: cover;
 	background: #000;
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.arv-podcasts__show-art {
+	width: 96px;
+	height: 96px;
 }
 
 .arv-podcasts__show-title {
@@ -7041,9 +7053,6 @@
 	flex: 0 0 auto;
 	width: 84px;
 	height: 84px;
-	border-radius: var(--arv-radius);
-	object-fit: cover;
-	background: #000;
 }
 
 .arv-podcasts__ep-body {
@@ -7711,16 +7720,26 @@
    Media sub-nav: the Watch / Films / Podcasts / Photos / Articles strip
    that sits above each of those pages.
 
-   Deliberately lighter than the dark sections it sits above: it belongs to
-   the page chrome, not to any one of them, and needs to read the same way
-   whichever dark or light section follows it.
+   Dark, matching the sections below it. It was light before, on the
+   reasoning that it was page chrome rather than part of any one section
+   and so had to read the same way above a light section or a dark one.
+   Every page it actually appears on turned out to be dark: the Media hub,
+   Broadcasts, Films, Film Tours, Podcasts and Articles all set the same
+   #10201f. So the light strip was not staying neutral between two cases,
+   it was putting a hard light-to-dark cut across the top of all six, and
+   each page read as two templates stacked rather than one section. Should
+   a light section ever sit under this strip, that page is the one that
+   needs the exception, not these six.
    --------------------------------------------------------------------------- */
 .arv-media-subnav {
 	box-sizing: border-box;
 	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
-	background: #f4f4f4;
-	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+	background: #10201f;
+	/* Divides the strip from the section below without drawing a line
+	   across the page: at this contrast it separates the nav from the
+	   content, where a solid rule would just be the old seam again. */
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -7742,12 +7761,12 @@
 .arv-media-subnav__parent:visited {
 	padding: 0.85rem 1rem 0.85rem 0;
 	margin-right: 0.75rem;
-	border-right: 1px solid rgba(0, 0, 0, 0.15);
+	border-right: 1px solid rgba(255, 255, 255, 0.15);
 	font-size: var(--arv-fs-label);
 	font-weight: 900;
 	letter-spacing: 0.4px;
 	text-transform: uppercase;
-	color: #10201f;
+	color: #fff;
 	text-decoration: none;
 }
 
@@ -7764,20 +7783,20 @@
 	font-weight: 700;
 	letter-spacing: 0.4px;
 	text-transform: uppercase;
-	color: rgba(0, 0, 0, 0.6);
+	color: rgba(244, 244, 244, 0.6);
 	text-decoration: none;
 	border-bottom: 3px solid transparent;
 }
 
 .arv-media-subnav__link:hover,
 .arv-media-subnav__link:focus {
-	color: #10201f;
+	color: #fff;
 }
 
 .arv-media-subnav__link.is-current,
 .arv-media-subnav__link.is-current:link,
 .arv-media-subnav__link.is-current:visited {
-	color: #10201f;
+	color: #fff;
 	border-bottom-color: #4ade80;
 }
 
