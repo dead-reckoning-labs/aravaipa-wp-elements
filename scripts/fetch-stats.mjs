@@ -843,8 +843,27 @@ async function walk() {
 
 	await Promise.all( Array.from( { length: WORKERS }, worker ) );
 
-	found.sort( ( a, b ) => a.slug.localeCompare( b.slug ) );
-	return found;
+	// Two ids can carry the same slug. Ram Party 2024 is board id 321, with
+	// 379 participants and every winner intact, and also id 335, empty,
+	// nobody's registration or a duplicate never cleaned up. Posting keys
+	// its store by slug, so both cannot survive, and which one did was
+	// decided by which worker happened to finish last: this ran clean
+	// three times in a row and then, without the archive or this script
+	// changing at all, posted Ram Party 2024 as zero finishers, because
+	// that time 335 finished after 321 instead of before it. Kept here by
+	// finishers rather than by arrival order, which is the one rule that
+	// gives the same answer regardless of which worker gets there first.
+	const bySlug = new Map();
+
+	for ( const event of found ) {
+		const kept = bySlug.get( event.slug );
+
+		if ( ! kept || event.finishers > kept.finishers ) {
+			bySlug.set( event.slug, event );
+		}
+	}
+
+	return [ ...bySlug.values() ].sort( ( a, b ) => a.slug.localeCompare( b.slug ) );
 }
 
 async function post( events ) {
