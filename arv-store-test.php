@@ -289,6 +289,7 @@ require_once __DIR__ . '/includes/tours-store.php';
 require_once __DIR__ . '/includes/shop-store.php';
 require_once __DIR__ . '/includes/trailtalk-feed.php';
 require_once __DIR__ . '/includes/media-seo.php';
+require_once __DIR__ . '/includes/youtube-store.php';
 require_once __DIR__ . '/includes/media-hub.php';
 require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
@@ -5377,6 +5378,41 @@ t( 'renders a real link, not a widget',  false !== strpos( arv_media_follow_rend
 t( 'no third-party script tag',          false === strpos( arv_media_follow_render( 'youtube', 'film' ), '<script' ) );
 t( 'the context is in the copy',         false !== strpos( arv_media_follow_render( 'youtube', 'broadcast' ), 'broadcast' ) );
 t( 'an unknown platform renders nothing', '' === arv_media_follow_render( 'tiktok', 'film' ) );
+
+
+
+echo "\nthe YouTube channel block:\n";
+
+// Google rounds any count over a thousand to three significant figures
+// before it ever reaches us, so these are the shapes that actually arrive.
+t( '39500 reads as 39.5K',            '39.5K' === arv_youtube_short_count( 39500 ) );
+t( 'a round thousand drops the .0',   '40K' === arv_youtube_short_count( 40000 ) );
+t( 'millions carry the M',            '6.8M' === arv_youtube_short_count( 6826570 ) );
+// Floors rather than rounds: 39999 is not yet 40K, and claiming it is
+// would be the one number on the page that is not true.
+t( 'rounds down, never up',           '39.9K' === arv_youtube_short_count( 39999 ) );
+t( 'under a thousand is just itself', '900' === arv_youtube_short_count( 900 ) );
+t( 'zero is zero',                    '0' === arv_youtube_short_count( 0 ) );
+
+$arv_yt = arv_youtube_clean(
+	array(
+		'title'       => 'Aravaipa Running',
+		'subscribers' => 39500,
+		'videoCount'  => 1030,
+		'views'       => 6826570,
+		'videos'      => array(
+			array( 'id' => 'abc123', 'title' => 'A real one', 'date' => '2026-09-04T00:00:00Z', 'thumb' => 'https://i.ytimg.com/vi/abc123/hq.jpg' ),
+			array( 'id' => '', 'title' => 'No id' ),
+			array( 'id' => 'def456' ),
+		),
+	)
+);
+
+t( 'a video needs an id and a title', 1 === count( $arv_yt['videos'] ) );
+t( 'the good video survives whole',   'abc123' === $arv_yt['videos'][0]['id'] );
+t( 'counts come through as ints',     1030 === $arv_yt['videoCount'] );
+t( 'a negative count floors at zero', 0 === arv_youtube_clean( array( 'subscribers' => -5 ) )['subscribers'] );
+t( 'garbage in is an empty array',    array() === arv_youtube_clean( 'not an array' ) );
 
 
 

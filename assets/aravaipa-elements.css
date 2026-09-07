@@ -9831,3 +9831,177 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	color: #5c5c5c !important;
 	cursor: default;
 }
+
+/* ---------------------------------------------------------------------------
+   The YouTube channel, at the foot of the Media page.
+
+   Sits under the hub's four cards, which are the site's own curated slice
+   of this channel: two of them (Broadcasts, Films) are literally its
+   videos. So this is the "and there is a thousand more of these" note,
+   not a sixth section, and it is deliberately quieter than the cards
+   above it. Same #10201f family as the rest of the media pages, same
+   1200px rail.
+   --------------------------------------------------------------------------- */
+.arv-youtube {
+	box-sizing: border-box;
+	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
+	background: #10201f;
+	color: #f4f4f4;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	/* The hub above ends its own section, so without this the two dark
+	   blocks meet with nothing between them and read as one over-long
+	   section rather than a coda to the one above. */
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.arv-youtube * {
+	box-sizing: inherit;
+}
+
+.arv-youtube__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2.5rem 1.25rem 3rem;
+}
+
+.arv-youtube__head {
+	text-align: center;
+}
+
+.arv-youtube__heading {
+	margin: 0;
+	font-size: clamp(26px, 3.4vw, 34px);
+	font-weight: 700;
+	line-height: 1.15;
+	color: #fff;
+}
+
+.arv-youtube__intro {
+	margin: 0.5rem auto 0;
+	max-width: 60ch;
+	font-size: var(--arv-fs-body);
+	line-height: 1.55;
+	color: rgba(244, 244, 244, 0.72);
+}
+
+.arv-youtube__stats {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.4rem 1.25rem;
+	margin: 0.75rem 0 0;
+}
+
+.arv-youtube__stat {
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #4ade80;
+}
+
+.arv-youtube__grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1.25rem;
+	margin: 1.75rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-youtube__card {
+	display: flex;
+}
+
+.arv-youtube__link,
+.arv-youtube__link:link,
+.arv-youtube__link:visited {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	overflow: hidden;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--arv-radius-card);
+	background: rgba(255, 255, 255, 0.04);
+	color: #f4f4f4;
+	text-decoration: none;
+}
+
+.arv-youtube__link:hover,
+.arv-youtube__link:focus-visible {
+	border-color: rgba(255, 255, 255, 0.28);
+}
+
+.arv-youtube__thumb {
+	display: block;
+	width: 100%;
+	/* height: auto beside the width/height attributes, or the attribute
+	   wins and aspect-ratio never applies. Same trap the shop grid
+	   documents. */
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+}
+
+.arv-youtube__title {
+	padding: 0.75rem 0.9rem 0;
+	font-size: var(--arv-fs-meta);
+	font-weight: 700;
+	line-height: 1.3;
+	color: #fff;
+}
+
+.arv-youtube__link:hover .arv-youtube__title,
+.arv-youtube__link:focus-visible .arv-youtube__title {
+	color: #4ade80;
+}
+
+.arv-youtube__date {
+	padding: 0.3rem 0.9rem 0.9rem;
+	font-size: var(--arv-fs-label);
+	color: rgba(244, 244, 244, 0.6);
+}
+
+.arv-youtube__follow {
+	margin: 1.75rem 0 0;
+	text-align: center;
+}
+
+/* YouTube red, the same colour and the same reasoning as the "Subscribe
+   on YouTube" link in media-follow.php: this is the one control on the
+   page that leaves for YouTube, and it should look like it. */
+.arv-youtube__cta,
+.arv-youtube__cta:link,
+.arv-youtube__cta:visited {
+	display: inline-block;
+	padding: 0.6rem 1.4rem;
+	border-radius: var(--arv-radius);
+	background: #ff0000;
+	font-size: var(--arv-fs-btn);
+	font-weight: 700;
+	color: #fff;
+	text-decoration: none;
+}
+
+.arv-youtube__cta:hover,
+.arv-youtube__cta:focus {
+	background: #d60000;
+	color: #fff;
+}
+
+@media (max-width: 900px) {
+	.arv-youtube__grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (max-width: 767px) {
+	.arv-youtube__inner {
+		padding: 1.5rem 1rem 2rem;
+	}
+
+	.arv-youtube__grid {
+		grid-template-columns: 1fr;
+	}
+}
