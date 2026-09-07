@@ -1,481 +1,523 @@
 {
- "_readme": "Editions this script cannot discover on its own: no local file, no Ultracast entry, nothing fetch-archive-stats.mjs can walk to. Sourced by hand and merged into every run's output before it posts, so a re-run of the script can never drop them the way a plain wholesale POST to /stats/archive would.",
- "events": [
-  {
-   "name": "Mogollon Monster",
-   "iso": "2012-09-28",
-   "finishers": 9,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "100 Mile",
-     "men": {
-      "name": "Jamil Coury",
-      "time": "22:24:00"
-     }
-    }
-   ],
-   "source": "wayback-ultrarunning"
-  },
-  {
-   "name": "Mogollon Monster",
-   "iso": "2013-09-28",
-   "finishers": 24,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "100 Mile",
-     "men": {
-      "name": "Steven Moore",
-      "time": "21:34:00"
-     },
-     "women": {
-      "name": "Rachel Ballard",
-      "time": "32:04:00"
-     }
-    }
-   ],
-   "source": "wayback-ultrarunning"
-  },
-  {
-   "name": "Mogollon Monster 105K",
-   "iso": "2020-09-12",
-   "finishers": 23,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "105K",
-     "men": {
-      "name": "Andy Chrysler",
-      "time": "13:27:29"
-     },
-     "women": {
-      "name": "Brianna Grigsby",
-      "time": "15:50:15"
-     }
-    }
-   ],
-   "source": "ultrasignup-browser"
-  },
-  {
-   "name": "Mogollon Monster",
-   "iso": "2021-09-11",
-   "finishers": 145,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "100 Mile",
-     "men": {
-      "name": "Jeff Browning",
-      "time": "20:52:07"
-     },
-     "women": {
-      "name": "Sarah Ostaszewski",
-      "time": "27:55:43"
-     }
-    },
-    {
-     "distance": "105K",
-     "men": {
-      "name": "Michael Sallinger",
-      "time": "15:29:20"
-     },
-     "women": {
-      "name": "Moira Hough",
-      "time": "17:00:49"
-     }
-    },
-    {
-     "distance": "42K",
-     "men": {
-      "name": "Tj Cuddy",
-      "time": "5:18:13"
-     },
-     "women": {
-      "name": "Natalie Sandoval",
-      "time": "4:47:54"
-     }
-    }
-   ],
-   "source": "ultrasignup-browser"
-  },
-  {
-   "name": "Mogollon Monster",
-   "iso": "2022-09-10",
-   "finishers": 181,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "100 Mile",
-     "men": {
-      "name": "Carlos Ruibal",
-      "time": "22:48:52"
-     },
-     "women": {
-      "name": "Leora Wallace",
-      "time": "29:48:26"
-     }
-    },
-    {
-     "distance": "42K",
-     "men": {
-      "name": "Brian King",
-      "time": "4:42:07"
-     },
-     "women": {
-      "name": "Mamiko Berger",
-      "time": "5:27:24"
-     }
-    }
-   ],
-   "source": "ultrasignup-browser"
-  },
-  {
-   "name": "Copper Basin 50K",
-   "iso": "2010-04-10",
-   "headline": true,
-   "winners": [
-    {
-     "distance": "50 Kilometer",
-     "men": {
-      "name": "Matt Hage",
-      "time": "5:59"
-     },
-     "women": {
-      "name": "Jody Chase",
-      "time": "6:04"
-     }
-    },
-    {
-     "distance": "36 Kilometer",
-     "men": {
-      "name": "Boone Ebel",
-      "time": "3:24"
-     },
-     "women": {
-      "name": "Becca Pace",
-      "time": "4:49"
-     }
-    },
-    {
-     "distance": "19 Kilometer",
-     "men": {
-      "name": "Donovan Sarka",
-      "time": "2:35"
-     },
-     "women": {
-      "name": "Paulette Zillmer",
-      "time": "2:18"
-     }
-    }
-   ],
-   "source": "jamil, read off the results file by hand: it has no gender column"
-  },
-  {
-   "name": "Silverton Alpine",
-   "iso": "2011-08-27",
-   "finishers": 28,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "50 Kilometer",
-     "men": {
-      "name": "Drew Gunn",
-      "time": "4:57:57"
-     },
-     "women": {
-      "name": "Leah Fein",
-      "time": "5:43:54"
-     }
-    },
-    {
-     "distance": "Marathon",
-     "men": {
-      "name": "David James",
-      "time": "4:06:36"
-     },
-     "women": {
-      "name": "Ivy Lefebvre",
-      "time": "5:17:30"
-     }
-    }
-   ],
-   "source": "pdftotext, read by hand: the only results file for this edition is a PDF this script cannot open"
-  },
-  {
-   "name": "Blue Ribbon Run (Timing Event)",
-   "iso": "2011-07-04",
-   "finishers": 162,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "10K",
-     "men": {
-      "name": "Nathan Coury",
-      "time": "37:31"
-     },
-     "women": {
-      "name": "Kenzie Grant",
-      "time": "44:21"
-     }
-    },
-    {
-     "distance": "5K",
-     "men": {
-      "name": "Ryan King",
-      "time": "20:49"
-     },
-     "women": {
-      "name": "Jackie Henderson",
-      "time": "21:27"
-     }
-    },
-    {
-     "distance": "2K",
-     "men": {
-      "name": "Jay Van Buren",
-      "time": "9:41"
-     },
-     "women": {
-      "name": "Summer Smith",
-      "time": "9:47"
-     }
-    }
-   ],
-   "source": "xlrd, read by hand: legacy binary .xls, no reader for that format here"
-  },
-  {
-   "name": "Black Canyon Ultras",
-   "iso": "2016-02-13",
-   "finishers": 245,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "100K",
-     "men": {
-      "name": "Sage Canaday",
-      "time": "7:52:26"
-     },
-     "women": {
-      "name": "Amy Sproston",
-      "time": "10:09:34"
-     }
-    },
-    {
-     "distance": "60K",
-     "men": {
-      "name": "Michael Versteeg",
-      "time": "5:17:21"
-     },
-     "women": {
-      "name": "Keely Henninger",
-      "time": "5:26:28"
-     }
-    }
-   ],
-   "source": "ultrasignup, read from the live grid in a real browser: this row links to ultrasignup.com directly rather than a local file, and this script only ever fetches aravaiparunning.com"
-  },
-  {
-   "name": "Copper Basin Fatass 50K",
-   "iso": "2009-10-17",
-   "headline": true,
-   "winners": [
-    {
-     "distance": "50 Kilometer",
-     "men": {
-      "name": "Brian Tinder",
-      "time": "5:57"
-     },
-     "women": {
-      "name": "Jody Chase",
-      "time": "6:15"
-     }
-    },
-    {
-     "distance": "36 Kilometer",
-     "men": {
-      "name": "Mike Melchiors",
-      "time": "4:50"
-     },
-     "women": {
-      "name": "Rachel Jones",
-      "time": "4:48"
-     }
-    },
-    {
-     "distance": "17 Kilometer",
-     "men": {
-      "name": "Burke Painter",
-      "time": "3:38"
-     },
-     "women": {
-      "name": "Pati Coury",
-      "time": "2:45"
-     }
-    }
-   ],
-   "source": "jamil, gender read off the results file by hand: it is a placing list with no header and no gender column"
-  },
-  {
-   "name": "Javelina Jundred",
-   "iso": "2009-10-31",
-   "headline": true,
-   "winners": [
-    {
-     "distance": "100 Mile",
-     "men": {
-      "name": "Dave James",
-      "time": "14:20:54"
-     },
-     "women": {
-      "name": "Beverley Abbs",
-      "time": "18:48:05"
-     }
-    }
-   ],
-   "source": "jamil, gender read off the results file by hand: it is a lap board with no gender column"
-  },
-  {
-   "name": "Javelina Jundred",
-   "iso": "2022-10-29",
-   "finishers": 401,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "100 Mile",
-     "men": {
-      "name": "Dakota Jones",
-      "time": "12:58:02"
-     },
-     "women": {
-      "name": "Devon Yanko",
-      "time": "14:36:10"
-     }
-    }
-   ],
-   "source": "ultrasignup, read from the live grid in a real browser"
-  },
-  {
-   "name": "Rough Canyon Trail Runs",
-   "iso": "2022-10-08",
-   "finishers": 15,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "50 Mile",
-     "men": {
-      "name": "Adam Vadeboncoeur",
-      "time": "7:10:15"
-     },
-     "women": {
-      "name": "Careth Arnold",
-      "time": "8:45:38"
-     }
-    }
-   ],
-   "source": "ultrasignup, read from the live grid in a real browser"
-  },
-  {
-   "name": "Pikes Peak APEX",
-   "iso": "2022-09-25",
-   "finishers": 18,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "50K",
-     "men": {
-      "name": "Graham Shalvoy",
-      "time": "4:31:32"
-     },
-     "women": {
-      "name": "Mary Sketch Bryant",
-      "time": "4:51:37"
-     }
-    }
-   ],
-   "source": "ultrasignup, read from the live grid in a real browser"
-  },
-  {
-   "name": "Flagstaff Sky Peaks",
-   "iso": "2022-09-24",
-   "finishers": 49,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "50 Miler",
-     "men": {
-      "name": "Jonathan Kuplack",
-      "time": "7:56:41"
-     },
-     "women": {
-      "name": "Kendra Eerdmans",
-      "time": "10:20:24"
-     }
-    }
-   ],
-   "source": "ultrasignup, read from the live grid in a real browser; the Momentum timing link on this row (event 198) no longer loads any data"
-  },
-  {
-   "name": "Javelina Jangover",
-   "iso": "2022-09-17",
-   "finishers": 27,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "75K",
-     "men": {
-      "name": "Nick Coury",
-      "time": "5:49:17"
-     },
-     "women": {
-      "name": "Melissa Kennedy",
-      "time": "10:06:00"
-     }
-    }
-   ],
-   "source": "ultrasignup, read from the live grid in a real browser"
-  },
-  {
-   "name": "Flagstaff Sky Race",
-   "iso": "2017-10-06",
-   "finishers": 139,
-   "headline": true,
-   "winners": [
-    {
-     "distance": "55K",
-     "men": {
-      "name": "Tim Freriks",
-      "time": "5:24:34"
-     },
-     "women": {
-      "name": "Kristi Knecht",
-      "time": "6:36:30"
-     }
-    },
-    {
-     "distance": "39K",
-     "men": {
-      "name": "David Sinclair",
-      "time": "3:54:14"
-     },
-     "women": {
-      "name": "Kathryn Ross",
-      "time": "4:58:22"
-     }
-    },
-    {
-     "distance": "Vertical Km",
-     "men": {
-      "name": "David Sinclair",
-      "time": "49:44"
-     },
-     "women": {
-      "name": "Rya Berrigan",
-      "time": "1:15:47"
-     }
-    }
-   ],
-   "source": "ultrasignup, read from the live grid in a real browser"
-  }
- ]
+	"_readme": "Editions this script cannot discover on its own: no local file, no Ultracast entry, nothing fetch-archive-stats.mjs can walk to. Sourced by hand and merged into every run's output before it posts, so a re-run of the script can never drop them the way a plain wholesale POST to /stats/archive would.",
+	"events": [
+		{
+			"name": "Mogollon Monster",
+			"iso": "2012-09-28",
+			"finishers": 9,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Jamil Coury",
+						"time": "22:24:00"
+					}
+				}
+			],
+			"source": "wayback-ultrarunning"
+		},
+		{
+			"name": "Mogollon Monster",
+			"iso": "2013-09-28",
+			"finishers": 24,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Steven Moore",
+						"time": "21:34:00"
+					},
+					"women": {
+						"name": "Rachel Ballard",
+						"time": "32:04:00"
+					}
+				}
+			],
+			"source": "wayback-ultrarunning"
+		},
+		{
+			"name": "Mogollon Monster 105K",
+			"iso": "2020-09-12",
+			"finishers": 23,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "105K",
+					"men": {
+						"name": "Andy Chrysler",
+						"time": "13:27:29"
+					},
+					"women": {
+						"name": "Brianna Grigsby",
+						"time": "15:50:15"
+					}
+				}
+			],
+			"source": "ultrasignup-browser"
+		},
+		{
+			"name": "Mogollon Monster",
+			"iso": "2021-09-11",
+			"finishers": 145,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Jeff Browning",
+						"time": "20:52:07"
+					},
+					"women": {
+						"name": "Sarah Ostaszewski",
+						"time": "27:55:43"
+					}
+				},
+				{
+					"distance": "105K",
+					"men": {
+						"name": "Michael Sallinger",
+						"time": "15:29:20"
+					},
+					"women": {
+						"name": "Moira Hough",
+						"time": "17:00:49"
+					}
+				},
+				{
+					"distance": "42K",
+					"men": {
+						"name": "Tj Cuddy",
+						"time": "5:18:13"
+					},
+					"women": {
+						"name": "Natalie Sandoval",
+						"time": "4:47:54"
+					}
+				}
+			],
+			"source": "ultrasignup-browser"
+		},
+		{
+			"name": "Mogollon Monster",
+			"iso": "2022-09-10",
+			"finishers": 181,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Carlos Ruibal",
+						"time": "22:48:52"
+					},
+					"women": {
+						"name": "Leora Wallace",
+						"time": "29:48:26"
+					}
+				},
+				{
+					"distance": "42K",
+					"men": {
+						"name": "Brian King",
+						"time": "4:42:07"
+					},
+					"women": {
+						"name": "Mamiko Berger",
+						"time": "5:27:24"
+					}
+				}
+			],
+			"source": "ultrasignup-browser"
+		},
+		{
+			"name": "Copper Basin 50K",
+			"iso": "2010-04-10",
+			"headline": true,
+			"winners": [
+				{
+					"distance": "50 Kilometer",
+					"men": {
+						"name": "Matt Hage",
+						"time": "5:59"
+					},
+					"women": {
+						"name": "Jody Chase",
+						"time": "6:04"
+					}
+				},
+				{
+					"distance": "36 Kilometer",
+					"men": {
+						"name": "Boone Ebel",
+						"time": "3:24"
+					},
+					"women": {
+						"name": "Becca Pace",
+						"time": "4:49"
+					}
+				},
+				{
+					"distance": "19 Kilometer",
+					"men": {
+						"name": "Donovan Sarka",
+						"time": "2:35"
+					},
+					"women": {
+						"name": "Paulette Zillmer",
+						"time": "2:18"
+					}
+				}
+			],
+			"source": "jamil, read off the results file by hand: it has no gender column"
+		},
+		{
+			"name": "Silverton Alpine",
+			"iso": "2011-08-27",
+			"finishers": 28,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "50 Kilometer",
+					"men": {
+						"name": "Drew Gunn",
+						"time": "4:57:57"
+					},
+					"women": {
+						"name": "Leah Fein",
+						"time": "5:43:54"
+					}
+				},
+				{
+					"distance": "Marathon",
+					"men": {
+						"name": "David James",
+						"time": "4:06:36"
+					},
+					"women": {
+						"name": "Ivy Lefebvre",
+						"time": "5:17:30"
+					}
+				}
+			],
+			"source": "pdftotext, read by hand: the only results file for this edition is a PDF this script cannot open"
+		},
+		{
+			"name": "Blue Ribbon Run (Timing Event)",
+			"iso": "2011-07-04",
+			"finishers": 162,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "10K",
+					"men": {
+						"name": "Nathan Coury",
+						"time": "37:31"
+					},
+					"women": {
+						"name": "Kenzie Grant",
+						"time": "44:21"
+					}
+				},
+				{
+					"distance": "5K",
+					"men": {
+						"name": "Ryan King",
+						"time": "20:49"
+					},
+					"women": {
+						"name": "Jackie Henderson",
+						"time": "21:27"
+					}
+				},
+				{
+					"distance": "2K",
+					"men": {
+						"name": "Jay Van Buren",
+						"time": "9:41"
+					},
+					"women": {
+						"name": "Summer Smith",
+						"time": "9:47"
+					}
+				}
+			],
+			"source": "xlrd, read by hand: legacy binary .xls, no reader for that format here"
+		},
+		{
+			"name": "Black Canyon Ultras",
+			"iso": "2016-02-13",
+			"finishers": 245,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100K",
+					"men": {
+						"name": "Sage Canaday",
+						"time": "7:52:26"
+					},
+					"women": {
+						"name": "Amy Sproston",
+						"time": "10:09:34"
+					}
+				},
+				{
+					"distance": "60K",
+					"men": {
+						"name": "Michael Versteeg",
+						"time": "5:17:21"
+					},
+					"women": {
+						"name": "Keely Henninger",
+						"time": "5:26:28"
+					}
+				}
+			],
+			"source": "ultrasignup, read from the live grid in a real browser: this row links to ultrasignup.com directly rather than a local file, and this script only ever fetches aravaiparunning.com"
+		},
+		{
+			"name": "Copper Basin Fatass 50K",
+			"iso": "2009-10-17",
+			"headline": true,
+			"winners": [
+				{
+					"distance": "50 Kilometer",
+					"men": {
+						"name": "Brian Tinder",
+						"time": "5:57"
+					},
+					"women": {
+						"name": "Jody Chase",
+						"time": "6:15"
+					}
+				},
+				{
+					"distance": "36 Kilometer",
+					"men": {
+						"name": "Mike Melchiors",
+						"time": "4:50"
+					},
+					"women": {
+						"name": "Rachel Jones",
+						"time": "4:48"
+					}
+				},
+				{
+					"distance": "17 Kilometer",
+					"men": {
+						"name": "Burke Painter",
+						"time": "3:38"
+					},
+					"women": {
+						"name": "Pati Coury",
+						"time": "2:45"
+					}
+				}
+			],
+			"source": "jamil, gender read off the results file by hand: it is a placing list with no header and no gender column"
+		},
+		{
+			"name": "Javelina Jundred",
+			"iso": "2009-10-31",
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Dave James",
+						"time": "14:20:54"
+					},
+					"women": {
+						"name": "Beverley Abbs",
+						"time": "18:48:05"
+					}
+				}
+			],
+			"source": "jamil, gender read off the results file by hand: it is a lap board with no gender column"
+		},
+		{
+			"name": "Javelina Jundred",
+			"iso": "2022-10-29",
+			"finishers": 401,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "100 Mile",
+					"men": {
+						"name": "Dakota Jones",
+						"time": "12:58:02"
+					},
+					"women": {
+						"name": "Devon Yanko",
+						"time": "14:36:10"
+					}
+				}
+			],
+			"source": "ultrasignup, read from the live grid in a real browser"
+		},
+		{
+			"name": "Rough Canyon Trail Runs",
+			"iso": "2022-10-08",
+			"finishers": 15,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "50 Mile",
+					"men": {
+						"name": "Adam Vadeboncoeur",
+						"time": "7:10:15"
+					},
+					"women": {
+						"name": "Careth Arnold",
+						"time": "8:45:38"
+					}
+				}
+			],
+			"source": "ultrasignup, read from the live grid in a real browser"
+		},
+		{
+			"name": "Pikes Peak APEX",
+			"iso": "2022-09-25",
+			"finishers": 18,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "50K",
+					"men": {
+						"name": "Graham Shalvoy",
+						"time": "4:31:32"
+					},
+					"women": {
+						"name": "Mary Sketch Bryant",
+						"time": "4:51:37"
+					}
+				}
+			],
+			"source": "ultrasignup, read from the live grid in a real browser"
+		},
+		{
+			"name": "Flagstaff Sky Peaks",
+			"iso": "2022-09-24",
+			"finishers": 49,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "50 Miler",
+					"men": {
+						"name": "Jonathan Kuplack",
+						"time": "7:56:41"
+					},
+					"women": {
+						"name": "Kendra Eerdmans",
+						"time": "10:20:24"
+					}
+				}
+			],
+			"source": "ultrasignup, read from the live grid in a real browser; the Momentum timing link on this row (event 198) no longer loads any data"
+		},
+		{
+			"name": "Javelina Jangover",
+			"iso": "2022-09-17",
+			"finishers": 27,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "75K",
+					"men": {
+						"name": "Nick Coury",
+						"time": "5:49:17"
+					},
+					"women": {
+						"name": "Melissa Kennedy",
+						"time": "10:06:00"
+					}
+				}
+			],
+			"source": "ultrasignup, read from the live grid in a real browser"
+		},
+		{
+			"name": "Flagstaff Sky Race",
+			"iso": "2017-10-06",
+			"finishers": 139,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "55K",
+					"men": {
+						"name": "Tim Freriks",
+						"time": "5:24:34"
+					},
+					"women": {
+						"name": "Kristi Knecht",
+						"time": "6:36:30"
+					}
+				},
+				{
+					"distance": "39K",
+					"men": {
+						"name": "David Sinclair",
+						"time": "3:54:14"
+					},
+					"women": {
+						"name": "Kathryn Ross",
+						"time": "4:58:22"
+					}
+				},
+				{
+					"distance": "Vertical Km",
+					"men": {
+						"name": "David Sinclair",
+						"time": "49:44"
+					},
+					"women": {
+						"name": "Rya Berrigan",
+						"time": "1:15:47"
+					}
+				}
+			],
+			"source": "ultrasignup, read from the live grid in a real browser"
+		},
+		{
+			"name": "Tucson Marathon",
+			"iso": "2025-12-14",
+			"finishers": 2511,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "Marathon",
+					"men": {
+						"name": "Joseph Moreno",
+						"time": "2:27:21"
+					},
+					"women": {
+						"name": "Sydney Welch",
+						"time": "2:42:36"
+					}
+				},
+				{
+					"distance": "50K",
+					"men": {
+						"name": "Ian Sharman",
+						"time": "3:12:00"
+					},
+					"women": {
+						"name": "Rachel Antol",
+						"time": "4:22:37"
+					}
+				},
+				{
+					"distance": "Half Marathon",
+					"men": {
+						"name": "Jacob Hatcher",
+						"time": "1:04:54"
+					},
+					"women": {
+						"name": "Tori Reeves",
+						"time": "1:19:10"
+					}
+				}
+			],
+			"source": "chronotrack, read from the live results in a real browser"
+		}
+	]
 }
