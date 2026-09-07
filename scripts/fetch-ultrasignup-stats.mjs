@@ -268,7 +268,24 @@ export function usableDistances( distances ) {
  */
 export function winnersOf( rows ) {
 	const list = Array.isArray( rows ) ? rows : [];
-	const finished = list.filter( ( r ) => Number( r.status ) === 1 && isTime( r.formattime ) );
+	const finishedTimed = list.filter( ( r ) => Number( r.status ) === 1 && isTime( r.formattime ) );
+
+	// Last Person Standing has no finish line: everybody runs the same
+	// lap until they can't, and the result is how far they got, not how
+	// long it took. UltraSignup reports that in the same formattime field
+	// a normal race puts a clock into, "129.3" instead of "8:04:52", which
+	// isTime() rejects outright, so Lone Cactus 2020 read as 82 starters
+	// and zero finishers.
+	//
+	// Distance mode only engages where a division's own times fail to
+	// parse as clocks at all: a real race's formattime is always a clock,
+	// so finishedTimed already caught it and this never overrides it.
+	const isDistanceDivision = ! finishedTimed.length
+		&& list.some( ( r ) => Number( r.status ) === 1 && isMileage( r.formattime ) );
+
+	const finished = isDistanceDivision
+		? list.filter( ( r ) => Number( r.status ) === 1 && isMileage( r.formattime ) )
+		: finishedTimed;
 
 	const pick = ( g ) => {
 		const own = finished.filter( ( r ) => String( r.gender || '' ).toUpperCase() === g );
@@ -276,14 +293,22 @@ export function winnersOf( rows ) {
 
 		// gender_place is the field to trust where it is filled in, and it
 		// is not always: some older editions carry every place as 0. Sorting
-		// by the clock is the same answer wherever both are present and the
-		// only answer where one is not.
-		own.sort( ( a, b ) => seconds( a.formattime ) - seconds( b.formattime ) );
+		// by the clock, or by ground covered in distance mode, is the same
+		// answer wherever both are present and the only answer where one is
+		// not.
+		own.sort( ( a, b ) => isDistanceDivision
+			? Number( b.formattime ) - Number( a.formattime )
+			: seconds( a.formattime ) - seconds( b.formattime )
+		);
 
 		const w = own[ 0 ];
 		const name = `${ ( w.firstname || '' ).trim() } ${ ( w.lastname || '' ).trim() }`.trim();
 
-		return name ? { name, time: String( w.formattime ).trim() } : null;
+		if ( ! name ) return null;
+
+		// "129.3 mi", the same shape the archive already stores a fixed-time
+		// result in, so nothing downstream has to learn a second one.
+		return { name, time: isDistanceDivision ? `${ Number( w.formattime ) } mi` : String( w.formattime ).trim() };
 	};
 
 	return {
@@ -295,6 +320,7 @@ export function winnersOf( rows ) {
 }
 
 const isTime = ( v ) => /^\d{1,3}:[0-5]\d(:[0-5]\d)?(\.\d+)?$/.test( String( v || '' ).trim() );
+const isMileage = ( v ) => /^\d+(?:\.\d+)?$/.test( String( v || '' ).trim() ) && Number( v ) > 0;
 
 const seconds = ( v ) => {
 	const p = String( v || '' ).trim().split( ':' ).map( Number );
@@ -337,6 +363,20 @@ async function main() {
 
 	const targets = rows.filter( ( r ) => {
 		if ( ! didOf( r.ultrasignup ) ) return false;
+
+		// A row with a live link is already scored, by the source that
+		// actually timed it: arv_stats_for_row() reads the board first and
+		// only falls back to this file's output when there is none. Walking
+		// it anyway does not change what a visitor sees, but it is not what
+		// this script is for, and every one of these read a mileage figure
+		// out of a fixed-time division's own UltraSignup row the same way
+		// Lone Cactus does, which surfaced the day that reading was fixed:
+		// Fat Ox, Jackpot, Desert Solstice and eight others all gained
+		// divisions UltraSignup had been silently dropping. Real
+		// improvements, and none of them for a row this script exists to
+		// cover, so left for the board to keep owning rather than folded
+		// into the archive as a fallback nobody asked to widen today.
+		if ( r.live ) return false;
 
 		const year = +String( r.iso || '' ).slice( 0, 4 );
 		if ( year < since || year > until ) return false;

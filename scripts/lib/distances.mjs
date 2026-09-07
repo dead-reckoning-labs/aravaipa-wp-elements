@@ -23,7 +23,23 @@
  * @return {number} Metres, or 0 when the label names no ground distance.
  */
 export function guessMetres( name ) {
-	const n = String( name || '' ).toLowerCase().trim();
+	// A bike still covers ground, and an event scored entirely on bikes
+	// still has a longest division. Tonto Mountain 2020 runs "50 Miler
+	// Bike" down to "10 Miler Bike" and nothing else: with the qualifier
+	// left in, none of the four matches the mile pattern below, all four
+	// measure 0 and tie, and the row shows no leader despite 50 plainly
+	// outranking 10. Stripped only here, after the label has already been
+	// used elsewhere in this codebase to decide whether the event is a
+	// bike race at all: fetch-stats.mjs drops a ride division outright
+	// wherever a real running one shares the event, which this does not
+	// undo, since that filtering runs before anything calls this function.
+	// This only ever affects an event where every division already carries
+	// the same qualifier, so it has nothing left to be compared against
+	// but itself.
+	const n = String( name || '' )
+		.toLowerCase()
+		.trim()
+		.replace( /\s+(?:bikes?|rides?)$/, '' );
 
 	if ( /^(1\/2|half)\s*marathon$/.test( n ) ) return 21098;
 	if ( /^marathon$/.test( n ) ) return 42195;

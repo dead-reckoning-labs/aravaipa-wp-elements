@@ -383,6 +383,16 @@ function arv_archive_stats_store_set( $events ) {
  * it is what actually timed the race. The static files are the fallback,
  * and for everything before 2020 they are the only record there is.
  *
+ * "Where a race has one" means a board record that says something, not
+ * merely a slug that exists. Across the Years 2025's board entry lists 599
+ * starters and zero finishers with no winners at all: every participant's
+ * finish time and lap count came back null, a dead timing record rather
+ * than an incomplete one. Trusted the way a real board entry is, that slug
+ * can never be helped by the archive again, no matter how good a hand-read
+ * fallback gets written for it: this function found *something* under the
+ * slug and stopped looking, the fallback existing only for a slug the
+ * board never touched at all.
+ *
  * @param array $row A results store row.
  * @return array|null
  */
@@ -392,7 +402,7 @@ function arv_stats_for_row( $row ) {
 	if ( '' !== $live ) {
 		$board = arv_stats_store_find( $live );
 
-		if ( null !== $board ) {
+		if ( null !== $board && ( ! empty( $board['finishers'] ) || ! empty( $board['winners'] ) ) ) {
 			return $board;
 		}
 	}

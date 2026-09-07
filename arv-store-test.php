@@ -2289,6 +2289,24 @@ t( 'a board with no stats still falls back', 62 === arv_stats_for_row( array(
 	'live' => 'https://live.aravaiparunning.com/#/nothing-here',
 ) )['finishers'] );
 
+// Across the Years 2025's actual shape: a board record that exists, 599
+// starters, and nothing else. Every participant's finish time and lap
+// count came back null, so it is not an incomplete board record, it is a
+// dead one, and treating it as "the board has this" the way a real one is
+// trusted meant a hand-read archive fallback could never reach the page.
+arv_stats_store_set( array( array(
+	'slug'      => 'dead-board-2025',
+	'finishers' => 0,
+	'starters'  => 599,
+	'rows'      => 87,
+	'headline'  => true,
+) ) );
+t( 'a board slug with nothing in it also falls back', 62 === arv_stats_for_row( array(
+	'name' => 'Mesquite Canyon Trail Runs',
+	'iso'  => '2010-03-20',
+	'live' => 'https://live.aravaiparunning.com/#/dead-board-2025',
+) )['finishers'] );
+
 // Same cleaning as the board's own events, because it is literally the same
 // function: a winner with no time is not a winner, and counts floor at zero.
 arv_archive_stats_store_set( array( array(
@@ -2426,6 +2444,24 @@ $no_headline_summary = substr( $no_headline, 0, strpos( $no_headline, '</summary
 t( 'no headline, no featured name',     false === strpos( $no_headline_summary, 'Alex Bustamante' ) );
 t( 'every distance still shows up',     false !== strpos( $no_headline, 'Alex Bustamante' ) && false !== strpos( $no_headline, 'Devin Sharps' ) );
 t( 'and none without winners either',   '' === arv_results_winners_block( array( 'headline' => true ) ) );
+
+// March of the Fallen: a ruck march, same course for everyone, "distance"
+// really means how much weight was carried. Calling that a distance reads
+// as though a longer route were on offer among four, and none is.
+$ruck = array( 'headline' => false, 'winners' => array(
+	array( 'distance' => '45 Lbs', 'men' => array( 'name' => 'A', 'time' => '3:00:00' ) ),
+	array( 'distance' => 'Heavyweight', 'men' => array( 'name' => 'B', 'time' => '3:10:00' ) ),
+	array( 'distance' => 'Litter', 'men' => array( 'name' => 'C', 'time' => '3:20:00' ) ),
+) );
+$ruck_out = arv_results_winners_block( $ruck );
+t( 'a ruck march is counted in categories, not distances', false !== strpos( $ruck_out, '3 categories' ) );
+t( 'and its table header says category too',               false !== strpos( $ruck_out, '>Category<' ) );
+t( 'never claims to be a distance',                         false === strpos( $ruck_out, 'distances' ) && false === strpos( $ruck_out, '>Distance<' ) );
+
+// A real no-headline event, Fat Ox's own shape before PR #258, is untouched:
+// still "distances", still a "Distance" column.
+t( 'a real lap event keeps saying distance',   false !== strpos( $no_headline, '2 distances' ) );
+t( 'and its table header is still Distance',   false !== strpos( $no_headline, '>Distance<' ) );
 
 echo "\nresults: a race's own page:\n";
 $GLOBALS['ARV_OPTIONS'] = array();

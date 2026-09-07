@@ -173,5 +173,33 @@ t( 'labels nothing can measure do not lead',
 	rankWinners( [ { distance: 'Relay' }, { distance: 'Team' } ] ) === false );
 t( 'no winners at all is not a headline', rankWinners( [] ) === false );
 
+console.log( '\na bike event still has a longest division:' );
+t( 'a bike distance reads the same as a run', guessMetres( '50 Miler Bike' ) === guessMetres( '50 Mile' ) );
+t( 'a ride reads the same way',              guessMetres( '20 Mile Ride' ) === guessMetres( '20 Mile' ) );
+const bikeOnly = [
+	{ distance: '50 Miler Bike' }, { distance: '30 Miler Bike' },
+	{ distance: '20 Miler Bike' }, { distance: '10 Miler Bike' },
+];
+t( 'Tonto Mountain 2020 gets a leader',        rankWinners( bikeOnly ) === true );
+t( 'and it is the 50, not whichever was first', bikeOnly[ 0 ].distance === '50 Miler Bike' );
+
+console.log( '\nLast Person Standing, scored in distance rather than time:' );
+const lps = [
+	{ status: 1, gender: 'M', firstname: 'Brian', lastname: 'Bondy', formattime: '129.3' },
+	{ status: 1, gender: 'M', firstname: 'Graham', lastname: 'Felsenthal', formattime: '125.1' },
+	{ status: 1, gender: 'F', firstname: 'Kelly', lastname: 'Young', formattime: '112.6' },
+	{ status: 2, gender: 'M', firstname: 'Did', lastname: 'Notfinish', formattime: '0' },
+];
+const lpsWon = winnersOf( lps );
+t( 'the furthest man wins',       lpsWon.men.name === 'Brian Bondy' && lpsWon.men.time === '129.3 mi' );
+t( 'the furthest woman wins',     lpsWon.women.name === 'Kelly Young' && lpsWon.women.time === '112.6 mi' );
+t( 'DNFs are not finishers here either', lpsWon.finishers === 3 );
+t( 'a real race is not read as mileage', ( () => {
+	const timed = winnersOf( [
+		{ status: 1, gender: 'M', firstname: 'A', lastname: 'B', formattime: '5:00:00' },
+	] );
+	return timed.men.time === '5:00:00';
+} )() );
+
 console.log( `\n${ pass } passed, ${ fail } failed` );
 process.exit( fail ? 1 : 0 );
