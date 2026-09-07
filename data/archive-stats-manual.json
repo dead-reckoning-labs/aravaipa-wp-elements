@@ -563,6 +563,112 @@
 				}
 			],
 			"source": "ultrarunning, read through a text proxy while Wayback was down and Cloudflare was blocking direct reads"
+		},
+		{
+			"name": "Across the Years",
+			"iso": "2017-12-28",
+			"finishers": 394,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "6 Day",
+					"men": {
+						"name": "Ed Ettinghausen",
+						"time": "455.84 mi"
+					},
+					"women": {
+						"name": "Annabel Hepworth",
+						"time": "393.66 mi"
+					}
+				},
+				{
+					"distance": "72 Hour",
+					"men": {
+						"name": "Scott Thompson",
+						"time": "212.05 mi"
+					},
+					"women": {
+						"name": "Amy Mower",
+						"time": "220.45 mi"
+					}
+				},
+				{
+					"distance": "48 Hour",
+					"men": {
+						"name": "Thomas Jackson",
+						"time": "192.10 mi"
+					},
+					"women": {
+						"name": "Dennene Huntley",
+						"time": "153.26 mi"
+					}
+				},
+				{
+					"distance": "24 Hour",
+					"men": {
+						"name": "Florian Nattero",
+						"time": "116.52 mi"
+					},
+					"women": {
+						"name": "Adela Salt",
+						"time": "129.12 mi"
+					}
+				}
+			],
+			"source": "raceresult, read from the MF Results view in a real browser; every mens figure cross-checks against UltraRunning race/18213-18216"
+		},
+		{
+			"name": "Across The Years",
+			"iso": "2018-12-28",
+			"finishers": 474,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "6 Day",
+					"men": {
+						"name": "Budjargal Byambaa",
+						"time": "489.209 mi"
+					},
+					"women": {
+						"name": "Amy Mower",
+						"time": "453.516 mi"
+					}
+				},
+				{
+					"distance": "72 Hour",
+					"men": {
+						"name": "Pablo Espinosa",
+						"time": "225.708 mi"
+					},
+					"women": {
+						"name": "Charlotte Vasarhelyi",
+						"time": "250.704 mi"
+					}
+				},
+				{
+					"distance": "48 Hour",
+					"men": {
+						"name": "Scott Jaime",
+						"time": "174.267 mi"
+					},
+					"women": {
+						"name": "Jess Mullen",
+						"time": "167.969 mi"
+					}
+				},
+				{
+					"distance": "24 Hour",
+					"men": {
+						"name": "Mark Hammond",
+						"time": "130.176 mi"
+					},
+					"women": {
+						"name": "Marisa Lizak",
+						"time": "130.176 mi"
+					}
+				}
+			],
+			"source": "raceresult, read from the MF Results view in a real browser; every mens figure cross-checks against UltraRunning race/21824-21827"
 		}
 	]
 }

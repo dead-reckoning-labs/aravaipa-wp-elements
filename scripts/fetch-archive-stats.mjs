@@ -843,7 +843,34 @@ function guessSeconds( name ) {
 	return 0;
 }
 
-function parseClax( xml ) {
+/**
+ * Which of a shared file's courses belong to the event asking for them.
+ *
+ * Aravaipa times McDowell Mountain Frenzy and Mayhem Night Runs on one
+ * evening at one park and scores them into one Ultracast file, twice
+ * named for it ("McDowell Mountain Frenzy and Mayhem 2019.clax"). Both
+ * archive rows point at that one file, so both were reading all of it:
+ * the 2017, 2018 and 2019 rows each showed the same eight distances and
+ * the same 550, 611 and 671 finishers, the Frenzy's 50 Mile sitting in
+ * Mayhem's table and Mayhem's 5M sitting in the Frenzy's.
+ *
+ * The file separates them itself. Mayhem's courses are named for it,
+ * "Mayhem 25k", "Mayhem 10M", "Mayhem 5M", and the Frenzy's are the bare
+ * distances it has run under since 2010, 50M through 5M. So each event
+ * takes the half that carries its own name.
+ *
+ * An event with no rule here keeps the whole file, which is every other
+ * Ultracast row on the archive.
+ */
+const SHARED_COURSES = {
+	'mayhem night runs': ( course ) => /^mayhem\b/i.test( course ),
+	'mcdowell mountain frenzy': ( course ) => ! /^mayhem\b/i.test( course ),
+};
+
+const coursesFor = ( name ) =>
+	SHARED_COURSES[ String( name || '' ).trim().toLowerCase() ] || ( () => true );
+
+function parseClax( xml, keep = () => true ) {
 	const entrants = new Map();
 
 	for ( const m of xml.matchAll( /<E\b[^>]*\/>/g ) ) {
@@ -881,9 +908,14 @@ function parseClax( xml ) {
 
 		if ( ! name ) continue;
 
-		seen++;
-
 		const course = courseName( e.p || 'Results' );
+
+		// Counted after the filter, not before it, so an event sharing a
+		// file with another reports its own finishers rather than both
+		// events' added together.
+		if ( ! keep( course ) ) continue;
+
+		seen++;
 
 		( byCourse[ course ] ||= [] ).push( {
 			name,
@@ -1053,7 +1085,7 @@ async function main() {
 			// course lengths it carries, instead of the caller guessing it
 			// from how many files happened to be listed.
 			if ( clax ) {
-				const got = parseClax( body );
+				const got = parseClax( body, coursesFor( row.name ) );
 				if ( ! got ) { skipped.push( `${ row.name } ${ row.iso }: ${ file.label } unparseable` ); continue; }
 
 				// One clax file is the whole event, every distance in it,
