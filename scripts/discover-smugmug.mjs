@@ -31,6 +31,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { raceMatcher, normalise, yearFrom, IS_RIDE } from './lib/race-match.mjs';
 
 const KEY = process.env.SMUGMUG_API_KEY;
 
@@ -90,59 +91,13 @@ const api = async path => {
 };
 
 // ---------------------------------------------------------------------------
-// The matcher. Deliberately the same rules as the Films one; see the header.
+// The matcher lives in scripts/lib/race-match.mjs now, shared with the
+// Zenfolio walker, which asks the identical question of a different host.
+// Two copies would drift, and the drift would be the expensive kind: both
+// would still accept and reject galleries, just not the same ones, so the
+// same race could arrive under one name from one host and another from the
+// other, or a stranger's race be published as Aravaipa's on one and not it.
 // ---------------------------------------------------------------------------
-
-const GENERIC = new Set(
-  ('mountain mountains canyon valley ridge creek desert lake park springs river peak peaks ' +
-   'trail trails endurance festival classic series marathon ultras ultra night runs run running ' +
-   'race races events event photos photo gallery half').split(' ')
-);
-
-/**
- * Aravaipa Rides is the mountain-bike brand, on its own site at
- * aravaiparides.com, and its galleries sit in the same SmugMug folders as
- * the running ones ("Sinister Night Rides 2026" beside "Sinister Night
- * Run"). Same call as leaving the Aravaipa Rides podcast off
- * aravaiparunning.com's podcasts page: it is a distinct brand, not a
- * distinct format of the same one.
- *
- * Matched on the word rather than the race, because the race name is
- * shared: it is the gallery that is a ride, not the event.
- */
-const IS_RIDE = /\b(rides?|bike|mtb)\b/i;
-
-const normalise = s =>
-  String(s)
-    .toLowerCase()
-    // "Mountain 2 Fountain" is how Let's Wander writes "Mountain to
-    // Fountain", and "50K & 27K" is how everyone writes "and". Folded here
-    // rather than added to the race list, because it is how the name was
-    // typed, not another name for the race.
-    .replace(/\b2\b/g, ' to ')
-    .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const phrasesFor = race => {
-  const words = normalise(race).split(' ');
-  const out = [];
-
-  for (let n = words.length; n > 0; n--) {
-    const phrase = words.slice(0, n).join(' ');
-    if (phrase.length < 5) continue;
-    // Seven, not six. Six was tried, to let "Bobcat" name Bobcat Trail
-    // Runs, and it immediately matched Spring Velvet's "Copper Mtn Cross
-    // Country Meet" to Copper Corridor on the word "copper". One folder
-    // gained is not worth one other promoter's race published as Aravaipa's,
-    // and the Bobcat gallery is covered by the store's existing row anyway.
-    if (n === 1 && (phrase.length < 7 || GENERIC.has(phrase))) continue;
-    out.push(phrase);
-  }
-
-  return out;
-};
 
 const raceNames = String(
   args.races ? readFileSync(args.races, 'utf8') : ''
@@ -156,54 +111,8 @@ if (!raceNames.length) {
   process.exit(1);
 }
 
-const RACE_PHRASES = raceNames.map(race => ({ race, phrases: phrasesFor(race) }));
+const raceFor = raceMatcher(raceNames);
 
-/**
- * The Aravaipa race a folder is for, or null.
- *
- * Longest matching phrase across every race wins, not the first race that
- * matches anything.
- */
-const raceFor = name => {
-  const hay = ` ${normalise(name)} `;
-  let best = null;
-  let bestLen = 0;
-
-  for (const { race, phrases } of RACE_PHRASES) {
-    for (const phrase of phrases) {
-      if (phrase.length <= bestLen) continue;
-      if (hay.includes(` ${phrase} `)) {
-        best = race;
-        bestLen = phrase.length;
-      }
-    }
-  }
-
-  return best;
-};
-
-// A year written anywhere in a folder name, its own or an ancestor's.
-const yearFrom = (...names) => {
-  for (const n of names) {
-    const m = String(n).match(/\b(20[12]\d)\b/);
-    if (m) return Number(m[1]);
-  }
-  return 0;
-};
-
-/**
- * When nobody wrote a year down, ask SmugMug when the gallery went up.
- *
- * Aravaipa and Let's Wander both put the year in the folder name, but
- * Spring Velvet does not ("Rock River Canyon 50K & 27K Trail Race" sits at
- * the account root with no year anywhere above it), and rejecting on that
- * threw away both of her real Aravaipa galleries.
- *
- * A gallery is uploaded within weeks of the race it is of, so DateAdded is
- * a good year even though it would be a poor date. Only ever a fallback:
- * a year somebody typed deliberately beats one inferred from an upload
- * timestamp, since a re-upload years later would carry the wrong one.
- */
 const yearFromUpload = node => {
   const m = String(node.DateAdded ?? '').match(/^(20[12]\d)/);
   return m ? Number(m[1]) : 0;
