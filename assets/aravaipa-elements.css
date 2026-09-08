@@ -10356,9 +10356,13 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	border-bottom: 1px solid #e3e3e3;
 }
 
+/* 4:5, matching the source cards exactly. Cropping these to a square cut
+   the top off every one of them, and the athlete's first name is printed up
+   there: the grid read "TUOMI", "BENNETT", "VADEBONCOEUR" with the given
+   names sliced off. */
 .arv-team__photo {
 	width: 100%;
-	aspect-ratio: 1 / 1;
+	aspect-ratio: 4 / 5;
 	object-fit: cover;
 	border-radius: var(--arv-radius);
 	margin: 0 0 0.6rem;
