@@ -4426,7 +4426,17 @@
 	   this column's preferred width to the whole row and pushes the buttons
 	   onto a line of their own. */
 	flex: 1 1 0;
-	min-width: 0;
+	/* But never nothing. min-width:0 alone let the chips take the entire
+	   row: they wrap, but only once the column holding them runs out of
+	   width, and nothing was stopping that column growing until the name
+	   beside it had none left. Adrenaline Virtual Night Race carries ten
+	   archive files and its name was down to 78px, four lines of two or
+	   three letters, against 886px of chips. A floor here is what makes
+	   the chips wrap instead, since one of the two has to.
+	   min() rather than a flat value so this cannot itself overflow: the
+	   row wraps to a single column on a narrow screen, where 100% is the
+	   smaller number and the floor stops applying. */
+	min-width: min( 100%, 18rem );
 }
 
 .arv-results__race-name {
