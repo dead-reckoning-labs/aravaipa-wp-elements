@@ -1877,6 +1877,15 @@ function arv_results_race_groups_markup( $rows, $year = '' ) {
 		$out .= arv_results_finisher_count( $stats ) . '</p>';
 		$out .= '</div>';
 		$out .= arv_results_links( $latest );
+
+		// A row that exists only for its note, such as a running stopped by
+		// weather before it was ever scored: arv_results_links() already
+		// returned nothing for it, and without this the row would carry a
+		// date and a name and nothing else, indistinguishable from a bug.
+		if ( ! empty( $latest['note'] ) ) {
+			$out .= '<p class="arv-results__race-note">' . esc_html( $latest['note'] ) . '</p>';
+		}
+
 		$out .= '</div>';
 		$out .= arv_results_winners_block( $stats );
 

@@ -4446,6 +4446,13 @@
 	line-height: 1.3;
 }
 
+.arv-results__race-note {
+	margin: 0.35rem 0 0;
+	font-size: var(--arv-fs-body);
+	font-style: italic;
+	color: var(--arv-results-muted);
+}
+
 .arv-results__race-meta {
 	margin: 0;
 	/* flex-grow: 0 on a flex-wrap item does not mean "shrink to content": it
