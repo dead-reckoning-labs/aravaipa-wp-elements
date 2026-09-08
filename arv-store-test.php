@@ -5265,6 +5265,27 @@ arv_test_queue_response( array( 'code' => 200, 'body' => '<head><title>no og tag
 t( 'a page with no tag gives no cover',       '' === arv_photos_cover( 'https://bare.test/a' ) );
 t( 'an empty url is not fetched at all',      '' === arv_photos_cover( '' ) );
 
+// The budget, which exists because /photos/ served a Cloudflare 524 the
+// first time it rebuilt after the Zenfolio import took the store from 206
+// galleries to 559. A cold cache meant hundreds of fetches into other
+// people's servers inside one render, Cloudflare allows the origin 100
+// seconds, and the page never finished.
+//
+// Driven through the filter rather than by burning ten real seconds in the
+// suite: a budget of zero means the very next uncached gallery is already
+// over it.
+$GLOBALS['_transients'] = array();
+add_filter( 'arv_photos_cover_budget', function () { return 0.0; } );
+arv_test_queue_response( array( 'code' => 200, 'body' => '<head><meta property="og:image" content="https://cdn.test/late.jpg"></head>' ) );
+t( 'past the budget nothing is fetched',      '' === arv_photos_cover( 'https://slow.test/a' ) );
+// And crucially not remembered as a failure: "not yet" is not "there is
+// none", so the next render still gets to try.
+t( 'and no failure is cached for it',         false === get_transient( 'arv_photo_cover_' . md5( 'https://slow.test/a' ) ) );
+// An explicit refresh is the warm pass, which runs from WP-CLI where there
+// is no Cloudflare timeout to respect, so the budget must not gag it.
+t( 'a fresh read ignores the budget',         'https://cdn.test/late.jpg' === arv_photos_cover( 'https://slow.test/a', true ) );
+unset( $GLOBALS['FILTERS']['arv_photos_cover_budget'] );
+
 echo "\nphotos, dates and races still to come:\n";
 // A gallery row exists the moment a photographer is booked, which for a
 // December race can be most of a year before a single picture is taken.
