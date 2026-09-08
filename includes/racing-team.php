@@ -323,10 +323,18 @@ function arv_athlete_profile_results_markup( $athlete ) {
 /**
  * The videos an athlete appears in.
  *
- * Rendered as links rather than 65 embedded iframes, which is what the old
- * roster page did on a single page. One athlete's handful of videos could
- * be embedded safely, but a link keeps the page weightless and still gets
- * someone to the video in one click.
+ * Real cards with the video's own title and thumbnail rather than a list
+ * reading "Video 1, Video 2, Video 3", which told a visitor nothing about
+ * what they were about to click.
+ *
+ * Titles and thumbnails come from YouTube's oEmbed endpoint, which needs no
+ * API key, and are cached for a week: the title of a published video does
+ * not change, and an athlete page should not make an outbound request per
+ * video on every load.
+ *
+ * Still links out rather than embedding. The old roster page put 65 YouTube
+ * iframes on one URL; a thumbnail is an image, an embed is a megabyte of
+ * player.
  *
  * @param array $athlete
  * @return string
@@ -344,17 +352,72 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 		return '';
 	}
 
-	$out = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2><ul class="arv-athlete__videos-list">';
+	$out = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2>';
+	$out .= '<ul class="arv-athlete__videos-list">';
 
-	foreach ( $urls as $i => $url ) {
-		$out .= '<li><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
-			. esc_html( sprintf( /* translators: video number */ __( 'Video %d', 'aravaipa-elements' ), $i + 1 ) )
-			. '</a></li>';
+	foreach ( $urls as $url ) {
+		$meta = arv_athlete_video_meta( $url );
+
+		$out .= '<li class="arv-athlete__video"><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">';
+
+		if ( '' !== $meta['thumbnail'] ) {
+			$out .= '<img class="arv-athlete__video-thumb" src="' . esc_url( $meta['thumbnail'] ) . '" alt="" loading="lazy" width="320" height="180" />';
+		}
+
+		$out .= '<span class="arv-athlete__video-title">' . esc_html( $meta['title'] ) . '</span>';
+		$out .= '</a></li>';
 	}
 
 	$out .= '</ul></div>';
 
 	return $out;
+}
+
+/**
+ * A video's title and thumbnail, from YouTube's oEmbed endpoint.
+ *
+ * Cached for a week. A failed lookup caches for an hour instead, so a
+ * transient network problem does not pin a blank title in place for the
+ * full week, which is the mistake the photo cover warming made earlier.
+ *
+ * @param string $url
+ * @return array{title: string, thumbnail: string}
+ */
+function arv_athlete_video_meta( $url ) {
+	$key    = 'arv_vid_' . md5( $url );
+	$cached = get_transient( $key );
+
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+
+	$fallback = array( 'title' => __( 'Watch on YouTube', 'aravaipa-elements' ), 'thumbnail' => '' );
+
+	$response = wp_remote_get(
+		'https://www.youtube.com/oembed?format=json&url=' . rawurlencode( $url ),
+		array( 'timeout' => 5 )
+	);
+
+	if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+		set_transient( $key, $fallback, HOUR_IN_SECONDS );
+		return $fallback;
+	}
+
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( ! is_array( $body ) || empty( $body['title'] ) ) {
+		set_transient( $key, $fallback, HOUR_IN_SECONDS );
+		return $fallback;
+	}
+
+	$meta = array(
+		'title'     => (string) $body['title'],
+		'thumbnail' => isset( $body['thumbnail_url'] ) ? (string) $body['thumbnail_url'] : '',
+	);
+
+	set_transient( $key, $meta, WEEK_IN_SECONDS );
+
+	return $meta;
 }
 
 /**
@@ -373,37 +436,64 @@ function arv_athlete_profile_links_markup( $athlete ) {
 	$links = array();
 
 	if ( '' !== $athlete['instagram'] ) {
-		$links[] = array( 'https://www.instagram.com/' . ltrim( $athlete['instagram'], '@' ), 'Instagram' );
+		$links[] = array(
+			'url'   => 'https://www.instagram.com/' . ltrim( $athlete['instagram'], '@' ),
+			'label' => $athlete['instagram'],
+			'icon'  => 'instagram',
+		);
 	}
 
 	if ( '' !== $athlete['strava'] ) {
-		$links[] = array( $athlete['strava'], 'Strava' );
+		$links[] = array( 'url' => $athlete['strava'], 'label' => 'Strava', 'icon' => 'strava' );
 	}
 
-	if ( '' !== $athlete['ultrasignup_id'] ) {
-		$links[] = array( 'https://ultrasignup.com/athlete_history.aspx?athlete_id=' . rawurlencode( $athlete['ultrasignup_id'] ), 'UltraSignup' );
+	if ( '' !== $athlete['ultrasignup_url'] ) {
+		$links[] = array( 'url' => $athlete['ultrasignup_url'], 'label' => 'UltraSignup', 'icon' => '' );
 	}
 
 	if ( '' !== $athlete['ultrarunning_url'] ) {
-		$links[] = array( $athlete['ultrarunning_url'], 'UltraRunning Magazine' );
+		$links[] = array( 'url' => $athlete['ultrarunning_url'], 'label' => 'UltraRunning Magazine', 'icon' => '' );
 	}
 
 	if ( empty( $links ) ) {
 		return '';
 	}
 
-	$out = '<p class="arv-athlete__links">';
+	$out = '<ul class="arv-athlete__links">';
 
-	foreach ( $links as $i => $link ) {
-		if ( $i > 0 ) {
-			$out .= ' ';
-		}
-		$out .= '<a href="' . esc_url( $link[0] ) . '" target="_blank" rel="noopener">' . esc_html( $link[1] ) . '</a>';
+	foreach ( $links as $link ) {
+		$out .= '<li><a href="' . esc_url( $link['url'] ) . '" target="_blank" rel="noopener">'
+			. arv_athlete_social_icon( $link['icon'] )
+			. '<span>' . esc_html( $link['label'] ) . '</span></a></li>';
 	}
 
-	$out .= '</p>';
+	$out .= '</ul>';
 
 	return $out;
+}
+
+/**
+ * An inline SVG mark for a social link.
+ *
+ * Inline rather than an icon font or an image request: it is two links per
+ * page, the paths are tiny, and this way the mark inherits currentColor and
+ * cannot flash unstyled while a font loads.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_athlete_social_icon( $name ) {
+	$icons = array(
+		'instagram' => '<path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.05 1.8.25 2.2.42.6.22 1 .48 1.4.9.43.44.7.83.9 1.4.18.4.38 1 .43 2.2.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.05 1.2-.25 1.8-.42 2.2-.22.6-.48 1-.9 1.4-.44.43-.83.7-1.4.9-.4.18-1 .38-2.2.43-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-1.2-.05-1.8-.25-2.2-.42-.6-.22-1-.48-1.4-.9-.43-.44-.7-.83-.9-1.4-.18-.4-.38-1-.43-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.9c.05-1.2.25-1.8.42-2.2.22-.6.48-1 .9-1.4.44-.43.83-.7 1.4-.9.4-.18 1-.38 2.2-.43C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.1 0-3.5 0-4.8.07-1.1.05-1.7.24-2.1.4-.5.2-.9.44-1.3.84-.4.4-.64.8-.84 1.3-.16.4-.35 1-.4 2.1C2.5 8.5 2.5 8.9 2.5 12s0 3.5.07 4.8c.05 1.1.24 1.7.4 2.1.2.5.44.9.84 1.3.4.4.8.64 1.3.84.4.16 1 .35 2.1.4 1.3.06 1.7.07 4.8.07s3.5 0 4.8-.07c1.1-.05 1.7-.24 2.1-.4.5-.2.9-.44 1.3-.84.4-.4.64-.8.84-1.3.16-.4.35-1 .4-2.1.06-1.3.07-1.7.07-4.8s0-3.5-.07-4.8c-.05-1.1-.24-1.7-.4-2.1-.2-.5-.44-.9-.84-1.3-.4-.4-.8-.64-1.3-.84-.4-.16-1-.35-2.1-.4C15.5 4 15.1 4 12 4z"/><path d="M12 15.3a3.3 3.3 0 1 1 0-6.6 3.3 3.3 0 0 1 0 6.6zm0-8.4a5.1 5.1 0 1 0 0 10.2 5.1 5.1 0 0 0 0-10.2z"/><circle cx="17.3" cy="6.7" r="1.2"/>',
+		'strava'    => '<path d="M13.8 2 7 15.2h4l2.8-5.5 2.8 5.5h4L13.8 2zm2.8 13.2-1.9 3.7-1.9-3.7H9.9L14.7 24l4.8-8.8h-2.9z"/>',
+	);
+
+	if ( ! isset( $icons[ $name ] ) ) {
+		return '';
+	}
+
+	return '<svg class="arv-athlete__icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" focusable="false">'
+		. $icons[ $name ] . '</svg>';
 }
 
 /**

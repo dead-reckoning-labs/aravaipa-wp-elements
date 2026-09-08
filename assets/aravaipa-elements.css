@@ -10426,11 +10426,23 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 }
 
 .arv-athlete__links {
+	list-style: none;
 	margin: 1.5rem 0 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.25rem;
 }
 
 .arv-athlete__links a {
-	margin-right: 1rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+/* Inherits the link colour, so the mark and its label always match. */
+.arv-athlete__icon {
+	flex: none;
 }
 
 /* Athlete profile: results and videos, rendered from the plain text fields
@@ -10458,13 +10470,56 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	margin-top: 0;
 }
 
-.arv-athlete__results-list,
-.arv-athlete__videos-list {
+.arv-athlete__results-list {
 	margin: 0 0 0 1.25rem;
 	padding: 0;
 }
 
-.arv-athlete__results-list li,
-.arv-athlete__videos-list li {
+.arv-athlete__results-list li {
 	margin-bottom: 0.35rem;
+}
+
+/* Video cards: a thumbnail and the video's real title, rather than a list
+   of links reading "Video 1, Video 2", which told a visitor nothing about
+   what they were about to click. */
+.arv-athlete__videos-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1rem;
+}
+
+@media (min-width: 600px) {
+	.arv-athlete__videos-list {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.arv-athlete__video a {
+	display: flex;
+	gap: 0.75rem;
+	align-items: flex-start;
+	text-decoration: none !important;
+	color: inherit;
+}
+
+.arv-athlete__video-thumb {
+	flex: none;
+	width: 120px;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	border-radius: var(--arv-radius);
+	background: #eee;
+}
+
+.arv-athlete__video-title {
+	font-size: var(--arv-fs-meta);
+	line-height: 1.35;
+}
+
+.arv-athlete__video a:hover .arv-athlete__video-title {
+	color: var(--arv-accent, #ff2a13);
 }
