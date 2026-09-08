@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.99.25
+ * Version:           0.99.26
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.99.25' );
+define( 'ARV_ELEMENTS_VERSION', '0.99.26' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -28,6 +28,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/seo.php';
 
 // After seo.php, which owns arv_seo_handled_elsewhere(): this one calls it.
 require_once ARV_ELEMENTS_PATH . 'includes/page-seo.php';
+
+// The FAQ page's search box, FAQPage schema and search-term logging.
+// Loaded unconditionally because it registers a shortcode, same as the
+// stores below it.
+require_once ARV_ELEMENTS_PATH . 'includes/faq.php';
 
 // The single source of truth for races. Loaded on the front end too: the
 // elements read from it on every page render, not just in the admin.
@@ -343,6 +348,16 @@ function arv_elements_assets() {
 	wp_enqueue_script(
 		'aravaipa-live',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-live.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
+	// The FAQ page's search filter. No-ops anywhere that markup is not
+	// present, same as every other script here.
+	wp_enqueue_script(
+		'aravaipa-faq',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-faq.js',
 		array(),
 		ARV_ELEMENTS_VERSION,
 		true
