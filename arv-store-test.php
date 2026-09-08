@@ -5837,6 +5837,17 @@ t( 'then the broadcast',                  'broadcast' === $items[3]['type'] );
 t( 'a limit is honoured',                 2 === count( arv_media_latest_items( 2 ) ) );
 t( 'and it keeps the newest, not the oldest', 'article' === arv_media_latest_items( 1 )[0]['type'] );
 
+// A sidebar sitting under its own "Recent Posts" widget asks for
+// everything but articles, so the two blocks never show the same post.
+$no_articles = arv_media_latest_items( 0, 0, array( 'broadcast', 'film', 'podcast' ) );
+t( 'a source filter drops the excluded type', ! in_array( 'article', array_column( $no_articles, 'type' ), true ) );
+t( 'and keeps the other three',           3 === count( $no_articles ) );
+t( 'still newest first within the filter', 'film' === $no_articles[0]['type'] ); // 05-06 film outranks the 05-05 podcast and 05-04 broadcast once the 05-07 article is excluded
+
+$shortcode_html = arv_media_latest_shortcode( array( 'sources' => 'broadcast, podcast' ) );
+t( 'the shortcode parses a comma-separated sources attribute',
+	false === strpos( $shortcode_html, 'A Film' ) && false !== strpos( $shortcode_html, 'An Episode' ) );
+
 t( 'the podcast item links to the show page, not anchor.fm',
 	home_url( '/podcasts/inside-aravaipa/' ) === $items[2]['url'] );
 t( 'the broadcast carries a real badge',  'Broadcast' === $items[3]['badge'] );

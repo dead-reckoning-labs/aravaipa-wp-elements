@@ -269,16 +269,33 @@ add_action( 'save_post', 'arv_media_latest_flush_on_save' );
 /**
  * Every source, merged and sorted newest first.
  *
- * @param int $limit 0 for everything.
+ * @param int      $limit   0 for everything.
+ * @param int      $offset
+ * @param string[] $sources Item types to include: broadcast, film, podcast,
+ *                          article. Empty for all four. A sidebar sitting
+ *                          under its own "Recent Posts" widget passes
+ *                          everything but 'article' here, so the two blocks
+ *                          do not surface the same post twice.
  * @return array<int, array>
  */
-function arv_media_latest_items( $limit = 0, $offset = 0 ) {
+function arv_media_latest_items( $limit = 0, $offset = 0, $sources = array() ) {
 	$items = array_merge(
 		arv_media_latest_from_watch(),
 		arv_media_latest_from_films(),
 		arv_media_latest_from_podcasts(),
 		arv_media_latest_from_posts()
 	);
+
+	if ( ! empty( $sources ) ) {
+		$items = array_values(
+			array_filter(
+				$items,
+				function ( $item ) use ( $sources ) {
+					return in_array( $item['type'], $sources, true );
+				}
+			)
+		);
+	}
 
 	usort(
 		$items,
@@ -378,7 +395,8 @@ add_shortcode( 'arv_media_hero', 'arv_media_hero_shortcode' );
 function arv_media_latest_render( $args = array() ) {
 	$items = arv_media_latest_items(
 		isset( $args['limit'] ) ? (int) $args['limit'] : 0,
-		isset( $args['offset'] ) ? (int) $args['offset'] : 0
+		isset( $args['offset'] ) ? (int) $args['offset'] : 0,
+		isset( $args['sources'] ) ? (array) $args['sources'] : array()
 	);
 
 	if ( empty( $items ) ) {
@@ -473,10 +491,15 @@ function arv_media_latest_shortcode( $atts ) {
 			// 1 where a hero sits directly above this, so the same item is
 			// not the hero and the first card at once.
 			'offset'  => 0,
+			// Comma-separated: broadcast, film, podcast, article. Empty for
+			// all four.
+			'sources' => '',
 		),
 		$atts,
 		'arv_media_latest'
 	);
+
+	$atts['sources'] = array_filter( array_map( 'trim', explode( ',', $atts['sources'] ) ) );
 
 	return arv_media_latest_render( $atts );
 }
