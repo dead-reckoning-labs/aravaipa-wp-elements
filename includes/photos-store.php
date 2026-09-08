@@ -220,6 +220,41 @@ function arv_photos_race_dates() {
 		$sources[] = arv_race_store_get();
 	}
 
+	// Memoised against what the sources actually say, rather than not at
+	// all. The docblock above is right that a plain static is unsafe here,
+	// and it was measured being unsafe: a static cached whatever the two
+	// stores held the first time anything asked, and in the test suite that
+	// was an earlier render against empty stores, leaving every gallery
+	// undated for the rest of the run.
+	//
+	// The cost of getting that right was worse than it looked, because
+	// arv_photos_race_date() is called once per gallery and this rebuilds
+	// the whole index every time: 206 galleries against ~570 race rows,
+	// each row through a regex, 206 times over. 3.5 of the 11 seconds an
+	// uncached /photos/ took were spent here, rebuilding the same index
+	// 205 times more than necessary.
+	//
+	// Keyed on a fingerprint of the sources, so a store that changes
+	// mid-request still invalidates it and the test scenario above still
+	// recomputes. The fingerprint is string work with no regex in it,
+	// which is the whole reason it is cheaper than what it replaces.
+	static $memo = array();
+
+	$fingerprint = '';
+
+	foreach ( $sources as $rows ) {
+		foreach ( (array) $rows as $row ) {
+			$fingerprint .= ( isset( $row['name'] ) ? $row['name'] : '' ) . '|'
+				. ( isset( $row['iso'] ) ? $row['iso'] : '' ) . "\n";
+		}
+	}
+
+	$fingerprint = md5( $fingerprint );
+
+	if ( isset( $memo[ $fingerprint ] ) ) {
+		return $memo[ $fingerprint ];
+	}
+
 	foreach ( $sources as $rows ) {
 		foreach ( (array) $rows as $row ) {
 			if ( empty( $row['name'] ) || empty( $row['iso'] ) ) {
@@ -243,6 +278,10 @@ function arv_photos_race_dates() {
 			}
 		}
 	}
+
+	// One entry is enough: the fingerprint only changes when a store does,
+	// which inside a single request is once at most.
+	$memo = array( $fingerprint => $dates );
 
 	return $dates;
 }
