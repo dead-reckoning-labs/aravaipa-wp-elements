@@ -10383,6 +10383,41 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	color: #6a6a6a;
 }
 
+/* Stands in for a card photo nobody has on file, so the grid stays even
+   instead of collapsing that cell to its text and leaving a hole. */
+.arv-team__photo--none {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2rem;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	color: #b4b4b4;
+	background: #f0f0f0;
+}
+
+/* The alumni note is why the section exists: where they went after
+   Aravaipa. It replaces the hometown line on an alumni card rather than
+   sitting beside it. */
+.arv-team__note {
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+	line-height: 1.35;
+}
+
+.arv-team__badge {
+	align-self: flex-start;
+	margin: 0.15rem 0;
+	padding: 0.1rem 0.5rem;
+	border: 1px solid #d8d8d8;
+	border-radius: 999px;
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #6a6a6a;
+}
+
 .arv-team-empty {
 	color: #6a6a6a;
 }
@@ -10479,47 +10514,81 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	margin-bottom: 0.35rem;
 }
 
-/* Video cards: a thumbnail and the video's real title, rather than a list
-   of links reading "Video 1, Video 2", which told a visitor nothing about
-   what they were about to click. */
+/* Video row: thumbnails that scroll sideways and swap to a real player
+   when clicked. Horizontal rather than a grid because an athlete has a
+   handful of videos, not a library, and a row keeps them beside the
+   results instead of pushing the page longer. */
 .arv-athlete__videos-list {
 	list-style: none;
 	margin: 0;
-	padding: 0;
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 1rem;
-}
-
-@media (min-width: 600px) {
-	.arv-athlete__videos-list {
-		grid-template-columns: repeat(2, 1fr);
-	}
-}
-
-.arv-athlete__video a {
+	padding: 0 0 0.5rem;
 	display: flex;
-	gap: 0.75rem;
-	align-items: flex-start;
-	text-decoration: none !important;
+	gap: 1rem;
+	overflow-x: auto;
+	scroll-snap-type: x proximity;
+	-webkit-overflow-scrolling: touch;
+}
+
+.arv-athlete__video {
+	flex: 0 0 260px;
+	scroll-snap-align: start;
+}
+
+.arv-athlete__video-play {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	text-align: left;
+	cursor: pointer;
 	color: inherit;
+	font: inherit;
+}
+
+.arv-athlete__video-thumb,
+.arv-athlete__video-frame {
+	display: block;
+	width: 100%;
+	aspect-ratio: 16 / 9;
+	border-radius: var(--arv-radius);
+	background: #eee;
+	border: 0;
 }
 
 .arv-athlete__video-thumb {
-	flex: none;
-	width: 120px;
-	height: auto;
-	aspect-ratio: 16 / 9;
 	object-fit: cover;
-	border-radius: var(--arv-radius);
-	background: #eee;
+}
+
+/* A play affordance, so a thumbnail reads as a video rather than a photo. */
+.arv-athlete__video-play {
+	position: relative;
+}
+
+.arv-athlete__video-play::after {
+	content: "";
+	position: absolute;
+	top: calc(50% - 1.4rem);
+	left: calc(50% - 1.4rem);
+	width: 2.8rem;
+	height: 2.8rem;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.65) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/1.4rem no-repeat;
+	pointer-events: none;
+	transition: background-color 0.15s;
+}
+
+.arv-athlete__video-play:hover::after {
+	background-color: var(--arv-accent, #ff2a13);
 }
 
 .arv-athlete__video-title {
+	display: block;
+	margin-top: 0.5rem;
 	font-size: var(--arv-fs-meta);
 	line-height: 1.35;
 }
 
-.arv-athlete__video a:hover .arv-athlete__video-title {
+.arv-athlete__video-play:hover .arv-athlete__video-title {
 	color: var(--arv-accent, #ff2a13);
 }
