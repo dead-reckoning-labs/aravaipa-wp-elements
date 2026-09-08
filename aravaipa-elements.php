@@ -51,6 +51,12 @@ require_once ARV_ELEMENTS_PATH . 'includes/athlete-store.php';
 require_once ARV_ELEMENTS_PATH . 'includes/racing-team.php';
 require_once ARV_ELEMENTS_PATH . 'includes/athlete-admin.php';
 
+// Which upcoming races an athlete is registered for, matched against
+// UltraSignup and rebuilt on a daily cron rather than fetched per page
+// view. Loaded unconditionally: the cron hook and the admin screen both
+// need to be reachable regardless of what request brought WordPress up.
+require_once ARV_ELEMENTS_PATH . 'includes/athlete-upcoming.php';
+
 // Past results, read by the Aravaipa Results element. An option rather than
 // a post type, since nothing in it is ever edited by hand; see the file.
 require_once ARV_ELEMENTS_PATH . 'includes/results-store.php';

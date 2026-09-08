@@ -10592,3 +10592,22 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-athlete__video-play:hover .arv-athlete__video-title {
 	color: var(--arv-accent, #ff2a13);
 }
+
+/* An athlete's upcoming races, matched against UltraSignup rather than
+   typed in by hand, so it never goes stale the way a manual field would. */
+.arv-athlete__upcoming {
+	margin: 2.5rem 0 0;
+}
+
+.arv-athlete__upcoming h2 {
+	margin: 0 0 1rem;
+}
+
+.arv-athlete__upcoming-list {
+	margin: 0 0 0 1.25rem;
+	padding: 0;
+}
+
+.arv-athlete__upcoming-list li {
+	margin-bottom: 0.5rem;
+}

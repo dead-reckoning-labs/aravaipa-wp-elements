@@ -254,6 +254,7 @@ function arv_athlete_profile_content( $content ) {
 
 	return arv_athlete_profile_meta_markup( $athlete )
 		. $content
+		. ( function_exists( 'arv_athlete_profile_upcoming_markup' ) ? arv_athlete_profile_upcoming_markup( $athlete ) : '' )
 		. arv_athlete_profile_results_markup( $athlete )
 		. arv_athlete_profile_videos_markup( $athlete )
 		. arv_athlete_profile_links_markup( $athlete );
