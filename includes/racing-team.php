@@ -607,7 +607,7 @@ function arv_athlete_breadcrumbs( $output ) {
 
 	$crumb = '<span itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">'
 		. '<a itemtype="http://schema.org/Thing" itemprop="item" href="' . esc_url( get_permalink( $roster ) ) . '">'
-		. '<span itemprop="name">' . esc_html( get_the_title( $roster ) ) . '</span></a>'
+		. '<span itemprop="name">' . esc_html( arv_athlete_breadcrumb_label( $roster ) ) . '</span></a>'
 		. $delimiter
 		. '<meta itemprop="position" content="2" />'
 		. '</span>';
@@ -627,4 +627,25 @@ function arv_athlete_breadcrumbs( $output ) {
 
 	return $output;
 }
-add_filter( 'x_breadcrumbs', 'arv_athlete_breadcrumbs' );
+/**
+ * The label for the roster crumb.
+ *
+ * Not the page's own title: that is "Aravaipa Racing Team Powered By HOKA",
+ * which is right at the top of the page it names and far too long sitting
+ * between a house icon and an athlete's name. Filterable so the sponsor
+ * changing does not mean editing this file.
+ *
+ * @param WP_Post $roster
+ * @return string
+ */
+function arv_athlete_breadcrumb_label( $roster ) {
+	return (string) apply_filters( 'arv_athlete_breadcrumb_label', __( 'Racing Team', 'aravaipa-elements' ), $roster );
+}
+
+// Priority 50, not the default 10. The theme calls
+// apply_filters( 'x_breadcrumbs', '', $args ) with an empty string and
+// Cornerstone's own Breadcrumbs::outputHtml is what actually builds the
+// markup, also at 10. Registered first, this filter was handed '' and
+// returned early every time, so the fix silently did nothing on a live
+// page while looking correct in isolation.
+add_filter( 'x_breadcrumbs', 'arv_athlete_breadcrumbs', 50 );
