@@ -384,3 +384,70 @@ function arv_athlete_profile_links_markup( $athlete ) {
 
 	return $out;
 }
+
+/**
+ * Put Racing Team into an athlete's breadcrumb trail.
+ *
+ * The theme builds breadcrumbs from a post's own hierarchy, and a custom
+ * post type has none, so every athlete read "Home > Devon Yanko" as though
+ * they sat at the top level of the site. The roster page they belong to was
+ * missing from the trail entirely, which is wrong for a visitor trying to
+ * get back to it and wrong for the BreadcrumbList schema the theme emits
+ * around it.
+ *
+ * Filters the rendered markup rather than the data, because that is the only
+ * hook the theme offers: x_breadcrumbs passes the finished HTML string. The
+ * inserted crumb is built to match the surrounding structure exactly,
+ * including the itemprop attributes, and the trailing position values are
+ * renumbered so the schema stays sequential.
+ *
+ * @param string $output
+ * @return string
+ */
+function arv_athlete_breadcrumbs( $output ) {
+	if ( ! is_singular( ARV_ATHLETE_POST_TYPE ) || '' === $output ) {
+		return $output;
+	}
+
+	$roster = get_page_by_path( 'racing-team' );
+
+	if ( ! $roster ) {
+		return $output;
+	}
+
+	// The athlete's own crumb is the last item in the list; the new one goes
+	// immediately before it.
+	$needle = strrpos( $output, '<span itemprop="itemListElement"' );
+
+	if ( false === $needle ) {
+		return $output;
+	}
+
+	$delimiter = '';
+	if ( preg_match( '~<span class="delimiter">.*?</span>~s', $output, $m ) ) {
+		$delimiter = ' ' . $m[0] . ' ';
+	}
+
+	$crumb = '<span itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">'
+		. '<a itemtype="http://schema.org/Thing" itemprop="item" href="' . esc_url( get_permalink( $roster ) ) . '">'
+		. '<span itemprop="name">' . esc_html( get_the_title( $roster ) ) . '</span></a>'
+		. $delimiter
+		. '<meta itemprop="position" content="2" />'
+		. '</span>';
+
+	$output = substr( $output, 0, $needle ) . $crumb . substr( $output, $needle );
+
+	// The athlete was position 2 and is now position 3.
+	$output = preg_replace_callback(
+		'~<meta itemprop="position" content="(\d+)"~',
+		function () {
+			static $i = 0;
+			$i++;
+			return '<meta itemprop="position" content="' . $i . '"';
+		},
+		$output
+	);
+
+	return $output;
+}
+add_filter( 'x_breadcrumbs', 'arv_athlete_breadcrumbs' );
