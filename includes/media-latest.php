@@ -477,6 +477,98 @@ function arv_media_latest_card( $item ) {
 }
 
 /**
+ * The same merged feed, sized for a sidebar.
+ *
+ * arv_media_latest_render() breaks its own section out to full viewport
+ * width with a negative margin trick, which is correct on /media/ and
+ * wrong anywhere the section is not the whole width of the page: dropped
+ * into the ~300px blog sidebar it did exactly what that CSS says to do,
+ * bled out of the sidebar column and over the article text next to it.
+ *
+ * Built the same way arv_articles_rail_render() solved the identical
+ * problem for Recent Posts: a plain list, sized to its container, no
+ * full-bleed, no grid. Reuses that rail's proven layout with its own class
+ * names rather than sharing arv-articles-rail's, so a later change to one
+ * rail cannot silently reshape the other.
+ *
+ * @param array $args heading, limit, offset, sources.
+ * @return string
+ */
+function arv_media_latest_rail_render( $args = array() ) {
+	$items = arv_media_latest_items(
+		isset( $args['limit'] ) ? (int) $args['limit'] : 6,
+		isset( $args['offset'] ) ? (int) $args['offset'] : 0,
+		isset( $args['sources'] ) ? (array) $args['sources'] : array()
+	);
+
+	if ( empty( $items ) ) {
+		return '';
+	}
+
+	$heading = isset( $args['heading'] ) ? trim( (string) $args['heading'] ) : '';
+
+	$out = '<section class="arv-media-latest-rail">';
+
+	if ( '' !== $heading ) {
+		$out .= '<h4 class="arv-media-latest-rail__head">' . esc_html( $heading ) . '</h4>';
+	}
+
+	$out .= '<ul class="arv-media-latest-rail__list">';
+
+	foreach ( $items as $item ) {
+		$stamp = strtotime( $item['date'] );
+
+		$out .= '<li class="arv-media-latest-rail__item">'
+			. '<a class="arv-media-latest-rail__link" href="' . esc_url( $item['url'] ) . '">';
+
+		$out .= '<span class="arv-media-latest-rail__thumb">';
+
+		if ( '' !== $item['thumb'] ) {
+			$out .= '<img src="' . esc_url( $item['thumb'] ) . '" alt="" loading="lazy" decoding="async" />';
+		}
+
+		$out .= '</span>';
+
+		$out .= '<span class="arv-media-latest-rail__body">';
+		$out .= '<span class="arv-media-latest-rail__cat">' . esc_html( $item['badge'] ) . '</span>';
+		$out .= '<span class="arv-media-latest-rail__title">' . esc_html( $item['title'] ) . '</span>';
+
+		if ( $stamp ) {
+			$out .= '<time class="arv-media-latest-rail__date" datetime="' . esc_attr( gmdate( 'Y-m-d', $stamp ) ) . '">'
+				. esc_html( gmdate( 'F j, Y', $stamp ) ) . '</time>';
+		}
+
+		$out .= '</span></a></li>';
+	}
+
+	return $out . '</ul></section>';
+}
+
+/**
+ * [arv_media_latest_rail] for the blog sidebar.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_media_latest_rail_shortcode( $atts ) {
+	$atts = shortcode_atts(
+		array(
+			'heading' => '',
+			'limit'   => 6,
+			'offset'  => 0,
+			'sources' => '',
+		),
+		$atts,
+		'arv_media_latest_rail'
+	);
+
+	$atts['sources'] = array_filter( array_map( 'trim', explode( ',', $atts['sources'] ) ) );
+
+	return arv_media_latest_rail_render( $atts );
+}
+add_shortcode( 'arv_media_latest_rail', 'arv_media_latest_rail_shortcode' );
+
+/**
  * [arv_media_latest] so a page can carry this without Cornerstone.
  *
  * @param array $atts
