@@ -801,6 +801,26 @@
 				}
 			],
 			"source": "raceresult, my.raceresult.com/377012, read from the Overall Results view of the four headline distances in a real browser, the same four this archive has carried for 2016 through 2019; the event's other twelve entries (100K, 100 Mile, 200 Miler, 12 Hour, 6 Hour, Last Person Standing and six per-day marathons) are not read here, matching those years. Not sourced from the live board despite this row carrying a live link: board id 465 lists all 599 participants with ft=null and lapCount=0 across the board, a dead timing record rather than a formatting quirk, so the fixed-time scoring added for Fat Ox and Hotfoot Hamster has nothing to compute from. Finishers are the four distances' overall-results row counts, 90+33+54+85, not the event's full 599 registrants."
+		},
+		{
+			"name": "Sinister Night Runs",
+			"iso": "2023-04-22",
+			"finishers": 16,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "54K",
+					"men": {
+						"name": "Daniel Soliz",
+						"time": "5:34:28"
+					},
+					"women": {
+						"name": "Melody McMenamy",
+						"time": "7:39:14"
+					}
+				}
+			],
+			"source": "ultrarunning, race 37246, read through a text proxy because ultrarunning.com blocks direct requests. Only the 54K: UltraRunning does not track this race's shorter distances (27K, 18K, 9K, 6K), the way it publishes no distance under 26.2 miles for a timed race either. The 54K is the event's real headline in every year the board has covered since (2024-2026), so a single distance here is what UltraRunning has, not a guess at which one leads."
 		}
 	]
 }
