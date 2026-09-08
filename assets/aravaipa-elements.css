@@ -10662,6 +10662,34 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	margin: 2.5rem 0 0;
 }
 
+/* The current season, synced off UltraSignup, above the curated career
+   history. Placing leads each line because that is what the hand-written
+   results below lead with, so the two sections read as one list. */
+.arv-athlete__season {
+	margin: 2.5rem 0 0;
+}
+
+.arv-athlete__season h2 {
+	margin: 0 0 1rem;
+}
+
+.arv-athlete__season-list {
+	margin: 0 0 0 1.25rem;
+	padding: 0;
+}
+
+.arv-athlete__season-list li {
+	margin-bottom: 0.35rem;
+}
+
+.arv-athlete__season-place {
+	font-weight: 700;
+}
+
+.arv-athlete__season-time {
+	color: #6a6a6a;
+}
+
 .arv-athlete__upcoming h2 {
 	margin: 0 0 1rem;
 }
