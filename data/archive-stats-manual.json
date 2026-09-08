@@ -821,6 +821,59 @@
 				}
 			],
 			"source": "ultrarunning, race 37246, read through a text proxy because ultrarunning.com blocks direct requests. Only the 54K: UltraRunning does not track this race's shorter distances (27K, 18K, 9K, 6K), the way it publishes no distance under 26.2 miles for a timed race either. The 54K is the event's real headline in every year the board has covered since (2024-2026), so a single distance here is what UltraRunning has, not a guess at which one leads."
+		},
+		{
+			"name": "Across The Years",
+			"iso": "2022-12-28",
+			"finishers": 0,
+			"headline": true,
+			"winners": [
+				{
+					"distance": "6 Day",
+					"men": {
+						"name": "Budjargal Byambaa",
+						"time": "463.108 mi"
+					},
+					"women": {
+						"name": "Annabel Hepworth",
+						"time": "403.386 mi"
+					}
+				},
+				{
+					"distance": "72 Hour",
+					"men": {
+						"name": "Troy Allen",
+						"time": "212.694 mi"
+					},
+					"women": {
+						"name": "Carol Northrup",
+						"time": "213.742 mi"
+					}
+				},
+				{
+					"distance": "48 Hour",
+					"men": {
+						"name": "Matthew Shepard",
+						"time": "181.261 mi"
+					},
+					"women": {
+						"name": "Rachel Entrekin",
+						"time": "188.596 mi"
+					}
+				},
+				{
+					"distance": "24 Hour",
+					"men": {
+						"name": "Ryan Shephard",
+						"time": "132.017 mi"
+					},
+					"women": {
+						"name": "Chavet Hills",
+						"time": "119.444 mi"
+					}
+				}
+			],
+			"source": "ultrarunning, races 35802 (144 Hours), 35803, 35804 and 35806, read through a text proxy because ultrarunning.com blocks direct requests. The same four headline distances this archive carries for 2016 through 2019 and 2025; the event's 100 Mile, 12 Hour, 6 Hour and Backyard entries are not read here, matching those years. Not sourced from the live board despite this row carrying a live link: across_the_years-2022 is another dead board record, 582 starters and zero finishers with no winners at all, the same shape as 2025. Finishers left at 0, which renders as no count, because UltraRunning lists only those over 26.2 miles: 352 across the four is a floor, not the count."
 		}
 	]
 }

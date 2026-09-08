@@ -430,6 +430,61 @@
    "source": "ultrasignup did=90651"
   },
   {
+   "name": "Durango Skyline Trail Runs",
+   "iso": "2022-06-04",
+   "starters": 117,
+   "finishers": 110,
+   "rows": 52,
+   "headline": true,
+   "winners": [
+    {
+     "distance": "50 Mile",
+     "men": {
+      "name": "William Mitchell",
+      "time": "9:20:34"
+     },
+     "women": {
+      "name": "Jennifer Mann",
+      "time": "14:13:59"
+     }
+    },
+    {
+     "distance": "50 KM",
+     "men": {
+      "name": "Miguel Medina",
+      "time": "4:38:45"
+     },
+     "women": {
+      "name": "Amber Pougiales",
+      "time": "6:11:35"
+     }
+    },
+    {
+     "distance": "30 KM",
+     "men": {
+      "name": "Willie Milam",
+      "time": "2:28:55"
+     },
+     "women": {
+      "name": "Meredith Bruner",
+      "time": "3:09:47"
+     }
+    },
+    {
+     "distance": "12 KM",
+     "men": {
+      "name": "Mario Turriago",
+      "time": "1:19:35"
+     },
+     "women": {
+      "name": "Dewachen Ilg",
+      "time": "1:01:06"
+     }
+    }
+   ],
+   "source": "ultrasignup did=92649"
+  },
+  {
    "name": "Adrenaline Night Runs",
    "iso": "2022-05-21",
    "starters": 489,
