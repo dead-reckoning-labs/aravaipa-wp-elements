@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * [arv_racing_team]
  * [arv_racing_team status="alumni"]
- * [arv_racing_team division="great-lakes-endurance"]
+ * [arv_racing_team division="great-lakes"]
  *
  * Filters are shortcode attributes rather than a client-side dropdown: the
  * roster splits into a handful of pages this way (Racing Team, an Alumni
@@ -108,12 +108,12 @@ add_shortcode( 'arv_racing_team', 'arv_racing_team_shortcode' );
  */
 function arv_racing_team_sort_groups( $groups ) {
 	$order = array(
-		'Arizona Team',
-		'Colorado Team',
+		'Arizona',
+		'Colorado',
 		'California',
 		'Utah',
 		'Nevada',
-		'North East',
+		'Northeast',
 		'Great Lakes',
 	);
 
@@ -274,10 +274,11 @@ function arv_athlete_profile_meta_markup( $athlete ) {
 		$out .= '<span class="arv-athlete__hometown">' . esc_html( $athlete['hometown'] ) . '</span>';
 	}
 
-	// Division first, then any region that is not just restating it.
-	// The divisions carry the old page's own names ("Arizona Team") and the
-	// regions are the states inside them ("Arizona"), so showing both put
-	// ARIZONA TEAM next to ARIZONA on most profiles, saying one thing twice.
+	// Division first, then any region that is not just restating it. Most
+	// divisions are named for the one state in them, so showing both put
+	// ARIZONA next to ARIZONA on most profiles, saying one thing twice.
+	// Northeast and Great Lakes are the ones where the region still adds
+	// something (New Hampshire, Michigan), and those survive the check.
 	$tags = $athlete['divisions'];
 
 	foreach ( $athlete['regions'] as $region ) {
