@@ -10290,3 +10290,130 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-faq-section[hidden] {
 	display: none;
 }
+
+/* --------------------------------------------------------- Racing Team -- */
+
+/* Flat cards: a photo, a name, a hometown. No shadow, no accent bar, same
+   posture as the rest of this file. The photo itself carries the visual
+   weight, the card doesn't need to add its own. */
+
+.arv-team__filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin: 0 0 0.5rem;
+}
+
+.arv-team__filter {
+	padding: 0.5rem 2rem 0.5rem 0.75rem;
+	border: 1px solid #d4d4d4;
+	border-radius: var(--arv-radius);
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: #fff;
+	color: inherit;
+}
+
+.arv-team__count {
+	margin: 0 0 1rem;
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+}
+
+.arv-team__grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1.5rem 1.25rem;
+}
+
+@media (min-width: 600px) {
+	.arv-team__grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 900px) {
+	.arv-team__grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.arv-team__card {
+	display: flex;
+	flex-direction: column;
+	text-decoration: none !important;
+	color: inherit;
+}
+
+.arv-team__card[hidden] {
+	display: none;
+}
+
+.arv-team__photo {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	border-radius: var(--arv-radius);
+	margin: 0 0 0.6rem;
+	background: #eee;
+}
+
+.arv-team__name {
+	font-weight: 700;
+	font-size: var(--arv-fs-lead);
+}
+
+.arv-team__card:hover .arv-team__name {
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-team__hometown {
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+}
+
+.arv-team-empty {
+	color: #6a6a6a;
+}
+
+/* An athlete's own page: hometown, division/region tags, then the bio. */
+
+.arv-athlete__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0 0 1rem;
+}
+
+.arv-athlete__hometown {
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+}
+
+.arv-athlete__tag {
+	display: inline-block;
+	padding: 0.25rem 0.7rem;
+	border: 1px solid #d8d8d8;
+	border-radius: 999px;
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #555;
+}
+
+.arv-athlete__tag--alumni {
+	border-color: var(--arv-accent, #ff2a13);
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-athlete__alumni-note {
+	font-style: italic;
+	color: #555;
+	margin: 0 0 1.5rem;
+}
+
+.arv-athlete__links {
+	margin: 1.5rem 0 0;
+}
+
+.arv-athlete__links a {
+	margin-right: 1rem;
+}

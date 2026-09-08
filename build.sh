@@ -85,7 +85,7 @@ for inc in "${INCLUDES[@]}"; do
 	cp "includes/$inc" "$STAGE/includes/"
 done
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -214,6 +214,9 @@ grep -q '\.arv-articles__card\[hidden\]' assets/aravaipa-elements.css \
 
 grep -q '\.arv-media-latest__card\[hidden\]' assets/aravaipa-elements.css \
 	|| { echo "assets/aravaipa-elements.css: .arv-media-latest__card[hidden] override is missing, the Latest feed's type filter will silently do nothing" >&2; missing=1; }
+
+grep -q '\.arv-team__card\[hidden\]' assets/aravaipa-elements.css \
+	|| { echo "assets/aravaipa-elements.css: .arv-team__card[hidden] override is missing, the Racing Team region and division filters will silently do nothing" >&2; missing=1; }
 [ "$missing" -eq 0 ] || exit 1
 
 # The live board's touch shield is rendered hidden and revealed by

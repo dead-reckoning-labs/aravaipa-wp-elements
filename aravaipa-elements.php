@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.99.26
+ * Version:           0.99.27
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.99.26' );
+define( 'ARV_ELEMENTS_VERSION', '0.99.27' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -42,6 +42,14 @@ require_once ARV_ELEMENTS_PATH . 'includes/race-store.php';
 // inside an element, because includes/seo.php needs both on race pages that
 // contain no element at all. See the file's own header.
 require_once ARV_ELEMENTS_PATH . 'includes/race-schema.php';
+
+// Racing Team athletes: their own post type, real URLs, Person schema.
+// Loaded unconditionally, not from includes/elements/, because it registers
+// a shortcode and a the_content filter that must run on every request, not
+// only when Cornerstone fires cs_register_elements.
+require_once ARV_ELEMENTS_PATH . 'includes/athlete-store.php';
+require_once ARV_ELEMENTS_PATH . 'includes/racing-team.php';
+require_once ARV_ELEMENTS_PATH . 'includes/athlete-admin.php';
 
 // Past results, read by the Aravaipa Results element. An option rather than
 // a post type, since nothing in it is ever edited by hand; see the file.
@@ -358,6 +366,16 @@ function arv_elements_assets() {
 	wp_enqueue_script(
 		'aravaipa-faq',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-faq.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
+
+	// The Racing Team grid's region and division filters. No-ops anywhere
+	// that markup is not present, same as every other script here.
+	wp_enqueue_script(
+		'aravaipa-team',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-team.js',
 		array(),
 		ARV_ELEMENTS_VERSION,
 		true
