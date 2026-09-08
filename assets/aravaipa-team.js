@@ -43,11 +43,13 @@
 
 	function apply() {
 		var query = search ? search.value.trim().toLowerCase() : '';
-		// Keyed on the profile URL, not counted per card. [arv_racing_team]
-		// already renders a Notable Alumni group, and page 79463 then calls
-		// the shortcode a second time for the same ten athletes, so every
-		// alumnus is on the page twice and counting cards reported one
-		// person as "2 athletes".
+		// Keyed on the profile URL rather than counted per card, so an
+		// athlete rendered by more than one block counts once. Page 79463
+		// does not currently do that ([arv_racing_team] defaults to
+		// status="current", so the roster's 51 and the alumni block's 10
+		// are disjoint), but nothing stops a page from overlapping two
+		// blocks, and a count that says "2 athletes" for one person is
+		// worse than the extra line it takes to not.
 		var seen = {};
 
 		for (var i = 0; i < blocks.length; i++) {
