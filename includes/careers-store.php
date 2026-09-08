@@ -136,42 +136,67 @@ function arv_careers_fetch_detail( $id ) {
 }
 
 /**
- * BambooHR's description field cleaned up for this site's own typography.
+ * A one or two sentence summary, not the full posting.
  *
- * It arrives as Google-Docs-style HTML: every paragraph and phrase wrapped
- * in its own <span style="font-family: Arial, sans-serif; ...">, bold done
- * with an inline font-weight rather than <strong>. Rendered as-is it would
- * carry BambooHR's font choices onto this page. Bold spans are converted
- * to <strong> first because several are the field labels ("About the
- * Role") that give the text its structure, then everything is passed
- * through wp_kses with a short allow-list and no attributes on any of it,
- * so nothing else. survives.
+ * The first version of this rendered BambooHR's entire description inline:
+ * every section header, every bullet under "What You'll Do," the full
+ * eighteen-line race schedule. That is an applicant-tracking-system detail
+ * page, written for someone who has already decided to apply and wants
+ * every particular. On the public careers page it read as a wall of text
+ * before anyone had a reason to be reading it that closely, per Jamil:
+ * "way too in depth... pretty awful."
+ *
+ * Two things dropped before trimming to length, both generic to how these
+ * descriptions are written rather than tuned to this one posting's exact
+ * wording, so the next role posted does not need this function revisited:
+ *
+ *   - A short bolded label on its own paragraph ("About the Role", "What
+ *     You'll Do", "Required"). BambooHR's format uses these as section
+ *     headers throughout, and a heading fragment reads as a sentence
+ *     trailing off when it lands at the end of a 40-word trim.
+ *   - A leading paragraph containing a "|" character. This posting opens
+ *     with "Social Media Manager | Phoenix, AZ | Full-Time | $50,000-
+ *     $53,000", restating the title, location and pay already shown in
+ *     the meta line above the summary, in a compact-header convention
+ *     unlikely to appear in actual prose anywhere else in the document.
+ *
+ * A bullet list is naturally excluded rather than specifically filtered:
+ * this only recognises <p> boundaries as paragraphs, so list items are
+ * never candidates in the first place.
  *
  * @param string $html
  * @return string
  */
-function arv_careers_clean_description( $html ) {
+function arv_careers_summary( $html ) {
 	$html = (string) $html;
+	$html = preg_replace( '~</p\s*>~i', "\n\n", $html );
+	$html = preg_replace( '~<br\s*/?>~i', "\n", $html );
 
-	$html = preg_replace(
-		'~<span[^>]*font-weight:\s*bold[^>]*>(.*?)</span>~is',
-		'<strong>$1</strong>',
-		$html
-	);
+	$paragraphs = preg_split( '~\n{2,}~', wp_strip_all_tags( $html ) );
+	$kept       = array();
+	$leading    = true;
 
-	return wp_kses(
-		$html,
-		array(
-			'p'      => array(),
-			'br'     => array(),
-			'strong' => array(),
-			'em'     => array(),
-			'ul'     => array(),
-			'ol'     => array(),
-			'li'     => array(),
-			'a'      => array( 'href' => array(), 'target' => array(), 'rel' => array() ),
-		)
-	);
+	foreach ( $paragraphs as $p ) {
+		$p = trim( html_entity_decode( preg_replace( '~\s+~', ' ', $p ), ENT_QUOTES ) );
+
+		if ( '' === $p ) {
+			continue;
+		}
+
+		if ( $leading && false !== strpos( $p, '|' ) ) {
+			continue;
+		}
+
+		$leading = false;
+
+		if ( str_word_count( $p ) <= 6 ) {
+			continue;
+		}
+
+		$kept[] = $p;
+	}
+
+	return wp_trim_words( implode( ' ', $kept ), 40, '…' );
 }
 
 /**
@@ -232,8 +257,10 @@ function arv_careers_render( $atts = array() ) {
 				$out .= '<p class="arv-careers__compensation">' . esc_html( $compensation ) . '</p>';
 			}
 
-			if ( ! empty( $detail['description'] ) ) {
-				$out .= '<div class="arv-careers__description">' . arv_careers_clean_description( $detail['description'] ) . '</div>';
+			$summary = ! empty( $detail['description'] ) ? arv_careers_summary( $detail['description'] ) : '';
+
+			if ( '' !== $summary ) {
+				$out .= '<p class="arv-careers__summary">' . esc_html( $summary ) . '</p>';
 			}
 		}
 

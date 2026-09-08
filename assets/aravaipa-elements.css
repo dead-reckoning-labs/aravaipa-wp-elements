@@ -10790,12 +10790,21 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 
 /* Open positions, read live from BambooHR. Flat, bordered cards: same
    posture as every other list in this file, nothing that reads as
-   dashboard chrome. */
+   dashboard chrome.
+
+   text-align: left set here rather than left to whatever page this lands
+   on: the site-wide Customizer default centers a .page's body copy, which
+   this block would otherwise inherit no matter where the shortcode is
+   placed. A one line meta row survives that fine; a summary sentence and
+   an Apply button centered under it do not. Scoped to the component so it
+   is correct on every page this ever ships to, not just the one it
+   shipped on first. */
 .arv-careers__list {
 	display: flex;
 	flex-direction: column;
 	gap: 1.5rem;
 	margin: 1.5rem 0;
+	text-align: left;
 }
 
 .arv-careers__card {
@@ -10818,8 +10827,9 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	font-weight: 700;
 }
 
-.arv-careers__description p {
-	margin: 0 0 1rem;
+.arv-careers__summary {
+	margin: 0 0 0.75rem;
+	max-width: 42em;
 }
 
 .arv-careers__apply {
