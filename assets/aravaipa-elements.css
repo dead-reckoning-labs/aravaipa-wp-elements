@@ -10514,8 +10514,9 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	margin-bottom: 0.35rem;
 }
 
-/* The big player. Empty and hidden until something is clicked, so a
-   profile nobody watches is no taller than it was. */
+/* The big player. Holds the first video's poster on arrival and swaps to
+   a real player on click, so the section reads as a feature rather than a
+   row of equal thumbnails without paying for an embed nobody asked for. */
 .arv-athlete__video-stage {
 	margin: 0 0 1rem;
 	background: #000;
@@ -10523,8 +10524,45 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	overflow: hidden;
 }
 
-.arv-athlete__video-stage[hidden] {
-	display: none;
+.arv-athlete__video-poster {
+	position: relative;
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+}
+
+.arv-athlete__video-poster-img {
+	display: block;
+	width: 100%;
+	/* The width and height attributes on the img are presentational hints
+	   for the CSS width and height properties, and aspect-ratio loses to an
+	   explicit height. Without this the stage came out 810x720 and cropped
+	   the sides off the frame. */
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+}
+
+/* A bigger badge than the thumbnails carry, in proportion to the frame
+   it sits on. */
+.arv-athlete__video-poster::after {
+	content: "";
+	position: absolute;
+	top: calc(50% - 2.4rem);
+	left: calc(50% - 2.4rem);
+	width: 4.8rem;
+	height: 4.8rem;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.65) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") center/2.4rem no-repeat;
+	pointer-events: none;
+	transition: background-color 0.15s;
+}
+
+.arv-athlete__video-poster:hover::after {
+	background-color: var(--arv-accent, #ff2a13);
 }
 
 /* Video row: thumbnails that scroll sideways and load the clicked video
@@ -10563,6 +10601,7 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-athlete__video-frame {
 	display: block;
 	width: 100%;
+	height: auto;
 	aspect-ratio: 16 / 9;
 	border-radius: var(--arv-radius);
 	background: #eee;

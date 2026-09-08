@@ -389,13 +389,11 @@ function arv_athlete_profile_results_markup( $athlete ) {
  * The videos an athlete appears in: one large player, with the rest of the
  * videos as a row of thumbnails scrolling sideways underneath it.
  *
- * Click to play rather than embedding every video outright: an embed is
- * roughly a megabyte of YouTube player each, a thumbnail is an image, and
- * most visitors scroll past without watching anything. Whoever does want to
- * watch gets a full width player without leaving the page.
- *
- * The stage ships empty and hidden. It only exists once someone picks a
- * video, which keeps the profile the same height for everyone who doesn't.
+ * The stage ships showing the first video's poster, not an empty box and
+ * not a loaded player. A still image is what makes the section read as a
+ * feature rather than a row of equal thumbnails, and it costs one JPEG
+ * instead of the roughly one megabyte a YouTube embed weighs. The player
+ * itself only loads once someone actually asks for it.
  *
  * @param array $athlete
  * @return string
@@ -413,7 +411,7 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 		return '';
 	}
 
-	$cards = '';
+	$videos = array();
 
 	foreach ( $urls as $url ) {
 		$id = arv_athlete_youtube_id( $url );
@@ -422,29 +420,72 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 			continue;
 		}
 
-		$meta = arv_athlete_video_meta( $url );
-
-		$cards .= '<li class="arv-athlete__video">';
-		$cards .= '<button type="button" class="arv-athlete__video-play" aria-pressed="false"'
-			. ' data-arv-video-id="' . esc_attr( $id ) . '"'
-			. ' data-arv-video-title="' . esc_attr( $meta['title'] ) . '">';
-
-		if ( '' !== $meta['thumbnail'] ) {
-			$cards .= '<img class="arv-athlete__video-thumb" src="' . esc_url( $meta['thumbnail'] ) . '" alt="" loading="lazy" width="320" height="180" />';
-		}
-
-		$cards .= '<span class="arv-athlete__video-title">' . esc_html( $meta['title'] ) . '</span>';
-		$cards .= '</button></li>';
+		$meta         = arv_athlete_video_meta( $url );
+		$meta['id']   = $id;
+		$videos[]     = $meta;
 	}
 
-	if ( '' === $cards ) {
+	if ( empty( $videos ) ) {
 		return '';
 	}
 
+	$cards = '';
+
+	foreach ( $videos as $i => $video ) {
+		// The first one is what the stage is already showing, so it starts
+		// marked: dimmed and without its play badge, the same state a
+		// thumbnail takes once it has been picked.
+		$active = ( 0 === $i );
+
+		$cards .= '<li class="arv-athlete__video">';
+		$cards .= '<button type="button" class="arv-athlete__video-play' . ( $active ? ' is-playing' : '' ) . '"'
+			. ' aria-pressed="' . ( $active ? 'true' : 'false' ) . '"'
+			. ' data-arv-video-id="' . esc_attr( $video['id'] ) . '"'
+			. ' data-arv-video-title="' . esc_attr( $video['title'] ) . '">';
+
+		if ( '' !== $video['thumbnail'] ) {
+			$cards .= '<img class="arv-athlete__video-thumb" src="' . esc_url( $video['thumbnail'] ) . '" alt="" loading="lazy" width="320" height="180" />';
+		}
+
+		$cards .= '<span class="arv-athlete__video-title">' . esc_html( $video['title'] ) . '</span>';
+		$cards .= '</button></li>';
+	}
+
 	$out  = '<div class="arv-athlete__videos" data-arv-videos><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2>';
-	$out .= '<div class="arv-athlete__video-stage" data-arv-video-stage hidden></div>';
+	$out .= '<div class="arv-athlete__video-stage" data-arv-video-stage>'
+		. arv_athlete_video_poster_markup( $videos[0] ) . '</div>';
 	$out .= '<ul class="arv-athlete__videos-list" data-arv-video-row>' . $cards . '</ul>';
 	$out .= '</div>';
+
+	return $out;
+}
+
+/**
+ * The still that fills the stage before anyone presses play.
+ *
+ * Served at hqdefault, which YouTube has for every video. Roughly nine in
+ * ten also have a maxresdefault, which is the real 16:9 frame rather than
+ * a 4:3 one that has to be cropped, but the other one in ten 404s. The
+ * upgrade is left to the script, which only swaps the source once the
+ * bigger file has actually loaded, so a missing one is never seen.
+ *
+ * @param array $video id, title, thumbnail
+ * @return string
+ */
+function arv_athlete_video_poster_markup( $video ) {
+	if ( '' === $video['thumbnail'] ) {
+		return '';
+	}
+
+	$out  = '<button type="button" class="arv-athlete__video-poster"'
+		. ' data-arv-video-id="' . esc_attr( $video['id'] ) . '"'
+		. ' data-arv-video-title="' . esc_attr( $video['title'] ) . '"'
+		. ' aria-label="' . esc_attr( sprintf( __( 'Play %s', 'aravaipa-elements' ), $video['title'] ) ) . '">';
+	$out .= '<img class="arv-athlete__video-poster-img"'
+		. ' src="' . esc_url( $video['thumbnail'] ) . '"'
+		. ' data-arv-video-hires="' . esc_url( 'https://i.ytimg.com/vi/' . $video['id'] . '/maxresdefault.jpg' ) . '"'
+		. ' alt="" loading="lazy" width="1280" height="720" />';
+	$out .= '</button>';
 
 	return $out;
 }
