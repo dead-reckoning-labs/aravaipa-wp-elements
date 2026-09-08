@@ -256,6 +256,42 @@ function arv_athlete_admin_save( $post_id ) {
 add_action( 'save_post_' . ARV_ATHLETE_POST_TYPE, 'arv_athlete_admin_save' );
 
 /**
+ * Alt text on the athlete's own card photo, if the attachment does not
+ * already have one.
+ *
+ * The migration off the old Cornerstone page set 51 featured images and
+ * none of their alt text, because that lives on the attachment, not the
+ * post: WordPress has never had a "this athlete's featured image" concept
+ * to hang it on automatically. Checked for existing text first and only
+ * filled in when blank, so a real caption someone wrote by hand for the
+ * photo itself is never overwritten just because an athlete post saved.
+ *
+ * @param int $post_id
+ */
+function arv_athlete_admin_set_photo_alt( $post_id ) {
+	$thumb_id = get_post_thumbnail_id( $post_id );
+
+	if ( ! $thumb_id ) {
+		return;
+	}
+
+	$existing = get_post_meta( $thumb_id, '_wp_attachment_image_alt', true );
+
+	if ( '' !== trim( (string) $existing ) ) {
+		return;
+	}
+
+	$name = get_the_title( $post_id );
+
+	if ( '' === $name ) {
+		return;
+	}
+
+	update_post_meta( $thumb_id, '_wp_attachment_image_alt', sanitize_text_field( $name ) );
+}
+add_action( 'save_post_' . ARV_ATHLETE_POST_TYPE, 'arv_athlete_admin_set_photo_alt' );
+
+/**
  * One athlete, in the shape every render path below shares.
  *
  * @param int|WP_Post $post
@@ -371,6 +407,143 @@ function arv_athlete_store_find_by_ultrasignup_id( $ultrasignup_id ) {
 }
 
 /**
+ * An athlete's bio, cleaned for a field a machine reads.
+ *
+ * The bio is written for a human reading the page top to bottom, where a
+ * trailing "@handle" line under a photo makes sense. Handed to Google as a
+ * Person's description, that same line reads as "...delicious food.
+ * @drbri_runningmd", so it is stripped here rather than at the source: the
+ * bio itself is fine, this is only about the one other place it gets reused.
+ *
+ * @param string $bio
+ * @return string
+ */
+function arv_athlete_clean_bio( $bio ) {
+	$text = wp_strip_all_tags( $bio );
+	$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+	$lines = array_filter(
+		preg_split( '/\R/', $text ),
+		function ( $line ) {
+			// A line that is only an @handle, the Instagram credit line
+			// baked into most bios, not part of the bio itself.
+			return ! preg_match( '/^@[A-Za-z0-9_.]+$/', trim( $line ) );
+		}
+	);
+
+	$text = preg_replace( '/\s+/', ' ', implode( ' ', $lines ) );
+
+	return trim( $text );
+}
+
+/**
+ * A search-result snippet for an athlete's page.
+ *
+ * Built from the structured fields rather than the bio: a bio is written in
+ * the athlete's own voice and at whatever length they wrote it, which is
+ * exactly right for the page and exactly wrong for a search snippet that
+ * needs to say who this is in about 155 characters. This says the same
+ * thing every time: name, hometown, division, and their most recent result
+ * if one is on file.
+ *
+ * @param array $athlete
+ * @return string
+ */
+function arv_athlete_seo_description( $athlete ) {
+	$parts = array( $athlete['name'] );
+
+	$division = ! empty( $athlete['divisions'] ) ? $athlete['divisions'][0] : '';
+	$parts[]  = $division ? "races for the Aravaipa Racing Team's {$division}" : 'races for the Aravaipa Racing Team';
+
+	if ( '' !== $athlete['hometown'] ) {
+		$parts[] = "out of {$athlete['hometown']}";
+	}
+
+	$description = implode( ' ', $parts ) . '.';
+
+	$top_result = arv_athlete_top_result( $athlete );
+
+	if ( '' !== $top_result ) {
+		$with_result = $description . ' Recent result: ' . $top_result . '.';
+		// Only append if it still fits a snippet; a name-only sentence beats
+		// a result truncated mid-word.
+		if ( mb_strlen( $with_result ) <= 155 ) {
+			$description = $with_result;
+		}
+	}
+
+	return $description;
+}
+
+/**
+ * The first result line under the first year heading in an athlete's
+ * results text, the same plain-text format
+ * arv_athlete_profile_results_markup() parses.
+ *
+ * @param array $athlete
+ * @return string
+ */
+function arv_athlete_top_result( $athlete ) {
+	$raw = isset( $athlete['results_text'] ) ? trim( (string) $athlete['results_text'] ) : '';
+
+	if ( '' === $raw ) {
+		return '';
+	}
+
+	$year   = '';
+	$result = '';
+
+	foreach ( preg_split( '/\R/', $raw ) as $line ) {
+		$line = trim( $line );
+
+		if ( '' === $line ) {
+			continue;
+		}
+
+		if ( preg_match( '/^(19|20)\d{2}$/', $line ) ) {
+			$year = $line;
+			continue;
+		}
+
+		if ( '' !== $year && in_array( strtolower( $line ), array( 'ultrasignup', 'strava', 'ultrarunning mag', 'ultrarunning magazine' ), true ) ) {
+			continue;
+		}
+
+		if ( '' !== $year ) {
+			$result = "{$line} ({$year})";
+			break;
+		}
+	}
+
+	return $result;
+}
+
+/**
+ * The meta description, on the same wp_head priority as
+ * arv_athlete_schema_head() so both are decided by the same guard.
+ */
+function arv_athlete_seo_head() {
+	if ( ! function_exists( 'arv_seo_handled_elsewhere' ) || arv_seo_handled_elsewhere() ) {
+		return;
+	}
+
+	if ( ! is_singular( ARV_ATHLETE_POST_TYPE ) ) {
+		return;
+	}
+
+	$athlete = arv_athlete_store_get_one( get_queried_object() );
+
+	if ( ! $athlete ) {
+		return;
+	}
+
+	$description = arv_athlete_seo_description( $athlete );
+
+	echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
+}
+add_action( 'wp_head', 'arv_athlete_seo_head', 5 );
+
+/**
  * Person structured data on an athlete's own page.
  *
  * Athletes are exactly what this page type never had before: a real,
@@ -399,19 +572,30 @@ function arv_athlete_schema_head() {
 	);
 
 	if ( '' !== $athlete['bio'] ) {
-		$node['description'] = wp_strip_all_tags( $athlete['bio'] );
+		$node['description'] = arv_athlete_clean_bio( $athlete['bio'] );
 	}
 
 	if ( $athlete['photo'] ) {
 		$node['image'] = $athlete['photo'];
 	}
 
-	if ( '' !== $athlete['instagram'] ) {
-		$node['sameAs'][] = 'https://www.instagram.com/' . ltrim( $athlete['instagram'], '@' );
+	if ( '' !== $athlete['hometown'] ) {
+		$node['homeLocation'] = array(
+			'@type' => 'Place',
+			'name'  => $athlete['hometown'],
+		);
 	}
 
-	if ( '' !== $athlete['strava'] ) {
-		$node['sameAs'][] = $athlete['strava'];
+	foreach ( array( 'instagram', 'strava', 'ultrasignup_url', 'ultrarunning_url' ) as $field ) {
+		if ( '' === $athlete[ $field ] ) {
+			continue;
+		}
+
+		$url = 'instagram' === $field
+			? 'https://www.instagram.com/' . ltrim( $athlete['instagram'], '@' )
+			: $athlete[ $field ];
+
+		$node['sameAs'][] = $url;
 	}
 
 	$node['memberOf'] = array(
