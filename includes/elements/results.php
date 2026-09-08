@@ -188,14 +188,34 @@ function arv_results_shortcode( $atts ) {
 	// arv_cached_render(): /results/ took 17 seconds to build and is the
 	// page most likely to be opened by someone logged in, who is never
 	// served WP Rocket's copy.
+	//
+	// The fingerprint also has to cover everything arv_results_render()
+	// reads besides $atts and the stores, or two different pages sharing
+	// this shortcode's fixed, attribute-less form ("[arv_results]" with no
+	// atts, which is every page that uses it) fingerprint identically and
+	// share a cache entry. That was a real bug, not a hypothetical one:
+	// /race-results/dam-good-run/, /race-results/javelina-jundred/ and the
+	// bare /results/ page are the same post (id 84107, the race URL rewrite
+	// resolves to pagename=results and adds arv_race as a query var rather
+	// than routing to a different page), so whichever one rendered first
+	// after the transient expired got cached, and every other one served
+	// that same race, or the same archive, until the transient's own
+	// day-long ceiling ran out. get_queried_object_id() separates this page
+	// from a results-YYYY year page (arv_results_year_from_page() reads the
+	// year off exactly that id), and arv_race separates one race URL from
+	// another and from the plain archive.
+	$fingerprint = array(
+		$atts,
+		get_option( ARV_RESULTS_OPTION, array() ),
+		function_exists( 'arv_race_store_get' ) ? arv_race_store_get() : array(),
+		get_option( 'arv_race_stats', array() ),
+		function_exists( 'get_queried_object_id' ) ? get_queried_object_id() : 0,
+		function_exists( 'get_query_var' ) ? get_query_var( 'arv_race' ) : '',
+	);
+
 	return arv_cached_render(
 		'results',
-		array(
-			$atts,
-			get_option( ARV_RESULTS_OPTION, array() ),
-			function_exists( 'arv_race_store_get' ) ? arv_race_store_get() : array(),
-			get_option( 'arv_race_stats', array() ),
-		),
+		$fingerprint,
 		function () use ( $atts ) {
 			return arv_results_render( $atts );
 		}
