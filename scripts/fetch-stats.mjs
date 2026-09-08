@@ -603,7 +603,23 @@ function timedWinnerOf( race, field ) {
 		return null;
 	}
 
-	const first = field.filter( ( p ) => 1 === p.genderPlace )[ 0 ];
+	// genderPlace is the field to trust where it is filled in, and it is not
+	// always. Fat Ox 2021's 48hrs has 26 entrants and exactly one of them
+	// carries a gender place at all, the outright winner; every other
+	// starter in the division is a 0, all eleven women included. Filtering
+	// on 1 alone found no woman to report and the row published a men's
+	// winner beside an empty cell, which reads as "no woman finished" rather
+	// than as "this board never scored the division".
+	//
+	// Ground covered is the same answer wherever both are present, and the
+	// only answer where the place is not: a timed race is won by whoever
+	// went furthest, which is what lapCount already says. Deborah
+	// Huntzinger's 472 laps are four places clear of the next woman's 411.
+	const placed = field.filter( ( p ) => 1 === p.genderPlace )[ 0 ];
+	const furthest = [ ...field ].sort(
+		( a, b ) => Number( b.lapCount || 0 ) - Number( a.lapCount || 0 )
+	)[ 0 ];
+	const first = placed || furthest;
 
 	if ( ! first || ! race.distance ) {
 		return null;
