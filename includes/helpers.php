@@ -1023,3 +1023,43 @@ function arv_race_terrain( $name ) {
 
 	return isset( $road[ arv_results_race_key( $name ) ] ) ? 'road' : 'trail';
 }
+
+/**
+ * Cache an expensive block of rendered HTML against the data it was built
+ * from.
+ *
+ * /results/ and /photos/ took 17 and 33 seconds to generate. WP Rocket hid
+ * that from anonymous visitors by serving a static copy, which is why it
+ * went unnoticed, but a cached page is not a fast page: logged-in staff are
+ * never served the cache and neither is the first visitor after any purge,
+ * and this plugin purges on every release. Those are the people who
+ * reported it.
+ *
+ * Keyed on a fingerprint of the source data rather than on a timer, so the
+ * cache is exactly as old as the data and correcting a result shows up on
+ * the next page load instead of whenever a TTL happens to lapse. There is
+ * no invalidation hook to forget to call.
+ *
+ * @param string   $name        Cache name, unique per render.
+ * @param mixed    $fingerprint Anything serialisable that changes when the output should.
+ * @param callable $build       Produces the HTML. Called only on a miss.
+ * @return string
+ */
+function arv_cached_render( $name, $fingerprint, $build ) {
+	$key = 'arv_render_' . $name . '_' . md5( (string) wp_json_encode( $fingerprint ) );
+
+	$cached = get_transient( $key );
+
+	if ( is_string( $cached ) ) {
+		return $cached;
+	}
+
+	$html = (string) call_user_func( $build );
+
+	// A day, not a week: the fingerprint already handles correctness, so
+	// this is only a floor on how long a stale entry can survive a
+	// fingerprint that fails to change for a reason nobody predicted.
+	set_transient( $key, $html, DAY_IN_SECONDS );
+
+	return $html;
+}

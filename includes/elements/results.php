@@ -183,7 +183,23 @@ function arv_results_shortcode( $atts ) {
 		'arv_results'
 	);
 
-	return arv_results_render( $atts );
+	// Cached against the three stores this reads, so correcting a result,
+	// a race date or a finisher count all show up on the next load. See
+	// arv_cached_render(): /results/ took 17 seconds to build and is the
+	// page most likely to be opened by someone logged in, who is never
+	// served WP Rocket's copy.
+	return arv_cached_render(
+		'results',
+		array(
+			$atts,
+			get_option( ARV_RESULTS_OPTION, array() ),
+			function_exists( 'arv_race_store_get' ) ? arv_race_store_get() : array(),
+			get_option( 'arv_race_stats', array() ),
+		),
+		function () use ( $atts ) {
+			return arv_results_render( $atts );
+		}
+	);
 }
 add_shortcode( 'arv_results', 'arv_results_shortcode' );
 
