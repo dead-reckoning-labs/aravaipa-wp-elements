@@ -5577,6 +5577,32 @@ t( 'the right year of a repeating race',    '2025-01-18' === arv_photos_race_dat
 t( 'an unknown race has no date',           '' === arv_photos_race_date( 'Nothing At All', 2026 ) );
 t( 'and neither does a yearless row',       '' === arv_photos_race_date( 'Coldwater Rumble', 0 ) );
 
+// A photographer names a gallery for the race, not for whatever this
+// plugin's canonical row is called, and arv_results_race_key() drops some
+// trailing words and not others. 17 live galleries had no date for this
+// reason alone and sorted to the bottom of an otherwise newest-first page.
+$GLOBALS['ARV_OPTIONS'][ ARV_RESULTS_OPTION ] = array(
+	array( 'name' => 'Silverton Alpine Marathon', 'iso' => '2026-07-18' ),
+	array( 'name' => 'Crown King Scramble', 'iso' => '2026-03-28' ),
+	array( 'name' => 'Big Pine', 'iso' => '2026-06-20' ),
+	array( 'name' => 'Blackout Night Runs', 'iso' => '2026-06-20' ),
+	array( 'name' => 'Javelina Jundred', 'iso' => '2026-10-24' ),
+	array( 'name' => 'Javelina Jangover', 'iso' => '2026-09-19' ),
+);
+t( 'a gallery named shorter than the race', '2026-07-18' === arv_photos_race_date( 'Silverton Alpine', 2026 ) );
+t( 'and shorter again',                     '2026-03-28' === arv_photos_race_date( 'Crown King', 2026 ) );
+t( 'a gallery named longer than the race',  '2026-06-20' === arv_photos_race_date( 'Flagstaff Big Pine', 2026 ) );
+t( 'a space that should not be there',      '2026-06-20' === arv_photos_race_date( 'Black Out Night Runs', 2026 ) );
+
+// An exact key still wins outright, before either looser pass runs.
+t( 'an exact name beats the loose passes',  '2026-10-24' === arv_photos_race_date( 'Javelina Jundred', 2026 ) );
+
+// Two races in one year that both contain the gallery's name is not a near
+// miss to be broken by picking one. An undated gallery is the honest answer.
+t( 'an ambiguous name stays undated',       '' === arv_photos_race_date( 'Javelina', 2026 ) );
+// And the looser passes never reach across years.
+t( 'nor does it borrow another year',       '' === arv_photos_race_date( 'Silverton Alpine', 2025 ) );
+
 // Grouping must not undo the sort: it walks the rows in order and PHP
 // keeps insertion order, so the cards come out newest first too.
 $order_cards = array_map( function ( $c ) { return $c['race']; }, arv_photos_group( $dated ) );
@@ -5589,15 +5615,25 @@ echo "\nphotos, the year filter uses a query var WordPress does not own:\n";
 // own year and renders no controls, so the filter links looked like they
 // were deleting the search box and the year row.
 $year_links = arv_photos_render( array() );
-t( 'the year links use arv_year',           false !== strpos( $year_links, 'arv_year=2026' ) );
+t( 'the year links use photo_year',         false !== strpos( $year_links, 'photo_year=2026' ) );
 t( 'and never a bare year=',                false === strpos( $year_links, '?year=' ) );
+// The prefix belongs on a function or an option, not in a URL somebody
+// reads and sends on: ?arv_year= made the reader wonder what an arv is.
+t( 'and no longer emit arv_year',           false === strpos( $year_links, 'arv_year=' ) );
 
-$_GET['arv_year'] = '2025';
+$_GET['photo_year'] = '2025';
 $filtered = arv_photos_render( array() );
-t( 'arv_year filters the grid',             1 === substr_count( $filtered, 'class="arv-photos__card"' ) );
+t( 'photo_year filters the grid',           1 === substr_count( $filtered, 'class="arv-photos__card"' ) );
 // The whole point: the controls survive the filter.
 t( 'the search box survives',               false !== strpos( $filtered, 'data-arv-photos-search' ) );
 t( 'the year row survives',                 false !== strpos( $filtered, 'arv-photos__years' ) );
+unset( $_GET['photo_year'] );
+
+// A URL is a promise the moment anyone copies one out of an address bar,
+// and these were real links for a while before the rename.
+$_GET['arv_year'] = '2025';
+$old = arv_photos_render( array() );
+t( 'the old arv_year still filters',        1 === substr_count( $old, 'class="arv-photos__card"' ) );
 unset( $_GET['arv_year'] );
 
 $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array();
