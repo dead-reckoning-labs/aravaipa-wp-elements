@@ -132,6 +132,15 @@ function arv_athlete_store_fields() {
 		// rather than a data migration.
 		'_arv_results_text'    => __( 'Results: one per line, a bare year on its own line starts a new group', 'aravaipa-elements' ),
 		'_arv_video_urls'      => __( 'Video URLs, one per line', 'aravaipa-elements' ),
+		// Our own blog posts, not press: nothing external has ever covered
+		// most of this roster, and pointing at outside coverage would mean
+		// a broken link the day someone else's site reorganizes. One URL
+		// per line, same shape as the video field, curated by hand rather
+		// than matched automatically: a name match against post content
+		// pulls in every roster-announcement post that lists fifty names
+		// at once, and separately, not every true match is one an athlete
+		// wants surfaced on their own page.
+		'_arv_article_urls'    => __( 'Article URLs (our own blog posts about this athlete), one per line', 'aravaipa-elements' ),
 	);
 }
 
@@ -141,7 +150,7 @@ function arv_athlete_store_fields() {
  * @return array<int, string>
  */
 function arv_athlete_store_textarea_fields() {
-	return array( '_arv_alumni_note', '_arv_results_text', '_arv_video_urls' );
+	return array( '_arv_alumni_note', '_arv_results_text', '_arv_video_urls', '_arv_article_urls' );
 }
 
 /**

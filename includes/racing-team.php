@@ -301,6 +301,7 @@ function arv_athlete_profile_content( $content ) {
 		. ( function_exists( 'arv_athlete_profile_season_results_markup' ) ? arv_athlete_profile_season_results_markup( $athlete ) : '' )
 		. arv_athlete_profile_results_markup( $athlete )
 		. arv_athlete_profile_videos_markup( $athlete )
+		. ( function_exists( 'arv_athlete_profile_articles_markup' ) ? arv_athlete_profile_articles_markup( $athlete ) : '' )
 		. arv_athlete_profile_links_markup( $athlete );
 }
 add_filter( 'the_content', 'arv_athlete_profile_content' );
