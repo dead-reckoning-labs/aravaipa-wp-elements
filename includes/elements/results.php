@@ -1451,6 +1451,7 @@ function arv_results_masthead( $rows ) {
 		. ( '' === $line ? ' hidden' : '' ) . '>' . esc_html( $line ) . '</p>';
 
 	$out .= '</header>';
+	$out .= arv_results_timing_correction_link();
 
 	return $out;
 }
@@ -2635,8 +2636,34 @@ function arv_results_race_page( $editions, $name ) {
 
 	$out .= arv_results_course_records( $editions );
 	$out .= arv_results_editions_table( $editions );
+	$out .= arv_results_timing_correction_link();
 
 	return $out . '</div>';
+}
+
+/**
+ * A pointer to the Timing Corrections form.
+ *
+ * This is the page someone lands on to check their own time, so it is also
+ * the moment they discover it is missing or wrong. The form existed and
+ * worked (it carries Turnstile already) but the page it lived on had never
+ * been published and nothing on the site linked to it, so there was no way
+ * to reach it short of guessing the URL.
+ *
+ * @return string
+ */
+function arv_results_timing_correction_link() {
+	$url = function_exists( 'get_page_by_path' )
+		? get_permalink( get_page_by_path( 'timing-corrections' ) )
+		: '';
+
+	if ( ! $url ) {
+		return '';
+	}
+
+	return '<p class="arv-results__correction"><a href="' . esc_url( $url ) . '">'
+		. esc_html__( 'Missing a result, or think a time is wrong? Report a timing correction.', 'aravaipa-elements' )
+		. '</a></p>';
 }
 
 /**

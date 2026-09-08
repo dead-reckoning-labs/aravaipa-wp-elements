@@ -4126,6 +4126,21 @@
 	display: none;
 }
 
+/* A small, quiet link rather than a button: this is a way out for the one
+   visitor out of many who needs it, not a call to action for everyone. */
+.arv-results__correction {
+	margin: 0.5rem 0 1.5rem;
+	font-size: var(--arv-fs-meta);
+}
+
+.arv-results__correction a {
+	color: var(--arv-results-muted);
+}
+
+.arv-results__correction a:hover {
+	color: inherit;
+}
+
 .arv-results__year-bar {
 	display: flex;
 	align-items: center;
