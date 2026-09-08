@@ -479,6 +479,37 @@ function arv_photos_cover( $url, $fresh = false ) {
 		}
 	}
 
+	// How long this request is allowed to spend fetching covers in total,
+	// across every gallery on the page.
+	//
+	// Without a ceiling the page's worst case is the gallery count times the
+	// timeout below, and the gallery count is not small: the Zenfolio
+	// backfill took the store from 206 to 559, so a cold cache was suddenly
+	// 559 fetches deep. Cloudflare gives the origin 100 seconds and then
+	// serves a 524, which is exactly what /photos/ did the first time it was
+	// asked to rebuild after that import. Fourteen slow hosts is enough to
+	// do it.
+	//
+	// Budgeted on elapsed time rather than a fetch count, because the thing
+	// that actually runs out is the time: fifty covers that answer in 200ms
+	// are fine and eight that hang for eight seconds each are not, and a
+	// count cannot tell those apart.
+	//
+	// Past the budget the gallery gets the same styled no-cover panel a
+	// gallery with no og:image gets, and nothing is written to the cache:
+	// this is "not yet", not "there is none", and the next render or the
+	// warm pass picks it up. A page missing a few thumbnails is a worse page.
+	// A page that times out is not a page.
+	static $spent = 0.0;
+
+	$budget = (float) apply_filters( 'arv_photos_cover_budget', 10.0 );
+
+	if ( ! $fresh && $spent >= $budget ) {
+		return '';
+	}
+
+	$started = microtime( true );
+
 	$response = wp_remote_get(
 		$url,
 		array(
@@ -489,10 +520,15 @@ function arv_photos_cover( $url, $fresh = false ) {
 			'headers'     => array(
 				'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36',
 			),
-			'timeout'     => 8,
+			// Five, not eight. A gallery thumbnail is not worth eight
+			// seconds of a page render, and every second here is spent
+			// inside somebody else's server.
+			'timeout'     => 5,
 			'redirection' => 3,
 		)
 	);
+
+	$spent += microtime( true ) - $started;
 
 	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
 		set_transient( $key, 'none', HOUR_IN_SECONDS );
