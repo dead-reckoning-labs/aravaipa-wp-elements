@@ -156,39 +156,102 @@ function arv_photos_race_date( $race, $year ) {
 	// answers to it. Two candidates is not a near miss to be broken by
 	// picking one, it is the same ambiguity that would put a wrong date on
 	// a gallery, and an undated gallery is the honest answer to it.
+	// Both looser passes read from an index built once per request rather
+	// than rescanning every known race date per gallery.
+	//
+	// This was O(galleries x race dates): 559 galleries against 656 dated
+	// races, each pair doing two explodes and two array_diffs, which came
+	// to 11ms per gallery and 6.4 seconds of the 8.8 the store read took.
+	// The work is identical, it just happens 656 times instead of 366,000.
+	$index = arv_photos_race_date_index();
+
+	if ( ! isset( $index[ $year ] ) ) {
+		return '';
+	}
+
 	$squashed = str_replace( ' ', '', $key );
-	$words    = array_filter( explode( ' ', $key ) );
-	$found    = '';
-	$hits     = 0;
+
+	if ( isset( $index[ $year ]['squashed'][ $squashed ] ) ) {
+		return $index[ $year ]['squashed'][ $squashed ];
+	}
+
+	$words = array_filter( explode( ' ', $key ) );
+
+	if ( ! $words ) {
+		return '';
+	}
+
+	$found = '';
+	$hits  = 0;
+
+	foreach ( $index[ $year ]['words'] as $entry ) {
+		$contains = ! array_diff( $words, $entry['words'] ) || ! array_diff( $entry['words'], $words );
+
+		if ( $contains ) {
+			$hits++;
+			$found = $entry['iso'];
+		}
+	}
+
+	// One candidate is a match; two is the same ambiguity that would put a
+	// wrong date on a gallery, and an undated gallery is the honest answer.
+	return ( 1 === $hits ) ? $found : '';
+}
+
+/**
+ * Race dates reshaped for lookup: per year, a squashed-name map and a list
+ * of pre-split word sets.
+ *
+ * arv_photos_race_dates() returns one flat "name|year => iso" map, which is
+ * the right shape to build and the wrong shape to query 559 times. This
+ * pays the reshaping cost once and is memoised against the same map, so it
+ * invalidates exactly when that does.
+ *
+ * @return array<int, array{squashed: array<string, string>, words: array<int, array{words: array, iso: string}>}>
+ */
+function arv_photos_race_date_index() {
+	$dates = arv_photos_race_dates();
+
+	static $memo = array();
+
+	$fingerprint = md5( wp_json_encode( array_keys( $dates ) ) );
+
+	if ( isset( $memo[ $fingerprint ] ) ) {
+		return $memo[ $fingerprint ];
+	}
+
+	$index = array();
 
 	foreach ( $dates as $indexed => $iso ) {
 		$parts = explode( '|', $indexed );
 
-		if ( 2 !== count( $parts ) || (int) $parts[1] !== (int) $year ) {
+		if ( 2 !== count( $parts ) ) {
 			continue;
 		}
 
-		$other = $parts[0];
+		$name = $parts[0];
+		$year = (int) $parts[1];
 
-		if ( str_replace( ' ', '', $other ) === $squashed ) {
-			return $iso;
-		}
-
-		$other_words = array_filter( explode( ' ', $other ) );
-
-		if ( ! $words || ! $other_words ) {
+		if ( ! $year ) {
 			continue;
 		}
 
-		$contains = ! array_diff( $words, $other_words ) || ! array_diff( $other_words, $words );
+		if ( ! isset( $index[ $year ] ) ) {
+			$index[ $year ] = array( 'squashed' => array(), 'words' => array() );
+		}
 
-		if ( $contains ) {
-			$hits++;
-			$found = $iso;
+		$index[ $year ]['squashed'][ str_replace( ' ', '', $name ) ] = $iso;
+
+		$words = array_filter( explode( ' ', $name ) );
+
+		if ( $words ) {
+			$index[ $year ]['words'][] = array( 'words' => $words, 'iso' => $iso );
 		}
 	}
 
-	return ( 1 === $hits ) ? $found : '';
+	$memo[ $fingerprint ] = $index;
+
+	return $index;
 }
 
 /**
@@ -951,7 +1014,16 @@ function arv_photos_shortcode( $atts ) {
 		'arv_photos'
 	);
 
-	return arv_photos_render( $atts );
+	// Cached against the gallery store and the covers currently resolved,
+	// so a new gallery or a newly warmed cover both invalidate it. See
+	// arv_cached_render(): this page took 33 seconds to build.
+	return arv_cached_render(
+		'photos',
+		array( $atts, get_option( ARV_PHOTOS_OPTION, array() ) ),
+		function () use ( $atts ) {
+			return arv_photos_render( $atts );
+		}
+	);
 }
 add_shortcode( 'arv_photos', 'arv_photos_shortcode' );
 
