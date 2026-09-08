@@ -10171,3 +10171,122 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	background-color: #0a6a6a;
 	color: #fff !important;
 }
+
+/* ------------------------------------------------------------- FAQ -- */
+
+/* Flat, bordered rows rather than the boxed-card-with-accent-bar look used
+   briefly on the Contact page and rejected: a plain top/bottom rule reads as
+   a list of questions, not as a stack of dashboard widgets. */
+
+.arv-faq-search-wrap {
+	--arv-teal: #5bb5a2;
+	margin: 0 0 2rem;
+}
+
+.arv-faq-search {
+	width: 100%;
+	max-width: 32rem;
+	padding: 0.7rem 1rem;
+	border: 1px solid #d4d4d4;
+	border-radius: var(--arv-radius);
+	/* 16px, same iOS-zoom reason as every other search input in this file. */
+	font-size: var(--arv-fs-input);
+	font-family: inherit;
+	background: #fff;
+	color: inherit;
+}
+
+.arv-faq-search::-webkit-search-cancel-button,
+.arv-faq-search::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.arv-faq-search::placeholder {
+	color: #8a8a8a;
+}
+
+.arv-faq-search:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 1px;
+}
+
+.arv-faq-search-status {
+	margin: 0.6rem 0 0;
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+}
+
+.arv-faq-section {
+	margin: 0 0 2.5rem;
+}
+
+.arv-faq-section h2 {
+	margin: 0 0 1rem;
+}
+
+.arv-faq-q {
+	border-bottom: 1px solid #e3e3e3;
+}
+
+.arv-faq-q:first-of-type {
+	border-top: 1px solid #e3e3e3;
+}
+
+.arv-faq-q summary {
+	position: relative;
+	padding: 1rem 2.25rem 1rem 0;
+	cursor: pointer;
+	font-weight: 600;
+}
+
+/* The theme's own accordions leave the default disclosure triangle in,
+   which sits flush left and reads as a bullet. Replaced with a plus/minus
+   on the right, the side people actually look for it, per Jamil: the old
+   grey boxes gave no sign they were clickable at all. */
+.arv-faq-q summary {
+	list-style: none;
+}
+
+.arv-faq-q summary::-webkit-details-marker {
+	display: none;
+}
+
+.arv-faq-q summary::after {
+	content: "+";
+	position: absolute;
+	right: 0.25rem;
+	top: 0.9rem;
+	font-weight: 400;
+	font-size: 1.4em;
+	line-height: 1;
+	color: #6a6a6a;
+}
+
+.arv-faq-q[open] summary::after {
+	content: "\2212";
+}
+
+.arv-faq-q summary:hover::after {
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-faq-a {
+	padding: 0 1.5rem 1.25rem 0;
+}
+
+.arv-faq-a p {
+	margin: 0 0 0.75rem;
+}
+
+.arv-faq-a p:last-child {
+	margin-bottom: 0;
+}
+
+/* The theme's own [hidden] rule loses to something more specific elsewhere
+   on source order, same fight documented next to every other filter in
+   this file, so the search filter needs its own override too. */
+.arv-faq-q[hidden],
+.arv-faq-section[hidden] {
+	display: none;
+}
