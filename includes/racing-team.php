@@ -231,7 +231,28 @@ function arv_athlete_profile_meta_markup( $athlete ) {
 		$out .= '<span class="arv-athlete__hometown">' . esc_html( $athlete['hometown'] ) . '</span>';
 	}
 
-	foreach ( array_merge( $athlete['divisions'], $athlete['regions'] ) as $tag ) {
+	// Division first, then any region that is not just restating it.
+	// The divisions carry the old page's own names ("Arizona Team") and the
+	// regions are the states inside them ("Arizona"), so showing both put
+	// ARIZONA TEAM next to ARIZONA on most profiles, saying one thing twice.
+	$tags = $athlete['divisions'];
+
+	foreach ( $athlete['regions'] as $region ) {
+		$duplicate = false;
+
+		foreach ( $tags as $shown ) {
+			if ( false !== stripos( $shown, $region ) || false !== stripos( $region, $shown ) ) {
+				$duplicate = true;
+				break;
+			}
+		}
+
+		if ( ! $duplicate ) {
+			$tags[] = $region;
+		}
+	}
+
+	foreach ( $tags as $tag ) {
 		$out .= '<span class="arv-athlete__tag">' . esc_html( $tag ) . '</span>';
 	}
 
@@ -321,20 +342,13 @@ function arv_athlete_profile_results_markup( $athlete ) {
 }
 
 /**
- * The videos an athlete appears in.
+ * The videos an athlete appears in, as a horizontal row of thumbnails that
+ * swap to a player in place when clicked.
  *
- * Real cards with the video's own title and thumbnail rather than a list
- * reading "Video 1, Video 2, Video 3", which told a visitor nothing about
- * what they were about to click.
- *
- * Titles and thumbnails come from YouTube's oEmbed endpoint, which needs no
- * API key, and are cached for a week: the title of a published video does
- * not change, and an athlete page should not make an outbound request per
- * video on every load.
- *
- * Still links out rather than embedding. The old roster page put 65 YouTube
- * iframes on one URL; a thumbnail is an image, an embed is a megabyte of
- * player.
+ * Click to play rather than embedding three iframes outright: an embed is
+ * roughly a megabyte of YouTube player each, a thumbnail is an image, and
+ * most visitors scroll past without watching anything. Whoever does want to
+ * watch gets the real player without leaving the page.
  *
  * @param array $athlete
  * @return string
@@ -352,20 +366,27 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 		return '';
 	}
 
-	$out = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2>';
-	$out .= '<ul class="arv-athlete__videos-list">';
+	$out  = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2>';
+	$out .= '<ul class="arv-athlete__videos-list" data-arv-video-row>';
 
 	foreach ( $urls as $url ) {
+		$id = arv_athlete_youtube_id( $url );
+
+		if ( '' === $id ) {
+			continue;
+		}
+
 		$meta = arv_athlete_video_meta( $url );
 
-		$out .= '<li class="arv-athlete__video"><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">';
+		$out .= '<li class="arv-athlete__video">';
+		$out .= '<button type="button" class="arv-athlete__video-play" data-arv-video-id="' . esc_attr( $id ) . '">';
 
 		if ( '' !== $meta['thumbnail'] ) {
 			$out .= '<img class="arv-athlete__video-thumb" src="' . esc_url( $meta['thumbnail'] ) . '" alt="" loading="lazy" width="320" height="180" />';
 		}
 
 		$out .= '<span class="arv-athlete__video-title">' . esc_html( $meta['title'] ) . '</span>';
-		$out .= '</a></li>';
+		$out .= '</button></li>';
 	}
 
 	$out .= '</ul></div>';
@@ -374,27 +395,72 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 }
 
 /**
+ * The eleven-character video id out of any YouTube URL shape.
+ *
+ * The roster migration scraped these out of iframe src attributes, so what
+ * is stored is the /embed/ form. That matters twice: oEmbed answers 404 for
+ * an /embed/ URL and 200 for a /watch? one, which is why every title on
+ * every athlete page silently fell back to "Watch on YouTube", and the
+ * player needs the bare id anyway.
+ *
+ * @param string $url
+ * @return string
+ */
+function arv_athlete_youtube_id( $url ) {
+	$patterns = array(
+		'~youtube\.com/embed/([A-Za-z0-9_-]{11})~',
+		'~youtube\.com/watch\?(?:.*&)?v=([A-Za-z0-9_-]{11})~',
+		'~youtu\.be/([A-Za-z0-9_-]{11})~',
+		'~youtube\.com/shorts/([A-Za-z0-9_-]{11})~',
+	);
+
+	foreach ( $patterns as $pattern ) {
+		if ( preg_match( $pattern, $url, $m ) ) {
+			return $m[1];
+		}
+	}
+
+	return '';
+}
+
+/**
  * A video's title and thumbnail, from YouTube's oEmbed endpoint.
  *
  * Cached for a week. A failed lookup caches for an hour instead, so a
  * transient network problem does not pin a blank title in place for the
- * full week, which is the mistake the photo cover warming made earlier.
+ * full week.
  *
  * @param string $url
  * @return array{title: string, thumbnail: string}
  */
 function arv_athlete_video_meta( $url ) {
-	$key    = 'arv_vid_' . md5( $url );
+	$id = arv_athlete_youtube_id( $url );
+
+	if ( '' === $id ) {
+		return array( 'title' => __( 'Watch on YouTube', 'aravaipa-elements' ), 'thumbnail' => '' );
+	}
+
+	// Keyed on the id, not the URL: the same video stored as an /embed/ URL
+	// on one athlete and a /watch? URL on another is one video.
+	$key    = 'arv_vid_' . $id;
 	$cached = get_transient( $key );
 
 	if ( is_array( $cached ) ) {
 		return $cached;
 	}
 
-	$fallback = array( 'title' => __( 'Watch on YouTube', 'aravaipa-elements' ), 'thumbnail' => '' );
+	// oEmbed only answers for a watch URL, whatever shape came in.
+	$watch = 'https://www.youtube.com/watch?v=' . $id;
+
+	$fallback = array(
+		'title'     => __( 'Watch on YouTube', 'aravaipa-elements' ),
+		// The thumbnail is predictable from the id, so a failed title lookup
+		// still leaves a real image rather than an empty card.
+		'thumbnail' => 'https://i.ytimg.com/vi/' . $id . '/hqdefault.jpg',
+	);
 
 	$response = wp_remote_get(
-		'https://www.youtube.com/oembed?format=json&url=' . rawurlencode( $url ),
+		'https://www.youtube.com/oembed?format=json&url=' . rawurlencode( $watch ),
 		array( 'timeout' => 5 )
 	);
 
@@ -412,7 +478,7 @@ function arv_athlete_video_meta( $url ) {
 
 	$meta = array(
 		'title'     => (string) $body['title'],
-		'thumbnail' => isset( $body['thumbnail_url'] ) ? (string) $body['thumbnail_url'] : '',
+		'thumbnail' => ! empty( $body['thumbnail_url'] ) ? (string) $body['thumbnail_url'] : $fallback['thumbnail'],
 	);
 
 	set_transient( $key, $meta, WEEK_IN_SECONDS );
