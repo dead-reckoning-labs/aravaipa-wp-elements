@@ -5879,6 +5879,27 @@ t( 'the podcast item links to the show page, not anchor.fm',
 	home_url( '/podcasts/inside-aravaipa/' ) === $items[2]['url'] );
 t( 'the broadcast carries a real badge',  'Broadcast' === $items[3]['badge'] );
 
+// The sidebar's own render: a plain list, not the full-bleed section.
+// arv_media_latest_render() breaks its section out to the full viewport
+// width, which is correct on /media/ and was the bug on the blog sidebar:
+// dropped into that ~300px column it bled out over the article next to it.
+$rail_html = arv_media_latest_rail_render( array( 'sources' => array( 'broadcast', 'film', 'podcast' ) ) );
+t( 'the rail carries none of the full-bleed section',
+	false === strpos( $rail_html, 'arv-media-latest__' ) );
+t( 'and renders the same three, newest first',
+	strpos( $rail_html, 'A Film' ) < strpos( $rail_html, 'An Episode' )
+	&& strpos( $rail_html, 'An Episode' ) < strpos( $rail_html, 'Cocodona 250' ) );
+t( 'a heading is optional',
+	false === strpos( arv_media_latest_rail_render( array( 'sources' => array( 'podcast' ) ) ), 'arv-media-latest-rail__head' ) );
+t( 'no items renders nothing',
+	'' === arv_media_latest_rail_render( array( 'sources' => array( 'article' ), 'offset' => 99 ) ) );
+
+$rail_shortcode = arv_media_latest_rail_shortcode( array( 'heading' => 'Latest', 'sources' => 'broadcast, podcast' ) );
+t( 'the rail shortcode parses sources the same way',
+	false === strpos( $rail_shortcode, 'A Film' ) && false !== strpos( $rail_shortcode, 'An Episode' ) );
+t( 'and prints the heading when one is given',
+	false !== strpos( $rail_shortcode, 'arv-media-latest-rail__head">Latest' ) );
+
 echo "\nmedia latest, rendered:\n";
 $html = arv_media_latest_render( array( 'heading' => 'Latest', 'intro' => 'Everything, newest first.' ) );
 t( 'the heading renders',                 false !== strpos( $html, 'Latest' ) );
