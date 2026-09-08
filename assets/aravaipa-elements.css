@@ -10341,8 +10341,19 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	color: inherit;
 }
 
-.arv-team__card[hidden] {
+.arv-team__card[hidden],
+.arv-team__group[hidden] {
 	display: none;
+}
+
+.arv-team__group {
+	margin: 0 0 3rem;
+}
+
+.arv-team__group-title {
+	margin: 0 0 1.25rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid #e3e3e3;
 }
 
 .arv-team__photo {

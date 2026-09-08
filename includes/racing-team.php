@@ -34,7 +34,6 @@ function arv_racing_team_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		array(
 			'status'   => 'current',
-			'region'   => '',
 			'division' => '',
 		),
 		$atts,
@@ -45,7 +44,6 @@ function arv_racing_team_shortcode( $atts ) {
 		array_filter(
 			array(
 				'status'   => $atts['status'],
-				'region'   => $atts['region'],
 				'division' => $atts['division'],
 			)
 		)
@@ -55,87 +53,105 @@ function arv_racing_team_shortcode( $atts ) {
 		return '<p class="arv-team-empty">' . esc_html__( 'No athletes to show yet.', 'aravaipa-elements' ) . '</p>';
 	}
 
-	$regions   = arv_athlete_store_filter_options( ARV_ATHLETE_REGION_TAX, $atts['status'] );
-	$divisions = arv_athlete_store_filter_options( ARV_ATHLETE_DIVISION_TAX, $atts['status'] );
-
-	$out  = '<div class="arv-team" data-arv-team-root>';
-	$out .= arv_racing_team_filters_markup( $regions, $divisions, $atts );
-	$out .= '<p class="arv-team__count" data-arv-team-count aria-live="polite"></p>';
-	$out .= '<div class="arv-team__grid" data-arv-team-grid>';
+	// Grouped by division rather than shown as one flat grid of 51, because
+	// each division's card art shares a colour: the Arizona banners are red,
+	// Colorado's blue, Utah's orange. Mixed together the page reads as noise;
+	// grouped, each block is visually coherent on its own.
+	$groups = array();
 
 	foreach ( $athletes as $athlete ) {
-		$out .= arv_racing_team_card_markup( $athlete );
+		$division = ! empty( $athlete['divisions'] ) ? $athlete['divisions'][0] : __( 'Team', 'aravaipa-elements' );
+		$groups[ $division ][] = $athlete;
 	}
 
-	$out .= '</div></div>';
+	$groups = arv_racing_team_sort_groups( $groups );
+
+	$out  = '<div class="arv-team" data-arv-team-root>';
+	$out .= arv_racing_team_filters_markup( array_keys( $groups ), $atts );
+	$out .= '<p class="arv-team__count" data-arv-team-count aria-live="polite"></p>';
+
+	foreach ( $groups as $division => $members ) {
+		$out .= '<section class="arv-team__group" data-arv-team-group="' . esc_attr( sanitize_title( $division ) ) . '">';
+		$out .= '<h2 class="arv-team__group-title">' . esc_html( $division ) . '</h2>';
+		$out .= '<div class="arv-team__grid">';
+
+		foreach ( $members as $athlete ) {
+			$out .= arv_racing_team_card_markup( $athlete );
+		}
+
+		$out .= '</div></section>';
+	}
+
+	$out .= '</div>';
 
 	return $out;
 }
 add_shortcode( 'arv_racing_team', 'arv_racing_team_shortcode' );
 
 /**
- * The region/division options actually in use for this status, so a filter
- * never offers a choice that would return zero results.
+ * Put the division groups in the order the old roster page used.
  *
- * @param string $taxonomy
- * @param string $status
- * @return array<int, array{slug: string, name: string}>
+ * Alphabetical would open the roster on California and bury Arizona in the
+ * middle, which is backwards for a company headquartered there. Anything
+ * not in this list keeps its place after the ones that are, so adding a
+ * new division does not require editing this function to make it appear.
+ *
+ * @param array $groups division name => athletes
+ * @return array
  */
-function arv_athlete_store_filter_options( $taxonomy, $status ) {
-	$terms = get_terms(
-		array(
-			'taxonomy'   => $taxonomy,
-			'hide_empty' => true,
-		)
+function arv_racing_team_sort_groups( $groups ) {
+	$order = array(
+		'Arizona Team',
+		'Colorado Team',
+		'California',
+		'Utah',
+		'Nevada',
+		'North East',
+		'Great Lakes',
 	);
 
-	if ( is_wp_error( $terms ) ) {
-		return array();
+	$sorted = array();
+
+	foreach ( $order as $division ) {
+		if ( isset( $groups[ $division ] ) ) {
+			$sorted[ $division ] = $groups[ $division ];
+			unset( $groups[ $division ] );
+		}
 	}
 
-	$options = array();
-
-	foreach ( $terms as $term ) {
-		$options[] = array( 'slug' => $term->slug, 'name' => $term->name );
-	}
-
-	return $options;
+	return $sorted + $groups;
 }
 
 /**
- * The filter controls above the grid.
+ * The filter control above the grid.
  *
- * @param array $regions
- * @param array $divisions
+ * One dropdown, division only, per Jamil: region and division described the
+ * same seven buckets on the old page, so offering both was two ways to ask
+ * the same question. Options come from the groups actually rendered, so the
+ * dropdown can never offer a choice that returns nothing.
+ *
+ * @param array $divisions Division names, already in display order.
  * @param array $atts
  * @return string
  */
-function arv_racing_team_filters_markup( $regions, $divisions, $atts ) {
-	if ( empty( $regions ) && empty( $divisions ) ) {
+function arv_racing_team_filters_markup( $divisions, $atts ) {
+	if ( count( $divisions ) < 2 ) {
 		return '';
 	}
 
-	$out = '<div class="arv-team__filters">';
+	$out  = '<div class="arv-team__filters">';
+	$out .= '<select class="arv-team__filter" data-arv-team-division aria-label="'
+		. esc_attr__( 'Filter by division', 'aravaipa-elements' ) . '">';
+	$out .= '<option value="">' . esc_html__( 'All divisions', 'aravaipa-elements' ) . '</option>';
 
-	if ( ! empty( $regions ) ) {
-		$out .= '<select class="arv-team__filter" data-arv-team-region aria-label="' . esc_attr__( 'Filter by region', 'aravaipa-elements' ) . '">';
-		$out .= '<option value="">' . esc_html__( 'All regions', 'aravaipa-elements' ) . '</option>';
-		foreach ( $regions as $r ) {
-			$out .= '<option value="' . esc_attr( $r['slug'] ) . '"' . selected( $atts['region'], $r['slug'], false ) . '>' . esc_html( $r['name'] ) . '</option>';
-		}
-		$out .= '</select>';
+	foreach ( $divisions as $division ) {
+		$slug  = sanitize_title( $division );
+		$out  .= '<option value="' . esc_attr( $slug ) . '"'
+			. selected( sanitize_title( $atts['division'] ), $slug, false ) . '>'
+			. esc_html( $division ) . '</option>';
 	}
 
-	if ( ! empty( $divisions ) ) {
-		$out .= '<select class="arv-team__filter" data-arv-team-division aria-label="' . esc_attr__( 'Filter by division', 'aravaipa-elements' ) . '">';
-		$out .= '<option value="">' . esc_html__( 'All divisions', 'aravaipa-elements' ) . '</option>';
-		foreach ( $divisions as $d ) {
-			$out .= '<option value="' . esc_attr( $d['slug'] ) . '"' . selected( $atts['division'], $d['slug'], false ) . '>' . esc_html( $d['name'] ) . '</option>';
-		}
-		$out .= '</select>';
-	}
-
-	$out .= '</div>';
+	$out .= '</select></div>';
 
 	return $out;
 }
@@ -143,18 +159,23 @@ function arv_racing_team_filters_markup( $regions, $divisions, $atts ) {
 /**
  * One athlete's card in the grid.
  *
+ * The division attribute is the term slug, not its name. It was the name
+ * lowercased, which meant the dropdown (whose values are slugs) compared
+ * "arizona-team" against "arizona team" and matched nothing: picking any
+ * option emptied the grid and reported zero athletes.
+ *
  * @param array $athlete
  * @return string
  */
 function arv_racing_team_card_markup( $athlete ) {
-	$regions_attr   = esc_attr( strtolower( implode( '|', $athlete['regions'] ) ) );
-	$divisions_attr = esc_attr( strtolower( implode( '|', $athlete['divisions'] ) ) );
+	$slugs = array_map( 'sanitize_title', $athlete['divisions'] );
 
 	$out  = '<a class="arv-team__card" href="' . esc_url( $athlete['url'] ) . '"';
-	$out .= ' data-arv-team-region="' . $regions_attr . '" data-arv-team-division="' . $divisions_attr . '">';
+	$out .= ' data-arv-team-division="' . esc_attr( implode( '|', $slugs ) ) . '">';
 
 	if ( $athlete['photo'] ) {
-		$out .= '<img class="arv-team__photo" src="' . esc_url( $athlete['photo'] ) . '" alt="' . esc_attr( $athlete['name'] ) . '" loading="lazy" width="400" height="400" />';
+		$out .= '<img class="arv-team__photo" src="' . esc_url( $athlete['photo'] ) . '" alt="'
+			. esc_attr( $athlete['name'] ) . '" loading="lazy" width="400" height="400" />';
 	}
 
 	$out .= '<span class="arv-team__name">' . esc_html( $athlete['name'] ) . '</span>';
