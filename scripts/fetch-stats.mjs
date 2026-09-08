@@ -65,18 +65,24 @@ const isTimedRace = ( race ) => race.isTimed === true;
  * Whether a race is a team or relay entry rather than an individual one.
  *
  * A relay's duration is not the same fact about the day as a solo race's:
- * Chase the Moon's "3 Per Team" and "5 Per Team" run the same twelve hours
- * as its "12HR Solo" by the board's own bookkeeping, since a team relay
- * with no stated duration of its own inherits the event's cutoff the same
- * way a solo race without one would. That tie is real on paper and wrong
- * in what it is claiming: three unrelated things measuring twelve hours
- * is not the same as the runner-up genuinely being ten per cent behind
- * the winner, which is what the headline check two paragraphs down is
- * actually asking. Kept out of that one comparison; still listed in the
- * winners table below it, since "who won the 5 Per Team relay" is a real
- * answer this event owes a real answer to.
+ * Chase the Moon's "12HR 3-Per Relay" and "12HR 5-Per Relay" run the same
+ * twelve hours as its "12HR Solo" by the board's own bookkeeping, since a
+ * relay with no stated duration of its own inherits the event's cutoff the
+ * same way a solo race without one would. That tie is real on paper and
+ * wrong in what it is claiming: three unrelated things measuring twelve
+ * hours is not the same as the runner-up genuinely being ten per cent
+ * behind the winner, which is what the headline check two paragraphs down
+ * is actually asking. Kept out of that one comparison; still listed in the
+ * winners table below it, since "who won the 5 Per Relay" is a real answer
+ * this event owes a real answer to.
+ *
+ * Both words, not just "team": the board calls Chase the Moon's own
+ * divisions "Relay" and never "Team" at all, which this matched on
+ * exclusively until the day that was checked against the actual event it
+ * was written for and matched nothing, silently, because a tied headline
+ * fails the same way an absent one does.
  */
-const isTeamRace = ( race ) => /\bteam\b/i.test( race.name || '' );
+const isTeamRace = ( race ) => /\b(?:teams?|relays?)\b/i.test( race.name || '' );
 
 /**
  * How long a timed race runs, in hours.
