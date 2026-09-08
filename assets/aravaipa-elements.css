@@ -10757,3 +10757,33 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-athlete__upcoming-list li {
 	margin-bottom: 0.5rem;
 }
+
+/* Our own coverage of an athlete: a preview naming them a contender, a race
+   report, a feature. A link and a date rather than a card, same weight as
+   the results list beside it, since this is more of that athlete's own
+   history rather than a separate media section. */
+.arv-athlete__articles {
+	margin: 2.5rem 0 0;
+}
+
+.arv-athlete__articles h2 {
+	margin: 0 0 1rem;
+}
+
+.arv-athlete__articles-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-athlete__article {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 0.6rem;
+	margin-bottom: 0.5rem;
+}
+
+.arv-athlete__article-date {
+	color: #6a6a6a;
+	font-size: var(--arv-fs-meta);
+}
