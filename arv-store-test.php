@@ -968,6 +968,50 @@ t( 'the mangled spelling is the same', false === strpos( $mangled, 'http://none'
 arv_results_ultrarunning_store_set( array() );
 arv_results_store_set( array() );
 
+echo "\na running that was never scored, but has something to say:\n";
+// 2014's Mogollon Monster was stopped by a storm mid-race and never scored:
+// no live board, no UltraSignup or UltraRunning link, no archive file. The
+// store's own guard drops exactly that row, the same guard that keeps a row
+// with nothing at all off the page. A note is the thing that earns it a
+// place: it is not "a race happened", it is "here is what happened to it".
+arv_results_store_set( array(
+	array( 'name' => 'Mogollon Monster', 'iso' => '2014-09-27', 'display' => 'September 27',
+	       'note' => 'Stopped mid-race by a storm. No results were ever scored.' ),
+	array( 'name' => 'Mogollon Monster', 'iso' => '2013-09-28', 'display' => 'September 28',
+	       'archive' => array( array( 'label' => 'Results', 'url' => 'https://aravaiparunning.com/results/mog13.htm' ) ) ),
+) );
+$noted = arv_results_store_get();
+t( 'a note-only row is kept, not dropped', 2 === count( $noted ) );
+t( 'the note survives the round trip',
+	'Stopped mid-race by a storm. No results were ever scored.' === $noted[0]['note'] );
+
+$mog_html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false', 'year' => '2014' ) );
+t( 'the note renders on the page',        false !== strpos( $mog_html, 'Stopped mid-race by a storm' ) );
+t( 'in its own styled line',              false !== strpos( $mog_html, 'arv-results__race-note' ) );
+t( 'and the date still shows',            false !== strpos( $mog_html, 'September 27' ) );
+
+// A row with both a note and a real link shows both: the note does not
+// replace the buttons, it sits with them.
+arv_results_store_set( array(
+	array( 'name' => 'Test Storm Race', 'iso' => '2022-08-01', 'display' => 'August 1',
+	       'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=1',
+	       'note' => 'Course shortened due to smoke; times not comparable to other years.' ),
+) );
+$both = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false', 'year' => '2022' ) );
+t( 'a note beside a real link keeps both', false !== strpos( $both, 'ultrasignup.com/results_event.aspx?did=1' )
+	&& false !== strpos( $both, 'Course shortened due to smoke' ) );
+
+// A note is text, not markup: it goes through esc_html() like a winner's
+// name does, so a note field is not a way to inject a script tag into the
+// results archive.
+arv_results_store_set( array(
+	array( 'name' => 'Test XSS Race', 'iso' => '2022-08-02', 'note' => '<script>x</script>' ),
+) );
+$escaped = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'false', 'year' => '2022' ) );
+t( 'a note is escaped, not rendered as html', false === strpos( $escaped, '<script>x' ) );
+
+arv_results_store_set( array() );
+
 echo "\nultrasignup results link, derived from the register url:\n";
 // 2026 uses "dtid", every row before it used "did". The regex only ever
 // matched "did", so this returned '' for every current race and the one

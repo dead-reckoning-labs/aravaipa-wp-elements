@@ -86,6 +86,7 @@ function arv_results_store_get() {
 			// so a row read out of the option has one shape whenever it was
 			// written. A row from before this existed simply has none.
 			'archive'      => arv_results_archive_links( $row ),
+			'note'         => isset( $row['note'] ) ? (string) $row['note'] : '',
 		);
 	}
 
@@ -179,14 +180,19 @@ function arv_results_store_set( $rows ) {
 			'ultrasignup'  => isset( $row['ultrasignup'] ) ? esc_url_raw( trim( (string) $row['ultrasignup'] ) ) : '',
 			'ultrarunning' => arv_results_clean_ultrarunning( isset( $row['ultrarunning'] ) ? $row['ultrarunning'] : '' ),
 			'archive'      => $archive,
+			// A fact about a running that has no result to point to, such as
+			// "stopped by a storm, never scored". A note earns the row its
+			// place the same way a link does: it is something to tell the
+			// reader, not just a date claiming a race happened.
+			'note'         => isset( $row['note'] ) ? sanitize_text_field( trim( (string) $row['note'] ) ) : '',
 		);
 
-		// A row with no way through to a result is a row that says a race
-		// happened and nothing else, which the calendar already says better.
-		// The archive counts: before 2020 it is usually the only one there
-		// is, and dropping those rows would have discarded most of the years
-		// this store was extended to hold.
-		if ( '' === $entry['live'] && '' === $entry['ultrasignup'] && '' === $entry['ultrarunning'] && empty( $archive ) ) {
+		// A row with no way through to a result and nothing to say instead
+		// is a row that only claims a race happened, which the calendar
+		// already says better. The archive counts: before 2020 it is
+		// usually the only one there is, and dropping those rows would have
+		// discarded most of the years this store was extended to hold.
+		if ( '' === $entry['live'] && '' === $entry['ultrasignup'] && '' === $entry['ultrarunning'] && empty( $archive ) && '' === $entry['note'] ) {
 			continue;
 		}
 
