@@ -10133,3 +10133,41 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 		grid-template-columns: 1fr;
 	}
 }
+
+/* ------------------------------------------------------------------ *
+ * Contact Form 7 submit buttons.
+ *
+ * The theme declares `.x-btn, .button, [type="submit"]` twice, and the
+ * second declaration sets the text colour to #2543C5. That is the link
+ * blue, painted onto a teal button, on every Contact Form 7 submit on
+ * the site. It is close to unreadable and it is not specific to any one
+ * page, so it is fixed here rather than on the page that happened to
+ * surface it.
+ *
+ * Scoped to CF7's own submit control instead of the theme's shared
+ * `[type="submit"]` selector, so the search button and any other themed
+ * button keep whatever the theme intends for them.
+ * ------------------------------------------------------------------ */
+
+.wpcf7 form input.wpcf7-submit,
+.wpcf7 form button.wpcf7-submit {
+	background-color: #008080;
+	/* !important because the rule this corrects is a bare element
+	   selector loaded after this file, and matching its specificity
+	   would mean copying a selector this does not want to own. */
+	color: #fff !important;
+	border: 0;
+	border-radius: 4px;
+	padding: 0.7rem 1.4rem;
+	font-weight: 700;
+	text-shadow: none;
+	cursor: pointer;
+}
+
+.wpcf7 form input.wpcf7-submit:hover,
+.wpcf7 form input.wpcf7-submit:focus-visible,
+.wpcf7 form button.wpcf7-submit:hover,
+.wpcf7 form button.wpcf7-submit:focus-visible {
+	background-color: #0a6a6a;
+	color: #fff !important;
+}
