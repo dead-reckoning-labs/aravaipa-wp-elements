@@ -10426,11 +10426,23 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 }
 
 .arv-athlete__links {
+	list-style: none;
 	margin: 1.5rem 0 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.25rem;
 }
 
 .arv-athlete__links a {
-	margin-right: 1rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+/* Inherits the link colour, so the mark and its label always match. */
+.arv-athlete__icon {
+	flex: none;
 }
 
 /* Athlete profile: results and videos, rendered from the plain text fields

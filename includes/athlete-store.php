@@ -119,6 +119,10 @@ function arv_athlete_store_fields() {
 		// race name differed slightly between two sources. A stored ID
 		// cannot have that bug.
 		'_arv_ultrasignup_id'  => __( 'UltraSignup participant ID', 'aravaipa-elements' ),
+		// The link the old roster page carried, which is name-based rather
+		// than an ID. Kept alongside the ID: the ID is what a future results
+		// sync joins on, this is just where the visitor's click goes.
+		'_arv_ultrasignup_url' => __( 'UltraSignup profile URL', 'aravaipa-elements' ),
 		'_arv_ultrarunning_url' => __( 'UltraRunning Mag profile URL', 'aravaipa-elements' ),
 		'_arv_personal_sponsor' => __( 'Personal shoe/gear sponsor, if different from Aravaipa', 'aravaipa-elements' ),
 		'_arv_alumni_note'     => __( 'Where they are now (alumni spotlight)', 'aravaipa-elements' ),
