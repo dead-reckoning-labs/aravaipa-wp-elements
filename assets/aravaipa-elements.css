@@ -10514,9 +10514,22 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	margin-bottom: 0.35rem;
 }
 
-/* Video row: thumbnails that scroll sideways and swap to a real player
-   when clicked. Horizontal rather than a grid because an athlete has a
-   handful of videos, not a library, and a row keeps them beside the
+/* The big player. Empty and hidden until something is clicked, so a
+   profile nobody watches is no taller than it was. */
+.arv-athlete__video-stage {
+	margin: 0 0 1rem;
+	background: #000;
+	border-radius: var(--arv-radius);
+	overflow: hidden;
+}
+
+.arv-athlete__video-stage[hidden] {
+	display: none;
+}
+
+/* Video row: thumbnails that scroll sideways and load the clicked video
+   into the stage above. Horizontal rather than a grid because an athlete
+   has a handful of videos, not a library, and a row keeps them beside the
    results instead of pushing the page longer. */
 .arv-athlete__videos-list {
 	list-style: none;
@@ -10589,8 +10602,19 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	line-height: 1.35;
 }
 
-.arv-athlete__video-play:hover .arv-athlete__video-title {
+.arv-athlete__video-play:hover .arv-athlete__video-title,
+.arv-athlete__video-play.is-playing .arv-athlete__video-title {
 	color: var(--arv-accent, #ff2a13);
+}
+
+/* Which one is on the stage. Dimming the thumbnail and dropping its play
+   badge, because it is playing above rather than waiting to be started. */
+.arv-athlete__video-play.is-playing .arv-athlete__video-thumb {
+	opacity: 0.45;
+}
+
+.arv-athlete__video-play.is-playing::after {
+	display: none;
 }
 
 /* An athlete's upcoming races, matched against UltraSignup rather than

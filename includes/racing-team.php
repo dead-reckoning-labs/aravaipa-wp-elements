@@ -385,13 +385,16 @@ function arv_athlete_profile_results_markup( $athlete ) {
 }
 
 /**
- * The videos an athlete appears in, as a horizontal row of thumbnails that
- * swap to a player in place when clicked.
+ * The videos an athlete appears in: one large player, with the rest of the
+ * videos as a row of thumbnails scrolling sideways underneath it.
  *
- * Click to play rather than embedding three iframes outright: an embed is
+ * Click to play rather than embedding every video outright: an embed is
  * roughly a megabyte of YouTube player each, a thumbnail is an image, and
  * most visitors scroll past without watching anything. Whoever does want to
- * watch gets the real player without leaving the page.
+ * watch gets a full width player without leaving the page.
+ *
+ * The stage ships empty and hidden. It only exists once someone picks a
+ * video, which keeps the profile the same height for everyone who doesn't.
  *
  * @param array $athlete
  * @return string
@@ -409,8 +412,7 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 		return '';
 	}
 
-	$out  = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2>';
-	$out .= '<ul class="arv-athlete__videos-list" data-arv-video-row>';
+	$cards = '';
 
 	foreach ( $urls as $url ) {
 		$id = arv_athlete_youtube_id( $url );
@@ -421,18 +423,27 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 
 		$meta = arv_athlete_video_meta( $url );
 
-		$out .= '<li class="arv-athlete__video">';
-		$out .= '<button type="button" class="arv-athlete__video-play" data-arv-video-id="' . esc_attr( $id ) . '">';
+		$cards .= '<li class="arv-athlete__video">';
+		$cards .= '<button type="button" class="arv-athlete__video-play" aria-pressed="false"'
+			. ' data-arv-video-id="' . esc_attr( $id ) . '"'
+			. ' data-arv-video-title="' . esc_attr( $meta['title'] ) . '">';
 
 		if ( '' !== $meta['thumbnail'] ) {
-			$out .= '<img class="arv-athlete__video-thumb" src="' . esc_url( $meta['thumbnail'] ) . '" alt="" loading="lazy" width="320" height="180" />';
+			$cards .= '<img class="arv-athlete__video-thumb" src="' . esc_url( $meta['thumbnail'] ) . '" alt="" loading="lazy" width="320" height="180" />';
 		}
 
-		$out .= '<span class="arv-athlete__video-title">' . esc_html( $meta['title'] ) . '</span>';
-		$out .= '</button></li>';
+		$cards .= '<span class="arv-athlete__video-title">' . esc_html( $meta['title'] ) . '</span>';
+		$cards .= '</button></li>';
 	}
 
-	$out .= '</ul></div>';
+	if ( '' === $cards ) {
+		return '';
+	}
+
+	$out  = '<div class="arv-athlete__videos" data-arv-videos><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2>';
+	$out .= '<div class="arv-athlete__video-stage" data-arv-video-stage hidden></div>';
+	$out .= '<ul class="arv-athlete__videos-list" data-arv-video-row>' . $cards . '</ul>';
+	$out .= '</div>';
 
 	return $out;
 }
