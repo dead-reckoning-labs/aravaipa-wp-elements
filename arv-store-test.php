@@ -3148,6 +3148,33 @@ arv_results_store_set( array(
 ) );
 t( 'one edition shows no year switcher', false === strpos( arv_live_page_render( array( 'slug' => 'one_off-2026' ) ), 'arv-live__years' ) );
 
+// The results store reaches back further than the board does. A year with
+// no live URL has nothing to show, so it gets no pill: linking one sent the
+// reader to ?edition=YYYY, which repainted the masthead for a year the
+// frame below could not follow.
+arv_results_store_set( array(
+	array( 'name' => 'Old Race', 'iso' => '2026-01-01', 'display' => 'January 1',
+	       'live' => 'https://live.aravaiparunning.com/#/old_race-2026' ),
+	array( 'name' => 'Old Race', 'iso' => '2025-01-01', 'display' => 'January 1',
+	       'live' => 'https://live.aravaiparunning.com/#/old_race-2025' ),
+	array( 'name' => 'Old Race', 'iso' => '2014-01-01', 'display' => 'January 1',
+	       'live' => '', 'ultrasignup' => 'https://ultrasignup.com/results_event.aspx?did=1' ),
+) );
+$switch = arv_live_page_render( array( 'slug' => 'old_race-2026' ) );
+t( 'a year with a board gets a pill',    false !== strpos( $switch, '>2025<' ) );
+t( 'a year with no board gets none',     false === strpos( $switch, '>2014<' ) );
+t( 'and is never linked by edition var', false === strpos( $switch, 'edition=2014' ) );
+
+// One board and nine boardless runnings is not a switcher, it is one pill.
+arv_results_store_set( array(
+	array( 'name' => 'Lone Board', 'iso' => '2026-01-01', 'display' => 'January 1',
+	       'live' => 'https://live.aravaiparunning.com/#/lone_board-2026' ),
+	array( 'name' => 'Lone Board', 'iso' => '2015-01-01', 'display' => 'January 1', 'live' => '' ),
+	array( 'name' => 'Lone Board', 'iso' => '2014-01-01', 'display' => 'January 1', 'live' => '' ),
+) );
+t( 'one board among many runnings shows no switcher',
+	false === strpos( arv_live_page_render( array( 'slug' => 'lone_board-2026' ) ), 'arv-live__years' ) );
+
 // A winner's name is untrusted text like any other.
 arv_stats_store_set( array( array(
 	'slug' => 'one_off-2026', 'finishers' => 3, 'headline' => true,

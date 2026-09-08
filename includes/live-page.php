@@ -568,6 +568,27 @@ function arv_live_bar( $name, $edition, $meta, $editions, $show, $stats = null )
  * @return string
  */
 function arv_live_years( $editions, $current ) {
+	// Only the editions the board actually timed. The results store reaches
+	// back further than live.aravaiparunning.com does: Mogollon Monster has
+	// fourteen runnings on file and five boards, so eleven of its pills
+	// pointed at a year with no timing behind it. Those fell through
+	// arv_live_edition_url() to ?edition=YYYY on the current page, which
+	// repainted the masthead for a year the frame below it could not
+	// follow, leaving the header claiming 2012 above a 2021 board.
+	//
+	// Filtered here rather than by the caller because every caller wants
+	// the same thing, and because the count check below has to run against
+	// what will actually be drawn: a race with ten runnings and one board
+	// needs no switcher at all.
+	$editions = array_values(
+		array_filter(
+			$editions,
+			function ( $edition ) {
+				return '' !== arv_live_store_slug( isset( $edition['live'] ) ? $edition['live'] : '' );
+			}
+		)
+	);
+
 	if ( count( $editions ) < 2 ) {
 		return '';
 	}
