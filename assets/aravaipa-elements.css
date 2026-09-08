@@ -10417,3 +10417,39 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-athlete__links a {
 	margin-right: 1rem;
 }
+
+/* Athlete profile: results and videos, rendered from the plain text fields
+   the migration off the old Cornerstone roster page produced. */
+
+.arv-athlete__results,
+.arv-athlete__videos {
+	margin: 2.5rem 0 0;
+}
+
+.arv-athlete__results h2,
+.arv-athlete__videos h2 {
+	margin: 0 0 1rem;
+}
+
+.arv-athlete__results-year {
+	margin: 1.5rem 0 0.5rem;
+	font-size: var(--arv-fs-lead);
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	color: #6a6a6a;
+}
+
+.arv-athlete__results-year:first-of-type {
+	margin-top: 0;
+}
+
+.arv-athlete__results-list,
+.arv-athlete__videos-list {
+	margin: 0 0 0 1.25rem;
+	padding: 0;
+}
+
+.arv-athlete__results-list li,
+.arv-athlete__videos-list li {
+	margin-bottom: 0.35rem;
+}

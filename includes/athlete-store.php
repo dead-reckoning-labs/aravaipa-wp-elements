@@ -122,6 +122,12 @@ function arv_athlete_store_fields() {
 		'_arv_ultrarunning_url' => __( 'UltraRunning Mag profile URL', 'aravaipa-elements' ),
 		'_arv_personal_sponsor' => __( 'Personal shoe/gear sponsor, if different from Aravaipa', 'aravaipa-elements' ),
 		'_arv_alumni_note'     => __( 'Where they are now (alumni spotlight)', 'aravaipa-elements' ),
+		// Plain text, one result per line, with a bare year on its own line
+		// as a heading. Parsed at render time by
+		// arv_athlete_profile_results_markup(), so a typo is a text edit
+		// rather than a data migration.
+		'_arv_results_text'    => __( 'Results: one per line, a bare year on its own line starts a new group', 'aravaipa-elements' ),
+		'_arv_video_urls'      => __( 'Video URLs, one per line', 'aravaipa-elements' ),
 	);
 }
 
@@ -131,7 +137,7 @@ function arv_athlete_store_fields() {
  * @return array<int, string>
  */
 function arv_athlete_store_textarea_fields() {
-	return array( '_arv_alumni_note' );
+	return array( '_arv_alumni_note', '_arv_results_text', '_arv_video_urls' );
 }
 
 /**
@@ -177,9 +183,12 @@ function arv_athlete_admin_meta_box_render( $post ) {
 
 		if ( in_array( $key, $textareas, true ) ) {
 			printf(
-				'<textarea id="%1$s" name="%1$s" rows="3" class="large-text">%2$s</textarea>',
+				'<textarea id="%1$s" name="%1$s" rows="%3$d" class="large-text">%2$s</textarea>',
 				esc_attr( $key ),
-				esc_textarea( $value )
+				esc_textarea( $value ),
+				// A results block runs to a couple of dozen lines; a "where
+				// are they now" note is a sentence.
+				'_arv_results_text' === $key ? 14 : 4
 			);
 		} else {
 			printf(

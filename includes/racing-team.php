@@ -189,7 +189,11 @@ function arv_athlete_profile_content( $content ) {
 		return $content;
 	}
 
-	return arv_athlete_profile_meta_markup( $athlete ) . $content . arv_athlete_profile_links_markup( $athlete );
+	return arv_athlete_profile_meta_markup( $athlete )
+		. $content
+		. arv_athlete_profile_results_markup( $athlete )
+		. arv_athlete_profile_videos_markup( $athlete )
+		. arv_athlete_profile_links_markup( $athlete );
 }
 add_filter( 'the_content', 'arv_athlete_profile_content' );
 
@@ -219,6 +223,115 @@ function arv_athlete_profile_meta_markup( $athlete ) {
 	if ( 'alumni' === $athlete['status'] && '' !== $athlete['alumni_note'] ) {
 		$out .= '<p class="arv-athlete__alumni-note">' . esc_html( $athlete['alumni_note'] ) . '</p>';
 	}
+
+	return $out;
+}
+
+/**
+ * An athlete's results, grouped by year.
+ *
+ * The stored text is what the old Cornerstone page carried: a bare four
+ * digit year on its own line, then that year's results one per line. The
+ * last few lines are the labels of the link buttons that sat underneath
+ * ("UltraSignup", "Strava", "UltraRunning Mag"), which are dropped here
+ * because arv_athlete_profile_links_markup() renders those as real links
+ * from stored URLs instead.
+ *
+ * Parsed at render time rather than at import, so correcting a typo in a
+ * result means editing one plain text field and nothing else.
+ *
+ * @param array $athlete
+ * @return string
+ */
+function arv_athlete_profile_results_markup( $athlete ) {
+	$raw = isset( $athlete['results_text'] ) ? trim( (string) $athlete['results_text'] ) : '';
+
+	if ( '' === $raw ) {
+		return '';
+	}
+
+	// Labels of the old link buttons, not results.
+	$not_results = array( 'ultrasignup', 'strava', 'ultrarunning mag', 'ultrarunning magazine', 'athlinks' );
+
+	$years = array();
+	$year  = '';
+
+	foreach ( preg_split( '/\R/', $raw ) as $line ) {
+		$line = trim( $line );
+
+		if ( '' === $line || in_array( strtolower( $line ), $not_results, true ) ) {
+			continue;
+		}
+
+		if ( preg_match( '/^(19|20)\d{2}$/', $line ) ) {
+			$year           = $line;
+			$years[ $year ] = isset( $years[ $year ] ) ? $years[ $year ] : array();
+			continue;
+		}
+
+		// A result before any year heading still belongs somewhere.
+		if ( '' === $year ) {
+			$year           = __( 'Selected results', 'aravaipa-elements' );
+			$years[ $year ] = array();
+		}
+
+		$years[ $year ][] = $line;
+	}
+
+	$years = array_filter( $years );
+
+	if ( empty( $years ) ) {
+		return '';
+	}
+
+	$out = '<div class="arv-athlete__results"><h2>' . esc_html__( 'Results', 'aravaipa-elements' ) . '</h2>';
+
+	foreach ( $years as $heading => $results ) {
+		$out .= '<h3 class="arv-athlete__results-year">' . esc_html( $heading ) . '</h3><ul class="arv-athlete__results-list">';
+		foreach ( $results as $result ) {
+			$out .= '<li>' . esc_html( $result ) . '</li>';
+		}
+		$out .= '</ul>';
+	}
+
+	$out .= '</div>';
+
+	return $out;
+}
+
+/**
+ * The videos an athlete appears in.
+ *
+ * Rendered as links rather than 65 embedded iframes, which is what the old
+ * roster page did on a single page. One athlete's handful of videos could
+ * be embedded safely, but a link keeps the page weightless and still gets
+ * someone to the video in one click.
+ *
+ * @param array $athlete
+ * @return string
+ */
+function arv_athlete_profile_videos_markup( $athlete ) {
+	$raw = isset( $athlete['video_urls'] ) ? trim( (string) $athlete['video_urls'] ) : '';
+
+	if ( '' === $raw ) {
+		return '';
+	}
+
+	$urls = array_filter( array_map( 'trim', preg_split( '/\R/', $raw ) ) );
+
+	if ( empty( $urls ) ) {
+		return '';
+	}
+
+	$out = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2><ul class="arv-athlete__videos-list">';
+
+	foreach ( $urls as $i => $url ) {
+		$out .= '<li><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
+			. esc_html( sprintf( /* translators: video number */ __( 'Video %d', 'aravaipa-elements' ), $i + 1 ) )
+			. '</a></li>';
+	}
+
+	$out .= '</ul></div>';
 
 	return $out;
 }
