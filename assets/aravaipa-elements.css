@@ -7494,10 +7494,14 @@
 .arv-photos {
 	box-sizing: border-box;
 	text-align: left;
+	--arv-teal: #5bb5a2;
+	--arv-teal-deep: #2a5e6b;
+	--arv-photos-rule: #ebebeb;
+	--arv-photos-muted: #7a7a7a;
 	margin-left: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
 	margin-right: calc(50% - 50vw + (var(--arv-sbw, 0px) / 2));
-	background: #10201f;
-	color: #f4f4f4;
+	background: #ffffff;
+	color: #272727;
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -7517,14 +7521,14 @@
 	font-weight: 900;
 	letter-spacing: -0.5px;
 	text-align: center;
-	color: #fff;
+	color: inherit;
 }
 
 .arv-photos__intro {
 	margin: 0.5rem 0 0;
 	font-size: var(--arv-fs-body);
 	text-align: center;
-	color: rgba(244, 244, 244, 0.75);
+	color: var(--arv-photos-muted);
 }
 
 .arv-photos__controls {
@@ -7551,33 +7555,33 @@
 	flex: 1 1 auto;
 	min-width: 0;
 	padding: 0.6rem 0.75rem;
-	border: 1px solid rgba(255, 255, 255, 0.18);
+	border: 1px solid #d4d4d4;
 	border-radius: var(--arv-radius);
 	/* 16px, same iOS-zoom reason as every other search input here. */
 	font-size: var(--arv-fs-input);
 	font-family: inherit;
-	background: rgba(255, 255, 255, 0.06);
-	color: #fff;
+	background: #fff;
+	color: inherit;
 }
 
 .arv-photos__search-input::placeholder {
-	color: rgba(244, 244, 244, 0.5);
+	color: var(--arv-photos-muted);
 }
 
 .arv-photos__search-input:focus-visible,
 .arv-photos__by:focus-visible {
-	outline: 2px solid #4ade80;
+	outline: 2px solid var(--arv-teal);
 	outline-offset: 1px;
 }
 
 .arv-photos__by {
 	padding: 0.6rem 2rem 0.6rem 0.75rem;
-	border: 1px solid rgba(255, 255, 255, 0.18);
+	border: 1px solid #d4d4d4;
 	border-radius: var(--arv-radius);
 	font-size: var(--arv-fs-input);
 	font-family: inherit;
-	background: rgba(255, 255, 255, 0.06);
-	color: #fff;
+	background: #fff;
+	color: inherit;
 }
 
 .arv-photos__years {
@@ -7590,38 +7594,38 @@
 .arv-photos__year:link,
 .arv-photos__year:visited {
 	padding: 0.4rem 0.7rem;
-	border: 1px solid rgba(255, 255, 255, 0.18);
+	border: 1px solid #d4d4d4;
 	border-radius: var(--arv-radius-chip);
 	font-size: var(--arv-fs-label);
 	font-weight: 700;
-	color: rgba(244, 244, 244, 0.8);
+	color: inherit;
 	text-decoration: none;
 }
 
 .arv-photos__year:hover,
 .arv-photos__year:focus {
-	border-color: rgba(255, 255, 255, 0.5);
-	color: #fff;
+	border-color: var(--arv-teal);
+	color: inherit;
 }
 
 .arv-photos__year.is-current,
 .arv-photos__year.is-current:link,
 .arv-photos__year.is-current:visited {
-	background: #4ade80;
-	border-color: #4ade80;
-	color: #10201f;
+	background: var(--arv-teal);
+	border-color: var(--arv-teal);
+	color: #0d1211;
 }
 
 .arv-photos__count {
 	margin: 0.75rem 0 0;
 	font-size: var(--arv-fs-meta);
-	color: rgba(244, 244, 244, 0.62);
+	color: var(--arv-photos-muted);
 }
 
 .arv-photos__empty {
 	margin: 1.5rem 0 0;
 	font-size: var(--arv-fs-body);
-	color: rgba(244, 244, 244, 0.75);
+	color: var(--arv-photos-muted);
 }
 
 .arv-photos__grid {
@@ -7637,9 +7641,9 @@
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	border: 1px solid var(--arv-photos-rule);
 	border-radius: var(--arv-radius);
-	background: rgba(255, 255, 255, 0.04);
+	background: #fff;
 }
 
 /* Fourth time for the same specificity tie the calendar, the Watch archive
@@ -7671,7 +7675,7 @@
 	height: auto;
 	aspect-ratio: 3 / 2;
 	object-fit: cover;
-	background: rgba(255, 255, 255, 0.06);
+	background: #fff;
 }
 
 /* No cover to be had from that host. A deliberate panel, so the card still
@@ -7680,7 +7684,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: rgba(244, 244, 244, 0.28);
+	color: #c9c9c9;
 }
 
 .arv-photos__body {
@@ -7693,12 +7697,12 @@
 .arv-photos__race {
 	font-size: var(--arv-fs-body);
 	font-weight: 700;
-	color: #fff;
+	color: inherit;
 }
 
 .arv-photos__year-tag {
 	font-size: var(--arv-fs-meta);
-	color: rgba(244, 244, 244, 0.6);
+	color: var(--arv-photos-muted);
 }
 
 /* Every photographer on a card is this one badge, including the first.
@@ -7717,17 +7721,17 @@
 .arv-photos__by-badge:link,
 .arv-photos__by-badge:visited {
 	padding: 0.15rem 0.45rem;
-	border: 1px solid rgba(74, 222, 128, 0.45);
+	border: 1px solid rgba(91, 181, 162, 0.55);
 	border-radius: var(--arv-radius-chip);
 	font-size: var(--arv-fs-label);
 	font-weight: 700;
-	color: #4ade80;
+	color: var(--arv-teal-deep);
 	text-decoration: none;
 }
 
 .arv-photos__by-badge:hover,
 .arv-photos__by-badge:focus {
-	background: rgba(74, 222, 128, 0.12);
+	background: rgba(91, 181, 162, 0.12);
 }
 
 @media (max-width: 767px) {
