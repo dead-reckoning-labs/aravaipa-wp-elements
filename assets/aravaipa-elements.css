@@ -10787,3 +10787,55 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	color: #6a6a6a;
 	font-size: var(--arv-fs-meta);
 }
+
+/* Open positions, read live from BambooHR. Flat, bordered cards: same
+   posture as every other list in this file, nothing that reads as
+   dashboard chrome. */
+.arv-careers__list {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	margin: 1.5rem 0;
+}
+
+.arv-careers__card {
+	padding: 1.5rem 0 0;
+	border-top: 1px solid #d4d4d4;
+}
+
+.arv-careers__title {
+	margin: 0 0 0.35rem;
+}
+
+.arv-careers__meta {
+	margin: 0 0 0.75rem;
+	color: #6a6a6a;
+	font-size: var(--arv-fs-meta);
+}
+
+.arv-careers__compensation {
+	margin: 0 0 0.75rem;
+	font-weight: 700;
+}
+
+.arv-careers__description p {
+	margin: 0 0 1rem;
+}
+
+.arv-careers__apply {
+	display: inline-block;
+	margin-top: 0.5rem;
+	padding: 0.7rem 1.5rem;
+	background: var(--arv-accent, #ff2a13);
+	color: #fff;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.arv-careers__apply:hover {
+	opacity: 0.9;
+}
+
+.arv-careers__empty {
+	color: #6a6a6a;
+}
