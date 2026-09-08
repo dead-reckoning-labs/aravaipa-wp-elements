@@ -323,10 +323,18 @@ function arv_athlete_profile_results_markup( $athlete ) {
 /**
  * The videos an athlete appears in.
  *
- * Rendered as links rather than 65 embedded iframes, which is what the old
- * roster page did on a single page. One athlete's handful of videos could
- * be embedded safely, but a link keeps the page weightless and still gets
- * someone to the video in one click.
+ * Real cards with the video's own title and thumbnail rather than a list
+ * reading "Video 1, Video 2, Video 3", which told a visitor nothing about
+ * what they were about to click.
+ *
+ * Titles and thumbnails come from YouTube's oEmbed endpoint, which needs no
+ * API key, and are cached for a week: the title of a published video does
+ * not change, and an athlete page should not make an outbound request per
+ * video on every load.
+ *
+ * Still links out rather than embedding. The old roster page put 65 YouTube
+ * iframes on one URL; a thumbnail is an image, an embed is a megabyte of
+ * player.
  *
  * @param array $athlete
  * @return string
@@ -344,17 +352,72 @@ function arv_athlete_profile_videos_markup( $athlete ) {
 		return '';
 	}
 
-	$out = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2><ul class="arv-athlete__videos-list">';
+	$out = '<div class="arv-athlete__videos"><h2>' . esc_html__( 'Watch', 'aravaipa-elements' ) . '</h2>';
+	$out .= '<ul class="arv-athlete__videos-list">';
 
-	foreach ( $urls as $i => $url ) {
-		$out .= '<li><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">'
-			. esc_html( sprintf( /* translators: video number */ __( 'Video %d', 'aravaipa-elements' ), $i + 1 ) )
-			. '</a></li>';
+	foreach ( $urls as $url ) {
+		$meta = arv_athlete_video_meta( $url );
+
+		$out .= '<li class="arv-athlete__video"><a href="' . esc_url( $url ) . '" target="_blank" rel="noopener">';
+
+		if ( '' !== $meta['thumbnail'] ) {
+			$out .= '<img class="arv-athlete__video-thumb" src="' . esc_url( $meta['thumbnail'] ) . '" alt="" loading="lazy" width="320" height="180" />';
+		}
+
+		$out .= '<span class="arv-athlete__video-title">' . esc_html( $meta['title'] ) . '</span>';
+		$out .= '</a></li>';
 	}
 
 	$out .= '</ul></div>';
 
 	return $out;
+}
+
+/**
+ * A video's title and thumbnail, from YouTube's oEmbed endpoint.
+ *
+ * Cached for a week. A failed lookup caches for an hour instead, so a
+ * transient network problem does not pin a blank title in place for the
+ * full week, which is the mistake the photo cover warming made earlier.
+ *
+ * @param string $url
+ * @return array{title: string, thumbnail: string}
+ */
+function arv_athlete_video_meta( $url ) {
+	$key    = 'arv_vid_' . md5( $url );
+	$cached = get_transient( $key );
+
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+
+	$fallback = array( 'title' => __( 'Watch on YouTube', 'aravaipa-elements' ), 'thumbnail' => '' );
+
+	$response = wp_remote_get(
+		'https://www.youtube.com/oembed?format=json&url=' . rawurlencode( $url ),
+		array( 'timeout' => 5 )
+	);
+
+	if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+		set_transient( $key, $fallback, HOUR_IN_SECONDS );
+		return $fallback;
+	}
+
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( ! is_array( $body ) || empty( $body['title'] ) ) {
+		set_transient( $key, $fallback, HOUR_IN_SECONDS );
+		return $fallback;
+	}
+
+	$meta = array(
+		'title'     => (string) $body['title'],
+		'thumbnail' => isset( $body['thumbnail_url'] ) ? (string) $body['thumbnail_url'] : '',
+	);
+
+	set_transient( $key, $meta, WEEK_IN_SECONDS );
+
+	return $meta;
 }
 
 /**
