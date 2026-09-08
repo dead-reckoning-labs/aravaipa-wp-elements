@@ -10297,21 +10297,76 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
    posture as the rest of this file. The photo itself carries the visual
    weight, the card doesn't need to add its own. */
 
-.arv-team__filters {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.6rem;
-	margin: 0 0 0.5rem;
+.arv-team__controls {
+	margin: 0 0 0.75rem;
 }
 
-.arv-team__filter {
-	padding: 0.5rem 2rem 0.5rem 0.75rem;
+.arv-team__search {
+	width: 100%;
+	max-width: 32rem;
+	padding: 0.7rem 1rem;
+	margin: 0 0 0.9rem;
 	border: 1px solid #d4d4d4;
 	border-radius: var(--arv-radius);
+	/* 16px, same iOS-zoom reason as every other search input in this file. */
 	font-size: var(--arv-fs-input);
 	font-family: inherit;
 	background: #fff;
 	color: inherit;
+}
+
+.arv-team__search::-webkit-search-cancel-button,
+.arv-team__search::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.arv-team__search::placeholder {
+	color: #8a8a8a;
+}
+
+.arv-team__search:focus-visible {
+	outline: 2px solid var(--arv-accent, #ff2a13);
+	outline-offset: 1px;
+}
+
+/* Division buttons. Squared and flat, the same posture as the rest of this
+   file: the active one is filled, the rest are outlined. No pills, no
+   shadows, nothing that reads as dashboard chrome. */
+.arv-team__filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+}
+
+.arv-team__filter {
+	padding: 0.45rem 0.9rem;
+	border: 1px solid #d4d4d4;
+	border-radius: 0;
+	font-size: var(--arv-fs-meta);
+	font-family: inherit;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	background: #fff;
+	color: #3a3a3a;
+	cursor: pointer;
+	transition: border-color 0.12s, color 0.12s;
+}
+
+.arv-team__filter:hover {
+	border-color: #8a8a8a;
+	color: #111;
+}
+
+.arv-team__filter.is-active {
+	background: #111;
+	border-color: #111;
+	color: #fff;
+}
+
+.arv-team__filter:focus-visible {
+	outline: 2px solid var(--arv-accent, #ff2a13);
+	outline-offset: 2px;
 }
 
 .arv-team__count {
