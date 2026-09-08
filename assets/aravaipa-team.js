@@ -1,54 +1,148 @@
 /**
- * Division filter for the Racing Team roster.
+ * Search and division filtering for the Racing Team roster.
  *
  * Same contract as aravaipa-photos.js: everything is already rendered
  * server side, this only hides what is there, and it no-ops entirely on a
  * page with no [data-arv-team-root].
  *
- * Hides whole division sections rather than individual cards, because the
- * roster is grouped by division: hiding cards one by one would leave the
- * headings of empty divisions behind.
+ * Both filters run through one pass over the cards rather than one hiding
+ * groups and the other hiding cards. Combining them any other way meant a
+ * search inside a picked division had to reconcile two different notions
+ * of hidden, and an empty division heading was left behind whenever the
+ * two disagreed.
  */
 (function () {
 	'use strict';
 
-	var root = document.querySelector('[data-arv-team-root]');
+	var blocks = Array.prototype.slice.call(document.querySelectorAll('[data-arv-team-root]'));
 
-	if (!root) {
+	if (!blocks.length) {
 		return;
 	}
 
-	var select = root.querySelector('[data-arv-team-division]');
-	var count = root.querySelector('[data-arv-team-count]');
-	var groups = Array.prototype.slice.call(root.querySelectorAll('.arv-team__group'));
+	// The controls render once, on the roster, because the alumni block is a
+	// single group and has nothing to filter by. Search still has to reach
+	// the alumni cards though: typing a name and being told there are no
+	// results while that athlete sits in a grid further down the same page
+	// would just be wrong.
+	var search = document.querySelector('[data-arv-team-search]');
+	var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-arv-team-division]'))
+		.filter(function (el) { return 'BUTTON' === el.tagName; });
 
-	if (!select || 0 === groups.length) {
+	if (!search && !buttons.length) {
 		return;
+	}
+
+	var division = '';
+
+	for (var b = 0; b < buttons.length; b++) {
+		if ('true' === buttons[b].getAttribute('aria-pressed')) {
+			division = buttons[b].getAttribute('data-arv-team-division');
+		}
 	}
 
 	function apply() {
-		var want = select.value;
-		var shown = 0;
+		var query = search ? search.value.trim().toLowerCase() : '';
+		// Keyed on the profile URL, not counted per card. [arv_racing_team]
+		// already renders a Notable Alumni group, and page 79463 then calls
+		// the shortcode a second time for the same ten athletes, so every
+		// alumnus is on the page twice and counting cards reported one
+		// person as "2 athletes".
+		var seen = {};
 
-		for (var i = 0; i < groups.length; i++) {
-			var group = groups[i];
-			var hit = ('' === want || group.getAttribute('data-arv-team-group') === want);
+		for (var i = 0; i < blocks.length; i++) {
+			var groups = blocks[i].querySelectorAll('.arv-team__group');
 
-			group.hidden = !hit;
+			for (var g = 0; g < groups.length; g++) {
+				var cards = groups[g].querySelectorAll('.arv-team__card');
+				var visible = 0;
 
-			if (hit) {
-				shown += group.querySelectorAll('.arv-team__card').length;
+				for (var c = 0; c < cards.length; c++) {
+					var card = cards[c];
+					var divisions = (card.getAttribute('data-arv-team-division') || '').split('|');
+					var text = card.getAttribute('data-arv-team-text') || '';
+
+					var hit = ('' === division || -1 !== divisions.indexOf(division))
+						&& ('' === query || -1 !== text.indexOf(query));
+
+					// hidden, not display:none in a class, so the grid's own
+					// layout rules stay in one place: CSS owns how a card
+					// looks, this owns whether it is there at all.
+					card.hidden = !hit;
+
+					if (hit) {
+						visible++;
+						seen[card.getAttribute('href') || card.getAttribute('data-arv-team-text')] = 1;
+					}
+				}
+
+				// A heading with nothing under it reads as a broken section,
+				// so a group with no surviving cards goes away entirely.
+				groups[g].hidden = (0 === visible);
 			}
 		}
 
-		if (count) {
-			count.textContent = ('' === want)
-				? ''
-				: shown + (1 === shown ? ' athlete' : ' athletes');
+		report(Object.keys(seen).length, query);
+	}
+
+	function report(shown, query) {
+		var filtering = ('' !== division || '' !== query);
+
+		for (var i = 0; i < blocks.length; i++) {
+			var count = blocks[i].querySelector('[data-arv-team-count]');
+
+			if (!count) {
+				continue;
+			}
+
+			// Only the block that owns the controls reports, otherwise the
+			// same total is printed twice on the page.
+			if (search && !blocks[i].contains(search)) {
+				count.textContent = '';
+				continue;
+			}
+
+			if (!filtering) {
+				count.textContent = '';
+			} else if (0 === shown) {
+				count.textContent = 'No athletes match' + (query ? ' "' + query + '"' : '') + '.';
+			} else {
+				count.textContent = shown + (1 === shown ? ' athlete' : ' athletes');
+			}
 		}
 	}
 
-	select.addEventListener('change', apply);
+	for (var k = 0; k < buttons.length; k++) {
+		buttons[k].addEventListener('click', function (e) {
+			division = e.currentTarget.getAttribute('data-arv-team-division');
+
+			for (var j = 0; j < buttons.length; j++) {
+				var on = (buttons[j] === e.currentTarget);
+				buttons[j].setAttribute('aria-pressed', on ? 'true' : 'false');
+				buttons[j].classList.toggle('is-active', on);
+			}
+
+			apply();
+		});
+	}
+
+	if (search) {
+		search.addEventListener('input', apply);
+		// Escape clears, which is what the native search-field X does, and
+		// keyboards without that X still need a way out.
+		search.addEventListener('keydown', function (e) {
+			if ('Escape' === e.key) {
+				search.value = '';
+				apply();
+			}
+		});
+	}
+
+	// A division preset by the shortcode attribute has to be applied on load,
+	// not just on click.
+	if ('' !== division) {
+		apply();
+	}
 })();
 
 /**

@@ -130,37 +130,75 @@ function arv_racing_team_sort_groups( $groups ) {
 }
 
 /**
- * The filter control above the grid.
+ * The controls above the grid: a search box and one button per division.
  *
- * One dropdown, division only, per Jamil: region and division described the
- * same seven buckets on the old page, so offering both was two ways to ask
- * the same question. Options come from the groups actually rendered, so the
- * dropdown can never offer a choice that returns nothing.
+ * Buttons rather than a dropdown because there are only seven divisions and
+ * a dropdown hides six of them behind a click. Laid out as a row, every
+ * option is readable at a glance and the current one is visible without
+ * opening anything.
+ *
+ * Division only, per Jamil: region and division described the same seven
+ * buckets on the old page, so offering both was two ways to ask the same
+ * question. The buttons come from the groups actually rendered, so no
+ * button can ever return an empty grid.
+ *
+ * Search covers name and hometown. Both are already on the card, and
+ * hometown is what makes "who do we have in Colorado" answerable by typing
+ * rather than by reading all fifty one cards.
  *
  * @param array $divisions Division names, already in display order.
  * @param array $atts
  * @return string
  */
 function arv_racing_team_filters_markup( $divisions, $atts ) {
+	// The alumni block is one group and renders from a second call to this
+	// shortcode on the same page. Giving it its own controls put a second
+	// search box under the roster that filtered nothing, so the block with
+	// something to filter is the only one that gets them. The script reaches
+	// every block from that one search box.
 	if ( count( $divisions ) < 2 ) {
 		return '';
 	}
 
-	$out  = '<div class="arv-team__filters">';
-	$out .= '<select class="arv-team__filter" data-arv-team-division aria-label="'
+	$active = sanitize_title( $atts['division'] );
+
+	$out  = '<div class="arv-team__controls">';
+	$out .= '<input type="search" class="arv-team__search" data-arv-team-search'
+		. ' placeholder="' . esc_attr__( 'Search by name or hometown', 'aravaipa-elements' ) . '"'
+		. ' aria-label="' . esc_attr__( 'Search athletes', 'aravaipa-elements' ) . '" />';
+
+	$out .= '<div class="arv-team__filters" role="group" aria-label="'
 		. esc_attr__( 'Filter by division', 'aravaipa-elements' ) . '">';
-	$out .= '<option value="">' . esc_html__( 'All divisions', 'aravaipa-elements' ) . '</option>';
+
+	$out .= arv_racing_team_filter_button( '', __( 'All', 'aravaipa-elements' ), '' === $active );
 
 	foreach ( $divisions as $division ) {
-		$slug  = sanitize_title( $division );
-		$out  .= '<option value="' . esc_attr( $slug ) . '"'
-			. selected( sanitize_title( $atts['division'] ), $slug, false ) . '>'
-			. esc_html( $division ) . '</option>';
+		$slug = sanitize_title( $division );
+		$out .= arv_racing_team_filter_button( $slug, $division, $slug === $active );
 	}
 
-	$out .= '</select></div>';
+	$out .= '</div></div>';
 
 	return $out;
+}
+
+/**
+ * One division button.
+ *
+ * aria-pressed rather than a disabled state or a link: this is a toggle that
+ * changes what is already on screen, so a screen reader should hear which
+ * one is on, and nothing here navigates.
+ *
+ * @param string $slug   Division slug, empty for "All".
+ * @param string $label
+ * @param bool   $active
+ * @return string
+ */
+function arv_racing_team_filter_button( $slug, $label, $active ) {
+	return '<button type="button" class="arv-team__filter' . ( $active ? ' is-active' : '' ) . '"'
+		. ' data-arv-team-division="' . esc_attr( $slug ) . '"'
+		. ' aria-pressed="' . ( $active ? 'true' : 'false' ) . '">'
+		. esc_html( $label ) . '</button>';
 }
 
 /**
@@ -179,8 +217,13 @@ function arv_racing_team_card_markup( $athlete ) {
 
 	$alumni = 'alumni' === $athlete['status'];
 
+	// Name and hometown, lowercased once here rather than on every keystroke
+	// in the browser. This is what the search box matches against.
+	$haystack = strtolower( trim( $athlete['name'] . ' ' . $athlete['hometown'] ) );
+
 	$out  = '<a class="arv-team__card' . ( $alumni ? ' arv-team__card--alumni' : '' ) . '" href="' . esc_url( $athlete['url'] ) . '"';
-	$out .= ' data-arv-team-division="' . esc_attr( implode( '|', $slugs ) ) . '">';
+	$out .= ' data-arv-team-division="' . esc_attr( implode( '|', $slugs ) ) . '"';
+	$out .= ' data-arv-team-text="' . esc_attr( $haystack ) . '">';
 
 	if ( $athlete['photo'] ) {
 		$out .= '<img class="arv-team__photo" src="' . esc_url( $athlete['photo'] ) . '" alt="'
