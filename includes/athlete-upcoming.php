@@ -312,9 +312,9 @@ function arv_athlete_profile_upcoming_markup( $athlete ) {
 		$when = date_i18n( 'F j, Y', strtotime( $race['iso'] ) );
 
 		if ( '' !== $race['url'] ) {
-			$out .= '<li><a href="' . esc_url( $race['url'] ) . '">' . esc_html( $race['race'] ) . '</a> &mdash; ' . esc_html( $when ) . '</li>';
+			$out .= '<li><a href="' . esc_url( $race['url'] ) . '">' . esc_html( $race['race'] ) . '</a>, ' . esc_html( $when ) . '</li>';
 		} else {
-			$out .= '<li>' . esc_html( $race['race'] ) . ' &mdash; ' . esc_html( $when ) . '</li>';
+			$out .= '<li>' . esc_html( $race['race'] ) . ', ' . esc_html( $when ) . '</li>';
 		}
 	}
 
