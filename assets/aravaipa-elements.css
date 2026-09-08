@@ -10383,6 +10383,41 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	color: #6a6a6a;
 }
 
+/* Stands in for a card photo nobody has on file, so the grid stays even
+   instead of collapsing that cell to its text and leaving a hole. */
+.arv-team__photo--none {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2rem;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	color: #b4b4b4;
+	background: #f0f0f0;
+}
+
+/* The alumni note is why the section exists: where they went after
+   Aravaipa. It replaces the hometown line on an alumni card rather than
+   sitting beside it. */
+.arv-team__note {
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+	line-height: 1.35;
+}
+
+.arv-team__badge {
+	align-self: flex-start;
+	margin: 0.15rem 0;
+	padding: 0.1rem 0.5rem;
+	border: 1px solid #d8d8d8;
+	border-radius: 999px;
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #6a6a6a;
+}
+
 .arv-team-empty {
 	color: #6a6a6a;
 }

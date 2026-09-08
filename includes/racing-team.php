@@ -70,9 +70,16 @@ function arv_racing_team_shortcode( $atts ) {
 	$out .= arv_racing_team_filters_markup( array_keys( $groups ), $atts );
 	$out .= '<p class="arv-team__count" data-arv-team-count aria-live="polite"></p>';
 
+	// A single group is already named by whatever heading the page put above
+	// the shortcode, so repeating it here printed "Notable Alumni" twice.
+	$show_headings = count( $groups ) > 1;
+
 	foreach ( $groups as $division => $members ) {
 		$out .= '<section class="arv-team__group" data-arv-team-group="' . esc_attr( sanitize_title( $division ) ) . '">';
-		$out .= '<h2 class="arv-team__group-title">' . esc_html( $division ) . '</h2>';
+
+		if ( $show_headings ) {
+			$out .= '<h2 class="arv-team__group-title">' . esc_html( $division ) . '</h2>';
+		}
 		$out .= '<div class="arv-team__grid">';
 
 		foreach ( $members as $athlete ) {
@@ -170,23 +177,58 @@ function arv_racing_team_filters_markup( $divisions, $atts ) {
 function arv_racing_team_card_markup( $athlete ) {
 	$slugs = array_map( 'sanitize_title', $athlete['divisions'] );
 
-	$out  = '<a class="arv-team__card" href="' . esc_url( $athlete['url'] ) . '"';
+	$alumni = 'alumni' === $athlete['status'];
+
+	$out  = '<a class="arv-team__card' . ( $alumni ? ' arv-team__card--alumni' : '' ) . '" href="' . esc_url( $athlete['url'] ) . '"';
 	$out .= ' data-arv-team-division="' . esc_attr( implode( '|', $slugs ) ) . '">';
 
 	if ( $athlete['photo'] ) {
 		$out .= '<img class="arv-team__photo" src="' . esc_url( $athlete['photo'] ) . '" alt="'
 			. esc_attr( $athlete['name'] ) . '" loading="lazy" width="400" height="400" />';
+	} else {
+		// A placeholder rather than nothing: a card with no image collapsed
+		// to its text and left the grid ragged around it, which read as
+		// broken rather than as "no photo on file".
+		$out .= '<span class="arv-team__photo arv-team__photo--none" aria-hidden="true">'
+			. esc_html( arv_racing_team_initials( $athlete['name'] ) ) . '</span>';
 	}
 
 	$out .= '<span class="arv-team__name">' . esc_html( $athlete['name'] ) . '</span>';
 
-	if ( '' !== $athlete['hometown'] ) {
+	if ( $alumni ) {
+		$out .= '<span class="arv-team__badge">' . esc_html__( 'Alumni', 'aravaipa-elements' ) . '</span>';
+	}
+
+	// For an alumnus the interesting line is where they went, not where they
+	// live now, and it is the whole reason the section exists.
+	if ( $alumni && '' !== $athlete['alumni_note'] ) {
+		$out .= '<span class="arv-team__note">' . esc_html( $athlete['alumni_note'] ) . '</span>';
+	} elseif ( '' !== $athlete['hometown'] ) {
 		$out .= '<span class="arv-team__hometown">' . esc_html( $athlete['hometown'] ) . '</span>';
 	}
 
 	$out .= '</a>';
 
 	return $out;
+}
+
+/**
+ * Initials, for the placeholder shown when an athlete has no photo on file.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_racing_team_initials( $name ) {
+	$parts    = preg_split( '/\s+/', trim( $name ) );
+	$initials = '';
+
+	foreach ( $parts as $part ) {
+		if ( '' !== $part ) {
+			$initials .= mb_strtoupper( mb_substr( $part, 0, 1 ) );
+		}
+	}
+
+	return mb_substr( $initials, 0, 2 );
 }
 
 /**
