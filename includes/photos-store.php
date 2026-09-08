@@ -127,9 +127,68 @@ function arv_photos_race_date( $race, $year ) {
 	}
 
 	$dates = arv_photos_race_dates();
-	$key   = arv_photos_race_key( $race ) . '|' . $year;
+	$key   = arv_photos_race_key( $race );
 
-	return isset( $dates[ $key ] ) ? $dates[ $key ] : '';
+	if ( isset( $dates[ $key . '|' . $year ] ) ) {
+		return $dates[ $key . '|' . $year ];
+	}
+
+	// The exact key misses more often than the comment above used to
+	// claim. arv_results_race_key() drops some trailing words and not
+	// others, so "Silverton Alpine" and "Silverton Alpine Marathon" are
+	// two keys, as are "Crown King" and "Crown King Scramble", "Chocorua"
+	// and "Chocorua Mountain", "Big Pine" and "Flagstaff Big Pine". A
+	// photographer names a gallery for the race, not for whatever this
+	// plugin's canonical row happens to be called, so 17 galleries had no
+	// date and sorted to the bottom of their year in a page that is
+	// otherwise strictly newest first.
+	//
+	// Two looser passes, both still exact rather than fuzzy:
+	//
+	// The spaces come out first, which settles "Black Out Night Runs"
+	// against "Blackout Night Runs" without loosening anything else.
+	//
+	// Then one name's words being wholly contained in the other's, which
+	// is the actual relationship in every case above and is directional-
+	// agnostic: the gallery can be the shorter name or the longer one.
+	//
+	// A subset match is only accepted when exactly one race in that year
+	// answers to it. Two candidates is not a near miss to be broken by
+	// picking one, it is the same ambiguity that would put a wrong date on
+	// a gallery, and an undated gallery is the honest answer to it.
+	$squashed = str_replace( ' ', '', $key );
+	$words    = array_filter( explode( ' ', $key ) );
+	$found    = '';
+	$hits     = 0;
+
+	foreach ( $dates as $indexed => $iso ) {
+		$parts = explode( '|', $indexed );
+
+		if ( 2 !== count( $parts ) || (int) $parts[1] !== (int) $year ) {
+			continue;
+		}
+
+		$other = $parts[0];
+
+		if ( str_replace( ' ', '', $other ) === $squashed ) {
+			return $iso;
+		}
+
+		$other_words = array_filter( explode( ' ', $other ) );
+
+		if ( ! $words || ! $other_words ) {
+			continue;
+		}
+
+		$contains = ! array_diff( $words, $other_words ) || ! array_diff( $other_words, $words );
+
+		if ( $contains ) {
+			$hits++;
+			$found = $iso;
+		}
+	}
+
+	return ( 1 === $hits ) ? $found : '';
 }
 
 /**
@@ -186,6 +245,54 @@ function arv_photos_race_dates() {
 	}
 
 	return $dates;
+}
+
+/**
+ * The name of the year parameter in a photos URL.
+ *
+ * Not "year", which is the obvious choice and does not work: "year" is one
+ * of WordPress's own reserved query vars for date archives, so
+ * /photos/?year=2025 was parsed as a date archive and the canonical
+ * redirect sent the reader to /photos-2025/ instead, a different page that
+ * pins its own year and renders no controls at all. The filter links
+ * looked like they were deleting the search box and the year row.
+ *
+ * Not "arv_year" either, which is what shipped instead. The prefix belongs
+ * on a function or an option, where it keeps this plugin out of everyone
+ * else's namespace, and not in a URL a person reads and sends to somebody:
+ * /photos/?photo_year=2026 says what it does, /photos/?arv_year=2026 makes
+ * the reader wonder what an arv is. The results element reached the same
+ * two conclusions in the same order and landed on race_year; this is that
+ * decision applied to the other page it affects.
+ */
+if ( ! defined( 'ARV_PHOTOS_YEAR_VAR' ) ) {
+	define( 'ARV_PHOTOS_YEAR_VAR', 'photo_year' );
+}
+
+/**
+ * What the year var was called before, still answered to.
+ *
+ * A URL is a promise the moment anyone copies one out of an address bar,
+ * and these have been live and linkable for a while, which was rather the
+ * point of making them real links.
+ */
+if ( ! defined( 'ARV_PHOTOS_YEAR_VAR_WAS' ) ) {
+	define( 'ARV_PHOTOS_YEAR_VAR_WAS', 'arv_year' );
+}
+
+/**
+ * The year the URL is asking for, under either name, digits only.
+ *
+ * @return string Empty when the URL names none.
+ */
+function arv_photos_requested_year() {
+	foreach ( array( ARV_PHOTOS_YEAR_VAR, ARV_PHOTOS_YEAR_VAR_WAS ) as $var ) {
+		if ( isset( $_GET[ $var ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return preg_replace( '/\D/', '', wp_unslash( $_GET[ $var ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		}
+	}
+
+	return '';
 }
 
 /**
@@ -430,20 +537,16 @@ function arv_photos_render( $args = array() ) {
 	$intro   = isset( $args['intro'] ) ? trim( (string) $args['intro'] ) : '';
 
 	// A year can be pinned by the element, which is what a per-year page
-	// uses, or chosen with ?arv_year=, which is what the filter links use.
-	//
-	// Namespaced, and it has to be: "year" is one of WordPress's own
-	// reserved query vars for date archives. Using it meant
-	// /photos/?year=2025 was parsed as a date archive, and WordPress's
-	// canonical redirect sent the request to /photos-2025/ instead, which
-	// is a different page that pins its own year and therefore renders no
-	// controls at all. The filter links looked like they were deleting the
-	// search box and the year row.
+	// uses, or chosen with ?photo_year=, which is what the filter links use.
 	$pinned = isset( $args['year'] ) ? (int) $args['year'] : 0;
 	$wanted = $pinned;
 
-	if ( ! $wanted && isset( $_GET['arv_year'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$wanted = (int) $_GET['arv_year']; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( ! $wanted ) {
+		$asked = arv_photos_requested_year();
+
+		if ( '' !== $asked ) {
+			$wanted = (int) $asked;
+		}
 	}
 
 	$years = arv_photos_years( $rows );
@@ -552,15 +655,22 @@ function arv_photos_controls( $years, $current, $photographers ) {
 		$out .= '<nav class="arv-photos__years" aria-label="'
 			. esc_attr__( 'Filter by year', 'aravaipa-elements' ) . '">';
 
+		// Both names come off the "All years" link, and the old one comes
+		// off every year link too: a reader who arrived on an ?arv_year=
+		// URL would otherwise keep it in the address bar alongside the new
+		// one, and the old name is read first by nothing here but would sit
+		// there looking like the page had two opinions about the year.
+		$clear = remove_query_arg( array( ARV_PHOTOS_YEAR_VAR, ARV_PHOTOS_YEAR_VAR_WAS ) );
+
 		$out .= '<a class="arv-photos__year' . ( $current ? '' : ' is-current' ) . '"'
-			. ' href="' . esc_url( remove_query_arg( 'arv_year' ) ) . '"'
+			. ' href="' . esc_url( $clear ) . '"'
 			. ( $current ? '' : ' aria-current="true"' ) . '>'
 			. esc_html__( 'All years', 'aravaipa-elements' ) . '</a>';
 
 		foreach ( $years as $year ) {
 			$is = ( $year === $current );
 			$out .= '<a class="arv-photos__year' . ( $is ? ' is-current' : '' ) . '"'
-				. ' href="' . esc_url( add_query_arg( 'arv_year', $year ) ) . '"'
+				. ' href="' . esc_url( add_query_arg( ARV_PHOTOS_YEAR_VAR, $year, $clear ) ) . '"'
 				. ( $is ? ' aria-current="true"' : '' ) . '>'
 				. esc_html( $year ) . '</a>';
 		}
