@@ -108,6 +108,175 @@ function arv_group_runs_list() {
 	);
 }
 
+const ARV_GROUP_RUNS_SHEET_OPTION = 'arv_group_runs_sheet_url';
+
+/**
+ * The Wednesday run's week-by-week schedule, read from the Google Sheet
+ * that already drives it.
+ *
+ * The rotating trailhead is not improvised: it is planned months ahead in
+ * a spreadsheet, with the social venue and any time exception alongside
+ * it, and that sheet is what the Strava event for a given week is built
+ * from. Verified by matching a row against its own Strava listing: the
+ * sheet's 9 September 2026 row says Dreamy Draw Park with the social at
+ * Linger Longer Lounge, and so does the event.
+ *
+ * Reading it turns "location varies, check Strava" into the actual
+ * trailhead for each upcoming week, which is the entire difference
+ * between a page that tells you to go look somewhere else and a page
+ * that answers the question.
+ *
+ * Needs the sheet's own tab published to the web as CSV
+ * (File, Share, Publish to web, that one sheet, CSV). Deliberately one
+ * tab and not the whole document: other tabs in the same file carry 44
+ * volunteers' personal email addresses, and publishing the document
+ * would put every one of them on a public URL.
+ *
+ * Returns an empty array when no URL is configured or the fetch fails,
+ * and every caller falls back to the honest "location varies" wording, so
+ * this is an upgrade to the page rather than a dependency of it.
+ *
+ * @return array<string, array> ISO date => row data.
+ */
+function arv_group_runs_sheet() {
+	$url = trim( (string) get_option( ARV_GROUP_RUNS_SHEET_OPTION, '' ) );
+
+	if ( '' === $url ) {
+		return array();
+	}
+
+	$key    = 'arv_group_runs_sheet';
+	$cached = get_transient( $key );
+
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+
+	$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
+
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		// An hour rather than six: a blip should not pin an empty
+		// schedule in place for the rest of the day when the page has a
+		// perfectly good fallback to fall back to in the meantime.
+		set_transient( $key, array(), HOUR_IN_SECONDS );
+		return array();
+	}
+
+	$rows = arv_group_runs_parse_sheet( wp_remote_retrieve_body( $response ) );
+
+	set_transient( $key, $rows, 6 * HOUR_IN_SECONDS );
+
+	return $rows;
+}
+
+/**
+ * Parse the published CSV into ISO date => row.
+ *
+ * Columns are located by their header text rather than by position: the
+ * sheet has a spare leading column and several trailing ones, and a
+ * column inserted by whoever maintains it should not silently shift the
+ * social venue into the start time.
+ *
+ * @param string $csv
+ * @return array<string, array>
+ */
+function arv_group_runs_parse_sheet( $csv ) {
+	$lines = preg_split( '/\R/', trim( (string) $csv ) );
+
+	if ( empty( $lines ) ) {
+		return array();
+	}
+
+	$cols = array();
+	$rows = array();
+
+	foreach ( $lines as $line ) {
+		$cells = str_getcsv( $line );
+
+		if ( empty( $cells ) ) {
+			continue;
+		}
+
+		// The header row is whichever one names the columns; everything
+		// above it is title/spacer rows.
+		if ( empty( $cols ) ) {
+			foreach ( $cells as $i => $cell ) {
+				$name = strtolower( trim( $cell ) );
+
+				if ( '' !== $name ) {
+					$cols[ $name ] = $i;
+				}
+			}
+
+			if ( ! isset( $cols['run location'] ) ) {
+				$cols = array();
+			}
+
+			continue;
+		}
+
+		$date = isset( $cells[0] ) ? trim( $cells[0] ) : '';
+		$time = arv_group_runs_cell( $cells, $cols, 'start' );
+
+		// A month name ("January") or a blank spacer sits in the same
+		// column as the dates, so anything that is not a real date is
+		// not a row.
+		$stamp = ( '' !== $date ) ? strtotime( $date ) : false;
+
+		if ( ! $stamp || ! preg_match( '~^\d{1,2}/\d{1,2}/\d{4}$~', $date ) ) {
+			continue;
+		}
+
+		$rows[ gmdate( 'Y-m-d', $stamp ) ] = array(
+			'location' => arv_group_runs_cell( $cells, $cols, 'run location' ),
+			'social'   => arv_group_runs_cell( $cells, $cols, 'social location' ),
+			'race'     => arv_group_runs_cell( $cells, $cols, 'upcoming race' ),
+			'raffle'   => ( 'yes' === strtolower( arv_group_runs_cell( $cells, $cols, 'raffle?' ) ) ),
+			// Asterisks are how the sheet flags a week that does not
+			// start at the usual time, e.g. "***7:00:00 PM" for the
+			// Javelina Experience run.
+			'time'     => arv_group_runs_clean_time( $time ),
+		);
+	}
+
+	return $rows;
+}
+
+/**
+ * One cell by header name, or ''.
+ *
+ * @param array  $cells
+ * @param array  $cols  header name => index.
+ * @param string $name
+ * @return string
+ */
+function arv_group_runs_cell( $cells, $cols, $name ) {
+	if ( ! isset( $cols[ $name ] ) || ! isset( $cells[ $cols[ $name ] ] ) ) {
+		return '';
+	}
+
+	return trim( $cells[ $cols[ $name ] ] );
+}
+
+/**
+ * "***7:00:00 PM" to "7:00 PM", "6:30 PM" unchanged, anything
+ * unparseable to ''.
+ *
+ * @param string $raw
+ * @return string
+ */
+function arv_group_runs_clean_time( $raw ) {
+	$raw = trim( str_replace( '*', '', (string) $raw ) );
+
+	if ( '' === $raw ) {
+		return '';
+	}
+
+	$stamp = strtotime( $raw );
+
+	return $stamp ? gmdate( 'g:i A', $stamp ) : '';
+}
+
 /**
  * The regions a run's 'region' key can resolve to, for the filter bar and
  * for grouping the region cards. Derived from the run list rather than
@@ -273,16 +442,41 @@ function arv_group_runs_card_markup( $key, $run ) {
  * @return string
  */
 function arv_group_runs_upcoming_markup( $runs ) {
-	$rows = array();
+	$rows  = array();
+	$sheet = arv_group_runs_sheet();
 
 	foreach ( $runs as $run ) {
 		foreach ( arv_group_runs_next_dates( $run, 6 ) as $iso ) {
+			$where  = ( '' !== $run['meet_name'] ) ? $run['meet_name'] : __( 'Location varies', 'aravaipa-elements' );
+			$time   = $run['time'];
+			$social = '';
+
+			// A run with no fixed meeting point takes that week's real
+			// one from the schedule sheet when it is published, and keeps
+			// saying "location varies" when it is not. A row the sheet
+			// itself has not filled in yet says TBD, which is the true
+			// answer and worth showing as-is rather than papering over.
+			if ( '' === $run['meet_name'] && isset( $sheet[ $iso ] ) ) {
+				$planned = $sheet[ $iso ];
+
+				if ( '' !== $planned['location'] ) {
+					$where = $planned['location'];
+				}
+
+				if ( '' !== $planned['time'] ) {
+					$time = $planned['time'];
+				}
+
+				$social = $planned['social'];
+			}
+
 			$rows[] = array(
 				'region' => $run['region'],
 				'label'  => $run['region_label'] . ' · ' . $run['name'],
 				'iso'    => $iso,
-				'time'   => $run['time'],
-				'where'  => ( '' !== $run['meet_name'] ) ? $run['meet_name'] : __( 'Location varies', 'aravaipa-elements' ),
+				'time'   => $time,
+				'where'  => $where,
+				'social' => $social,
 			);
 		}
 	}
@@ -306,6 +500,13 @@ function arv_group_runs_upcoming_markup( $runs ) {
 		$out .= '<span class="arv-grouprun__upcoming-region">' . esc_html( $row['label'] ) . '</span>';
 		$out .= '<span class="arv-grouprun__upcoming-time">' . esc_html( $row['time'] ) . '</span>';
 		$out .= '<span class="arv-grouprun__upcoming-where">' . esc_html( $row['where'] ) . '</span>';
+
+		if ( ! empty( $row['social'] ) ) {
+			$out .= '<span class="arv-grouprun__upcoming-social">'
+				. esc_html( sprintf( /* translators: %s: venue name */ __( 'after: %s', 'aravaipa-elements' ), $row['social'] ) )
+				. '</span>';
+		}
+
 		$out .= '</li>';
 	}
 
@@ -412,4 +613,82 @@ function arv_group_runs_start_datetime( $iso, $time12h, $tz ) {
 	);
 
 	return $dt ? $dt->format( 'c' ) : $iso . 'T00:00:00';
+}
+
+/**
+ * Where the schedule sheet's published CSV URL is set.
+ *
+ * An option rather than a constant in this file, because the URL is a
+ * thing Jamil generates in Google Sheets and pastes in, not a fact about
+ * the code, and because regenerating it (republishing, or moving the
+ * schedule to a new sheet) should not need a plugin release.
+ */
+function arv_group_runs_admin_menu() {
+	add_management_page(
+		__( 'Group Runs Schedule', 'aravaipa-elements' ),
+		__( 'Group Runs Schedule', 'aravaipa-elements' ),
+		'manage_options',
+		'arv-group-runs',
+		'arv_group_runs_admin_screen'
+	);
+}
+add_action( 'admin_menu', 'arv_group_runs_admin_menu' );
+
+function arv_group_runs_admin_screen() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	if ( isset( $_POST['arv_group_runs_url'] ) && check_admin_referer( 'arv_group_runs_save' ) ) {
+		update_option( ARV_GROUP_RUNS_SHEET_OPTION, esc_url_raw( wp_unslash( $_POST['arv_group_runs_url'] ) ) );
+		delete_transient( 'arv_group_runs_sheet' );
+		printf( '<div class="notice notice-success"><p>%s</p></div>', esc_html__( 'Saved and re-read.', 'aravaipa-elements' ) );
+	}
+
+	$url    = (string) get_option( ARV_GROUP_RUNS_SHEET_OPTION, '' );
+	$parsed = arv_group_runs_sheet();
+
+	echo '<div class="wrap"><h1>' . esc_html__( 'Group Runs Schedule', 'aravaipa-elements' ) . '</h1>';
+	echo '<p>' . esc_html__( 'The Wednesday run rotates trailheads on a schedule kept in Google Sheets. Publish that one sheet (File, Share, Publish to web, pick the schedule tab, CSV) and paste the URL here, and the page shows each week\'s real trailhead instead of "location varies".', 'aravaipa-elements' ) . '</p>';
+	echo '<p><strong>' . esc_html__( 'Publish the single schedule tab, not the whole document: other tabs in that file hold volunteers\' personal email addresses.', 'aravaipa-elements' ) . '</strong></p>';
+
+	echo '<form method="post"><table class="form-table"><tr><th scope="row"><label for="arv_group_runs_url">'
+		. esc_html__( 'Published CSV URL', 'aravaipa-elements' ) . '</label></th><td>';
+	echo '<input type="url" class="regular-text code" id="arv_group_runs_url" name="arv_group_runs_url" value="'
+		. esc_attr( $url ) . '" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=0&amp;single=true&amp;output=csv" />';
+	echo '</td></tr></table>';
+	wp_nonce_field( 'arv_group_runs_save' );
+	submit_button( __( 'Save', 'aravaipa-elements' ) );
+	echo '</form>';
+
+	if ( '' === $url ) {
+		echo '<p>' . esc_html__( 'Not configured. The page currently says "location varies" for the Wednesday run, which is accurate but less useful.', 'aravaipa-elements' ) . '</p></div>';
+		return;
+	}
+
+	printf( '<p>%s</p>', esc_html( sprintf( '%d dated rows read from the sheet.', count( $parsed ) ) ) );
+
+	$today = current_time( 'Y-m-d' );
+
+	echo '<table class="widefat"><thead><tr><th>Date</th><th>Trailhead</th><th>Social</th><th>Start</th></tr></thead><tbody>';
+
+	$shown = 0;
+
+	foreach ( $parsed as $iso => $row ) {
+		if ( $iso < $today || $shown >= 12 ) {
+			continue;
+		}
+
+		printf(
+			'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
+			esc_html( $iso ),
+			esc_html( '' !== $row['location'] ? $row['location'] : '—' ),
+			esc_html( '' !== $row['social'] ? $row['social'] : '—' ),
+			esc_html( '' !== $row['time'] ? $row['time'] : '—' )
+		);
+
+		$shown++;
+	}
+
+	echo '</tbody></table></div>';
 }

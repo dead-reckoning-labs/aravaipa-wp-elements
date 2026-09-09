@@ -11042,3 +11042,12 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-grouprun__upcoming-where {
 	color: #6a6a6a;
 }
+
+/* Only present on a week the schedule sheet named a venue for, so it is
+   extra detail on some rows and absent on others rather than a column
+   that would sit empty most of the time. */
+.arv-grouprun__upcoming-social {
+	color: #8a8a8a;
+	font-size: var(--arv-fs-meta);
+	font-style: italic;
+}
