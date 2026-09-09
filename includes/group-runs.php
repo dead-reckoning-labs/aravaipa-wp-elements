@@ -3,12 +3,12 @@
  * Group Runs: the weekly runs in Phoenix and Colorado Springs.
  *
  * The page this replaces said Wednesdays, rotating locations, and named
- * four leaders off 2017 photos, none of which was current: both runs are
- * on Monday now, at fixed meeting points, and the roster of who leads them
- * has moved on. None of that was caught for years because nothing on the
- * page was checked against where the run actually happens, which is
- * Strava: both regions run their group event there, and that is the
- * closest thing to a maintained source this has.
+ * four leaders off 2017 photos, none of which was current: the schedule
+ * had grown to three separate weekly runs across two regions and nothing
+ * on the page reflected any of it. That was never caught because nothing
+ * on the page was checked against where the runs actually happen, which
+ * is Strava: every one of them runs as a Strava group event, and that is
+ * the closest thing to a maintained source this has.
  *
  * The schedule below is hand-entered from that source rather than synced
  * live, because Strava's group event details are only visible to a
@@ -18,11 +18,12 @@
  * is not one. A future version could read this through Strava's own API
  * once a club admin authorises it (see the athlete results sync for the
  * shape that would take), which would also pick up a one-off cancellation
- * a hand-entered weekday recurrence cannot know about. Until then this is
- * the honest middle ground: real days, times and places, verified
- * 2026-09-08 directly from each region's Strava app, computed forward
- * into an actual calendar instead of a paragraph saying "usually
- * Wednesdays."
+ * or, for the Wednesday run, a rotating trailhead the way a fixed weekday
+ * entry cannot. Until then this is the honest middle ground: real days,
+ * times and places (or an honest "location varies" where one is not
+ * fixed), verified 2026-09-08 directly from each run's Strava listing,
+ * computed forward into an actual calendar instead of a paragraph saying
+ * "usually Wednesdays."
  *
  * @package Aravaipa_Elements
  */
@@ -32,22 +33,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * The two regions. Edited by hand when a schedule actually changes, the
- * same way arv_racing_team_sort_groups() holds its fixed division order:
- * this is a fact about the world, not data that belongs in a database
- * table nobody but this file's author would think to check.
+ * Every weekly run, across both regions. A flat list rather than one run
+ * per region, because Arizona alone has two (a fixed Monday trailhead and
+ * a Wednesday run that moves), and a run belongs to the calendar and the
+ * region filter the same way whichever bucket it is in.
+ *
+ * Edited by hand when a schedule actually changes, the same way
+ * arv_racing_team_sort_groups() holds its fixed division order: this is a
+ * fact about the world, not data that belongs in a database table nobody
+ * but this file's author would think to check.
  *
  * 'weekday' is ISO-8601 (1 = Monday), matching what date('N') returns, so
- * arv_group_runs_next_dates() can compare them directly.
+ * arv_group_runs_next_dates() can compare them directly. 'meet_addr' is
+ * blank on a run whose location genuinely rotates; nothing prints an
+ * empty address, it prints the honest "location varies" note instead.
  *
  * @return array<string, array>
  */
-function arv_group_runs_regions() {
+function arv_group_runs_list() {
 	return array(
-		'arizona'  => array(
-			'label'       => __( 'Arizona', 'aravaipa-elements' ),
+		'arizona-monday'    => array(
+			'region'      => 'arizona',
+			'region_label' => __( 'Arizona', 'aravaipa-elements' ),
+			'name'        => __( 'Monday Night', 'aravaipa-elements' ),
 			'city'        => __( 'Phoenix', 'aravaipa-elements' ),
-			'weekday'     => 1, // Monday.
+			'weekday'     => 1,
 			'time'        => '6:30 PM',
 			'timezone'    => 'America/Phoenix',
 			'meet_name'   => 'Pima Canyon Trailhead',
@@ -58,10 +68,33 @@ function arv_group_runs_regions() {
 			'strava'      => 'https://www.strava.com/clubs/Aravaipa',
 			'facebook'    => 'https://www.facebook.com/groups/aravaipagrouprun/',
 		),
-		'colorado' => array(
-			'label'       => __( 'Colorado', 'aravaipa-elements' ),
+		'arizona-wednesday' => array(
+			'region'      => 'arizona',
+			'region_label' => __( 'Arizona', 'aravaipa-elements' ),
+			'name'        => __( 'Wednesday Night', 'aravaipa-elements' ),
+			'city'        => __( 'Phoenix', 'aravaipa-elements' ),
+			'weekday'     => 3,
+			'time'        => '6:30 PM',
+			'timezone'    => 'America/Phoenix',
+			// The trailhead rotates week to week rather than sitting at
+			// one fixed spot the way Monday's does, so there is no
+			// permanent address to print. Recent week met at Dreamy Draw
+			// Recreation Area; that is this week's answer, not a fixed
+			// fact worth hardcoding as though it always will be.
+			'meet_name'   => '',
+			'meet_addr'   => '',
+			'description' => __( 'A one-hour trail run at a rotating Phoenix-area trailhead, with multiple pace groups so all levels are welcome. Meet at the trailhead with water and a light; the current week\'s location is posted on the Strava club and the Facebook group ahead of the run.', 'aravaipa-elements' ),
+			'social'      => __( 'Social afterward at a nearby spot, announced with the week\'s location', 'aravaipa-elements' ),
+			'social_addr' => '',
+			'strava'      => 'https://www.strava.com/clubs/Aravaipa',
+			'facebook'    => 'https://www.facebook.com/groups/aravaipagrouprun/',
+		),
+		'colorado-monday'   => array(
+			'region'      => 'colorado',
+			'region_label' => __( 'Colorado', 'aravaipa-elements' ),
+			'name'        => __( 'Monday Night', 'aravaipa-elements' ),
 			'city'        => __( 'Colorado Springs', 'aravaipa-elements' ),
-			'weekday'     => 1, // Monday.
+			'weekday'     => 1,
 			'time'        => '5:30 PM',
 			'timezone'    => 'America/Denver',
 			'meet_name'   => 'Fossil Craft Beer Company',
@@ -76,21 +109,42 @@ function arv_group_runs_regions() {
 }
 
 /**
- * The next several occurrences of a region's weekly run, computed forward
- * from today rather than stored anywhere.
+ * The regions a run's 'region' key can resolve to, for the filter bar and
+ * for grouping the region cards. Derived from the run list rather than
+ * held as its own fixed array, so a region only ever appears in the
+ * filter once a run actually exists for it.
+ *
+ * @param array $runs From arv_group_runs_list().
+ * @return array<string, string> region key => label, in first-seen order.
+ */
+function arv_group_runs_regions_in( $runs ) {
+	$regions = array();
+
+	foreach ( $runs as $run ) {
+		if ( ! isset( $regions[ $run['region'] ] ) ) {
+			$regions[ $run['region'] ] = $run['region_label'];
+		}
+	}
+
+	return $regions;
+}
+
+/**
+ * The next several occurrences of one run, computed forward from today
+ * rather than stored anywhere.
  *
  * A fixed weekday recurrence is the one part of this that genuinely will
  * not go stale on its own: "every Monday" needs no maintenance the way a
  * list of dates would, right up until an actual week is skipped, which
  * this has no way to know about (see the file header).
  *
- * @param array $region One entry from arv_group_runs_regions().
- * @param int   $count  How many upcoming dates to return.
+ * @param array $run   One entry from arv_group_runs_list().
+ * @param int   $count How many upcoming dates to return.
  * @return array<int, string> ISO dates (Y-m-d), soonest first.
  */
-function arv_group_runs_next_dates( $region, $count = 6 ) {
+function arv_group_runs_next_dates( $run, $count = 6 ) {
 	$today   = new DateTimeImmutable( 'today', wp_timezone() );
-	$target  = (int) $region['weekday'];
+	$target  = (int) $run['weekday'];
 	$current = (int) $today->format( 'N' );
 
 	$offset = ( $target - $current + 7 ) % 7;
@@ -112,22 +166,23 @@ function arv_group_runs_next_dates( $region, $count = 6 ) {
  * @return string
  */
 function arv_group_runs_shortcode( $atts ) {
-	$regions = arv_group_runs_regions();
+	$runs    = arv_group_runs_list();
+	$regions = arv_group_runs_regions_in( $runs );
 
 	$out  = '<div class="arv-grouprun" data-arv-grouprun-root>';
 	$out .= arv_group_runs_filter_markup( $regions );
 	$out .= '<div class="arv-grouprun__cards">';
 
-	foreach ( $regions as $key => $region ) {
-		$out .= arv_group_runs_card_markup( $key, $region );
+	foreach ( $runs as $key => $run ) {
+		$out .= arv_group_runs_card_markup( $key, $run );
 	}
 
 	$out .= '</div>';
-	$out .= arv_group_runs_upcoming_markup( $regions );
+	$out .= arv_group_runs_upcoming_markup( $runs );
 	$out .= '</div>';
 
-	foreach ( $regions as $key => $region ) {
-		$out .= arv_group_runs_schema( $key, $region );
+	foreach ( $runs as $key => $run ) {
+		$out .= arv_group_runs_schema( $key, $run );
 	}
 
 	return $out;
@@ -138,8 +193,10 @@ add_shortcode( 'arv_group_runs', 'arv_group_runs_shortcode' );
  * The region toggle. Same control as the Racing Team division buttons:
  * squared, flat, the active one filled. "All" plus one button per region,
  * filtering the cards above and the combined calendar below from one bar.
+ * Filters by region, not by individual run, since Arizona's two runs are
+ * one region a visitor either wants to see or does not.
  *
- * @param array $regions
+ * @param array $regions region key => label.
  * @return string
  */
 function arv_group_runs_filter_markup( $regions ) {
@@ -147,9 +204,9 @@ function arv_group_runs_filter_markup( $regions ) {
 	$out .= '<button type="button" class="arv-grouprun__filter is-active" data-arv-grouprun-region="" aria-pressed="true">'
 		. esc_html__( 'All', 'aravaipa-elements' ) . '</button>';
 
-	foreach ( $regions as $key => $region ) {
+	foreach ( $regions as $key => $label ) {
 		$out .= '<button type="button" class="arv-grouprun__filter" data-arv-grouprun-region="' . esc_attr( $key ) . '" aria-pressed="false">'
-			. esc_html( $region['label'] ) . '</button>';
+			. esc_html( $label ) . '</button>';
 	}
 
 	$out .= '</div>';
@@ -158,39 +215,44 @@ function arv_group_runs_filter_markup( $regions ) {
 }
 
 /**
- * One region's info card: what it is, where it meets, how to find the
- * club.
+ * One run's info card: what it is, where it meets, how to find the club.
  *
  * @param string $key
- * @param array  $region
+ * @param array  $run
  * @return string
  */
-function arv_group_runs_card_markup( $key, $region ) {
-	$out  = '<article class="arv-grouprun__card" data-arv-grouprun-region="' . esc_attr( $key ) . '">';
-	$out .= '<h2 class="arv-grouprun__card-title">' . esc_html( $region['label'] ) . '</h2>';
+function arv_group_runs_card_markup( $key, $run ) {
+	$out  = '<article class="arv-grouprun__card" data-arv-grouprun-region="' . esc_attr( $run['region'] ) . '">';
+	$out .= '<p class="arv-grouprun__card-eyebrow">' . esc_html( $run['region_label'] ) . '</p>';
+	$out .= '<h2 class="arv-grouprun__card-title">' . esc_html( $run['name'] ) . '</h2>';
 	$out .= '<p class="arv-grouprun__meta">'
-		. esc_html( arv_group_runs_weekday_name( $region['weekday'] ) . 's, ' . $region['time'] . ' · ' . $region['city'] )
+		. esc_html( arv_group_runs_weekday_name( $run['weekday'] ) . 's, ' . $run['time'] . ' · ' . $run['city'] )
 		. '</p>';
 
-	$out .= '<p class="arv-grouprun__where">' . esc_html( $region['meet_name'] ) . '<br>'
-		. '<span class="arv-grouprun__addr">' . esc_html( $region['meet_addr'] ) . '</span></p>';
+	if ( '' !== $run['meet_addr'] ) {
+		$out .= '<p class="arv-grouprun__where">' . esc_html( $run['meet_name'] ) . '<br>'
+			. '<span class="arv-grouprun__addr">' . esc_html( $run['meet_addr'] ) . '</span></p>';
+	} else {
+		$out .= '<p class="arv-grouprun__where arv-grouprun__where--varies">'
+			. esc_html__( 'Location varies week to week, posted on Strava and Facebook beforehand.', 'aravaipa-elements' ) . '</p>';
+	}
 
-	$out .= '<p class="arv-grouprun__desc">' . esc_html( $region['description'] ) . '</p>';
+	$out .= '<p class="arv-grouprun__desc">' . esc_html( $run['description'] ) . '</p>';
 
-	if ( '' !== $region['social'] ) {
-		$out .= '<p class="arv-grouprun__social">' . esc_html( $region['social'] );
-		if ( '' !== $region['social_addr'] ) {
-			$out .= '<br><span class="arv-grouprun__addr">' . esc_html( $region['social_addr'] ) . '</span>';
+	if ( '' !== $run['social'] ) {
+		$out .= '<p class="arv-grouprun__social">' . esc_html( $run['social'] );
+		if ( '' !== $run['social_addr'] ) {
+			$out .= '<br><span class="arv-grouprun__addr">' . esc_html( $run['social_addr'] ) . '</span>';
 		}
 		$out .= '</p>';
 	}
 
 	$out .= '<div class="arv-grouprun__links">';
-	$out .= '<a class="arv-grouprun__link arv-grouprun__link--strava" href="' . esc_url( $region['strava'] ) . '" target="_blank" rel="noopener">'
+	$out .= '<a class="arv-grouprun__link arv-grouprun__link--strava" href="' . esc_url( $run['strava'] ) . '" target="_blank" rel="noopener">'
 		. esc_html__( 'Join on Strava', 'aravaipa-elements' ) . '</a>';
 
-	if ( '' !== $region['facebook'] ) {
-		$out .= '<a class="arv-grouprun__link arv-grouprun__link--facebook" href="' . esc_url( $region['facebook'] ) . '" target="_blank" rel="noopener">'
+	if ( '' !== $run['facebook'] ) {
+		$out .= '<a class="arv-grouprun__link arv-grouprun__link--facebook" href="' . esc_url( $run['facebook'] ) . '" target="_blank" rel="noopener">'
 			. esc_html__( 'Facebook group', 'aravaipa-elements' ) . '</a>';
 	}
 
@@ -200,27 +262,27 @@ function arv_group_runs_card_markup( $key, $region ) {
 }
 
 /**
- * The combined upcoming list: every region's next several dates,
- * interleaved and sorted chronologically, each row tagged with its region
- * so the filter bar above can narrow it. This is the "one calendar,
- * toggle a region on or off" Jamil asked for, built from a computed
- * recurrence rather than a fetched feed because that is the data that
- * actually exists right now (see the file header).
+ * The combined upcoming list: every run's next several dates, interleaved
+ * and sorted chronologically, each row tagged with its region so the
+ * filter bar above can narrow it. This is the "one calendar, toggle a
+ * region on or off" Jamil asked for, built from a computed recurrence
+ * rather than a fetched feed because that is the data that actually
+ * exists right now (see the file header).
  *
- * @param array $regions
+ * @param array $runs
  * @return string
  */
-function arv_group_runs_upcoming_markup( $regions ) {
+function arv_group_runs_upcoming_markup( $runs ) {
 	$rows = array();
 
-	foreach ( $regions as $key => $region ) {
-		foreach ( arv_group_runs_next_dates( $region, 6 ) as $iso ) {
+	foreach ( $runs as $run ) {
+		foreach ( arv_group_runs_next_dates( $run, 6 ) as $iso ) {
 			$rows[] = array(
-				'region' => $key,
-				'label'  => $region['label'],
+				'region' => $run['region'],
+				'label'  => $run['region_label'] . ' · ' . $run['name'],
 				'iso'    => $iso,
-				'time'   => $region['time'],
-				'where'  => $region['meet_name'],
+				'time'   => $run['time'],
+				'where'  => ( '' !== $run['meet_name'] ) ? $run['meet_name'] : __( 'Location varies', 'aravaipa-elements' ),
 			);
 		}
 	}
@@ -228,7 +290,8 @@ function arv_group_runs_upcoming_markup( $regions ) {
 	usort(
 		$rows,
 		static function ( $a, $b ) {
-			return strcmp( $a['iso'], $b['iso'] );
+			$cmp = strcmp( $a['iso'], $b['iso'] );
+			return ( 0 !== $cmp ) ? $cmp : strcmp( $a['label'], $b['label'] );
 		}
 	);
 
@@ -268,48 +331,54 @@ function arv_group_runs_weekday_name( $n ) {
 }
 
 /**
- * Event schema for a region's next occurrence.
+ * Event schema for one run's next occurrence.
  *
- * One event, not the six rows in the visible calendar: schema.org has no
- * clean way to say "this repeats every Monday indefinitely" that Google
- * reliably renders, and marking up every generated future date as its own
- * Event would read as a wall of near-duplicate structured data for what
- * is, factually, one recurring thing. The next date is enough to make the
- * run itself discoverable; it is replaced automatically as this week's
- * Monday passes; because it is a computed date rather than a fetched one,
- * it is never wrong about being valid, only about whether that week is
- * still actually happening (see the file header on that limit).
+ * One event per run, not the six rows each contributes to the visible
+ * calendar: schema.org has no clean way to say "this repeats every Monday
+ * indefinitely" that Google reliably renders, and marking up every
+ * generated future date as its own Event would read as a wall of
+ * near-duplicate structured data for what is, factually, one recurring
+ * thing. The next date is enough to make the run itself discoverable; it
+ * is replaced automatically as this week's date passes.
+ *
+ * A run with no fixed address (the rotating Wednesday one) omits
+ * jobLocation's street address rather than inventing one; schema.org
+ * allows a Place with just a name, and "location varies" is not
+ * something an address field should ever have to hold.
  *
  * @param string $key
- * @param array  $region
+ * @param array  $run
  * @return string
  */
-function arv_group_runs_schema( $key, $region ) {
-	$dates = arv_group_runs_next_dates( $region, 1 );
+function arv_group_runs_schema( $key, $run ) {
+	$dates = arv_group_runs_next_dates( $run, 1 );
 	$next  = $dates[0];
 
 	// A group trail run is not a competition, so SportsEvent overstates
 	// it; schema.org's own definition of that type is "a sports event."
 	// This is a social run, plain Event covers it without the mismatch.
-	$start = arv_group_runs_start_datetime( $next, $region['time'], $region['timezone'] );
+	$start = arv_group_runs_start_datetime( $next, $run['time'], $run['timezone'] );
 
 	$schema = array(
-		'@context'           => 'https://schema.org/',
-		'@type'              => 'Event',
-		'name'               => sprintf(
-			/* translators: %s: region label, e.g. "Arizona" */
-			__( 'Aravaipa Group Run - %s', 'aravaipa-elements' ),
-			$region['label']
+		'@context'            => 'https://schema.org/',
+		'@type'               => 'Event',
+		'name'                => sprintf(
+			/* translators: 1: region label, e.g. "Arizona". 2: run name, e.g. "Monday Night" */
+			__( 'Aravaipa Group Run - %1$s (%2$s)', 'aravaipa-elements' ),
+			$run['region_label'],
+			$run['name']
 		),
-		'description'        => wp_strip_all_tags( $region['description'] ),
+		'description'         => wp_strip_all_tags( $run['description'] ),
 		'startDate'           => $start,
 		'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
 		'eventStatus'         => 'https://schema.org/EventScheduled',
 		'isAccessibleForFree' => true,
-		'location'            => array(
-			'@type'   => 'Place',
-			'name'    => $region['meet_name'],
-			'address' => $region['meet_addr'],
+		'location'            => array_filter(
+			array(
+				'@type'   => 'Place',
+				'name'    => ( '' !== $run['meet_name'] ) ? $run['meet_name'] : $run['city'],
+				'address' => $run['meet_addr'],
+			)
 		),
 		'organizer'           => array(
 			'@type' => 'Organization',
@@ -325,11 +394,10 @@ function arv_group_runs_schema( $key, $region ) {
  * An ISO-8601 datetime with the region's own UTC offset, from a plain
  * date and a "6:30 PM" string.
  *
- * Each region's time is entered in its own local clock (Phoenix does not
+ * Each run's time is entered in its own local clock (Phoenix does not
  * observe daylight saving, Colorado Springs does), so the offset has to
  * come from that region's timezone at that specific date, not a single
- * fixed value that would drift an hour off for one of the two regions
- * across a DST change.
+ * fixed value that would drift an hour off across a DST change.
  *
  * @param string $iso      Y-m-d.
  * @param string $time12h  e.g. "6:30 PM".

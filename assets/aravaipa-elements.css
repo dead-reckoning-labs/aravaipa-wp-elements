@@ -10912,6 +10912,15 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	border: 1px solid #d4d4d4;
 }
 
+.arv-grouprun__card-eyebrow {
+	margin: 0 0 0.15rem;
+	color: var(--arv-accent, #ff2a13);
+	font-weight: 700;
+	font-size: var(--arv-fs-meta);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
 .arv-grouprun__card-title {
 	margin: 0 0 0.35rem;
 }
@@ -10928,6 +10937,15 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-grouprun__where {
 	margin: 0 0 1rem;
 	font-weight: 700;
+}
+
+/* The Wednesday run's trailhead moves week to week, so this reads as a
+   plain note rather than the bold, fixed-fact styling a real address
+   gets: it is telling you where to look, not where to go. */
+.arv-grouprun__where--varies {
+	font-weight: 400;
+	font-style: italic;
+	color: #6a6a6a;
 }
 
 .arv-grouprun__addr {
