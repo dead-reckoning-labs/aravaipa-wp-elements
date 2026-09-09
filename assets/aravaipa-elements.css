@@ -10849,3 +10849,178 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 .arv-careers__empty {
 	color: #6a6a6a;
 }
+
+/* Group Runs. Same flat, bordered posture and the same division-button
+   pattern as Racing Team: a filter bar, squared buttons, active one
+   filled dark. */
+.arv-grouprun {
+	text-align: left;
+}
+
+.arv-grouprun__filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 0 0 1.5rem;
+}
+
+.arv-grouprun__filter {
+	padding: 0.45rem 0.9rem;
+	border: 1px solid #d4d4d4;
+	border-radius: 0;
+	font-size: var(--arv-fs-meta);
+	font-family: inherit;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	background: #fff;
+	color: #3a3a3a;
+	cursor: pointer;
+	transition: border-color 0.12s, color 0.12s;
+}
+
+.arv-grouprun__filter:hover {
+	border-color: #8a8a8a;
+	color: #111;
+}
+
+.arv-grouprun__filter.is-active {
+	background: #111;
+	border-color: #111;
+	color: #fff;
+}
+
+.arv-grouprun__filter:focus-visible {
+	outline: 2px solid var(--arv-accent, #ff2a13);
+	outline-offset: 2px;
+}
+
+.arv-grouprun__cards {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1.5rem;
+	margin: 0 0 2.5rem;
+}
+
+@media (max-width: 780px) {
+	.arv-grouprun__cards {
+		grid-template-columns: 1fr;
+	}
+}
+
+.arv-grouprun__card {
+	padding: 1.5rem;
+	border: 1px solid #d4d4d4;
+}
+
+.arv-grouprun__card-title {
+	margin: 0 0 0.35rem;
+}
+
+.arv-grouprun__meta {
+	margin: 0 0 1rem;
+	color: #6a6a6a;
+	font-weight: 700;
+	font-size: var(--arv-fs-meta);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.arv-grouprun__where {
+	margin: 0 0 1rem;
+	font-weight: 700;
+}
+
+.arv-grouprun__addr {
+	font-weight: 400;
+	color: #6a6a6a;
+}
+
+.arv-grouprun__desc {
+	margin: 0 0 1rem;
+}
+
+.arv-grouprun__social {
+	margin: 0 0 1.25rem;
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+}
+
+.arv-grouprun__links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+}
+
+.arv-grouprun__link {
+	display: inline-block;
+	padding: 0.6rem 1.1rem;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.arv-grouprun__link--strava {
+	background: var(--arv-accent, #ff2a13);
+	color: #fff;
+}
+
+.arv-grouprun__link--strava:hover {
+	opacity: 0.9;
+}
+
+.arv-grouprun__link--facebook {
+	border: 1px solid #d4d4d4;
+	color: inherit;
+}
+
+.arv-grouprun__link--facebook:hover {
+	border-color: #8a8a8a;
+}
+
+.arv-grouprun__upcoming h2 {
+	margin: 0 0 0.35rem;
+}
+
+.arv-grouprun__count {
+	margin: 0 0 1rem;
+	font-size: var(--arv-fs-meta);
+	color: #6a6a6a;
+}
+
+.arv-grouprun__upcoming-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-grouprun__upcoming-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.4rem 1rem;
+	padding: 0.75rem 0;
+	border-top: 1px solid #e5e5e5;
+}
+
+/* Without this, "display: flex" on the row above has the same specificity
+   as the browser's own "[hidden] { display: none }" default and wins by
+   coming later in the file, so the region filter would set the attribute
+   correctly and the row would stay visibly on screen anyway. */
+.arv-grouprun__upcoming-row[hidden] {
+	display: none;
+}
+
+.arv-grouprun__upcoming-date {
+	font-weight: 700;
+	min-width: 5.5em;
+}
+
+.arv-grouprun__upcoming-region {
+	color: #6a6a6a;
+	font-size: var(--arv-fs-meta);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.arv-grouprun__upcoming-where {
+	color: #6a6a6a;
+}
