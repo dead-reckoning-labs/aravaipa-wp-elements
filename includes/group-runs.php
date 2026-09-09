@@ -10,20 +10,28 @@
  * is Strava: every one of them runs as a Strava group event, and that is
  * the closest thing to a maintained source this has.
  *
- * The schedule below is hand-entered from that source rather than synced
- * live, because Strava's group event details are only visible to a
- * logged-in member and there is no public feed to read: /group_events
- * redirects straight to a login wall, and the club page itself shows
- * "Upcoming Club Event, sign up to see these details" to a visitor who
- * is not one. A future version could read this through Strava's own API
- * once a club admin authorises it (see the athlete results sync for the
- * shape that would take), which would also pick up a one-off cancellation
- * or, for the Wednesday run, a rotating trailhead the way a fixed weekday
- * entry cannot. Until then this is the honest middle ground: real days,
- * times and places (or an honest "location varies" where one is not
- * fixed), verified 2026-09-08 directly from each run's Strava listing,
- * computed forward into an actual calendar instead of a paragraph saying
- * "usually Wednesdays."
+ * Two sources, because the two halves of this are maintained in two
+ * different places.
+ *
+ * The recurrence (which weekday, what time, where a fixed run meets) is
+ * hand-entered here, from each run's own Strava listing, verified
+ * 2026-09-08. Strava itself cannot be read for it: group event details
+ * are only visible to a logged-in member, /group_events redirects to a
+ * login wall, and the club page shows "Upcoming Club Event, sign up to
+ * see these details" to everyone else. A weekday and a time are also the
+ * part that genuinely does not drift, so hand-entering them costs
+ * nothing on an ongoing basis.
+ *
+ * The Wednesday run's rotating trailhead is the part that does change
+ * every week, and that is read live from the Google Sheet it is planned
+ * in, which is the same sheet each week's Strava event is built from.
+ * See arv_group_runs_sheet().
+ *
+ * What neither source gives is a week being cancelled outright: the
+ * recurrence will still compute it and the sheet will still list its
+ * planned trailhead. Reading Strava through its own API, once a club
+ * admin authorises it, is what would close that, in the shape the
+ * athlete results sync already uses.
  *
  * @package Aravaipa_Elements
  */
@@ -126,11 +134,17 @@ const ARV_GROUP_RUNS_SHEET_OPTION = 'arv_group_runs_sheet_url';
  * between a page that tells you to go look somewhere else and a page
  * that answers the question.
  *
- * Needs the sheet's own tab published to the web as CSV
- * (File, Share, Publish to web, that one sheet, CSV). Deliberately one
- * tab and not the whole document: other tabs in the same file carry 44
- * volunteers' personal email addresses, and publishing the document
- * would put every one of them on a public URL.
+ * Reads the sheet's /export?format=csv URL, which serves the first tab
+ * only. That matters here for a reason beyond convenience: other tabs in
+ * the same document carry 44 volunteers' personal email addresses, and
+ * the export returns none of them. Checked rather than assumed, against
+ * the real published URL: 15KB and zero email addresses, against 103KB
+ * for the document as a whole.
+ *
+ * Sharing has to be set so that anyone with the link can view, which is
+ * what makes the export readable without credentials. A sheet that is
+ * not shared that way answers 401 and this falls back, rather than
+ * breaking the page.
  *
  * Returns an empty array when no URL is configured or the fetch fails,
  * and every caller falls back to the honest "location varies" wording, so
@@ -650,7 +664,7 @@ function arv_group_runs_admin_screen() {
 
 	echo '<div class="wrap"><h1>' . esc_html__( 'Group Runs Schedule', 'aravaipa-elements' ) . '</h1>';
 	echo '<p>' . esc_html__( 'The Wednesday run rotates trailheads on a schedule kept in Google Sheets. Publish that one sheet (File, Share, Publish to web, pick the schedule tab, CSV) and paste the URL here, and the page shows each week\'s real trailhead instead of "location varies".', 'aravaipa-elements' ) . '</p>';
-	echo '<p><strong>' . esc_html__( 'Publish the single schedule tab, not the whole document: other tabs in that file hold volunteers\' personal email addresses.', 'aravaipa-elements' ) . '</strong></p>';
+	echo '<p><strong>' . esc_html__( 'The export URL serves the first tab only, which is the schedule. That is deliberate: other tabs in that document hold volunteers\' personal email addresses, and the export returns none of them. Point this at a document whose first tab is not the schedule and it will read the wrong thing.', 'aravaipa-elements' ) . '</strong></p>';
 
 	echo '<form method="post"><table class="form-table"><tr><th scope="row"><label for="arv_group_runs_url">'
 		. esc_html__( 'Published CSV URL', 'aravaipa-elements' ) . '</label></th><td>';
