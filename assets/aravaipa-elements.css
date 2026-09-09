@@ -10812,8 +10812,15 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	border-top: 1px solid #d4d4d4;
 }
 
+/* Sized explicitly rather than left to the theme's h3, which renders at
+   34px here: measured against the rest of the page that made a job title
+   larger than the "Current Openings" header above it and nearly as large
+   as the page's own h1. A listing should sit under its section, not
+   compete with the page title. */
 .arv-careers__title {
 	margin: 0 0 0.35rem;
+	font-size: 1.5rem;
+	line-height: 1.2;
 }
 
 .arv-careers__meta {
@@ -10848,6 +10855,11 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 
 .arv-careers__empty {
 	color: #6a6a6a;
+}
+
+.arv-careers__board {
+	margin: 1.5rem 0 0;
+	font-size: var(--arv-fs-meta);
 }
 
 /* Group Runs. Same flat, bordered posture and the same division-button

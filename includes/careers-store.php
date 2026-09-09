@@ -212,7 +212,8 @@ function arv_careers_render( $atts = array() ) {
 	if ( empty( $list ) ) {
 		return '<p class="arv-careers__empty">'
 			. esc_html__( "We don't have any open positions right now, but we're always glad to hear from people who want to work here. Check back soon.", 'aravaipa-elements' )
-			. '</p>';
+			. '</p>'
+			. arv_careers_board_link();
 	}
 
 	$out = '<div class="arv-careers__list">';
@@ -273,8 +274,27 @@ function arv_careers_render( $atts = array() ) {
 	}
 
 	$out .= '</div>';
+	$out .= arv_careers_board_link();
 
 	return $out;
+}
+
+/**
+ * A link to the BambooHR board itself.
+ *
+ * Every role Aravaipa posts goes up there, and this page only ever shows
+ * what is open at this moment. That distinction matters to the person who
+ * looked, found nothing for them, and would otherwise have no reason to
+ * come back or anywhere else to look. On the empty path it is the only
+ * useful thing on the page.
+ *
+ * @return string
+ */
+function arv_careers_board_link() {
+	return '<p class="arv-careers__board">'
+		. '<a href="https://aravaipa.bamboohr.com/careers" target="_blank" rel="noopener">'
+		. esc_html__( 'See all openings on our job board', 'aravaipa-elements' )
+		. '</a></p>';
 }
 
 /**
