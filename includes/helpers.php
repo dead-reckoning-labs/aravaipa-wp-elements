@@ -1056,10 +1056,19 @@ function arv_cached_render( $name, $fingerprint, $build ) {
 
 	$html = (string) call_user_func( $build );
 
-	// A day, not a week: the fingerprint already handles correctness, so
+	// A week, not a day: the fingerprint already handles correctness, so
 	// this is only a floor on how long a stale entry can survive a
 	// fingerprint that fails to change for a reason nobody predicted.
-	set_transient( $key, $html, DAY_IN_SECONDS );
+	//
+	// The floor matters more than it looks. The per-year photo archives
+	// (/photos-2023/ etc.) get little enough traffic that a one-day TTL
+	// meant the transient routinely expired between visits, so the next
+	// visitor, often a crawler rather than a person, paid the full 30 to
+	// 90 second cold render WP Rocket's own page cache was supposed to
+	// hide. A week is still short enough to recover quickly from a bad
+	// fingerprint, and long enough that low-traffic pages actually stay
+	// warm between the visits they get.
+	set_transient( $key, $html, WEEK_IN_SECONDS );
 
 	return $html;
 }
@@ -1084,4 +1093,26 @@ function arv_heading_tag( $value, $default = 'h2' ) {
 	$value   = is_string( $value ) ? strtolower( trim( $value ) ) : '';
 
 	return in_array( $value, $allowed, true ) ? $value : $default;
+}
+
+/**
+ * Stop Jetpack printing its own Open Graph tags on a page one of this
+ * plugin's SEO modules is about to describe itself.
+ *
+ * Jetpack prints og:tags unconditionally on every singular page via its own
+ * wp_head callback, jetpack_og_tags, at the default priority (10). Every
+ * module in this plugin that prints its own og:title/og:description runs
+ * earlier, at priority 3 or 4, so calling this from inside one of them
+ * removes Jetpack's callback from the same wp_head event before it fires.
+ * Without it, a page carried two full sets: this module's specific one,
+ * then Jetpack's generic fallback a few lines later in the same <head>
+ * ("Visit the post for more."), and which one a given scraper honored was
+ * whichever it read first.
+ *
+ * Safe to call unconditionally: each caller has already decided, by the time
+ * it calls this, that the current page is one it owns and is about to print
+ * tags for.
+ */
+function arv_seo_suppress_jetpack_og() {
+	remove_action( 'wp_head', 'jetpack_og_tags' );
 }

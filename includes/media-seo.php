@@ -457,6 +457,8 @@ function arv_post_seo_head() {
 		return;
 	}
 
+	arv_seo_suppress_jetpack_og();
+
 	$title       = get_the_title( $post );
 	$description = arv_post_seo_description( $post );
 	$image       = arv_post_seo_image( $post );
@@ -525,6 +527,8 @@ function arv_media_seo_head() {
 	}
 
 	$url = get_permalink( get_queried_object_id() );
+
+	arv_seo_suppress_jetpack_og();
 
 	echo '<meta name="description" content="' . esc_attr( $meta['description'] ) . '" />' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr( $meta['title'] ) . '" />' . "\n";

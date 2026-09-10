@@ -390,6 +390,8 @@ function arv_live_seo_head() {
 		return;
 	}
 
+	arv_seo_suppress_jetpack_og();
+
 	echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
 
 	$title = arv_live_seo_title( $ctx );
