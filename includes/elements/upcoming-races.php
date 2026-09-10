@@ -37,6 +37,7 @@ cs_register_element(
 			array(
 				'eyebrow'   => cs_value( 'Next up', 'markup' ),
 				'heading'   => cs_value( 'Races open now', 'markup' ),
+				'heading_tag' => 'h2',
 				'intro'     => cs_value( '', 'markup' ),
 				'theme'     => cs_value( 'light', 'style' ),
 				'columns'   => cs_value( '3', 'markup' ),
@@ -177,6 +178,23 @@ function arv_upcoming_races_builder() {
 					'key'   => 'heading',
 					'type'  => 'text',
 					'label' => __( 'Heading', 'aravaipa-elements' ),
+				),
+				array(
+					'key'     => 'heading_tag',
+					'type'    => 'select',
+					'label'   => __( 'Heading level', 'aravaipa-elements' ),
+					'options' => array(
+						'choices' => array(
+							array(
+								'value' => 'h2',
+								'label' => __( 'H2 (default)', 'aravaipa-elements' ),
+							),
+							array(
+								'value' => 'h1',
+								'label' => __( 'H1 (only where the page has no other heading)', 'aravaipa-elements' ),
+							),
+						),
+					),
 				),
 				array(
 					'key'   => 'intro',
@@ -793,7 +811,8 @@ function arv_upcoming_races_render( $data ) {
 		$out .= '<p class="arv-races__eyebrow">' . esc_html( $eyebrow ) . '</p>';
 	}
 	if ( '' !== trim( $heading ) ) {
-		$out .= '<h2 class="arv-races__heading">' . esc_html( $heading ) . '</h2>';
+		$tag  = arv_heading_tag( isset( $data['heading_tag'] ) ? $data['heading_tag'] : '' );
+		$out .= '<' . $tag . ' class="arv-races__heading">' . esc_html( $heading ) . '</' . $tag . '>';
 	}
 	if ( '' !== trim( $intro ) ) {
 		$out .= '<p class="arv-races__intro">' . esc_html( $intro ) . '</p>';

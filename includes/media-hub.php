@@ -240,7 +240,8 @@ function arv_media_hub_render( $args = array() ) {
 	$out .= '<div class="arv-media-hub__inner">';
 
 	if ( '' !== $heading ) {
-		$out .= '<h2 class="arv-media-hub__heading">' . esc_html( $heading ) . '</h2>';
+		$tag  = arv_heading_tag( isset( $args['heading_tag'] ) ? $args['heading_tag'] : '' );
+		$out .= '<' . $tag . ' class="arv-media-hub__heading">' . esc_html( $heading ) . '</' . $tag . '>';
 	}
 
 	if ( '' !== $intro ) {
@@ -293,8 +294,9 @@ function arv_media_hub_render( $args = array() ) {
 function arv_media_hub_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		array(
-			'heading' => 'Media',
-			'intro'   => '',
+			'heading'     => 'Media',
+			'intro'       => '',
+			'heading_tag' => '',
 		),
 		$atts,
 		'arv_media_hub'

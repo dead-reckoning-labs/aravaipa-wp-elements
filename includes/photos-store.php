@@ -722,7 +722,8 @@ function arv_photos_render( $args = array() ) {
 			? $wanted . ' ' . $heading
 			: $heading;
 
-		$out .= '<h2 class="arv-photos__heading">' . esc_html( $shown ) . '</h2>';
+		$tag  = arv_heading_tag( isset( $args['heading_tag'] ) ? $args['heading_tag'] : '' );
+		$out .= '<' . $tag . ' class="arv-photos__heading">' . esc_html( $shown ) . '</' . $tag . '>';
 	}
 
 	if ( '' !== $intro ) {
@@ -1006,9 +1007,10 @@ function arv_photos_ordered_galleries( $galleries ) {
 function arv_photos_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		array(
-			'heading' => 'Photos',
-			'intro'   => '',
-			'year'    => '',
+			'heading'     => 'Photos',
+			'intro'       => '',
+			'year'        => '',
+			'heading_tag' => '',
 		),
 		$atts,
 		'arv_photos'
