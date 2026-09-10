@@ -121,6 +121,25 @@ function arv_live_editions_by_name( $name ) {
 }
 
 /**
+ * The edition year a live page's own slug names, or '' when it names none.
+ *
+ * Archive pages are "<race>-<year>" ("mogollon-monster-2024"), the current
+ * one is the bare slug. Only a trailing four-digit year counts, and only a
+ * plausible one: a race named "across-the-years" must not be read as an
+ * edition, and neither must a slug ending in a distance like "-50".
+ *
+ * @param string $slug Page slug.
+ * @return string Four-digit year, or ''.
+ */
+function arv_live_year_from_slug( $slug ) {
+	if ( ! preg_match( '~-((?:19|20)\\d{2})$~', (string) $slug, $m ) ) {
+		return '';
+	}
+
+	return $m[1];
+}
+
+/**
  * The edition a request is asking for.
  *
  * ?year= wins when it names an edition that exists. Anything else, including
@@ -1478,7 +1497,19 @@ function arv_live_seo_context() {
 	// the whole exercise was built to get indexed.
 	$editions  = arv_live_all_editions( $slug );
 	$requested = isset( $_GET[ ARV_LIVE_YEAR_VAR ] ) ? wp_unslash( $_GET[ ARV_LIVE_YEAR_VAR ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$edition   = arv_live_pick_edition( $editions, $requested );
+
+	// The per-year archive pages carry their year in the slug, not in a query
+	// string: /live-results/mogollon-monster-2024/ is a distinct, indexable
+	// page, while ?edition= is only ever used by the switcher on the current
+	// one. Reading the query string alone meant every archive page fell
+	// through to $editions[0] and described itself as the newest running, so
+	// six Mogollon URLs all claimed to be the 2026 edition, each with 2026's
+	// date in its schema and each self-canonical.
+	if ( '' === $requested ) {
+		$requested = arv_live_year_from_slug( get_post_field( 'post_name', $id ) );
+	}
+
+	$edition = arv_live_pick_edition( $editions, $requested );
 	$name      = $edition ? $edition['name'] : '';
 	$show      = $edition ? arv_live_store_slug( $edition['live'] ) : $slug;
 
