@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.99.49
+ * Version:           0.99.50
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.99.49' );
+define( 'ARV_ELEMENTS_VERSION', '0.99.50' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -165,6 +165,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/weather.php';
 // that should depend on Cornerstone being active.
 require_once ARV_ELEMENTS_PATH . 'includes/live-page.php';
 require_once ARV_ELEMENTS_PATH . 'includes/race-admin.php';
+
+// Update-notification policy. Hooks only fire during the auto-update cron,
+// which runs outside wp-admin, so this cannot sit in the is_admin() block
+// below.
+require_once ARV_ELEMENTS_PATH . 'includes/update-emails.php';
 
 // Admin only: every hook in updater.php answers questions WordPress only
 // asks inside wp-admin (the Plugins screen, the update cron that runs
