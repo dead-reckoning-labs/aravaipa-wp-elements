@@ -701,7 +701,8 @@ function arv_shop_render( $args = array() ) {
 	$out .= '<div class="arv-shop__inner">';
 
 	if ( '' !== $heading ) {
-		$out .= '<h2 class="arv-shop__heading arv-shop__heading--page">' . esc_html( $heading ) . '</h2>';
+		$tag  = arv_heading_tag( isset( $args['heading_tag'] ) ? $args['heading_tag'] : '' );
+	$out .= '<' . $tag . ' class="arv-shop__heading arv-shop__heading--page">' . esc_html( $heading ) . '</' . $tag . '>';
 	}
 
 	if ( '' !== $intro ) {
@@ -785,8 +786,9 @@ function arv_shop_collection_row( $collections, $label, $kind ) {
 function arv_shop_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		array(
-			'heading' => 'Shop',
-			'intro'   => '',
+			'heading'     => 'Shop',
+			'intro'       => '',
+			'heading_tag' => '',
 		),
 		$atts,
 		'arv_shop'

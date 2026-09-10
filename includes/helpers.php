@@ -1063,3 +1063,25 @@ function arv_cached_render( $name, $fingerprint, $build ) {
 
 	return $html;
 }
+
+/**
+ * Resolve a caller-supplied heading level to a tag we are willing to print.
+ *
+ * Section headings in this plugin are h2 by default, which is right when the
+ * page already has an h1 above them. Some pages are built almost entirely from
+ * these shortcodes and so have no other candidate: on those, the primary
+ * section needs to be the h1 instead, and passing heading_tag says so.
+ *
+ * Anything unrecognised falls back to the default rather than being printed,
+ * since the value reaches us from page content and ends up in markup.
+ *
+ * @param mixed  $value   Requested tag.
+ * @param string $default Tag to use when nothing valid was asked for.
+ * @return string
+ */
+function arv_heading_tag( $value, $default = 'h2' ) {
+	$allowed = array( 'h1', 'h2', 'h3', 'h4', 'p', 'div' );
+	$value   = is_string( $value ) ? strtolower( trim( $value ) ) : '';
+
+	return in_array( $value, $allowed, true ) ? $value : $default;
+}
