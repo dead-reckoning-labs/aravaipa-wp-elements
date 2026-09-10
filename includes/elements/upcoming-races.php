@@ -671,7 +671,7 @@ function arv_upcoming_races_render( $data ) {
 			// Race name as alt rather than empty: unlike the region map's
 			// brand marks, this image is the only thing identifying the race
 			// visually, and it sits above the name rather than beside it.
-			$img = '<img class="arv-races__img" src="' . esc_url( $race['image'] ) . '" alt="' . esc_attr( $race['name'] ) . '" loading="lazy" decoding="async" />';
+			$img = '<img class="arv-races__img" src="' . esc_url( arv_card_image_url( $race['image'] ) ) . '" alt="' . esc_attr( $race['name'] ) . '" loading="lazy" decoding="async" />';
 			// Wrapped in a link to the race page when there is one. It is the
 			// most obviously clickable thing on the card and was doing
 			// nothing. aria-hidden with tabindex -1 because the race name

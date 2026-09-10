@@ -1387,7 +1387,7 @@ function arv_races_next_render( $atts ) {
 		$out .= '<span class="arv-next-races__thumb">';
 
 		if ( ! empty( $race['image'] ) ) {
-			$out .= '<img src="' . esc_url( $race['image'] ) . '" alt="" loading="lazy" decoding="async" />';
+			$out .= '<img src="' . esc_url( arv_card_image_url( $race['image'] ) ) . '" alt="" loading="lazy" decoding="async" />';
 		}
 
 		$out .= '</span><span class="arv-next-races__body">';
