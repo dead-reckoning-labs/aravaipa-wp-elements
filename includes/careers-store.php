@@ -258,10 +258,10 @@ function arv_careers_render( $atts = array() ) {
 				$out .= '<p class="arv-careers__compensation">' . esc_html( $compensation ) . '</p>';
 			}
 
-			$summary = ! empty( $detail['description'] ) ? arv_careers_summary( $detail['description'] ) : '';
+			$summary_text = ! empty( $detail['description'] ) ? arv_careers_summary( $detail['description'] ) : '';
 
-			if ( '' !== $summary ) {
-				$out .= '<p class="arv-careers__summary">' . esc_html( $summary ) . '</p>';
+			if ( '' !== $summary_text ) {
+				$out .= '<p class="arv-careers__summary">' . esc_html( $summary_text ) . '</p>';
 			}
 		}
 
