@@ -1116,3 +1116,44 @@ function arv_heading_tag( $value, $default = 'h2' ) {
 function arv_seo_suppress_jetpack_og() {
 	remove_action( 'wp_head', 'jetpack_og_tags' );
 }
+
+/**
+ * Cap the rendered width of a Photon-hosted card image.
+ *
+ * Race card artwork is stored in the race store at whatever size the source
+ * upload happened to be, and those are logo files: 50 published races carry a
+ * card image over 4MB decoded, the largest 1875x1920. The cards render them at
+ * roughly 300-400px wide, so the browser was decoding a 13MB bitmap to paint a
+ * thumbnail. Measured on the homepage after a full scroll, card images alone
+ * accounted for 122MB of the 193MB of decoded image memory on the page, which
+ * is enough on its own to get a tab killed and reloaded by Safari on iPadOS.
+ *
+ * Every stored URL already points at Jetpack's Photon CDN, which resizes from
+ * a width parameter, so capping is a query-string rewrite rather than a
+ * re-upload: fit/resize/w/h are dropped and replaced with a single w. 800 is
+ * twice the widest the card is ever painted, so it stays sharp on a 2x display.
+ *
+ * Only for visible <img> tags. Open Graph and schema.org image URLs are
+ * deliberately left at full size, since those want the largest available.
+ *
+ * Returns the URL untouched when it is empty or not on Photon, so a race whose
+ * image is hosted anywhere else keeps working.
+ *
+ * @param string $url
+ * @param int    $max_w
+ * @return string
+ */
+function arv_card_image_url( $url, $max_w = 800 ) {
+	if ( ! is_string( $url ) || '' === $url ) {
+		return $url;
+	}
+
+	$host = wp_parse_url( $url, PHP_URL_HOST );
+	if ( ! is_string( $host ) || ! preg_match( '~(^|\.)wp\.com$~i', $host ) ) {
+		return $url;
+	}
+
+	$url = remove_query_arg( array( 'fit', 'resize', 'w', 'h' ), $url );
+
+	return add_query_arg( 'w', (int) $max_w, $url );
+}
