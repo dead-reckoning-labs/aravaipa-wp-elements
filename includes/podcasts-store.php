@@ -953,6 +953,13 @@ function arv_podcasts_seo_title_parts( $parts ) {
 		? $ctx['show']['title'] . ' | Aravaipa Running'
 		: __( 'Podcasts | Aravaipa Running', 'aravaipa-elements' );
 
+	// Core has already put the site name in $parts['site'] by the time this
+	// filter runs, and the title set above already carries it once. Left
+	// alone, a show page rendered "Inside Aravaipa | Aravaipa Running |
+	// Aravaipa Running": core appends whatever survives array_filter() after
+	// this filter returns, with no idea this title already named the site.
+	unset( $parts['site'] );
+
 	return $parts;
 }
 add_filter( 'document_title_parts', 'arv_podcasts_seo_title_parts' );
@@ -997,6 +1004,8 @@ function arv_podcasts_seo_index_head( $ctx ) {
 		number_format_i18n( $total )
 	);
 
+	arv_seo_suppress_jetpack_og();
+
 	echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr__( 'Podcasts | Aravaipa Running', 'aravaipa-elements' ) . '" />' . "\n";
 	echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
@@ -1032,6 +1041,8 @@ function arv_podcasts_seo_show_head( $ctx ) {
 	if ( strlen( $description ) > 160 ) {
 		$description = rtrim( substr( $description, 0, strrpos( substr( $description, 0, 158 ), ' ' ) ), " ,.;:" ) . '…';
 	}
+
+	arv_seo_suppress_jetpack_og();
 
 	echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr( $show['title'] . ' | Aravaipa Running' ) . '" />' . "\n";

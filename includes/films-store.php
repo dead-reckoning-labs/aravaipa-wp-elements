@@ -1297,6 +1297,8 @@ function arv_films_seo_head() {
 		number_format_i18n( count( $all ) )
 	);
 
+	arv_seo_suppress_jetpack_og();
+
 	echo '<meta name="description" content="' . esc_attr( $description ) . '" />' . "\n";
 	echo '<meta property="og:title" content="' . esc_attr__( 'Films | Aravaipa Running', 'aravaipa-elements' ) . '" />' . "\n";
 	echo '<meta property="og:description" content="' . esc_attr( $description ) . '" />' . "\n";
