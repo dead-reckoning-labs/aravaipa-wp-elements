@@ -529,6 +529,20 @@
 			return m + ':' + pad( s % 60 );
 		}
 
+		// Elapsed race time is always hours, minutes and seconds, zero padded:
+		// "33:53:37", never "1d 9:53:37". It is read against a cutoff stated in
+		// hours (38 hour Mogollon, 8.5 hour 50K), and a day boundary in the
+		// middle of that number makes a reader do arithmetic to compare the two.
+		// Hours simply keep counting past 24. The countdown above keeps its own
+		// "3d 4h" form, since "starts in" is not measured against anything.
+		function clock( ms ) {
+			var s = Math.max( 0, Math.floor( ms / 1000 ) );
+			var h = Math.floor( s / 3600 );
+			var m = Math.floor( ( s % 3600 ) / 60 );
+
+			return pad( h ) + ':' + pad( m ) + ':' + pad( s % 60 );
+		}
+
 		function show( which ) {
 			if ( soon ) {
 				soon.hidden = 'soon' !== which;
@@ -556,7 +570,7 @@
 			if ( now >= start ) {
 				show( 'live' );
 				if ( elapsedValue ) {
-					elapsedValue.textContent = span( now - start );
+					elapsedValue.textContent = clock( now - start );
 				}
 				return;
 			}
