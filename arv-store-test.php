@@ -27,6 +27,15 @@ $GLOBALS['next_id'] = 1;
 function register_post_type( $t, $a = array() ) {}
 function register_taxonomy( $t, $o, $a = array() ) {}
 function register_post_meta( $p, $k, $a = array() ) {}
+// Stubbed because includes/seo.php (#303) calls it to drop Jetpack's Open
+// Graph tags. Without it the suite fatals at the live page SEO section and
+// every test after that point silently never runs.
+if ( ! function_exists( 'remove_action' ) ) {
+	function remove_action( $hook, $cb, $priority = 10 ) {
+		return true;
+	}
+}
+
 function add_action( $t, $f, $p = 10, $n = 1 ) {}
 function add_submenu_page() {}
 function add_meta_box() {}
@@ -3634,13 +3643,13 @@ t( 'and no elapsed time is written',    false !== strpos( $before, 'elapsed-valu
 $GLOBALS['NOW_TS'] = strtotime( '2026-08-29T15:30:00Z' );
 $during = arv_races_live_clock( $card_race );
 t( 'during the race it shows',          false !== strpos( $during, 'data-arv-results-live>' ) );
-t( 'with the time elapsed so far',      false !== strpos( $during, '>3:30<' ) );
+t( 'with the time elapsed so far',      false !== strpos( $during, '>03:30:00<' ) );
 t( 'and a pulse to catch the eye',      false !== strpos( $during, 'arv-results__pulse' ) );
 
 $GLOBALS['NOW_TS'] = strtotime( '2026-08-29T22:00:00Z' );
 $after = arv_races_live_clock( $card_race );
 t( 'after the cutoff it hides again',   false !== strpos( $after, 'data-arv-results-live hidden' ) );
-t( 'and stops reporting a time',        false === strpos( $after, '>10:00<' ) );
+t( 'and stops reporting a time',        false === strpos( $after, '>10:00:00<' ) );
 
 // Both states ship on every card whatever PHP decided, because this site is
 // behind a page cache: HTML generated hours before the gun still has to be

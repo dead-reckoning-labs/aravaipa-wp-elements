@@ -885,9 +885,10 @@ function arv_results_now() {
  *
  * Same reason the countdown has a server-rendered value: WP Rocket holds
  * scripts until the visitor interacts, so an empty span is what a real
- * visitor reads first. Hours and minutes rather than seconds, because that
- * is as precise as a number can usefully be before the script takes over
- * and starts ticking.
+ * visitor reads first. Same HH:MM:SS the script ticks in, hours counting
+ * past 24 rather than rolling into days, so the first paint and the running
+ * clock never disagree about shape: a race cutoff is stated in hours, and
+ * "33:53:37" can be read against "38 hours" where "1d 9:53" cannot.
  *
  * @param string $start ISO 8601, or empty when the board has no time.
  * @return string
@@ -905,8 +906,9 @@ function arv_results_elapsed_text( $start ) {
 
 	$hours   = (int) floor( $since / 3600 );
 	$minutes = (int) floor( ( $since % 3600 ) / 60 );
+	$seconds = (int) ( $since % 60 );
 
-	return sprintf( '%d:%02d', $hours, $minutes );
+	return sprintf( '%02d:%02d:%02d', $hours, $minutes, $seconds );
 }
 
 /**
