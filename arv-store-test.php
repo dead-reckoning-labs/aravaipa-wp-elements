@@ -1087,6 +1087,10 @@ $GLOBALS['NOW']    = '2026-08-29';
 $GLOBALS['NOW_TS'] = strtotime( '2026-08-29T15:00:00Z' );   // three hours in
 $during = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'during the race it is flagged',   false !== strpos( arv_test_archive_only( $during ), 'arv-results__flag' ) );
+// Carrying the race week clock's own start and cutoff, so the script can
+// drop it from a cached page at the same instant that block says COMPLETED.
+t( 'the flag carries the board start',  false !== strpos( arv_test_archive_only( $during ), 'data-arv-results-flag data-arv-start="2026-08-29T12:00:00+00:00"' ) );
+t( 'and the board cutoff',              false !== strpos( arv_test_archive_only( $during ), 'data-arv-cutoff="2026-08-29T22:00:00+00:00"' ) );
 
 // Past the cutoff, still the same calendar day. This is the case a date
 // comparison cannot get right and the one the board exists for.
@@ -1099,6 +1103,19 @@ t( 'past the cutoff it is not',       false === strpos( arv_test_archive_only( $
 $GLOBALS['NOW_TS'] = strtotime( '2026-08-29T08:00:00Z' );
 $before = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'and before the gun it is not',    false === strpos( arv_test_archive_only( $before ), 'arv-results__flag' ) );
+
+// Through the shortcode's render cache. Its fingerprint only covered the
+// stores, and nothing in a store changes at a cutoff, so the copy cached
+// mid-race was served all the next day: Mogollon and Race The Cog both said
+// "Happening now" on a Monday under a race week block reading COMPLETED.
+$GLOBALS['_transients'] = array();
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T15:00:00Z' );
+$sc_during = arv_results_shortcode( array() );
+t( 'the cached page flags a running race', false !== strpos( arv_test_archive_only( $sc_during ), 'arv-results__flag' ) );
+$GLOBALS['NOW_TS'] = strtotime( '2026-08-29T23:00:00Z' );
+$sc_after = arv_results_shortcode( array() );
+t( 'and drops it once the cutoff passes', false === strpos( arv_test_archive_only( $sc_after ), 'arv-results__flag' ) );
+$GLOBALS['_transients'] = array();
 
 // The same three states for a race with NO board at all.
 //

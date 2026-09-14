@@ -32,6 +32,35 @@
 		for ( var k = 0; k < clocks.length; k++ ) {
 			clock( clocks[ k ] );
 		}
+
+		var flags = document.querySelectorAll( '[data-arv-results-flag]' );
+
+		for ( var f = 0; f < flags.length; f++ ) {
+			flag( flags[ f ] );
+		}
+	}
+
+	/**
+	 * The archive's "Happening now" tag, held to the race week clock.
+	 *
+	 * Same start and cutoff as that clock, so a cached page drops the tag at
+	 * the instant the race week block says COMPLETED.
+	 */
+	function flag( el ) {
+		var start = Date.parse( el.getAttribute( 'data-arv-start' ) );
+		var cutoff = Date.parse( el.getAttribute( 'data-arv-cutoff' ) );
+
+		if ( isNaN( start ) ) {
+			return;
+		}
+
+		function tick() {
+			var now = Date.now();
+			el.hidden = now < start || ( ! isNaN( cutoff ) && now >= cutoff );
+		}
+
+		tick();
+		window.setInterval( tick, 15000 );
 	}
 	function wire( input ) {
 		// Scoped to this element's own wrapper, so two Results blocks on one

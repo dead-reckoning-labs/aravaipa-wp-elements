@@ -211,6 +211,8 @@ function arv_results_shortcode( $atts ) {
 		get_option( 'arv_race_stats', array() ),
 		function_exists( 'get_queried_object_id' ) ? get_queried_object_id() : 0,
 		function_exists( 'get_query_var' ) ? get_query_var( 'arv_race' ) : '',
+		// Which races are running right now: see arv_results_live_signature().
+		arv_results_live_signature(),
 	);
 
 	return arv_cached_render(
@@ -353,6 +355,20 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 			? ( 'live' === arv_races_live_state( $race, $board, $start_ts ) )
 			: ( $race['iso'] === $today || ( '' !== $race['end'] && $race['iso'] <= $today && $today <= $race['end'] ) );
 
+		// The same start and cutoff the race week block hands its clock, so
+		// the flag can be switched off by the same script at the same
+		// instant. Without them the flag was whatever the server thought
+		// when the HTML was built, and a page cached on Sunday afternoon
+		// said "Happening now" all Monday under a block reading COMPLETED.
+		$clock_start  = '';
+		$clock_cutoff = '';
+		if ( $start_ts ) {
+			$cutoff_ts    = function_exists( 'arv_race_cutoff_for' ) ? arv_race_cutoff_for( $race['name'], $board, $start_ts ) : 0;
+			$cutoff_ts    = arv_results_backstop_cutoff( $cutoff_ts, gmdate( 'c', $start_ts ) );
+			$clock_start  = gmdate( 'c', $start_ts );
+			$clock_cutoff = $cutoff_ts ? gmdate( 'c', $cutoff_ts ) : '';
+		}
+
 		// Derived from the calendar's own registration link rather than left
 		// blank until the scraper's next run. UltraSignup's results page for
 		// a race is the same id as its registration page under a different
@@ -370,10 +386,62 @@ function arv_results_live_rows( $today, $grace = 10 ) {
 			'ultrasignup'  => $ultrasignup,
 			'ultrarunning' => '',
 			'current'      => $current,
+			'clock_start'  => $clock_start,
+			'clock_cutoff' => $clock_cutoff,
 		);
 	}
 
 	return $rows;
+}
+
+/**
+ * The "Happening now" tag for one archive row, or nothing.
+ *
+ * Carries the race week clock's own start and cutoff where the row has a
+ * clock, and aravaipa-results.js hides it once that cutoff passes. A cached
+ * page therefore stops claiming a race is running at the same moment the
+ * race week block above it flips to COMPLETED, rather than whenever the
+ * cache next happens to rebuild.
+ *
+ * @param array $row
+ * @return string
+ */
+function arv_results_flag( $row ) {
+	if ( empty( $row['current'] ) ) {
+		return '';
+	}
+
+	$attrs = '';
+	if ( ! empty( $row['clock_start'] ) ) {
+		$attrs = ' data-arv-results-flag data-arv-start="' . esc_attr( $row['clock_start'] ) . '"'
+			. ( ! empty( $row['clock_cutoff'] ) ? ' data-arv-cutoff="' . esc_attr( $row['clock_cutoff'] ) . '"' : '' );
+	}
+
+	return '<span class="arv-results__flag"' . $attrs . '>' . esc_html( __( 'Happening now', 'aravaipa-elements' ) ) . '</span>';
+}
+
+/**
+ * What the archive's live state depends on besides the stores.
+ *
+ * For the render cache fingerprint. The stores only change when someone
+ * writes to them, but whether a race is running changes on its own at the
+ * gun and at the cutoff, so a page cached mid-race kept its "Happening now"
+ * tags for up to a week. Folding each live row's current state in means the
+ * next load after a start or a cutoff misses the cache and renders fresh.
+ *
+ * @return array
+ */
+function arv_results_live_signature() {
+	$today = function_exists( 'arv_upcoming_races_today' ) ? arv_upcoming_races_today() : gmdate( 'Y-m-d' );
+	$sig   = array( $today );
+
+	foreach ( arv_results_live_rows( $today, ARV_RESULTS_LIVE_MERGE_GRACE ) as $row ) {
+		if ( ! empty( $row['current'] ) ) {
+			$sig[] = $row['name'] . '|' . $row['iso'];
+		}
+	}
+
+	return $sig;
 }
 
 /**
@@ -1907,7 +1975,7 @@ function arv_results_race_groups_markup( $rows, $year = '' ) {
 		$out .= '<p class="arv-results__race-meta">' . esc_html( arv_results_edition_label( $latest ) );
 
 		if ( ! empty( $latest['current'] ) ) {
-			$out .= ' <span class="arv-results__flag">' . esc_html( __( 'Happening now', 'aravaipa-elements' ) ) . '</span>';
+			$out .= ' ' . arv_results_flag( $latest );
 		}
 
 		$out .= arv_results_finisher_count( $stats ) . '</p>';
@@ -2539,7 +2607,7 @@ function arv_results_table( $rows ) {
 			// Only while it is the live board's own race. Once the scrape
 			// picks the race up this row is replaced by the stored one and
 			// the tag goes with it.
-			$out .= '<span class="arv-results__flag">' . esc_html( __( 'Happening now', 'aravaipa-elements' ) ) . '</span>';
+			$out .= arv_results_flag( $row );
 		}
 
 		$out .= '</th>';
