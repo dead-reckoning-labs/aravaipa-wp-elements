@@ -3923,6 +3923,10 @@
 /* A race that has run but that the scraper has not picked up yet, carrying
    only its live link. Amber, the same colour this site uses everywhere else
    for "true right now, and not for long". */
+.arv-results__flag[hidden] {
+	display: none;
+}
+
 .arv-results__flag {
 	display: inline-block;
 	margin-top: 0.35rem;
