@@ -213,6 +213,11 @@ function arv_results_shortcode( $atts ) {
 		function_exists( 'get_query_var' ) ? get_query_var( 'arv_race' ) : '',
 		// Which races are running right now: see arv_results_live_signature().
 		arv_results_live_signature(),
+		// Which races have their own live results page. The LIVE RESULTS
+		// button links to that page when it exists and to the bare board when
+		// it does not, so creating one has to show up on the next load rather
+		// than after the cached copy's day-long ceiling.
+		function_exists( 'arv_live_page_map' ) ? arv_live_page_map() : array(),
 	);
 
 	return arv_cached_render(
