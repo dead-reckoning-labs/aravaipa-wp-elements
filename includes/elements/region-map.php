@@ -184,6 +184,10 @@ function arv_region_map_render( $data ) {
 		// simply renders as it did before, so a partner whose logo we do
 		// not have yet is not a blank box.
 		$logo   = arv_region_map_logo_url( arv_cell( $row, 7 ) );
+		// Optional 9th column: the region's Instagram handle. Blank falls back
+		// to the account that region's own page links to. See
+		// arv_region_map_social().
+		$social = arv_region_map_social( $url, arv_cell( $row, 8 ), '' !== trim( $full ) ? $full : $name );
 
 		// Name, a real position, and somewhere to send the click: without any
 		// one of those a pin cannot render as anything a visitor could use.
@@ -220,9 +224,16 @@ function arv_region_map_render( $data ) {
 		// Detail is the one thing that stays hover/focus-only, since it is
 		// prose, not an identifier, and every pin having its full sentence
 		// permanently on screen would turn the map back into a wall of text.
-		$pins .= '<a class="' . esc_attr( $classes ) . '" style="left:' . esc_attr( $x ) . '%;top:' . esc_attr( $y ) . '%" href="' . esc_url( $url ) . '">';
+		// A positioning point holding two things: the link (dot and label)
+		// and the card. The whole pin used to be one link with the card inside
+		// it, which left no way to put a second destination in the card: a
+		// link inside a link is invalid HTML. The card's own button and the
+		// region's Instagram are now links of their own.
+		$pins .= '<div class="' . esc_attr( $classes ) . '" style="left:' . esc_attr( $x ) . '%;top:' . esc_attr( $y ) . '%">';
+		$pins .= '<a class="arv-region-map__pin-link" href="' . esc_url( $url ) . '">';
 		$pins .= '<span class="arv-region-map__dot"></span>';
 		$pins .= '<span class="arv-region-map__name">' . esc_html( $name ) . '</span>';
+		$pins .= '</a>';
 		// Always a card now, where it used to appear only for a row carrying
 		// a detail or a logo: it also holds the call to action, and a pin
 		// whose card never opens would be the one pin on the map with no
@@ -245,22 +256,20 @@ function arv_region_map_render( $data ) {
 		if ( '' !== trim( $detail ) ) {
 			$pins .= '<span class="arv-region-map__detail-text">' . esc_html( $detail ) . '</span>';
 		}
-		// A span, not a nested <a> or <button>. The whole pin is already the
-		// link to this region's page, and putting a second interactive
-		// element inside it would be invalid HTML and would announce the
-		// same destination to a screen reader twice. This is the affordance
-		// for a click the surrounding anchor already handles, which is why
-		// it is also aria-hidden.
-		$pins .= '<span class="arv-region-map__cta" aria-hidden="true">' . esc_html( __( 'View races', 'aravaipa-elements' ) ) . '</span>';
+		$pins .= '<span class="arv-region-map__detail-actions">';
+		$pins .= '<a class="arv-region-map__cta" href="' . esc_url( $url ) . '">' . esc_html( __( 'View races', 'aravaipa-elements' ) ) . '</a>';
+		$pins .= arv_region_map_social_link( $social, 'arv-region-map__social' );
 		$pins .= '</span>';
-		$pins .= '</a>';
+		$pins .= '</span>';
+		$pins .= '</div>';
 
 		// The same regions again as plain text links. On a phone the pins are
 		// a few millimetres across and their labels are set small to stop
 		// them colliding, so the list is what actually makes this section
 		// usable there. It is also the only part a search engine can read:
 		// the map itself is one decorative SVG with no place names in it.
-		$items .= '<a class="arv-region-map__item" href="' . esc_url( $url ) . '">';
+		$items .= '<div class="arv-region-map__item">';
+		$items .= '<a class="arv-region-map__item-link" href="' . esc_url( $url ) . '">';
 		if ( '' !== trim( $logo ) ) {
 			$items .= '<span class="arv-region-map__item-logo"><img src="' . esc_url( $logo ) . '" alt="" loading="lazy" decoding="async" /></span>';
 		}
@@ -270,6 +279,8 @@ function arv_region_map_render( $data ) {
 			$items .= '<span class="arv-region-map__item-detail">' . esc_html( $detail ) . '</span>';
 		}
 		$items .= '</span></a>';
+		$items .= arv_region_map_social_link( $social, 'arv-region-map__item-social' );
+		$items .= '</div>';
 	}
 
 	if ( '' === $pins ) {
@@ -317,6 +328,67 @@ function arv_region_map_render( $data ) {
 	$out .= '</div></div>';
 
 	return $out;
+}
+
+/**
+ * The Instagram account for a region.
+ *
+ * Each handle was read off that region's own page on aravaiparunning.com
+ * (September 2026) rather than guessed, and matches the accounts the race
+ * week list on /results/ already links. Regions with no account of their own
+ * (Arizona, Tucson, California, Nevada) link the main Aravaipa account, which
+ * is what their own pages link. A 9th row column overrides all of this.
+ *
+ * @param string $url   Region page URL.
+ * @param string $cell  Optional handle from the row.
+ * @param string $label Region name, for the screen reader text.
+ * @return array{url:string,label:string}
+ */
+function arv_region_map_social( $url, $cell, $label ) {
+	$handle = ltrim( trim( (string) $cell ), '@' );
+
+	if ( '' === $handle ) {
+		$by_path = array(
+			'colorado'                 => 'aravaipacolorado',
+			'ultra-adventures'         => 'ultraadventures',
+			'great-lakes-endurance'    => 'greatlakesendurance',
+			'white-mountain-endurance' => 'whitemountainendurance',
+			'bad-beard'                => 'badbeardevents',
+		);
+		$path   = trim( (string) parse_url( (string) $url, PHP_URL_PATH ), '/' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+		$first  = strtok( $path, '/' );
+		$handle = ( false !== $first && isset( $by_path[ $first ] ) ) ? $by_path[ $first ] : 'aravaiparunning';
+	}
+
+	if ( ! preg_match( '/^[A-Za-z0-9_.]+$/', $handle ) ) {
+		return array( 'url' => '', 'label' => '' );
+	}
+
+	return array(
+		'url'   => 'https://www.instagram.com/' . $handle . '/',
+		'label' => (string) $label,
+	);
+}
+
+/**
+ * An Instagram icon link, or '' when there is no account.
+ *
+ * @param array  $social From arv_region_map_social().
+ * @param string $class
+ * @return string
+ */
+function arv_region_map_social_link( $social, $class ) {
+	if ( empty( $social['url'] ) ) {
+		return '';
+	}
+
+	return '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $social['url'] ) . '" target="_blank" rel="noopener">'
+		. '<span class="arv-region-map__sr">' . esc_html( sprintf( /* translators: %s is a region name. */ __( '%s on Instagram', 'aravaipa-elements' ), $social['label'] ) ) . '</span>'
+		. '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">'
+		. '<rect x="2.5" y="2.5" width="19" height="19" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+		. '<circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+		. '<circle cx="17.4" cy="6.6" r="1.2" fill="currentColor"/>'
+		. '</svg></a>';
 }
 
 /**

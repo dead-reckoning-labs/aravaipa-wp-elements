@@ -578,8 +578,16 @@
 	z-index: 1;
 }
 
-.arv-region-map__pin:focus-visible {
+.arv-region-map__pin:focus-within {
 	z-index: 3;
+}
+
+.arv-region-map__pin-link {
+	text-decoration: none;
+	color: inherit;
+}
+
+.arv-region-map__pin-link:focus-visible {
 	outline: none;
 }
 
@@ -611,7 +619,7 @@
 	background: var(--arv-teal);
 	box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.35);
 }
-.arv-region-map__pin:focus-visible .arv-region-map__dot {
+.arv-region-map__pin:focus-within .arv-region-map__dot {
 	transform: translate(-50%, -50%) scale(1.3);
 	box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.4);
 }
@@ -744,9 +752,18 @@
    rounded corners, no shadow, squared off like the name chips and the
    section's rules, so it reads as part of the same graphic language rather
    than a UI button borrowed from somewhere else. */
+/* The button and the region's Instagram, side by side under the text. */
+.arv-region-map__detail-actions {
+	display: flex;
+	align-items: stretch;
+	gap: 0.45rem;
+	margin-top: 0.6rem;
+}
+
 .arv-region-map__cta {
 	display: block;
-	margin-top: 0.6rem;
+	flex: 1 1 auto;
+	text-decoration: none;
 	padding: 0.32rem 0.55rem;
 	background: var(--arv-teal);
 	color: #0d1211;
@@ -766,6 +783,48 @@
 	transition: transform 0.15s ease;
 }
 
+/* Instagram, in the card and beside each region in the list. Squared off to
+   match the button, outline only so it stays secondary to it. */
+.arv-region-map__social,
+.arv-region-map__item-social {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	color: var(--arv-map-muted);
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.arv-region-map__social {
+	width: 2.1rem;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	border-radius: var(--arv-radius);
+	color: #f2f2f2;
+}
+
+.arv-region-map__item-social {
+	width: 2.25rem;
+	height: 2.25rem;
+	align-self: center;
+}
+
+.arv-region-map__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+}
+
+.arv-region-map__social:focus-visible,
+.arv-region-map__item-social:focus-visible {
+	outline: 2px solid var(--arv-teal);
+	outline-offset: 2px;
+}
+
 /* No separate treatment for headquarters here either. Every card's button
    does the same thing, "go to this region's races", and styling one of them
    red and the other eight teal made the same action look like two different
@@ -779,7 +838,6 @@
    underneath it. */
 .arv-region-map__pin:hover .arv-region-map__detail,
 .arv-region-map__pin:focus-within .arv-region-map__detail,
-.arv-region-map__pin:focus-visible .arv-region-map__detail,
 .arv-region-map__pin.is-open .arv-region-map__detail {
 	pointer-events: auto;
 }
@@ -811,7 +869,7 @@
    devices with no real pointer. It is listed alongside :focus-visible rather
    than given rules of its own so the tapped card and the keyboard card are
    the same card, and a future change to one cannot quietly skip the other. */
-.arv-region-map__pin:focus-visible .arv-region-map__detail,
+.arv-region-map__pin:focus-within .arv-region-map__detail,
 .arv-region-map__pin.is-open .arv-region-map__detail {
 	opacity: 1;
 	transform: translateX(-50%) translateY(0);
@@ -837,7 +895,7 @@
 	transform: translateX(-50%) translateY(-4px);
 }
 
-.arv-region-map__pin--label-below:focus-visible .arv-region-map__detail,
+.arv-region-map__pin--label-below:focus-within .arv-region-map__detail,
 .arv-region-map__pin--label-below.is-open .arv-region-map__detail {
 	transform: translateX(-50%) translateY(0);
 }
@@ -850,7 +908,7 @@
 	transform: translateX(0) translateY(4px);
 }
 
-.arv-region-map__pin--edge-left:focus-visible .arv-region-map__detail,
+.arv-region-map__pin--edge-left:focus-within .arv-region-map__detail,
 .arv-region-map__pin--edge-left.is-open .arv-region-map__detail {
 	transform: translateX(0) translateY(0);
 }
@@ -861,7 +919,7 @@
 	transform: translateX(0) translateY(4px);
 }
 
-.arv-region-map__pin--edge-right:focus-visible .arv-region-map__detail,
+.arv-region-map__pin--edge-right:focus-within .arv-region-map__detail,
 .arv-region-map__pin--edge-right.is-open .arv-region-map__detail {
 	transform: translateX(0) translateY(0);
 }
@@ -903,9 +961,17 @@
 .arv-region-map__item {
 	display: flex;
 	align-items: flex-start;
-	gap: 0.75rem;
+	gap: 0.5rem;
 	padding: 1.1rem 0 1.2rem;
 	border-bottom: 1px solid var(--arv-map-rule);
+}
+
+.arv-region-map__item-link {
+	display: flex;
+	flex: 1 1 auto;
+	min-width: 0;
+	align-items: flex-start;
+	gap: 0.75rem;
 	text-decoration: none;
 	color: inherit;
 }
@@ -965,12 +1031,12 @@
 	color: var(--arv-map-muted);
 }
 
-.arv-region-map__item:focus-visible {
+.arv-region-map__item-link:focus-visible {
 	outline: 2px solid var(--arv-teal);
 	outline-offset: -2px;
 }
 
-.arv-region-map__item:focus-visible .arv-region-map__item-name::after {
+.arv-region-map__item-link:focus-visible .arv-region-map__item-name::after {
 	opacity: 1;
 }
 
@@ -989,8 +1055,18 @@
 
 	.arv-region-map__item {
 		align-items: center;
-		gap: 0.55rem;
+		gap: 0.35rem;
 		padding: 0.8rem 0;
+	}
+
+	.arv-region-map__item-link {
+		align-items: center;
+		gap: 0.55rem;
+	}
+
+	.arv-region-map__item-social {
+		width: 1.9rem;
+		height: 1.9rem;
 	}
 
 	.arv-region-map__item-logo {
@@ -1053,25 +1129,31 @@
 		background: #6fc7b4;
 	}
 
-	.arv-region-map__pin--primary .arv-region-map__cta:hover {
-		background: #ff4a30;
-	}
 
 	.arv-region-map__cta:hover::after {
 		transform: translateX(3px);
 	}
 
-	.arv-region-map__item:hover .arv-region-map__item-name {
+	.arv-region-map__item-link:hover .arv-region-map__item-name {
 		color: var(--arv-teal);
 	}
 
-	.arv-region-map--light .arv-region-map__item:hover .arv-region-map__item-name {
+	.arv-region-map--light .arv-region-map__item-link:hover .arv-region-map__item-name {
 		color: var(--arv-teal-deep);
 	}
 
-	.arv-region-map__item:hover .arv-region-map__item-name::after {
+	.arv-region-map__item-link:hover .arv-region-map__item-name::after {
 		opacity: 1;
 		transform: translateX(3px);
+	}
+
+	.arv-region-map__social:hover {
+		border-color: var(--arv-teal);
+		color: var(--arv-teal);
+	}
+
+	.arv-region-map__item-social:hover {
+		color: var(--arv-teal);
 	}
 }
 
