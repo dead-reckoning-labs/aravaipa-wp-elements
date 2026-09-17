@@ -642,9 +642,12 @@
 
 /* The label follows the dot: white like every other region's. A red name
    under a teal dot was the last trace of the accent-coloured HQ treatment
-   and read as an error rather than an emphasis. */
+   and read as an error rather than an emphasis.
+
+   Set explicitly, not "inherit": the pin is a link, so inherit picked up the
+   theme's red link hover and Arizona's label still turned red on hover. */
 .arv-region-map__pin--primary .arv-region-map__name {
-	color: inherit;
+	color: var(--arv-map-text);
 }
 
 /* Lifts the label above the dot. Paired with a neighbour that keeps the
@@ -699,24 +702,38 @@
 	color: #fff;
 }
 
+/* The card's heading: the brand mark with the region's name to its right,
+   or the name alone for a region with no mark. */
+.arv-region-map__detail-head {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	margin-bottom: 0.5rem;
+}
+
 /* Brand mark inside the hover card, for the regions that have one. Capped
    by height rather than width so a square logo and a wide horizontal
    lockup both land at the same optical weight. */
 .arv-region-map__detail-logo {
 	display: block;
-	max-width: 100%;
+	flex: none;
+	max-width: 6rem;
 	max-height: 2.6rem;
 	width: auto;
-	margin-bottom: 0.5rem;
 	object-fit: contain;
 	object-position: left center;
 }
 
-/* Only at phone width, where the label beside the dot is hidden and the
-   card would otherwise describe an unnamed place. See the matching comment
-   in includes/elements/region-map.php. */
+/* Every card names its region. It used to at phone width only, on the
+   reasoning that the label beside the dot already said it, but a card whose
+   heading is a bare logo reads as unfinished, and several regions share the
+   same Aravaipa mark. */
 .arv-region-map__detail-name {
-	display: none;
+	display: block;
+	font-size: var(--arv-fs-meta);
+	font-weight: 800;
+	line-height: 1.2;
+	color: #fff;
 }
 
 .arv-region-map__detail-text {
@@ -1009,8 +1026,10 @@
 		box-shadow: 0 0 0 5px rgba(91, 181, 162, 0.4);
 	}
 
+	/* Teal like its resting state. This ring was the accent red, the last
+	   place the HQ pin still went red, on hover. */
 	.arv-region-map__pin--primary:hover .arv-region-map__dot {
-		box-shadow: 0 0 0 6px rgba(255, 42, 19, 0.35);
+		box-shadow: 0 0 0 6px rgba(91, 181, 162, 0.45);
 	}
 
 	.arv-region-map__pin:hover .arv-region-map__detail {
@@ -1089,14 +1108,6 @@
 		font-size: var(--arv-fs-label);
 	}
 
-	.arv-region-map__detail-name {
-		display: block;
-		margin-bottom: 0.25rem;
-		font-size: var(--arv-fs-meta);
-		font-weight: 800;
-		line-height: 1.2;
-		color: #fff;
-	}
 
 	/* Without labels the dots carry the map on their own, so they get a
 	   little bigger rather than reading as specks. */

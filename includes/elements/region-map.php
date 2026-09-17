@@ -228,22 +228,20 @@ function arv_region_map_render( $data ) {
 		// whose card never opens would be the one pin on the map with no
 		// visible way to reach the page it links to.
 		$pins .= '<span class="arv-region-map__detail">';
-		// The region's name, inside the card, for phone width only. The
-		// always-visible label beside the dot is hidden below 767px because
-		// four of the regions sit close enough together that the labels
-		// collide, which left the opened card describing a place it never
-		// named: "Southwest roots. Home of Cocodona 250..." with no way to
-		// tell which of the dots you had actually hit. Hidden on desktop,
-		// where the label beside the dot already says it and this would be
-		// the name twice.
-		$pins .= '<span class="arv-region-map__detail-name">' . esc_html( $name ) . '</span>';
+		// The card's heading: brand mark, then the region's name to its
+		// right. The name used to be phone-only, since the label beside the
+		// dot already says it on desktop, but a heading that is just a logo
+		// reads as unfinished and several regions share the same Aravaipa
+		// mark, so every card now names its region.
+		$pins .= '<span class="arv-region-map__detail-head">';
 		if ( '' !== trim( $logo ) ) {
-			// alt is empty on purpose: the region's name is already in
-			// the label beside this card and in the list below, so a
-			// screen reader announcing the brand a third time off the
-			// image is repetition, not information.
+			// alt is empty on purpose: the name sits right beside it, so a
+			// screen reader announcing the brand off the image as well is
+			// repetition, not information.
 			$pins .= '<img class="arv-region-map__detail-logo" src="' . esc_url( $logo ) . '" alt="" loading="lazy" decoding="async" />';
 		}
+		$pins .= '<span class="arv-region-map__detail-name">' . esc_html( $name ) . '</span>';
+		$pins .= '</span>';
 		if ( '' !== trim( $detail ) ) {
 			$pins .= '<span class="arv-region-map__detail-text">' . esc_html( $detail ) . '</span>';
 		}
