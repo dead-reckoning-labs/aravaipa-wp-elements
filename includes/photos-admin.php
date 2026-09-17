@@ -215,6 +215,23 @@ function arv_photos_admin_year( $rows ) {
  *
  * @return array{saved:int,added:int,deleted:int,merged:string}|null
  */
+/**
+ * The cover already stored for a gallery link, or ''.
+ *
+ * @param array  $stored
+ * @param string $url
+ * @return string
+ */
+function arv_photos_admin_stored_cover( $stored, $url ) {
+	foreach ( $stored as $row ) {
+		if ( is_array( $row ) && isset( $row['url'], $row['cover'] ) && $row['url'] === $url ) {
+			return (string) $row['cover'];
+		}
+	}
+
+	return '';
+}
+
 function arv_photos_admin_save() {
 	if ( ! isset( $_POST['arv_photos_save'] ) || ! check_admin_referer( 'arv_photos_save' ) ) {
 		return null;
@@ -279,10 +296,13 @@ function arv_photos_admin_save() {
 		}
 
 		$edited[] = array(
-			'race' => $race,
-			'year' => $year,
-			'by'   => $settled,
-			'url'  => $url,
+			'race'  => $race,
+			'year'  => $year,
+			'by'    => $settled,
+			'url'   => $url,
+			// Not on the form. Carried over from the stored row with the same
+			// link, so saving this screen does not quietly drop a chosen cover.
+			'cover' => arv_photos_admin_stored_cover( $stored, $url ),
 		);
 
 		if ( $new ) {
