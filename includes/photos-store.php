@@ -61,6 +61,9 @@ function arv_photos_store_get() {
 			'year' => $year,
 			'by'   => isset( $row['by'] ) ? (string) $row['by'] : '',
 			'url'  => (string) $row['url'],
+			// A chosen cover image, when the gallery's own preview is not one
+			// to show. See arv_photos_card().
+			'cover' => isset( $row['cover'] ) ? (string) $row['cover'] : '',
 			// When the race actually ran, so the newest one is first. See
 			// arv_photos_race_date().
 			'iso'  => arv_photos_race_date( $race, $year ),
@@ -888,7 +891,11 @@ function arv_photos_card_when( $card ) {
 function arv_photos_card( $card ) {
 	$galleries = arv_photos_ordered_galleries( $card['galleries'] );
 	$primary   = $galleries[0];
-	$cover     = arv_photos_cover( $primary['url'] );
+	// A stored cover wins over the gallery's own preview image. Outside
+	// photographers often set that preview to a pricing flyer ("Free with
+	// logo, $15, $25") rather than a race photo, and on a card that reads as
+	// an ad. Race The Cog 2026 was the first one reported.
+	$cover     = ! empty( $primary['cover'] ) ? $primary['cover'] : arv_photos_cover( $primary['url'] );
 
 	$by = array();
 
@@ -1057,6 +1064,12 @@ function arv_photos_store_set( $rows ) {
 			'by'   => isset( $row['by'] ) ? sanitize_text_field( (string) $row['by'] ) : '',
 			'url'  => $url,
 		);
+
+		$cover = isset( $row['cover'] ) ? esc_url_raw( (string) $row['cover'] ) : '';
+
+		if ( '' !== $cover && preg_match( '#^https?://#i', $cover ) ) {
+			$clean[ count( $clean ) - 1 ]['cover'] = $cover;
+		}
 	}
 
 	update_option( ARV_PHOTOS_OPTION, $clean, false );
