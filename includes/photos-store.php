@@ -452,8 +452,9 @@ function arv_photos_group( $rows ) {
 		}
 
 		$grouped[ $key ]['galleries'][] = array(
-			'by'  => $row['by'],
-			'url' => $row['url'],
+			'by'    => $row['by'],
+			'url'   => $row['url'],
+			'cover' => isset( $row['cover'] ) ? $row['cover'] : '',
 		);
 	}
 
