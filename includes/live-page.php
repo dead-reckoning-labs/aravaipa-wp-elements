@@ -929,7 +929,8 @@ function arv_live_frame( $slug, $height, $name ) {
 		. ' data-no-lazy="1" data-skip-lazy="1"'
 		. ' referrerpolicy="no-referrer-when-downgrade"'
 		. ' sandbox="allow-scripts allow-same-origin allow-popups"></iframe>';
-	$out .= '<button class="arv-live__shield" type="button" hidden data-arv-live-shield>'
+	$out .= '<button class="arv-live__shield" type="button" hidden data-arv-live-shield'
+		. ' data-arv-scroll-label="' . esc_attr__( 'Scroll page', 'aravaipa-elements' ) . '">'
 		. '<span class="arv-live__shield-hint">'
 		. esc_html__( 'Tap to use the board', 'aravaipa-elements' )
 		. '</span></button>';

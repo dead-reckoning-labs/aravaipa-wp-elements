@@ -5762,6 +5762,40 @@
 	border: 0;
 }
 
+/* On a touch screen the board stops short of both edges. A drag that starts
+   on the frame's own background is a drag on the page, so there is always a
+   strip under a thumb that scrolls, whatever state the shield is in. */
+@media (hover: none) and (pointer: coarse) {
+	.arv-live__iframe {
+		width: calc(100% - 28px);
+		margin-left: 14px;
+	}
+}
+
+/* Fixed to the screen while the board is live, so the way back to page
+   scrolling is always visible. Square and flat like the rest of the bar. */
+.arv-live__scroll {
+	position: fixed;
+	left: 50%;
+	bottom: 1rem;
+	transform: translateX(-50%);
+	z-index: 3;
+	padding: 0.7rem 1.1rem;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-radius: 0;
+	background: #101314;
+	font-size: var(--arv-fs-label, 12px);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #fff;
+	cursor: pointer;
+}
+
+.arv-live__scroll[hidden] {
+	display: none;
+}
+
 .arv-live__open {
 	margin: 0.6rem 0 0;
 	font-size: var(--arv-fs-body);

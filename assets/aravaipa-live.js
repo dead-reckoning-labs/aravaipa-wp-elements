@@ -28,6 +28,12 @@
 		return;
 	}
 
+	// How far the page has to move, as a share of the screen, before a lifted
+	// shield goes back down. Scrolling the page at all while the board is live
+	// means the reader found a way to move it (the gutters, or the button
+	// below), and the next drag over the board should do the same.
+	var REARM_SCROLL = 0.5;
+
 	function wire( frame ) {
 		var shield = frame.querySelector( '[data-arv-live-shield]' );
 
@@ -35,15 +41,52 @@
 			return;
 		}
 
+		// Without IntersectionObserver there is no way to tell, so assume yes.
+		var visible = ! window.IntersectionObserver;
+		var liftedAt = 0;
+
+		// Fixed to the bottom of the screen while the board is live and on
+		// screen, so there is always a visible way to get the page back. The
+		// old rule re-armed the shield only once the whole frame had left the
+		// screen, and on a board several screens tall that never happens while
+		// anyone is reading it: one tap and the page was stuck until a reload.
+		var page = document.createElement( 'button' );
+		page.type = 'button';
+		page.className = 'arv-live__scroll';
+		page.hidden = true;
+		page.textContent = shield.getAttribute( 'data-arv-scroll-label' ) || 'Scroll page';
+		frame.appendChild( page );
+
+		function sync() {
+			page.hidden = ! shield.hidden || ! visible;
+		}
+
+		function arm() {
+			shield.hidden = false;
+			sync();
+		}
+
+		function lift() {
+			shield.hidden = true;
+			liftedAt = window.pageYOffset;
+			sync();
+		}
+
 		shield.hidden = false;
 
-		shield.addEventListener( 'click', function () {
-			shield.hidden = true;
-		} );
+		shield.addEventListener( 'click', lift );
+		page.addEventListener( 'click', arm );
 
-		// Put it back once the board has left the screen, so a reader who
-		// scrolls back to it can scroll past it again rather than being
-		// trapped a second time by their own earlier tap.
+		window.addEventListener(
+			'scroll',
+			function () {
+				if ( shield.hidden && Math.abs( window.pageYOffset - liftedAt ) > window.innerHeight * REARM_SCROLL ) {
+					arm();
+				}
+			},
+			{ passive: true }
+		);
+
 		if ( ! window.IntersectionObserver ) {
 			return;
 		}
@@ -51,10 +94,16 @@
 		var observer = new IntersectionObserver(
 			function ( entries ) {
 				for ( var i = 0; i < entries.length; i++ ) {
-					if ( ! entries[ i ].isIntersecting ) {
+					visible = entries[ i ].isIntersecting;
+
+					// Off screen entirely: put it back, as before, so a reader
+					// who scrolls back to the board is not trapped by an old tap.
+					if ( ! visible ) {
 						shield.hidden = false;
 					}
 				}
+
+				sync();
 			},
 			{ threshold: 0 }
 		);
