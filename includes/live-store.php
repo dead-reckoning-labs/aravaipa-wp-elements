@@ -63,34 +63,6 @@ function arv_live_store_find( $live_url ) {
 }
 
 /**
- * When a race actually starts, as a timestamp, for ordering races that share
- * a date. The date on a race row is a day; on a weekend with three races on
- * the same Saturday it cannot say that Kilkenny went off at 5:00 AM Eastern,
- * Bryce at 5:00 AM Mountain and Jangover at 5:00 PM Arizona. The board's own
- * event start can.
- *
- * @param array $race A race row carrying a 'live' URL.
- * @return int Unix time, or 0 when the board has no start for it.
- */
-function arv_race_start_ts( $race ) {
-	$live = isset( $race['live'] ) ? (string) $race['live'] : '';
-
-	if ( '' === $live ) {
-		return 0;
-	}
-
-	$event = arv_live_store_find( $live );
-
-	if ( ! is_array( $event ) || empty( $event['start'] ) ) {
-		return 0;
-	}
-
-	$ts = strtotime( (string) $event['start'] );
-
-	return false === $ts ? 0 : (int) $ts;
-}
-
-/**
  * Compare two races: by date, then by start time when both are known, then
  * by name. Ascending; callers reverse for a newest-first list.
  *
@@ -105,8 +77,11 @@ function arv_races_compare_chronological( $a, $b, $by_name = true ) {
 		return ( $a['iso'] < $b['iso'] ) ? -1 : 1;
 	}
 
-	$ta = arv_race_start_ts( $a );
-	$tb = arv_race_start_ts( $b );
+	// arv_race_start_ts() (helpers.php) is the one place a race's start is
+	// resolved: the board's event start, then the manual override for races
+	// the board does not carry.
+	$ta = arv_race_start_ts( $a, ! empty( $a['live'] ) ? arv_live_store_find( $a['live'] ) : null );
+	$tb = arv_race_start_ts( $b, ! empty( $b['live'] ) ? arv_live_store_find( $b['live'] ) : null );
 
 	// A known start sorts before an unknown one, and known starts sort by
 	// time. Mixing "by time when both are known" with "by name otherwise"
