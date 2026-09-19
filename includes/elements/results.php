@@ -2387,7 +2387,19 @@ function arv_results_links( $row ) {
 	$live = function_exists( 'arv_live_page_for_live_url' )
 		? arv_live_page_for_live_url( $row['live'] )
 		: '';
-	$live = '' !== $live ? $live : $row['live'];
+
+	// Same switch as arv_upcoming_races_action(): the branded page is built
+	// around a board embed the board now refuses to render (2026-09-19), and
+	// the board's own link for the edition still opens at the top level with
+	// the right event and year, past years included (checked: 2021 to 2025
+	// editions render their full results). So the button goes straight there.
+	// apply_filters( 'arv_prefer_live_board', false ) restores the pages.
+	$prefer_board = (bool) apply_filters( 'arv_prefer_live_board', true, $row );
+	if ( $prefer_board && '' !== $row['live'] ) {
+		$live = $row['live'];
+	} else {
+		$live = '' !== $live ? $live : $row['live'];
+	}
 
 	$slots = array(
 		array( $live, __( 'Live Results', 'aravaipa-elements' ), 'live' ),
