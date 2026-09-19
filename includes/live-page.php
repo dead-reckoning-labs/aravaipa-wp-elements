@@ -1466,6 +1466,44 @@ function arv_live_register_meta() {
 add_action( 'init', 'arv_live_register_meta' );
 
 /**
+ * Send a per-race live page to the board itself.
+ *
+ * The board refuses to render inside a frame, so these pages show an empty
+ * shell until they carry results of their own. Old links to them are
+ * everywhere (emails, social, race pages placed by hand), so the page
+ * forwards rather than every link being found and repointed. The same
+ * arv_prefer_live_board filter that steers the buttons steers this, so one
+ * switch brings the branded pages back.
+ *
+ * Temporary redirect on purpose: this is reversible, and nothing should
+ * remember it. ?arv_no_redirect=1 opens the page itself for editing.
+ */
+function arv_live_forward_to_board() {
+	if ( is_admin() || is_preview() || ! is_singular( 'page' ) ) {
+		return;
+	}
+
+	if ( isset( $_GET['arv_no_redirect'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return;
+	}
+
+	$ctx = arv_live_seo_context();
+
+	if ( ! $ctx || '' === $ctx['show'] ) {
+		return;
+	}
+
+	if ( ! (bool) apply_filters( 'arv_prefer_live_board', true, array( 'live' => ARV_LIVE_BASE . $ctx['show'] ) ) ) {
+		return;
+	}
+
+	nocache_headers();
+	wp_redirect( ARV_LIVE_BASE . $ctx['show'], 302 ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+	exit;
+}
+add_action( 'template_redirect', 'arv_live_forward_to_board', 1 );
+
+/**
  * Everything the SEO layer needs about the live page being requested, or
  * null when the current request is not one.
  *
