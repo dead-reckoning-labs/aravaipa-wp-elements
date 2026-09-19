@@ -602,7 +602,9 @@ function arv_upcoming_races_render( $data ) {
 	usort(
 		$races,
 		function ( $a, $b ) {
-			return strcmp( $a['iso'], $b['iso'] );
+			return function_exists( 'arv_races_compare_chronological' )
+				? arv_races_compare_chronological( $a, $b, false )
+				: strcmp( $a['iso'], $b['iso'] );
 		}
 	);
 
