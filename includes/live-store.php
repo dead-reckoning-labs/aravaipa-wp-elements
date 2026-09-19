@@ -63,6 +63,69 @@ function arv_live_store_find( $live_url ) {
 }
 
 /**
+ * When a race actually starts, as a timestamp, for ordering races that share
+ * a date. The date on a race row is a day; on a weekend with three races on
+ * the same Saturday it cannot say that Kilkenny went off at 5:00 AM Eastern,
+ * Bryce at 5:00 AM Mountain and Jangover at 5:00 PM Arizona. The board's own
+ * event start can.
+ *
+ * @param array $race A race row carrying a 'live' URL.
+ * @return int Unix time, or 0 when the board has no start for it.
+ */
+function arv_race_start_ts( $race ) {
+	$live = isset( $race['live'] ) ? (string) $race['live'] : '';
+
+	if ( '' === $live ) {
+		return 0;
+	}
+
+	$event = arv_live_store_find( $live );
+
+	if ( ! is_array( $event ) || empty( $event['start'] ) ) {
+		return 0;
+	}
+
+	$ts = strtotime( (string) $event['start'] );
+
+	return false === $ts ? 0 : (int) $ts;
+}
+
+/**
+ * Compare two races: by date, then by start time when both are known, then
+ * by name. Ascending; callers reverse for a newest-first list.
+ *
+ * @param array $a
+ * @param array $b
+ * @param bool  $by_name Fall back to the name when date and start tie. Off
+ *                       for lists whose hand order is the tiebreak.
+ * @return int
+ */
+function arv_races_compare_chronological( $a, $b, $by_name = true ) {
+	if ( $a['iso'] !== $b['iso'] ) {
+		return ( $a['iso'] < $b['iso'] ) ? -1 : 1;
+	}
+
+	$ta = arv_race_start_ts( $a );
+	$tb = arv_race_start_ts( $b );
+
+	// A known start sorts before an unknown one, and known starts sort by
+	// time. Mixing "by time when both are known" with "by name otherwise"
+	// is not a consistent order (K before B by time, B before C by name, C
+	// before K by name is a cycle), and usort on a cycle is undefined.
+	if ( ( $ta > 0 ) !== ( $tb > 0 ) ) {
+		return ( $ta > 0 ) ? -1 : 1;
+	}
+
+	if ( $ta > 0 && $ta !== $tb ) {
+		return ( $ta < $tb ) ? -1 : 1;
+	}
+
+	return $by_name
+		? strcasecmp( isset( $a['name'] ) ? $a['name'] : '', isset( $b['name'] ) ? $b['name'] : '' )
+		: 0;
+}
+
+/**
  * The board's slug for a race, read out of its live URL.
  *
  * Its own function because two stores key on it now: this one and the stats

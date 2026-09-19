@@ -565,10 +565,10 @@ function arv_results_render( $data ) {
 			usort(
 				$rows,
 				function ( $a, $b ) {
-					if ( $a['iso'] === $b['iso'] ) {
-						return strcasecmp( $a['name'], $b['name'] );
-					}
-					return ( $a['iso'] < $b['iso'] ) ? 1 : -1;
+					// Newest first, so within one day the later start sits on top.
+					return function_exists( 'arv_races_compare_chronological' )
+						? -arv_races_compare_chronological( $a, $b )
+						: ( $a['iso'] === $b['iso'] ? strcasecmp( $a['name'], $b['name'] ) : ( ( $a['iso'] < $b['iso'] ) ? 1 : -1 ) );
 				}
 			);
 		}
@@ -917,13 +917,14 @@ function arv_results_race_week( $today, $grace = 3 ) {
 		return '';
 	}
 
+	// By date, then by actual start time within a date, so a Saturday with
+	// three races reads in the order they went off, not alphabetically.
 	usort(
 		$races,
 		function ( $a, $b ) {
-			if ( $a['iso'] === $b['iso'] ) {
-				return strcasecmp( $a['name'], $b['name'] );
-			}
-			return ( $a['iso'] < $b['iso'] ) ? -1 : 1;
+			return function_exists( 'arv_races_compare_chronological' )
+				? arv_races_compare_chronological( $a, $b )
+				: ( $a['iso'] === $b['iso'] ? strcasecmp( $a['name'], $b['name'] ) : ( ( $a['iso'] < $b['iso'] ) ? -1 : 1 ) );
 		}
 	);
 
