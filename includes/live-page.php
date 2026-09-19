@@ -920,6 +920,13 @@ function arv_live_frame( $slug, $height, $name ) {
 		. ' title="' . esc_attr( $title ) . '"'
 		. ' style="height:' . (int) $height . 'px"'
 		. ' loading="lazy"'
+		// WP Rocket's iframe lazy-load rewrites src to about:blank and waits for
+		// its own script to swap the URL back, and its delay-JS setting holds
+		// that script until the first interaction. Bryce Canyon 2026: the board
+		// sat as an empty black box on a fresh iPad load with only the fallback
+		// link showing. The browser's native loading="lazy" above already defers
+		// it near the viewport, so opt this one frame out of Rocket's version.
+		. ' data-no-lazy="1" data-skip-lazy="1"'
 		. ' referrerpolicy="no-referrer-when-downgrade"'
 		. ' sandbox="allow-scripts allow-same-origin allow-popups"></iframe>';
 	$out .= '<button class="arv-live__shield" type="button" hidden data-arv-live-shield>'
