@@ -75,7 +75,19 @@ function arv_upcoming_races_action( $race, $today, $lead = 5 ) {
 	$page    = function_exists( 'arv_live_page_for_live_url' )
 		? arv_live_page_for_live_url( $race['live'] )
 		: '';
-	$results = '' !== $page ? $page : $race['live'];
+
+	// The board refuses to render inside a frame as of 2026-09-19: its own
+	// script checks window.self !== window.top and, instead of the results,
+	// writes a bare link to the board's home page with no event and no year.
+	// So our branded page, which is built around that embed, is a dead end
+	// during a live race. Until the page carries results of its own, the
+	// button goes straight to the board's deep link for this event and year,
+	// which still works when opened at the top level. Flip the filter back to
+	// false to restore the branded page as the destination.
+	$prefer_board = (bool) apply_filters( 'arv_prefer_live_board', true, $race );
+	$results      = ( $prefer_board && '' !== $race['live'] )
+		? $race['live']
+		: ( '' !== $page ? $page : $race['live'] );
 
 	if ( '' === $results ) {
 		$results = arv_upcoming_races_results_url( $race['register'] );
