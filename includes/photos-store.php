@@ -594,6 +594,16 @@ function arv_photos_cover( $url, $fresh = false ) {
 		return '';
 	}
 
+	// A host that just rate limited us is left alone for a while, and the
+	// gallery counts as "not yet" so the page is not cached for a week.
+	$host    = (string) wp_parse_url( $url, PHP_URL_HOST );
+	$backoff = 'arv_photo_cover_backoff_' . md5( $host );
+
+	if ( '' !== $host && false !== get_transient( $backoff ) ) {
+		$GLOBALS['arv_photos_covers_deferred'] = arv_photos_covers_deferred() + 1;
+		return '';
+	}
+
 	$started = microtime( true );
 
 	$response = wp_remote_get(
@@ -615,6 +625,19 @@ function arv_photos_cover( $url, $fresh = false ) {
 	);
 
 	$spent += microtime( true ) - $started;
+
+	// 429 and 5xx mean "ask later", not "this gallery has no cover". On
+	// 2026-10-01 photos.aravaiparunning.com (Zenfolio) answered 429 to most
+	// of a warm pass, and caching those as "none" left 291 grey panels.
+	$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+
+	if ( 429 === $code || $code >= 500 ) {
+		if ( '' !== $host ) {
+			set_transient( $backoff, 1, 10 * MINUTE_IN_SECONDS );
+		}
+		$GLOBALS['arv_photos_covers_deferred'] = arv_photos_covers_deferred() + 1;
+		return '';
+	}
 
 	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
 		set_transient( $key, 'none', HOUR_IN_SECONDS );
@@ -663,8 +686,10 @@ function arv_photos_warm_covers() {
 	$budget = (float) apply_filters( 'arv_photos_warm_budget', 45.0 );
 	$start  = microtime( true );
 	$done   = 0;
+	$rows   = (array) get_option( ARV_PHOTOS_OPTION, array() );
+	$found  = 0;
 
-	foreach ( (array) get_option( ARV_PHOTOS_OPTION, array() ) as $row ) {
+	foreach ( $rows as $i => $row ) {
 		if ( ( microtime( true ) - $start ) >= $budget ) {
 			break;
 		}
@@ -677,8 +702,20 @@ function arv_photos_warm_covers() {
 			continue;
 		}
 
-		arv_photos_cover( (string) $row['url'], true );
+		$cover = arv_photos_cover( (string) $row['url'], true );
 		$done++;
+
+		// Written into the store itself, not just the transient. Transients
+		// live in the object cache here, and every cache reset (wp cache
+		// flush) wiped all of them, which is what kept /photos/ grey.
+		if ( '' !== $cover ) {
+			$rows[ $i ]['cover'] = esc_url_raw( $cover );
+			$found++;
+		}
+	}
+
+	if ( $found > 0 ) {
+		update_option( ARV_PHOTOS_OPTION, $rows, false );
 	}
 
 	return $done;
