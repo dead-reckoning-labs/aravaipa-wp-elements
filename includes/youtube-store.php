@@ -190,7 +190,7 @@ function arv_youtube_render() {
 				. '" target="_blank" rel="noopener">';
 
 			if ( '' !== $video['thumb'] ) {
-				$out .= '<img class="arv-youtube__thumb" src="' . esc_url( $video['thumb'] ) . '" alt=""'
+				$out .= '<img class="arv-youtube__thumb" src="' . esc_url( arv_youtube_card_thumb( $video['thumb'] ) ) . '" alt=""'
 					. ' loading="lazy" decoding="async" width="480" height="270" />';
 			}
 

@@ -129,7 +129,9 @@ $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
 $GLOBALS['_http_calls'] = 0;
 function get_transient( $key ) { return $GLOBALS['_transients'][ $key ] ?? false; }
-function set_transient( $key, $value, $exp = 0 ) { $GLOBALS['_transients'][ $key ] = $value; return true; }
+function set_transient( $key, $value, $exp = 0 ) { $GLOBALS['_transients'][ $key ] = $value; $GLOBALS['_transient_ttl'][ $key ] = $exp; return true; }
+function register_deactivation_hook( $file, $fn ) {}
+function wp_clear_scheduled_hook( $hook ) { return 0; }
 function delete_transient( $key ) { unset( $GLOBALS['_transients'][ $key ] ); return true; }
 function arv_test_queue_response( $response ) { $GLOBALS['_http_queue'][] = $response; }
 function wp_remote_get( $url, $args = array() ) {
@@ -5382,6 +5384,46 @@ t( 'and no failure is cached for it',         false === get_transient( 'arv_phot
 // is no Cloudflare timeout to respect, so the budget must not gag it.
 t( 'a fresh read ignores the budget',         'https://cdn.test/late.jpg' === arv_photos_cover( 'https://slow.test/a', true ) );
 unset( $GLOBALS['FILTERS']['arv_photos_cover_budget'] );
+
+echo "\nphotos, warm pass and incomplete renders:\n";
+// The render cache used to keep a page that ran out of cover budget for a
+// week: on 2026-10-01 /photos/ was serving 493 grey panels out of 514 cards.
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Warm One', 'year' => 2019, 'by' => 'A', 'url' => 'https://warm.test/1' ),
+	array( 'race' => 'Warm Two', 'year' => 2019, 'by' => 'B', 'url' => 'https://warm.test/2' ),
+	array( 'race' => 'Has Cover', 'year' => 2019, 'by' => 'C', 'url' => 'https://warm.test/3', 'cover' => 'https://cdn.test/own.jpg' ),
+);
+$GLOBALS['_transients'] = array();
+$GLOBALS['_http_queue'] = array();
+add_filter( 'arv_photos_cover_budget', function () { return 0.0; } );
+$GLOBALS['_http_calls'] = 0;
+$deferred_html = arv_photos_shortcode( array() );
+$deferred_key  = array_values( array_filter( array_keys( $GLOBALS['_transients'] ), function ( $k ) { return 0 === strpos( $k, 'arv_render_photos_' ); } ) );
+t( 'a budget-starved render fetches nothing', 0 === $GLOBALS['_http_calls'] );
+t( 'and is cached for minutes, not a week',   1 === count( $deferred_key ) && 10 * MINUTE_IN_SECONDS === $GLOBALS['_transient_ttl'][ $deferred_key[0] ] );
+unset( $GLOBALS['FILTERS']['arv_photos_cover_budget'] );
+arv_test_queue_response( array( 'code' => 200, 'body' => '<head><meta property="og:image" content="https://cdn.test/w1.jpg"></head>' ) );
+arv_test_queue_response( array( 'code' => 200, 'body' => '<head><meta property="og:image" content="https://cdn.test/w2.jpg"></head>' ) );
+$GLOBALS['_http_calls'] = 0;
+t( 'the warm pass fetches each missing cover', 2 === arv_photos_warm_covers() && 2 === $GLOBALS['_http_calls'] );
+t( 'and caches what it found',                'https://cdn.test/w1.jpg' === get_transient( 'arv_photo_cover_' . md5( 'https://warm.test/1' ) ) );
+t( 'for a month',                             30 * DAY_IN_SECONDS === $GLOBALS['_transient_ttl'][ 'arv_photo_cover_' . md5( 'https://warm.test/1' ) ] );
+$GLOBALS['_http_calls'] = 0;
+t( 'a second pass has nothing left to fetch', 0 === arv_photos_warm_covers() && 0 === $GLOBALS['_http_calls'] );
+$GLOBALS['_transients'] = array_diff_key( $GLOBALS['_transients'], array_flip( $deferred_key ) );
+$complete_html = arv_photos_shortcode( array() );
+t( 'the rebuilt page carries the warmed covers', false !== strpos( $complete_html, 'https://cdn.test/w2.jpg' ) );
+$complete_key = array_values( array_filter( array_keys( $GLOBALS['_transients'] ), function ( $k ) { return 0 === strpos( $k, 'arv_render_photos_' ); } ) );
+t( 'and a complete render keeps the week',    WEEK_IN_SECONDS === $GLOBALS['_transient_ttl'][ $complete_key[0] ] );
+$GLOBALS['_transients'] = array();
+
+echo "\nyoutube card thumbnails:\n";
+// Photon 302s i.ytimg.com back to the original, so a 480px card was
+// downloading a 1280x720 maxresdefault. hqdefault is about 30KB.
+t( 'maxres becomes hqdefault',                'https://i.ytimg.com/vi/guZ7ZTeN2Hk/hqdefault.jpg' === arv_youtube_card_thumb( 'https://i.ytimg.com/vi/guZ7ZTeN2Hk/maxresdefault.jpg' ) );
+t( 'so does a live maxres',                   'https://i.ytimg.com/vi/guZ7ZTeN2Hk/hqdefault.jpg' === arv_youtube_card_thumb( 'https://i.ytimg.com/vi/guZ7ZTeN2Hk/maxresdefault_live.jpg' ) );
+t( 'hqdefault is left alone',                 'https://i.ytimg.com/vi/abc123/hqdefault.jpg' === arv_youtube_card_thumb( 'https://i.ytimg.com/vi/abc123/hqdefault.jpg' ) );
+t( 'a non-youtube image is left alone',       'https://cdn.test/art.jpg' === arv_youtube_card_thumb( 'https://cdn.test/art.jpg' ) );
 
 echo "\nphotos, dates and races still to come:\n";
 // A gallery row exists the moment a photographer is booked, which for a

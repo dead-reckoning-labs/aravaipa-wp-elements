@@ -1045,9 +1045,10 @@ function arv_race_terrain( $name ) {
  * @param string   $name        Cache name, unique per render.
  * @param mixed    $fingerprint Anything serialisable that changes when the output should.
  * @param callable $build       Produces the HTML. Called only on a miss.
+ * @param callable $ttl         Optional. Called after the build, returns the seconds to keep it.
  * @return string
  */
-function arv_cached_render( $name, $fingerprint, $build ) {
+function arv_cached_render( $name, $fingerprint, $build, $ttl = null ) {
 	$key = 'arv_render_' . $name . '_' . md5( (string) wp_json_encode( $fingerprint ) );
 
 	$cached = get_transient( $key );
@@ -1070,7 +1071,7 @@ function arv_cached_render( $name, $fingerprint, $build ) {
 	// hide. A week is still short enough to recover quickly from a bad
 	// fingerprint, and long enough that low-traffic pages actually stay
 	// warm between the visits they get.
-	set_transient( $key, $html, WEEK_IN_SECONDS );
+	set_transient( $key, $html, is_callable( $ttl ) ? (int) call_user_func( $ttl ) : WEEK_IN_SECONDS );
 
 	return $html;
 }
@@ -1158,4 +1159,31 @@ function arv_card_image_url( $url, $max_w = 800 ) {
 	$url = remove_query_arg( array( 'fit', 'resize', 'w', 'h' ), $url );
 
 	return add_query_arg( 'w', (int) $max_w, $url );
+}
+
+/**
+ * A YouTube thumbnail at card size rather than full frame.
+ *
+ * The film, YouTube, tour and hub stores keep YouTube's maxresdefault, a
+ * 1280x720 JPEG of 165 to 390KB, and Jetpack's Photon does not resize
+ * i.ytimg.com: the ?resize= URL 302s straight back to the original. So a
+ * 480px card was downloading the full frame. hqdefault is the same frame
+ * at 480x360, about 30KB, letterboxed to 4:3; every 16:9 card that uses
+ * this crops with object-fit: cover, which removes the bars exactly. The
+ * Watch store already made the same switch (see watch-store.php).
+ *
+ * Only for 16:9 boxes. The 16:10 Latest cards and the square podcast art
+ * would show part of the letterbox, so they keep the stored URL.
+ *
+ * @param string $url
+ * @return string
+ */
+function arv_youtube_card_thumb( $url ) {
+	$url = (string) $url;
+
+	if ( preg_match( '#^https?://i\.ytimg\.com/vi(?:_webp)?/([A-Za-z0-9_-]{6,})/(?:maxresdefault|sddefault)(?:_live)?\.(?:jpg|webp)$#', $url, $m ) ) {
+		return 'https://i.ytimg.com/vi/' . $m[1] . '/hqdefault.jpg';
+	}
+
+	return $url;
 }

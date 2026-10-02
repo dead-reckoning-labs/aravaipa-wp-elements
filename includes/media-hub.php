@@ -255,7 +255,7 @@ function arv_media_hub_render( $args = array() ) {
 			. ' href="' . esc_url( $card['url'] ) . '">';
 
 		if ( '' !== $card['thumb'] ) {
-			$out .= '<img class="arv-media-hub__thumb" src="' . esc_url( $card['thumb'] ) . '" alt=""'
+			$out .= '<img class="arv-media-hub__thumb" src="' . esc_url( arv_youtube_card_thumb( $card['thumb'] ) ) . '" alt=""'
 				. ' loading="lazy" decoding="async" width="480" height="360" />';
 		}
 

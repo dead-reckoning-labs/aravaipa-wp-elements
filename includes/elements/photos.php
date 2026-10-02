@@ -62,7 +62,7 @@ function arv_photos_element_builder() {
  * @return string
  */
 function arv_photos_element_render( $data ) {
-	return arv_photos_render(
+	return arv_photos_cached(
 		array(
 			'heading' => isset( $data['heading'] ) ? $data['heading'] : 'Photos',
 			'intro'   => isset( $data['intro'] ) ? $data['intro'] : '',
