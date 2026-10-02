@@ -686,8 +686,10 @@ function arv_photos_warm_covers() {
 	$budget = (float) apply_filters( 'arv_photos_warm_budget', 45.0 );
 	$start  = microtime( true );
 	$done   = 0;
+	$rows   = (array) get_option( ARV_PHOTOS_OPTION, array() );
+	$found  = 0;
 
-	foreach ( (array) get_option( ARV_PHOTOS_OPTION, array() ) as $row ) {
+	foreach ( $rows as $i => $row ) {
 		if ( ( microtime( true ) - $start ) >= $budget ) {
 			break;
 		}
@@ -700,8 +702,20 @@ function arv_photos_warm_covers() {
 			continue;
 		}
 
-		arv_photos_cover( (string) $row['url'], true );
+		$cover = arv_photos_cover( (string) $row['url'], true );
 		$done++;
+
+		// Written into the store itself, not just the transient. Transients
+		// live in the object cache here, and every cache reset (wp cache
+		// flush) wiped all of them, which is what kept /photos/ grey.
+		if ( '' !== $cover ) {
+			$rows[ $i ]['cover'] = esc_url_raw( $cover );
+			$found++;
+		}
+	}
+
+	if ( $found > 0 ) {
+		update_option( ARV_PHOTOS_OPTION, $rows, false );
 	}
 
 	return $done;
