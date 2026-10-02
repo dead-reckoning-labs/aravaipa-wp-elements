@@ -260,7 +260,7 @@ function arv_tours_card( $tour ) {
 	$out = '<li class="arv-tours__card arv-tours__card--' . esc_attr( $state ) . '">';
 	$out .= '<a class="arv-tours__link" href="' . esc_url( $href ) . '">';
 
-	$out .= '<img class="arv-tours__art" src="' . esc_url( $film['thumb'] ) . '" alt=""'
+	$out .= '<img class="arv-tours__art" src="' . esc_url( arv_youtube_card_thumb( $film['thumb'] ) ) . '" alt=""'
 		. ' loading="lazy" decoding="async" width="480" height="270" />';
 
 	$out .= '<span class="arv-tours__body">';

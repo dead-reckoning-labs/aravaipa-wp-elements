@@ -970,7 +970,7 @@ function arv_films_card( $film, $active_id ) {
 		. ' data-yt-title="' . esc_attr( $film['title'] ) . '"'
 		. ( $is_active ? ' aria-current="true"' : '' )
 		. ' target="_blank" rel="noopener">';
-	$out .= '<img class="arv-films__thumb" src="' . esc_url( $film['thumbnail'] ) . '" alt=""'
+	$out .= '<img class="arv-films__thumb" src="' . esc_url( arv_youtube_card_thumb( $film['thumbnail'] ) ) . '" alt=""'
 		. ' loading="lazy" decoding="async" width="480" height="360" />';
 
 	$duration = arv_films_duration( $film['duration'] );
@@ -1127,7 +1127,7 @@ function arv_films_rail_render( $args = array() ) {
 		$out .= '<a class="arv-rail__link" href="' . esc_url( home_url( '/films/?v=' . $film['id'] ) ) . '">';
 
 		if ( '' !== $film['thumbnail'] ) {
-			$out .= '<img class="arv-rail__art" src="' . esc_url( $film['thumbnail'] ) . '" alt=""'
+			$out .= '<img class="arv-rail__art" src="' . esc_url( arv_youtube_card_thumb( $film['thumbnail'] ) ) . '" alt=""'
 				. ' loading="lazy" decoding="async" width="480" height="270" />';
 		}
 

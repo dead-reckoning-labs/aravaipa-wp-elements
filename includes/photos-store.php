@@ -43,6 +43,16 @@ function arv_photos_store_get() {
 
 	$out = array();
 
+	// Read once for the whole store rather than once per gallery. Both are
+	// rebuilt from the results and race stores on every call, and neither of
+	// those memoises its own read, so resolving a date per row meant two
+	// full rebuilds per gallery: 567 galleries at about 11ms each, 6.5
+	// seconds on every uncached /photos/ and /photos-YYYY/ request, paid
+	// before the render cache was even consulted because the SEO description
+	// counts the galleries through this function. Measured 2026-10-01.
+	$dates = arv_photos_race_dates();
+	$index = arv_photos_race_date_index( $dates );
+
 	foreach ( $stored as $row ) {
 		if ( ! is_array( $row ) || empty( $row['race'] ) || empty( $row['url'] ) ) {
 			continue;
@@ -66,7 +76,7 @@ function arv_photos_store_get() {
 			'cover' => isset( $row['cover'] ) ? (string) $row['cover'] : '',
 			// When the race actually ran, so the newest one is first. See
 			// arv_photos_race_date().
-			'iso'  => arv_photos_race_date( $race, $year ),
+			'iso'  => arv_photos_race_date( $race, $year, $dates, $index ),
 		);
 	}
 
@@ -120,16 +130,18 @@ function arv_photos_compare( $a, $b ) {
  * Matched on the same key the rest of this file groups by, so "Silverton
  * Alpine" and "Silverton Alpine Marathon" find the same date.
  *
- * @param string $race
- * @param int    $year
+ * @param string     $race
+ * @param int        $year
+ * @param array|null $dates A map already read by arv_photos_race_dates(), when the caller has one.
+ * @param array|null $index The matching arv_photos_race_date_index(), likewise.
  * @return string ISO date, or '' when nothing knows.
  */
-function arv_photos_race_date( $race, $year ) {
+function arv_photos_race_date( $race, $year, $dates = null, $index = null ) {
 	if ( ! $year ) {
 		return '';
 	}
 
-	$dates = arv_photos_race_dates();
+	$dates = ( null === $dates ) ? arv_photos_race_dates() : $dates;
 	$key   = arv_photos_race_key( $race );
 
 	if ( isset( $dates[ $key . '|' . $year ] ) ) {
@@ -166,7 +178,7 @@ function arv_photos_race_date( $race, $year ) {
 	// races, each pair doing two explodes and two array_diffs, which came
 	// to 11ms per gallery and 6.4 seconds of the 8.8 the store read took.
 	// The work is identical, it just happens 656 times instead of 366,000.
-	$index = arv_photos_race_date_index();
+	$index = ( null === $index ) ? arv_photos_race_date_index( $dates ) : $index;
 
 	if ( ! isset( $index[ $year ] ) ) {
 		return '';
@@ -210,10 +222,11 @@ function arv_photos_race_date( $race, $year ) {
  * pays the reshaping cost once and is memoised against the same map, so it
  * invalidates exactly when that does.
  *
+ * @param array|null $dates The map to index, when the caller already has it.
  * @return array<int, array{squashed: array<string, string>, words: array<int, array{words: array, iso: string}>}>
  */
-function arv_photos_race_date_index() {
-	$dates = arv_photos_race_dates();
+function arv_photos_race_date_index( $dates = null ) {
+	$dates = ( null === $dates ) ? arv_photos_race_dates() : $dates;
 
 	static $memo = array();
 
@@ -569,9 +582,15 @@ function arv_photos_cover( $url, $fresh = false ) {
 	// A page that times out is not a page.
 	static $spent = 0.0;
 
-	$budget = (float) apply_filters( 'arv_photos_cover_budget', 10.0 );
+	// Three seconds, down from ten, now that the hourly warm pass below
+	// (arv_photos_warm_covers) does the bulk of the fetching off the request
+	// path. The render only tops up what the warm pass has not reached yet.
+	$budget = (float) apply_filters( 'arv_photos_cover_budget', 3.0 );
 
 	if ( ! $fresh && $spent >= $budget ) {
+		// Counted so the render cache knows this page is incomplete and
+		// keeps it for minutes rather than a week. See arv_photos_shortcode().
+		$GLOBALS['arv_photos_covers_deferred'] = arv_photos_covers_deferred() + 1;
 		return '';
 	}
 
@@ -609,10 +628,72 @@ function arv_photos_cover( $url, $fresh = false ) {
 		return '';
 	}
 
-	set_transient( $key, $cover, WEEK_IN_SECONDS );
+	// A month rather than a week. A gallery's cover changes about never,
+	// and every expiry is another fetch from somebody else's server.
+	set_transient( $key, $cover, 30 * DAY_IN_SECONDS );
 
 	return $cover;
 }
+
+/**
+ * How many covers this request skipped because the fetch budget ran out.
+ *
+ * @return int
+ */
+function arv_photos_covers_deferred() {
+	return isset( $GLOBALS['arv_photos_covers_deferred'] ) ? (int) $GLOBALS['arv_photos_covers_deferred'] : 0;
+}
+
+/**
+ * Resolve covers that are not cached yet, off the request path.
+ *
+ * The render cache used to freeze whatever the first cold render managed
+ * inside its fetch budget, for a week. On 2026-10-01 that was 30 covers
+ * out of 514 cards on /photos/: the other 493 were the grey no-picture
+ * panel, because 446 of the 567 cover lookups had expired out of the
+ * object cache and a ten second budget reaches a dozen or so of them.
+ *
+ * This runs hourly from WP-Cron with its own, larger budget, so the cold
+ * cache fills in the background instead of one page view at a time. Only
+ * misses are fetched: a cached cover or a cached "none" is left alone.
+ *
+ * @return int How many covers were fetched.
+ */
+function arv_photos_warm_covers() {
+	$budget = (float) apply_filters( 'arv_photos_warm_budget', 45.0 );
+	$start  = microtime( true );
+	$done   = 0;
+
+	foreach ( (array) get_option( ARV_PHOTOS_OPTION, array() ) as $row ) {
+		if ( ( microtime( true ) - $start ) >= $budget ) {
+			break;
+		}
+
+		if ( ! is_array( $row ) || empty( $row['url'] ) || ! empty( $row['cover'] ) ) {
+			continue;
+		}
+
+		if ( false !== get_transient( 'arv_photo_cover_' . md5( (string) $row['url'] ) ) ) {
+			continue;
+		}
+
+		arv_photos_cover( (string) $row['url'], true );
+		$done++;
+	}
+
+	return $done;
+}
+add_action( 'arv_photos_warm_covers_cron', 'arv_photos_warm_covers' );
+
+/**
+ * Hourly registration for the warm pass.
+ */
+function arv_photos_warm_covers_schedule() {
+	if ( function_exists( 'wp_next_scheduled' ) && ! wp_next_scheduled( 'arv_photos_warm_covers_cron' ) ) {
+		wp_schedule_event( time() + 60, 'hourly', 'arv_photos_warm_covers_cron' );
+	}
+}
+add_action( 'init', 'arv_photos_warm_covers_schedule' );
 
 /**
  * The og:image out of a page's markup.
@@ -666,6 +747,7 @@ function arv_photos_og_image( $body ) {
  */
 function arv_photos_render( $args = array() ) {
 	$rows = arv_photos_store_get();
+	$all  = $rows;
 
 	if ( empty( $rows ) ) {
 		return '';
@@ -737,7 +819,7 @@ function arv_photos_render( $args = array() ) {
 	// Only where the page has not pinned a year itself: a /photos-2026/
 	// page switching itself to 2024 would contradict its own URL.
 	if ( ! $pinned ) {
-		$out .= arv_photos_controls( $years, $wanted, arv_photos_photographers( arv_photos_store_get() ) );
+		$out .= arv_photos_controls( $years, $wanted, arv_photos_photographers( $all ) );
 	}
 
 	if ( empty( $cards ) ) {
@@ -1027,11 +1109,32 @@ function arv_photos_shortcode( $atts ) {
 	// Cached against the gallery store and the covers currently resolved,
 	// so a new gallery or a newly warmed cover both invalidate it. See
 	// arv_cached_render(): this page took 33 seconds to build.
+	return arv_photos_cached( $atts );
+}
+
+/**
+ * The Photos render through the render cache, for the shortcode and the
+ * Cornerstone element alike. The element used to call arv_photos_render()
+ * directly and paid the full build on every uncached view.
+ *
+ * A render that ran out of cover budget is cached for ten minutes rather
+ * than a week, so it is rebuilt once the warm pass has caught up instead
+ * of serving grey panels until the week is out.
+ *
+ * @param array $atts
+ * @return string
+ */
+function arv_photos_cached( $atts ) {
+	$before = arv_photos_covers_deferred();
+
 	return arv_cached_render(
 		'photos',
 		array( $atts, get_option( ARV_PHOTOS_OPTION, array() ) ),
 		function () use ( $atts ) {
 			return arv_photos_render( $atts );
+		},
+		function () use ( $before ) {
+			return ( arv_photos_covers_deferred() > $before ) ? 10 * MINUTE_IN_SECONDS : WEEK_IN_SECONDS;
 		}
 	);
 }
@@ -1191,3 +1294,11 @@ function arv_photos_rest_set( $request ) {
 		'previous' => $current,
 	);
 }
+
+/**
+ * Leave no warm pass scheduled for a plugin that is no longer active.
+ */
+function arv_photos_warm_covers_deactivate() {
+	wp_clear_scheduled_hook( 'arv_photos_warm_covers_cron' );
+}
+register_deactivation_hook( ARV_ELEMENTS_PATH . 'aravaipa-elements.php', 'arv_photos_warm_covers_deactivate' );
