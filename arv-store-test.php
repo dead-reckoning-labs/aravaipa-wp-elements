@@ -7207,8 +7207,8 @@ $csp     = preg_match( '/<li class="arv-results__week-race[^"]*">(?:(?!<\/li>).)
 
 t( 'both races are in race week',       '' !== $bc && '' !== $csp );
 // Mountain Daylight, from the board's own -6 agreeing with Colorado's zone.
-t( 'Bear Chase lists Saturday starts',  false !== strpos( $bc, 'Sat</span> 100K 5:30 AM · 50 Mile 6:30 AM · 50K 7:30 AM MDT' ) );
-t( 'and Sunday, day word dropped',      false !== strpos( $bc, 'Sun</span> Half Marathon 7:00 AM · 10K 8:00 AM · 5K 8:30 AM MDT' ) );
+t( 'Bear Chase lists Saturday starts',  false !== strpos( strip_tags( $bc ), 'Sat 100K 5:30 AM, 50 Mile 6:30 AM, 50K 7:30 AM MDT' ) );
+t( 'and Sunday, day word dropped',      false !== strpos( strip_tags( $bc ), 'Sun Half Marathon 7:00 AM, 10K 8:00 AM, 5K 8:30 AM MDT' ) );
 t( 'and the board cutoff, local',       false !== strpos( $bc, '<dt>Cutoff</dt><dd>Sun 11:00 AM MDT</dd>' ) );
 t( 'it is live',                        false !== strpos( $bc, 'data-arv-results-live>' ) );
 t( 'elapsed names the 100K gun',        false !== strpos( $bc, '<span data-arv-results-elapsed-from>100K</span> elapsed' ) );
@@ -7252,7 +7252,7 @@ $GLOBALS['NOW_TS'] = strtotime( '2026-10-04T05:46:18Z' );
 $ovr  = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 $csp2 = preg_match( '/<li class="arv-results__week-race[^"]*">(?:(?!<\/li>).)*Catalina.*?<\/li>/s', $ovr, $cm2 ) ? $cm2[0] : '';
 // Arizona is MST all year: 6:00 AM there is 13:00Z in October.
-t( 'Catalina lists both guns in MST',   false !== strpos( $csp2, 'Sun</span> 9.3 Mile 6:00 AM · 5K 6:20 AM MST' ) );
+t( 'Catalina lists both guns in MST',   false !== strpos( strip_tags( $csp2 ), 'Sun 9.3 Mile 6:00 AM, 5K 6:20 AM MST' ) );
 t( 'and its cutoff with the limit',     false !== strpos( $csp2, '<dt>Cutoff</dt><dd>Sun 9:00 AM MST (3 hr limit)</dd>' ) );
 t( 'counting to the real gun',          false !== strpos( $csp2, 'data-arv-start="2026-10-04T13:00:00+00:00"' ) );
 t( 'about seven hours out',             (bool) preg_match( '/countdown-value"[^>]*>7 hours</', $csp2 ) );

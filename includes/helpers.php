@@ -1127,7 +1127,8 @@ function arv_race_time_text( $ts, $tz, $day = true ) {
  *
  * One start: "Start Sat 7:00 AM MDT". Several: one line per race day,
  * distances in the order they go off, distances sharing a gun listed
- * together: "Sat 100K 5:30 AM · 50 Mile 6:30 AM · 50K 7:30 AM MDT". Then
+ * together: "Sat 100K 5:30 AM, 50 Mile 6:30 AM, 50K 7:30 AM MDT", each one a
+ * wrapping slot so a line breaks between distances, never mid-time. Then
  * "Cutoff Sun 11:00 AM MDT", with the time limit beside it when the cutoff
  * is one we hold as a duration.
  *
@@ -1173,15 +1174,22 @@ function arv_race_schedule_markup( $schedule ) {
 		$first = true;
 		foreach ( $days as $day => $times ) {
 			$parts = array();
+			$count = count( $times );
+			$i     = 0;
 			foreach ( $times as $time => $labels ) {
-				$parts[] = ( empty( $labels ) ? '' : implode( ', ', $labels ) . ' ' ) . $time;
+				$i++;
+				// Each "100K 5:30 AM" kept on one line, so a wrap falls
+				// between distances and never between a time and its AM.
+				$parts[] = '<span class="arv-results__week-slot">'
+					. esc_html( ( empty( $labels ) ? '' : implode( ' / ', $labels ) . ' ' ) . $time . ( $i === $count ? ' ' . $zone : '' ) )
+					. '</span>';
 			}
 
 			$out .= '<div class="arv-results__week-time">'
 				. '<dt' . ( $first ? '' : ' class="arv-results__week-time-more"' ) . '>'
 				. esc_html( $first ? __( 'Start', 'aravaipa-elements' ) : '' ) . '</dt>'
 				. '<dd><span class="arv-results__week-day">' . esc_html( $day ) . '</span> '
-				. esc_html( implode( ' · ', $parts ) . ' ' . $zone ) . '</dd>'
+				. implode( '<span class="arv-results__sr">, </span>', $parts ) . '</dd>'
 				. '</div>';
 
 			$first = false;

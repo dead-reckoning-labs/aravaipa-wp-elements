@@ -5233,8 +5233,15 @@
 }
 
 .arv-results__week-times dd {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 0.7rem;
 	margin: 0;
 	font-variant-numeric: tabular-nums;
+}
+
+.arv-results__week-slot {
+	white-space: nowrap;
 }
 
 .arv-results__week-day {
