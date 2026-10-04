@@ -1163,7 +1163,7 @@ function arv_race_waitlist_rest_set( $request ) {
  * had anywhere to put "8am" or "Chattanooga is Eastern."
  *
  * A hand-maintained overlay, the same shape as the waitlist map and the
- * producer notes beside it: race name => { time, tz }. The timezone is
+ * producer notes beside it: race name => { time, tz, distances? }. The timezone is
  * stored explicitly as an IANA identifier rather than derived from the
  * race's own lat/lng, even though those are already on file. A longitude
  * lookup is exactly the kind of thing that is confidently wrong at a
@@ -1214,6 +1214,28 @@ function arv_race_start_store_set( $map ) {
 		$time = isset( $entry['time'] ) ? trim( (string) $entry['time'] ) : '';
 		$tz   = isset( $entry['tz'] ) ? trim( (string) $entry['tz'] ) : '';
 
+		// Optional per-distance guns, distance label => 'H:i', for a race
+		// whose distances go off at different times (Catalina: 9.3 Mile at
+		// 6:00, 5K at 6:20). Same validation as the single time; a bad entry
+		// is dropped on its own rather than taking the race with it.
+		$distances = array();
+		foreach ( (array) ( isset( $entry['distances'] ) && is_array( $entry['distances'] ) ? $entry['distances'] : array() ) as $label => $at ) {
+			$label = trim( (string) $label );
+			$at    = trim( (string) $at );
+
+			if ( '' !== $label && preg_match( '/^([01]\d|2[0-3]):[0-5]\d$/', $at ) ) {
+				$distances[ $label ] = $at;
+			}
+		}
+
+		// The race's own start is its earliest gun, so a map with only
+		// distances still has one, and a stated time later than a
+		// distance's is pulled back to it rather than trusted.
+		if ( ! empty( $distances ) ) {
+			$earliest = min( $distances );
+			$time     = ( '' === $time || $earliest < $time ) ? $earliest : $time;
+		}
+
 		if ( ! preg_match( '/^([01]\d|2[0-3]):[0-5]\d$/', $time ) ) {
 			continue;
 		}
@@ -1226,6 +1248,10 @@ function arv_race_start_store_set( $map ) {
 			'time' => $time,
 			'tz'   => $tz,
 		);
+
+		if ( ! empty( $distances ) ) {
+			$clean[ $name ]['distances'] = $distances;
+		}
 	}
 
 	update_option( ARV_RACE_START_OPTION, $clean, false );
@@ -1299,6 +1325,8 @@ add_action( 'rest_api_init', 'arv_race_start_register_rest_route' );
  * POST /wp-json/aravaipa/v1/races/starts
  *
  * Body: starts is a JSON string, { "Race Name": { "time": "08:00", "tz": "America/New_York" } }.
+ * Optional per-distance guns ride along as "distances": { "9.3 Mile": "06:00", "5K": "06:20" },
+ * which the race week card lists one by one.
  * Same JSON-as-a-string shape as /races/notes, for the same reason: it
  * survives a plain form-encoded POST, which is what curl sends by hand.
  *

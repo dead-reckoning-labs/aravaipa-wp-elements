@@ -815,6 +815,436 @@ function arv_race_start_ts( $race, $board ) {
 	return 0;
 }
 
+/* ------------------------------------------------------------------ *
+ * Start times and cutoffs, in the race's own time zone.
+ *
+ * The race week block used to show a single number: a countdown or an
+ * elapsed clock. With no gun time it counted down to midnight in Phoenix,
+ * so a Tucson race that goes off at 6:00 AM read "Starts in 1:13:41" at a
+ * quarter to eleven the night before. Jamil's ask was to show the real
+ * start and cutoff instead, so a card now carries both, read from the same
+ * sources the clock already trusts and nothing new:
+ *
+ *   1. The timing board (arv_live_store_find()): a start per distance and
+ *      the event's cutoff, maintained by the timing team.
+ *   2. A director's gun time (arv_race_start_store_get()), for a race the
+ *      board does not carry. Optionally per distance.
+ *   3. A cutoff override in hours (arv_race_cutoff_store_get()), measured
+ *      from the first gun, which beats the board's own cutoff.
+ *
+ * Neither the calendar rows nor UltraSignup/RunSignup carry a gun time, so
+ * a race with none of the three shows its date and no clock at all.
+ * ------------------------------------------------------------------ */
+
+/**
+ * The IANA zone a US state's races run in, where a state has only one.
+ *
+ * Split states (TN, KY, FL, IN, ND, SD, NE, KS, TX, OR, ID) are left out on
+ * purpose: Chattanooga is Eastern and Nashville Central, and guessing the
+ * wrong half would print a confidently wrong hour. A race in one of those
+ * gets its zone from the board's own offset or a start override instead.
+ *
+ * @param string $location "Town, ST".
+ * @return string Empty when the state is unknown or split.
+ */
+function arv_race_state_zone( $location ) {
+	if ( ! preg_match( '/,\s*([A-Z]{2})\s*$/', trim( (string) $location ), $m ) ) {
+		return '';
+	}
+
+	$zones = array(
+		'AZ' => 'America/Phoenix',
+		'CO' => 'America/Denver',
+		'UT' => 'America/Denver',
+		'NM' => 'America/Denver',
+		'WY' => 'America/Denver',
+		'MT' => 'America/Denver',
+		'CA' => 'America/Los_Angeles',
+		'NV' => 'America/Los_Angeles',
+		'WA' => 'America/Los_Angeles',
+		'IL' => 'America/Chicago',
+		'WI' => 'America/Chicago',
+		'MN' => 'America/Chicago',
+		'IA' => 'America/Chicago',
+		'MO' => 'America/Chicago',
+		'AR' => 'America/Chicago',
+		'LA' => 'America/Chicago',
+		'MS' => 'America/Chicago',
+		'AL' => 'America/Chicago',
+		'OK' => 'America/Chicago',
+		'NH' => 'America/New_York',
+		'VT' => 'America/New_York',
+		'ME' => 'America/New_York',
+		'MA' => 'America/New_York',
+		'NY' => 'America/New_York',
+		'PA' => 'America/New_York',
+		'NJ' => 'America/New_York',
+		'CT' => 'America/New_York',
+		'RI' => 'America/New_York',
+		'MI' => 'America/Detroit',
+		'OH' => 'America/New_York',
+		'GA' => 'America/New_York',
+		'NC' => 'America/New_York',
+		'SC' => 'America/New_York',
+		'VA' => 'America/New_York',
+		'WV' => 'America/New_York',
+		'MD' => 'America/New_York',
+		'DE' => 'America/New_York',
+		'DC' => 'America/New_York',
+		'HI' => 'Pacific/Honolulu',
+	);
+
+	return isset( $zones[ $m[1] ] ) ? $zones[ $m[1] ] : '';
+}
+
+/**
+ * The zone a race's times should be read and printed in.
+ *
+ * A director's stated zone first, since it was entered for exactly this.
+ * Then the state's zone, but only if it agrees with the board's offset at
+ * the gun: the board knows the real offset, the state map only knows the
+ * usual one. Where they disagree, or there is no state, the board's offset
+ * as a fixed zone. Last, the site's own zone.
+ *
+ * @param array      $race  Needs 'name'; 'location' when known.
+ * @param array|null $board
+ * @return DateTimeZone
+ */
+function arv_race_timezone( $race, $board = null ) {
+	$name   = isset( $race['name'] ) ? (string) $race['name'] : '';
+	$starts = function_exists( 'arv_race_start_store_get' ) ? arv_race_start_store_get() : array();
+
+	if ( '' !== $name && ! empty( $starts[ $name ]['tz'] ) ) {
+		try {
+			return new DateTimeZone( $starts[ $name ]['tz'] );
+		} catch ( Exception $e ) {
+			// Fall through to the next source.
+		}
+	}
+
+	$state = arv_race_state_zone( isset( $race['location'] ) ? $race['location'] : '' );
+	$zone  = ( '' !== $state ) ? new DateTimeZone( $state ) : null;
+
+	$board_ts = ( null !== $board && ! empty( $board['start'] ) ) ? (int) strtotime( $board['start'] ) : 0;
+	$offset   = ( null !== $board && ! empty( $board['offset'] ) ) ? (float) $board['offset'] : 0.0;
+
+	if ( $board_ts && 0.0 !== $offset ) {
+		$seconds = (int) round( $offset * 3600 );
+
+		if ( null !== $zone && $zone->getOffset( new DateTime( '@' . $board_ts ) ) === $seconds ) {
+			return $zone;
+		}
+
+		$abs = abs( $seconds );
+
+		return new DateTimeZone( sprintf( '%s%02d:%02d', $seconds < 0 ? '-' : '+', intdiv( $abs, 3600 ), intdiv( $abs % 3600, 60 ) ) );
+	}
+
+	if ( null !== $zone ) {
+		return $zone;
+	}
+
+	if ( function_exists( 'wp_timezone' ) ) {
+		return wp_timezone();
+	}
+
+	return new DateTimeZone( 'America/Phoenix' );
+}
+
+/**
+ * "MDT", "MST", or "UTC-6" for a fixed-offset zone, at a given instant.
+ *
+ * @param int          $ts
+ * @param DateTimeZone $tz
+ * @return string
+ */
+function arv_race_zone_label( $ts, $tz ) {
+	$dt   = ( new DateTime( '@' . (int) $ts ) )->setTimezone( $tz );
+	$abbr = $dt->format( 'T' );
+
+	if ( preg_match( '/^[A-Z]{2,5}$/', $abbr ) ) {
+		return $abbr;
+	}
+
+	$seconds = $tz->getOffset( $dt );
+	$hours   = $seconds / 3600;
+
+	return 'UTC' . ( $hours < 0 ? '-' : '+' ) . rtrim( rtrim( number_format( abs( $hours ), 2, '.', '' ), '0' ), '.' );
+}
+
+/**
+ * A board distance name as a card should show it.
+ *
+ * The board names Sunday races "5K Sunday" or "SUNDAY 20K" so its own list
+ * can tell the days apart. The card already groups starts by day, so the
+ * day word is dropped and the rest normalised the same way the pills are.
+ *
+ * @param string $name
+ * @return string
+ */
+function arv_race_schedule_label( $name ) {
+	$label = preg_replace( '/\b(?:mon|tues|wednes|thurs|fri|satur|sun)day\b/i', '', (string) $name );
+	$label = trim( preg_replace( '/\s+/', ' ', $label ), " \t-:" );
+
+	if ( '' === $label ) {
+		$label = trim( (string) $name );
+	}
+
+	return function_exists( 'arv_results_distance_label' ) ? arv_results_distance_label( $label ) : $label;
+}
+
+/**
+ * Every known gun time for one race, plus its cutoff, in its own zone.
+ *
+ * 'first' is the instant the race clock runs from: the board's event start
+ * where there is one, the same instant arv_race_start_ts() returns, so the
+ * clock and every other caller agree. 'waves' is the first start of each
+ * local day, which is what the elapsed clock steps through on a multi-day
+ * event (see arv_results_week_status()). 'cutoff' is the real cutoff only,
+ * never the eight day backstop, so it is safe to print.
+ *
+ * @param array      $race  Needs 'name' and 'iso'; 'location' when known.
+ * @param array|null $board
+ * @return array {tz, starts: list<{label, ts}>, waves: list<{label, ts}>, first, cutoff, hours, source}
+ */
+function arv_race_schedule( $race, $board = null ) {
+	$name   = isset( $race['name'] ) ? (string) $race['name'] : '';
+	$iso    = isset( $race['iso'] ) ? (string) $race['iso'] : '';
+	$tz     = arv_race_timezone( $race, $board );
+	$starts = array();
+	$first  = 0;
+	$source = '';
+
+	if ( null !== $board && ! empty( $board['start'] ) ) {
+		$source = 'board';
+		$first  = (int) strtotime( $board['start'] );
+
+		foreach ( (array) ( isset( $board['races'] ) ? $board['races'] : array() ) as $entry ) {
+			$ts = ! empty( $entry['start'] ) ? (int) strtotime( $entry['start'] ) : 0;
+
+			if ( $ts > 0 && ! empty( $entry['name'] ) ) {
+				$starts[] = array( 'label' => arv_race_schedule_label( $entry['name'] ), 'ts' => $ts );
+			}
+		}
+
+		if ( empty( $starts ) && $first ) {
+			$starts[] = array( 'label' => '', 'ts' => $first );
+		}
+	} elseif ( '' !== $iso && function_exists( 'arv_race_start_store_get' ) ) {
+		$stored = arv_race_start_store_get();
+		$entry  = isset( $stored[ $name ] ) ? $stored[ $name ] : null;
+
+		if ( is_array( $entry ) && ! empty( $entry['tz'] ) ) {
+			$source = 'override';
+
+			$times = ! empty( $entry['distances'] ) && is_array( $entry['distances'] )
+				? $entry['distances']
+				: ( ! empty( $entry['time'] ) ? array( '' => $entry['time'] ) : array() );
+
+			foreach ( $times as $label => $time ) {
+				try {
+					$dt = new DateTime( $iso . ' ' . $time, new DateTimeZone( $entry['tz'] ) );
+				} catch ( Exception $e ) {
+					continue;
+				}
+
+				$starts[] = array( 'label' => arv_race_schedule_label( (string) $label ), 'ts' => $dt->getTimestamp() );
+			}
+
+			// The single 'time' stays the race's own start, the one
+			// arv_race_start_override_ts() and every sort already use.
+			$override = function_exists( 'arv_race_start_override_ts' ) ? arv_race_start_override_ts( $name, $iso ) : null;
+			$first    = ( null !== $override ) ? (int) $override : 0;
+		}
+	}
+
+	usort(
+		$starts,
+		function ( $a, $b ) {
+			return ( $a['ts'] === $b['ts'] ) ? 0 : ( ( $a['ts'] < $b['ts'] ) ? -1 : 1 );
+		}
+	);
+
+	if ( ! $first && ! empty( $starts ) ) {
+		$first = $starts[0]['ts'];
+	}
+
+	// The first gun of each local day. Starts are sorted, so the first one
+	// seen for a day is that day's earliest.
+	$waves = array();
+	foreach ( $starts as $start ) {
+		$day = ( new DateTime( '@' . $start['ts'] ) )->setTimezone( $tz )->format( 'Y-m-d' );
+
+		if ( ! isset( $waves[ $day ] ) ) {
+			$waves[ $day ] = $start;
+		}
+	}
+	$waves = array_values( $waves );
+
+	// The board's event start is normally its first distance's start, but
+	// the two are entered separately. Whichever is earlier is the first
+	// wave, so the clock never starts after a gun that has already gone.
+	if ( ! empty( $waves ) && $first ) {
+		$waves[0]['ts'] = min( $waves[0]['ts'], $first );
+	}
+
+	$hours = 0.0;
+	if ( function_exists( 'arv_race_cutoff_store_get' ) ) {
+		$cutoffs = arv_race_cutoff_store_get();
+		$hours   = isset( $cutoffs[ $name ] ) ? (float) $cutoffs[ $name ] : 0.0;
+		$hours   = (float) apply_filters( 'arv_race_cutoff_hours', $hours, $name, $board );
+	}
+
+	$cutoff = ( $first && function_exists( 'arv_race_cutoff_for' ) ) ? (int) arv_race_cutoff_for( $name, $board, $first ) : 0;
+
+	return array(
+		'tz'     => $tz,
+		'starts' => $starts,
+		'waves'  => $waves,
+		'first'  => $first,
+		'cutoff' => $cutoff,
+		'hours'  => ( $cutoff && $hours > 0 ) ? $hours : 0.0,
+		'source' => $source,
+	);
+}
+
+/**
+ * "Sat 7:00 AM" in a race's zone.
+ *
+ * @param int          $ts
+ * @param DateTimeZone $tz
+ * @param bool         $day Lead with the weekday.
+ * @return string
+ */
+function arv_race_time_text( $ts, $tz, $day = true ) {
+	$dt = ( new DateTime( '@' . (int) $ts ) )->setTimezone( $tz );
+
+	return $dt->format( $day ? 'D g:i A' : 'g:i A' );
+}
+
+/**
+ * The start and cutoff lines for a race card.
+ *
+ * One start: "Start Sat 7:00 AM MDT". Several: one line per race day,
+ * distances in the order they go off, distances sharing a gun listed
+ * together: "Sat 100K 5:30 AM · 50 Mile 6:30 AM · 50K 7:30 AM MDT". Then
+ * "Cutoff Sun 11:00 AM MDT", with the time limit beside it when the cutoff
+ * is one we hold as a duration.
+ *
+ * Plain text in the HTML, not filled by a script: these never change while
+ * the page is cached, so there is nothing for WP Rocket to get wrong.
+ *
+ * @param array $schedule From arv_race_schedule().
+ * @return string Empty when there is no start time to show.
+ */
+function arv_race_schedule_markup( $schedule ) {
+	if ( empty( $schedule['starts'] ) ) {
+		return '';
+	}
+
+	$tz   = $schedule['tz'];
+	$zone = arv_race_zone_label( $schedule['starts'][0]['ts'], $tz );
+	$out  = '<dl class="arv-results__week-times">';
+
+	$distinct = array_unique( arv_race_schedule_instants( $schedule['starts'] ) );
+
+	if ( 1 === count( $distinct ) ) {
+		$out .= '<div class="arv-results__week-time">'
+			. '<dt>' . esc_html( __( 'Start', 'aravaipa-elements' ) ) . '</dt>'
+			. '<dd>' . esc_html( arv_race_time_text( $schedule['starts'][0]['ts'], $tz ) . ' ' . $zone ) . '</dd>'
+			. '</div>';
+	} else {
+		// Day => time text => labels sharing that gun.
+		$days = array();
+		foreach ( $schedule['starts'] as $start ) {
+			$dt   = ( new DateTime( '@' . $start['ts'] ) )->setTimezone( $tz );
+			$day  = $dt->format( 'D' );
+			$time = $dt->format( 'g:i A' );
+
+			if ( ! isset( $days[ $day ][ $time ] ) ) {
+				$days[ $day ][ $time ] = array();
+			}
+
+			if ( '' !== $start['label'] && ! in_array( $start['label'], $days[ $day ][ $time ], true ) ) {
+				$days[ $day ][ $time ][] = $start['label'];
+			}
+		}
+
+		$first = true;
+		foreach ( $days as $day => $times ) {
+			$parts = array();
+			foreach ( $times as $time => $labels ) {
+				$parts[] = ( empty( $labels ) ? '' : implode( ', ', $labels ) . ' ' ) . $time;
+			}
+
+			$out .= '<div class="arv-results__week-time">'
+				. '<dt' . ( $first ? '' : ' class="arv-results__week-time-more"' ) . '>'
+				. esc_html( $first ? __( 'Start', 'aravaipa-elements' ) : '' ) . '</dt>'
+				. '<dd><span class="arv-results__week-day">' . esc_html( $day ) . '</span> '
+				. esc_html( implode( ' · ', $parts ) . ' ' . $zone ) . '</dd>'
+				. '</div>';
+
+			$first = false;
+		}
+	}
+
+	if ( ! empty( $schedule['cutoff'] ) ) {
+		$text = arv_race_time_text( $schedule['cutoff'], $tz ) . ' ' . arv_race_zone_label( $schedule['cutoff'], $tz );
+
+		if ( ! empty( $schedule['hours'] ) ) {
+			$hours = rtrim( rtrim( number_format( (float) $schedule['hours'], 2, '.', '' ), '0' ), '.' );
+			/* translators: %s is a number of hours. */
+			$text .= ' (' . sprintf( __( '%s hr limit', 'aravaipa-elements' ), $hours ) . ')';
+		}
+
+		$out .= '<div class="arv-results__week-time">'
+			. '<dt>' . esc_html( __( 'Cutoff', 'aravaipa-elements' ) ) . '</dt>'
+			. '<dd>' . esc_html( $text ) . '</dd>'
+			. '</div>';
+	}
+
+	return $out . '</dl>';
+}
+
+/**
+ * The instants out of a list of starts.
+ *
+ * @param array $starts
+ * @return int[]
+ */
+function arv_race_schedule_instants( $starts ) {
+	return array_map(
+		function ( $s ) {
+			return (int) $s['ts'];
+		},
+		(array) $starts
+	);
+}
+
+/**
+ * The wave a race clock should be measuring from right now.
+ *
+ * The latest day's first gun that has already gone. On Bear Chase that is
+ * the 100K from 5:30 AM Saturday until the Sunday half goes off at 7:00
+ * AM, then the half: a clock reading 25:30 on Sunday morning, from a gun
+ * nobody on course on Sunday heard, is the wrong number for that crowd.
+ *
+ * @param array $waves From arv_race_schedule().
+ * @param int   $now
+ * @return array|null {label, ts}
+ */
+function arv_race_current_wave( $waves, $now ) {
+	$current = null;
+
+	foreach ( (array) $waves as $wave ) {
+		if ( $wave['ts'] <= $now ) {
+			$current = $wave;
+		}
+	}
+
+	return $current;
+}
+
 function arv_races_live_state( $race, $board, $start_ts ) {
 	$now = arv_results_now();
 

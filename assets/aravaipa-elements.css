@@ -5206,6 +5206,47 @@
 	outline-offset: 2px;
 }
 
+/* Start and cutoff, in the race's own zone. Quieter than the name and the
+   clock: reference facts, read once. A two-column grid so "Start" and
+   "Cutoff" line up and a second race day sits under the first. */
+.arv-results__week-times {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	column-gap: 0.6rem;
+	row-gap: 0.15rem;
+	margin: 0.5rem 0 0;
+	font-size: var(--arv-fs-label);
+	line-height: 1.4;
+	color: rgba(242, 242, 242, 0.75);
+}
+
+.arv-results__week-time {
+	display: contents;
+}
+
+.arv-results__week-times dt {
+	margin: 0;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: rgba(242, 242, 242, 0.5);
+}
+
+.arv-results__week-times dd {
+	margin: 0;
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-results__week-day {
+	font-weight: 700;
+	color: rgba(242, 242, 242, 0.9);
+}
+
+/* "Race day", for a race with no known gun: a fact, not a clock. */
+.arv-results__elapsed--day {
+	color: rgba(242, 242, 242, 0.75);
+}
+
 /* The state, not the town: enough to tell two races apart at a glance
    without turning the bar into an address book. */
 .arv-results__week-place {
