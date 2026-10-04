@@ -509,6 +509,35 @@
 		var elapsed = root.querySelector( '[data-arv-results-elapsed]' );
 		var elapsedValue = root.querySelector( '[data-arv-results-elapsed-value]' );
 		var done = root.querySelector( '.arv-results__done' );
+		var from = root.querySelector( '[data-arv-results-elapsed-from]' );
+		var dayOnly = root.hasAttribute( 'data-arv-day-only' );
+
+		// The first gun of each race day, on an event that runs more than
+		// one. Elapsed counts from the latest of them that has gone, so a
+		// Sunday half is not read against Saturday's 100K gun. One day, or
+		// no attribute at all, and the clock runs from data-arv-start.
+		var waves = [];
+		try {
+			var raw = JSON.parse( root.getAttribute( 'data-arv-waves' ) || '[]' );
+			for ( var w = 0; w < raw.length; w++ ) {
+				var at = Date.parse( raw[ w ].t );
+				if ( ! isNaN( at ) ) {
+					waves.push( { t: at, l: raw[ w ].l || '' } );
+				}
+			}
+		} catch ( e ) {
+			waves = [];
+		}
+
+		function wave( now ) {
+			var current = null;
+			for ( var i = 0; i < waves.length; i++ ) {
+				if ( waves[ i ].t <= now ) {
+					current = waves[ i ];
+				}
+			}
+			return current;
+		}
 
 		// The pulsing marker lives beside the race name, not in here, so the
 		// clock has to look up to whatever row holds both. Two things use
@@ -582,8 +611,9 @@
 			if ( done ) {
 				done.hidden = 'done' !== which;
 			}
+			// No known gun, no pulse: "Race day" says what is known.
 			if ( live ) {
-				live.hidden = 'live' !== which;
+				live.hidden = dayOnly || 'live' !== which;
 			}
 		}
 
@@ -598,8 +628,12 @@
 
 			if ( now >= start ) {
 				show( 'live' );
+				var current = wave( now );
+				if ( current && from && current.l ) {
+					from.textContent = current.l;
+				}
 				if ( elapsedValue ) {
-					elapsedValue.textContent = clock( now - start );
+					elapsedValue.textContent = clock( now - ( current ? current.t : start ) );
 				}
 				return;
 			}

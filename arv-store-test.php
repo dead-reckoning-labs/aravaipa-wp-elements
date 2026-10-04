@@ -1373,10 +1373,18 @@ t( 'and the year, not just the day',   false !== strpos( $week, 'August 29, 2026
 // right one.
 t( 'each race has its own clock',      2 === substr_count( $week, 'data-arv-results-clock' ) );
 t( 'each carrying a real start time',  2 === substr_count( $week, 'data-arv-start=' ) );
-t( 'a live marker each',               2 === substr_count( $week, 'data-arv-results-live' ) );
+// Neither race has a board or a director's gun time in this section, so
+// neither gets a pulse, a countdown or an elapsed clock: those used to run
+// off midnight in Phoenix, which is a made-up start (Catalina State Park
+// read "Starts in 1:13:41" at 10:46 PM the night before a 6:00 AM gun).
+t( 'no live marker without a gun time', 0 === substr_count( $week, 'data-arv-results-live' ) );
 t( 'and a completed marker each',      2 === substr_count( $week, 'arv-results__done' ) );
-t( 'the countdown is the visible one', (bool) preg_match( '/arv-results__countdown" data-arv-results-countdown>/', $week ) );
-t( 'live is hidden before the start',  2 === substr_count( $week, 'data-arv-results-live hidden' ) );
+t( 'and no countdown to a guessed hour', false === strpos( $week, 'data-arv-results-countdown' ) );
+t( 'race day is hidden before the day', 2 === substr_count( $week, 'arv-results__elapsed--day" data-arv-results-elapsed hidden' ) );
+t( 'the clock is marked day-only',     2 === substr_count( $week, 'data-arv-day-only' ) );
+// The day switches at the race's own midnight: Rock Hawk is Colorado.
+t( 'at the race\'s own midnight',      false !== strpos( $week, 'data-arv-start="2026-08-29T00:00:00-06:00"' ) );
+t( 'ending with its last day',         false !== strpos( $week, 'data-arv-cutoff="2026-08-30T06:00:00+00:00"' ) );
 t( 'completed is hidden too',          2 === substr_count( $week, 'arv-results__done" hidden' ) );
 
 // The countdown text is written by PHP, not left for the script. WP Rocket
@@ -1384,8 +1392,9 @@ t( 'completed is hidden too',          2 === substr_count( $week, 'arv-results__
 // real visitor sees first, which is what shipped and read "First race in"
 // followed by nothing.
 // No "in" here: the "Starts in" label beside it already says that.
-t( 'the countdown has a server value', (bool) preg_match( '/countdown-value"[^>]*>\\d+ (hour|day)/', $week ) );
-t( 'and a label saying what it is',    false !== strpos( $week, 'Starts in' ) );
+t( 'no countdown value either',        ! preg_match( '/countdown-value"[^>]*>\\d+ (hour|day)/', $week ) );
+t( 'and no "Starts in" label',         false === strpos( $week, 'Starts in' ) );
+t( 'and no start line on the card',    false === strpos( $week, 'arv-results__week-times' ) );
 t( 'and no "first race in" label',     false === strpos( $week, 'First race in' ) );
 
 // Name and logo both go to the race's own page. The logo link is hidden
@@ -1418,7 +1427,7 @@ t( 'and handles a space',              '50K' === arv_results_distance_label( '50
 // Race day.
 $GLOBALS['NOW'] = '2026-08-29';
 $live = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
-t( 'on race day the live marker shows', (bool) preg_match( '/data-arv-results-live>/', $live ) );
+t( 'on race day it says Race day',     (bool) preg_match( '/arv-results__elapsed--day" data-arv-results-elapsed>Race day/', $live ) );
 t( 'and the countdown is hidden',       2 === substr_count( $live, 'data-arv-results-countdown="' ) - substr_count( $live, 'hidden><span class="arv-results__countdown-value"' ) ? true : true );
 t( 'completed is still hidden',         2 === substr_count( $live, 'arv-results__done" hidden' ) );
 
@@ -1428,7 +1437,7 @@ $GLOBALS['NOW'] = '2026-08-30';
 $done = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
 t( 'a finished race stays listed',      false !== strpos( $done, 'Rock Hawk' ) );
 t( 'marked completed',                  (bool) preg_match( '/arv-results__done">/', $done ) );
-t( 'with live now hidden',              2 === substr_count( $done, 'data-arv-results-live hidden' ) );
+t( 'with no live marker',               0 === substr_count( $done, 'data-arv-results-live' ) );
 t( 'and its state class set',           false !== strpos( $done, 'arv-results__week-race--done' ) );
 
 // But not forever: once it is old news the archive below owns it.
@@ -1500,7 +1509,7 @@ $mon = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' =>
 $mon_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $mon, $mm ) ? $mm[0] : '';
 t( 'Monday brings the coming weekend',  false !== strpos( $mon_week, 'Snow Mountain Ranch' ) );
 t( 'the whole weekend, not one race',   false !== strpos( $mon_week, 'Mogollon Monster' ) );
-t( 'and it counts down to the start',   false !== strpos( $mon_week, 'Starts in' ) );
+t( 'but never to a midnight it made up', false === strpos( $mon_week, 'Starts in' ) );
 
 // The week is a week, not a rolling window: the following weekend waits.
 t( 'the weekend after still waits',     false === strpos( $mon_week, 'Jangover' ) );
@@ -7158,6 +7167,115 @@ t( 'so it does not re-request',         1 === $GLOBALS['_http_calls'] );
 
 $GLOBALS['_transients'] = array();
 $GLOBALS['_http_queue'] = array();
+
+// --------------------------------------- Start and cutoff on race week --
+// Jamil, 2026-10-03, 10:46 PM in Phoenix: Bear Chase read "Elapsed 18:16:18"
+// with no hint of which gun that was from, and Catalina State Park read
+// "Starts in 1:13:41", counting to midnight. Board data below is the real
+// the_bear_chase-2026 entry from live.aravaiparunning.com.
+echo "\nrace week start and cutoff:\n";
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_race_store_import(
+	"The Bear Chase | 2026-10-03 | October 3-4 | 100K | 50 Mile | 50K | Half Marathon | Baby Bear 10K | 5K | Bear Creek Lake Park | Lakewood, CO | https://ultrasignup.com/register.aspx?dtid=63926 | https://www.aravaiparunning.com/the-bear-chase-race/ | https://example.com/bc.png | 2026-10-04 | https://live.aravaiparunning.com/#/the_bear_chase-2026 | 2026-09-28 | 1 | 0 | 39.6508843 | -105.1419767\n"
+	. "Catalina State Park 50-Year | 2026-10-04 | October 4 | 9.3 Mile | 5K | Catalina State Park | Tucson, AZ | https://runsignup.com/Race/AZ/Tucson/CSP50YearTrailRaceand5kRoadRun | https://www.aravaiparunning.com/catalina-50-year/ | https://example.com/csp.png |  |  |  | 1 | 0 | 32.4333938 | -110.9134124",
+	true
+);
+arv_live_store_set( array(
+	array(
+		'slug'   => 'the_bear_chase-2026',
+		'start'  => '2026-10-03T11:30:00.000Z',
+		'cutoff' => '2026-10-04T17:00:00.000Z',
+		'offset' => -6,
+		'races'  => array(
+			array( 'id' => 302256, 'name' => '100K', 'start' => '2026-10-03T11:30:00.000Z' ),
+			array( 'id' => 302257, 'name' => '50 Mile', 'start' => '2026-10-03T12:30:00.000Z' ),
+			array( 'id' => 302252, 'name' => '50K', 'start' => '2026-10-03T13:30:00.000Z' ),
+			array( 'id' => 302255, 'name' => 'Half Marathon Sunday', 'start' => '2026-10-04T13:00:00.000Z' ),
+			array( 'id' => 302253, 'name' => '10K Sunday', 'start' => '2026-10-04T14:00:00.000Z' ),
+			array( 'id' => 302254, 'name' => '5K Sunday', 'start' => '2026-10-04T14:30:00.000Z' ),
+		),
+	),
+) );
+
+// 10:46 PM in Phoenix is 05:46Z, 11:46 PM in Lakewood.
+$GLOBALS['NOW']    = '2026-10-03';
+$GLOBALS['NOW_TS'] = strtotime( '2026-10-04T05:46:18Z' );
+$rw      = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$rw_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $rw, $rwm ) ? $rwm[0] : '';
+$bc      = preg_match( '/<li class="arv-results__week-race[^"]*">(?:(?!<\/li>).)*Bear Chase.*?<\/li>/s', $rw_week, $bcm ) ? $bcm[0] : '';
+$csp     = preg_match( '/<li class="arv-results__week-race[^"]*">(?:(?!<\/li>).)*Catalina.*?<\/li>/s', $rw_week, $cm ) ? $cm[0] : '';
+
+t( 'both races are in race week',       '' !== $bc && '' !== $csp );
+// Mountain Daylight, from the board's own -6 agreeing with Colorado's zone.
+t( 'Bear Chase lists Saturday starts',  false !== strpos( strip_tags( $bc ), 'Sat 100K 5:30 AM, 50 Mile 6:30 AM, 50K 7:30 AM MDT' ) );
+t( 'and Sunday, day word dropped',      false !== strpos( strip_tags( $bc ), 'Sun Half Marathon 7:00 AM, 10K 8:00 AM, 5K 8:30 AM MDT' ) );
+t( 'and the board cutoff, local',       false !== strpos( $bc, '<dt>Cutoff</dt><dd>Sun 11:00 AM MDT</dd>' ) );
+t( 'it is live',                        false !== strpos( $bc, 'data-arv-results-live>' ) );
+t( 'elapsed names the 100K gun',        false !== strpos( $bc, '<span data-arv-results-elapsed-from>100K</span> elapsed' ) );
+t( 'and counts from it',                false !== strpos( $bc, '>18:16:18<' ) );
+t( 'the script gets both race days',    false !== strpos( $bc, 'data-arv-waves=' ) && false !== strpos( $bc, '2026-10-04T13:00:00+00:00' ) );
+t( 'and stops at the cutoff',           false !== strpos( $bc, 'data-arv-cutoff="2026-10-04T17:00:00+00:00"' ) );
+
+// Catalina has no board and no gun time on file: no countdown to midnight.
+t( 'Catalina has no countdown',         false === strpos( $csp, 'Starts in' ) && false === strpos( $csp, 'data-arv-results-countdown' ) );
+t( 'and no start line it cannot know',  false === strpos( $csp, 'arv-results__week-times' ) );
+t( 'and no pulse',                      false === strpos( $csp, 'data-arv-results-live' ) );
+t( 'its day switches in Arizona time',  false !== strpos( $csp, 'data-arv-start="2026-10-04T00:00:00-07:00"' ) );
+
+// Sunday 7:30 AM in Lakewood: the half is running, so the clock is its.
+$GLOBALS['NOW']    = '2026-10-04';
+$GLOBALS['NOW_TS'] = strtotime( '2026-10-04T13:30:00Z' );
+$sun_rw  = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'Sunday, elapsed is the half\'s',    false !== strpos( $sun_rw, '<span data-arv-results-elapsed-from>Half Marathon</span> elapsed' ) );
+t( 'thirty minutes in',                 false !== strpos( $sun_rw, '>00:30:00<' ) );
+
+// After the cutoff: completed.
+$GLOBALS['NOW_TS'] = strtotime( '2026-10-04T17:30:00Z' );
+$after_rw = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'past the cutoff it is completed',   (bool) preg_match( '/Bear Chase.*?arv-results__done">Completed/s', $after_rw ) );
+
+// A director's per-distance guns for a boardless race, with its cutoff as
+// a duration: Catalina's own page says 9.3 Mile 6:00, 5K 6:20, cutoff 9:00.
+arv_race_start_store_set( array(
+	'Catalina State Park 50-Year' => array(
+		'tz'        => 'America/Phoenix',
+		'distances' => array( '9.3 Mile' => '06:00', '5K' => '06:20', 'Bad' => '6am' ),
+	),
+) );
+arv_race_cutoff_store_set( array( 'Catalina State Park 50-Year' => 3 ) );
+$stored = arv_race_start_store_get();
+t( 'distances alone set the start',     '06:00' === $stored['Catalina State Park 50-Year']['time'] );
+t( 'a bad distance time is dropped',    ! isset( $stored['Catalina State Park 50-Year']['distances']['Bad'] ) );
+
+$GLOBALS['NOW']    = '2026-10-03';
+$GLOBALS['NOW_TS'] = strtotime( '2026-10-04T05:46:18Z' );
+$ovr  = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+$csp2 = preg_match( '/<li class="arv-results__week-race[^"]*">(?:(?!<\/li>).)*Catalina.*?<\/li>/s', $ovr, $cm2 ) ? $cm2[0] : '';
+// Arizona is MST all year: 6:00 AM there is 13:00Z in October.
+t( 'Catalina lists both guns in MST',   false !== strpos( strip_tags( $csp2 ), 'Sun 9.3 Mile 6:00 AM, 5K 6:20 AM MST' ) );
+t( 'and its cutoff with the limit',     false !== strpos( $csp2, '<dt>Cutoff</dt><dd>Sun 9:00 AM MST (3 hr limit)</dd>' ) );
+t( 'counting to the real gun',          false !== strpos( $csp2, 'data-arv-start="2026-10-04T13:00:00+00:00"' ) );
+t( 'about seven hours out',             (bool) preg_match( '/countdown-value"[^>]*>7 hours</', $csp2 ) );
+
+// One gun for everyone reads as one line.
+arv_race_start_store_set( array( 'Catalina State Park 50-Year' => array( 'time' => '06:00', 'tz' => 'America/Phoenix' ) ) );
+$one  = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+t( 'a single start is one line',        false !== strpos( $one, '<dt>Start</dt><dd>Sun 6:00 AM MST</dd>' ) );
+t( 'and the clock just says Elapsed',   false === strpos( preg_replace( '/^.*?Catalina/s', '', $one ), 'data-arv-results-elapsed-from' ) );
+
+// Zones: the state map, checked against the board, a fixed offset when
+// they disagree, and nothing guessed for a split state.
+t( 'CO is Denver',                      'America/Denver' === arv_race_state_zone( 'Lakewood, CO' ) );
+t( 'AZ is Phoenix',                     'America/Phoenix' === arv_race_state_zone( 'Tucson, AZ' ) );
+t( 'TN is not guessed',                 '' === arv_race_state_zone( 'Chattanooga, TN' ) );
+$odd = arv_race_timezone( array( 'name' => 'X', 'location' => 'Somewhere, AZ' ), array( 'start' => '2026-10-03T12:00:00Z', 'offset' => -6 ) );
+t( 'a board that disagrees wins',       'UTC-6' === arv_race_zone_label( strtotime( '2026-10-03T12:00:00Z' ), $odd ) );
+
+arv_race_start_store_set( array() );
+arv_race_cutoff_store_set( array() );
+$GLOBALS['NOW_TS'] = null;
+$GLOBALS['ARV_OPTIONS'] = array();
+arv_race_store_import( $ROWS, true );
 
 
 echo "\n$pass passed, $fail failed\n";

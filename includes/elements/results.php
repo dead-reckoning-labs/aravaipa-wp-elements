@@ -898,6 +898,7 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			'image'     => $race['image'],
 			'page'      => $race['page'],
 			'location'  => $race['location'],
+			'end'       => $race['end'],
 			'distances' => $race['distances'],
 			'url'       => $action['url'],
 			'live'      => $race['live'],
@@ -981,7 +982,16 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			$out .= '<span class="arv-results__week-place">' . esc_html( $state_code ) . '</span>';
 		}
 
-		$out .= arv_results_week_live_badge( $race );
+		// Start and cutoff, worked out once and used twice: printed under
+		// the distances, and handed to the clock in the status cell.
+		$schedule = arv_race_schedule( $race, $race['board'] );
+
+		// The pulse only for a race with a real gun to switch it on. With
+		// no start time it would light at midnight in Phoenix, hours before
+		// anyone runs, so a race with no clock says "Race day" instead.
+		if ( $schedule['first'] > 0 ) {
+			$out .= arv_results_week_live_badge( $race );
+		}
 		$out .= '</span>';
 
 		$distances = arv_split_distances( $race['distances'] );
@@ -997,6 +1007,8 @@ function arv_results_race_week( $today, $grace = 3 ) {
 			}
 			$out .= '</span>';
 		}
+
+		$out .= arv_race_schedule_markup( $schedule );
 
 		$out .= '</div>';
 
@@ -1181,78 +1193,116 @@ function arv_results_race_social( $race ) {
  * The three states one race passes through across its own weekend.
  *
  * All three are rendered and two are hidden, so the transitions need no
- * request: a page left open through Friday night becomes "live" on its own
- * at midnight. PHP decides which one starts visible, which means a reader
- * with no JavaScript, or one behind WP Rocket's delayed-JS setting, still
- * gets the right one for whenever the page was built.
+ * request: a page left open through the night becomes "live" on its own at
+ * the gun. PHP decides which one starts visible, which means a reader with
+ * no JavaScript, or one behind WP Rocket's delayed-JS setting, still gets
+ * the right one for whenever the page was built.
  *
  * The countdown carries a server-rendered value rather than an empty span
  * waiting to be filled. WP Rocket holds scripts until the visitor interacts
  * with the page, so an empty span is what a real visitor sees first: the
  * live site was showing "First race in" followed by nothing at all.
  *
- * "Completed" is decided by the day, not a cutoff time. The store keeps
- * dates, so the honest claim is that the race is over once its last day
- * is, and the label says completed rather than naming a cutoff we do not
- * have.
+ * Only ever counts to a real gun: the board's, or a director's. It used to
+ * fall back to midnight in Phoenix when it had neither, which put "Starts in
+ * 1:13:41" on Catalina State Park at 10:46 PM the night before a 6:00 AM
+ * start. A race with no known start now gets no countdown and no elapsed
+ * clock at all, only "Race day" on the day and "Completed" after it, both
+ * switched at midnight in the race's own zone.
  *
- * @param array $race
+ * Elapsed runs from the first gun of the latest race day that has started
+ * (arv_race_current_wave()). On a one-day race that is simply the first
+ * start. On Bear Chase it is the 100K's 5:30 AM gun through Saturday night,
+ * then the half marathon's 7:00 AM gun on Sunday; the distance it is
+ * measuring from is named beside it, "100K elapsed", whenever a race has
+ * more than one start time, so the number is never ambiguous. It stops and
+ * flips to "Completed" at the cutoff.
+ *
+ * @param array $race Needs name, iso, board, state; location and end when
+ *                    known, for the race's zone and its last day.
  * @return string
  */
 function arv_results_week_status( $race ) {
-	$board  = $race['board'];
-	$has    = ( null !== $board && '' !== $board['start'] );
+	$board    = isset( $race['board'] ) ? $race['board'] : null;
+	$schedule = arv_race_schedule( $race, $board );
+	$known    = ( $schedule['first'] > 0 );
 
-	// A director-told start time, for the race that has no board but does
-	// have one of these: see arv_race_start_override_ts(). Checked whenever
-	// there is no board rather than only when nobody else can answer,
-	// because a board that has not started scoring yet and a hand-entered
-	// gun time are not in conflict, but "no board" and "we were told 8am"
-	// are the exact case this exists for.
-	$override_ts = ( ! $has && function_exists( 'arv_race_start_override_ts' ) )
-		? arv_race_start_override_ts( $race['name'], $race['iso'] )
-		: null;
-
-	// The board's clock where it has one, the director's where that is all
-	// that exists, midnight on race day where neither does. The last of
-	// those is the honest fallback rather than a guess at a start time: it
-	// is what the store actually knows.
-	if ( $has ) {
-		$start = gmdate( 'c', strtotime( $board['start'] ) );
-	} elseif ( null !== $override_ts ) {
-		$start = gmdate( 'c', $override_ts );
+	if ( $known ) {
+		$start     = gmdate( 'c', $schedule['first'] );
+		$cutoff_ts = arv_results_backstop_cutoff( $schedule['cutoff'], $start );
 	} else {
-		$start = arv_results_start_iso( $race['iso'] );
+		// No gun time from anyone: the day itself, in the race's own zone,
+		// is all that can be switched on. Nothing counts to it.
+		$last = ( ! empty( $race['end'] ) && $race['end'] >= $race['iso'] ) ? $race['end'] : $race['iso'];
+
+		try {
+			$start     = ( new DateTime( $race['iso'] . ' 00:00:00', $schedule['tz'] ) )->format( 'c' );
+			$cutoff_ts = ( new DateTime( $last . ' 00:00:00', $schedule['tz'] ) )->modify( '+1 day' )->getTimestamp();
+		} catch ( Exception $e ) {
+			$start     = arv_results_start_iso( $race['iso'] );
+			$cutoff_ts = strtotime( $start ) + DAY_IN_SECONDS;
+		}
 	}
 
-	$cutoff_ts = function_exists( 'arv_race_cutoff_for' ) ? arv_race_cutoff_for( $race['name'], $board, strtotime( $start ) ) : 0;
-	$cutoff_ts = arv_results_backstop_cutoff( $cutoff_ts, $start );
-	$cutoff    = $cutoff_ts ? gmdate( 'c', $cutoff_ts ) : '';
+	$cutoff = $cutoff_ts ? gmdate( 'c', $cutoff_ts ) : '';
+
+	// More than one race day: the script steps the elapsed clock from one
+	// day's first gun to the next, the same rule the server applies below.
+	$waves = '';
+	if ( $known && count( $schedule['waves'] ) > 1 ) {
+		$list = array();
+		foreach ( $schedule['waves'] as $wave ) {
+			$list[] = array(
+				't' => gmdate( 'c', $wave['ts'] ),
+				'l' => $wave['label'],
+			);
+		}
+		$waves = ' data-arv-waves="' . esc_attr( wp_json_encode( $list ) ) . '"';
+	}
 
 	$out = '<span class="arv-results__week-status" data-arv-results-clock'
 		. ' data-arv-start="' . esc_attr( $start ) . '"'
 		. ( '' !== $cutoff ? ' data-arv-cutoff="' . esc_attr( $cutoff ) . '"' : '' )
+		. ( $known ? '' : ' data-arv-day-only' )
+		. $waves
 		. '>';
 
-	// Same three-way choice as $start above, so the server-rendered text a
-	// reader sees before the clock script runs already says "in 6 hours"
-	// rather than a coarse "today" that the script then visibly corrects.
-	$countdown_source = $has ? $board['start'] : ( null !== $override_ts ? $start : '' );
+	if ( ! $known ) {
+		// Same three states, none of them a number. The script still
+		// switches them, at the race's own midnight, because nothing here
+		// writes a value it would have to compute.
+		$out .= '<span class="arv-results__elapsed arv-results__elapsed--day" data-arv-results-elapsed'
+			. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
+			. esc_html( __( 'Race day', 'aravaipa-elements' ) )
+			. '</span>';
+	} else {
+		$out .= '<span class="arv-results__countdown" data-arv-results-countdown'
+			. ( 'soon' === $race['state'] ? '' : ' hidden' ) . '>'
+			. '<span class="arv-results__clock-label">' . esc_html( __( 'Starts in', 'aravaipa-elements' ) ) . '</span> '
+			. '<span class="arv-results__countdown-value" data-arv-results-countdown-value>'
+			. esc_html( arv_results_countdown_text( $race['iso'], $start ) )
+			. '</span></span>';
 
-	$out .= '<span class="arv-results__countdown" data-arv-results-countdown'
-		. ( 'soon' === $race['state'] ? '' : ' hidden' ) . '>'
-		. '<span class="arv-results__clock-label">' . esc_html( __( 'Starts in', 'aravaipa-elements' ) ) . '</span> '
-		. '<span class="arv-results__countdown-value" data-arv-results-countdown-value>'
-		. esc_html( arv_results_countdown_text( $race['iso'], $countdown_source ) )
-		. '</span></span>';
+		$distinct = count( array_unique( arv_race_schedule_instants( $schedule['starts'] ) ) );
+		$wave     = arv_race_current_wave( $schedule['waves'], arv_results_now() );
+		if ( null === $wave && ! empty( $schedule['waves'] ) ) {
+			$wave = $schedule['waves'][0];
+		}
+		$from_ts    = ( null !== $wave ) ? $wave['ts'] : $schedule['first'];
+		$from_label = ( $distinct > 1 && null !== $wave ) ? $wave['label'] : '';
 
-	$out .= '<span class="arv-results__elapsed" data-arv-results-elapsed'
-		. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
-		. '<span class="arv-results__clock-label">' . esc_html( __( 'Elapsed', 'aravaipa-elements' ) ) . '</span> '
-		. '<span class="arv-results__elapsed-value" data-arv-results-elapsed-value>'
-		. esc_html( arv_results_elapsed_text( $countdown_source ) )
-		. '</span>'
-		. '</span>';
+		$label = ( '' !== $from_label )
+			? '<span data-arv-results-elapsed-from>' . esc_html( $from_label ) . '</span> ' . esc_html( __( 'elapsed', 'aravaipa-elements' ) )
+			: esc_html( __( 'Elapsed', 'aravaipa-elements' ) );
+
+		$out .= '<span class="arv-results__elapsed" data-arv-results-elapsed'
+			. ( 'live' === $race['state'] ? '' : ' hidden' ) . '>'
+			. '<span class="arv-results__clock-label">' . $label . '</span> '
+			. '<span class="arv-results__elapsed-value" data-arv-results-elapsed-value>'
+			. esc_html( 'live' === $race['state'] ? arv_results_elapsed_text( gmdate( 'c', $from_ts ) ) : '' )
+			. '</span>'
+			. '</span>';
+	}
 
 	$out .= '<span class="arv-results__done"'
 		. ( 'done' === $race['state'] ? '' : ' hidden' ) . '>'
@@ -1288,6 +1338,13 @@ function arv_results_countdown_text( $iso, $start = '' ) {
 	if ( ! is_numeric( $now ) ) {
 		$today = function_exists( 'arv_upcoming_races_today' ) ? arv_upcoming_races_today() : gmdate( 'Y-m-d' );
 		$now   = strtotime( $today . ' 00:00:00' );
+	}
+
+	// A real gun is a real instant, so it is measured against the real
+	// now. current_time( 'timestamp' ) is shifted by the site's offset and
+	// would read a 6:00 AM start as seven hours further off than it is.
+	if ( '' !== $start && function_exists( 'arv_results_now' ) ) {
+		$now = arv_results_now();
 	}
 
 	$target = ( '' !== $start ) ? strtotime( $start ) : strtotime( $iso . ' 00:00:00' );
