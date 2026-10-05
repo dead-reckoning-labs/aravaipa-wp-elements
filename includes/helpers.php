@@ -1451,6 +1451,7 @@ function arv_race_terrain( $name ) {
 			'Run Around Tucson (RAT)',
 			'Run with the Roosters',
 			'Across the Years',
+			'Madeline Island Marathon',
 		)
 	);
 
