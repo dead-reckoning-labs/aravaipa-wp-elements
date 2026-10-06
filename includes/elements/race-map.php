@@ -205,6 +205,15 @@ function arv_race_map_render( $data ) {
 			$display_date .= ', ' . $year_str;
 		}
 
+		// A generator-guessed date (last running plus a year) is not a date
+		// anyone has committed to, and the race cards already say TBD for
+		// these. The popup printed the guess as fact: Westminster "August 15,
+		// 2027", Baldface "July 25, 2027" while its own page said June 19.
+		// Even the month can be wrong, so no part of the guess is shown.
+		if ( ! empty( $race['guessed'] ) ) {
+			$display_date = __( 'Date TBD', 'aravaipa-elements' );
+		}
+
 		$region = arv_race_store_region_for( $race );
 		$logo   = isset( $logo_map[ $region ] ) ? $logo_map[ $region ] : '';
 		// Bad Beard's mark is white artwork on transparency, so on the
