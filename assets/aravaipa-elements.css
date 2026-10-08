@@ -247,7 +247,6 @@
 	flex-direction: column;
 	padding: 1.5rem;
 	border: 1px solid var(--arv-line);
-	border-top: 4px solid var(--arv-accent);
 	background: #fff;
 }
 
@@ -325,7 +324,7 @@
 .arv-timeline__day-label {
 	margin: 0 0 0.5rem;
 	padding-bottom: 0.5rem;
-	border-bottom: 2px solid var(--arv-accent);
+	border-bottom: 1px solid var(--arv-line);
 	font-size: var(--arv-fs-lead);
 	font-weight: 800;
 	letter-spacing: 0.04em;
@@ -433,7 +432,6 @@
 	min-width: 5.5rem;
 	padding: 1rem 0.75rem;
 	border: 1px solid var(--arv-line);
-	border-top: 4px solid var(--arv-accent);
 	background: #fff;
 }
 
@@ -3403,13 +3401,12 @@
 
 /* Same amber as a sold-out race's waitlist button and the card's price
    rise note: this site's one colour for "act now, on a real deadline"
-   rather than a fresh one invented for this line. A left border rather
-   than a filled background, so it reads as a note attached to the CTA
-   beneath it rather than as a second button competing with it. */
+   rather than a fresh one invented for this line. Coloured text only, no
+   fill and no edge stripe (no color bars rule), so it reads as a note
+   attached to the CTA beneath it rather than as a second button. */
 .arv-featured__deadline {
 	margin: 0 0 1.1rem;
-	padding: 0.5rem 0 0.5rem 0.85rem;
-	border-left: 3px solid #daa520;
+	padding: 0.5rem 0;
 	max-width: 26rem;
 	font-size: var(--arv-fs-meta);
 	font-weight: 600;
@@ -4461,7 +4458,7 @@
 	margin: 0;
 	padding: 0.55rem 0;
 	background: #ffffff;
-	border-bottom: 2px solid var(--arv-teal);
+	border-bottom: 1px solid var(--arv-results-rule);
 	font-size: var(--arv-fs-label);
 	font-weight: 800;
 	letter-spacing: 0.1em;
