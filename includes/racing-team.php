@@ -74,6 +74,10 @@ function arv_racing_team_shortcode( $atts ) {
 	// the shortcode, so repeating it here printed "Notable Alumni" twice.
 	$show_headings = count( $groups ) > 1;
 
+	// Counts cards across groups, so only the first row on the page loads
+	// eagerly, not the first row of every division.
+	$card_index = 0;
+
 	foreach ( $groups as $division => $members ) {
 		$out .= '<section class="arv-team__group" data-arv-team-group="' . esc_attr( sanitize_title( $division ) ) . '">';
 
@@ -83,7 +87,7 @@ function arv_racing_team_shortcode( $atts ) {
 		$out .= '<div class="arv-team__grid">';
 
 		foreach ( $members as $athlete ) {
-			$out .= arv_racing_team_card_markup( $athlete );
+			$out .= arv_racing_team_card_markup( $athlete, $card_index++ );
 		}
 
 		$out .= '</div></section>';
@@ -212,7 +216,7 @@ function arv_racing_team_filter_button( $slug, $label, $active ) {
  * @param array $athlete
  * @return string
  */
-function arv_racing_team_card_markup( $athlete ) {
+function arv_racing_team_card_markup( $athlete, $index = 99 ) {
 	$slugs = array_map( 'sanitize_title', $athlete['divisions'] );
 
 	$alumni = 'alumni' === $athlete['status'];
@@ -226,8 +230,7 @@ function arv_racing_team_card_markup( $athlete ) {
 	$out .= ' data-arv-team-text="' . esc_attr( $haystack ) . '">';
 
 	if ( $athlete['photo'] ) {
-		$out .= '<img class="arv-team__photo" src="' . esc_url( $athlete['photo'] ) . '" alt="'
-			. esc_attr( $athlete['name'] ) . '" loading="lazy" width="400" height="400" />';
+		$out .= arv_racing_team_photo_markup( $athlete, $index < 4 );
 	} else {
 		// A placeholder rather than nothing: a card with no image collapsed
 		// to its text and left the grid ragged around it, which read as
@@ -253,6 +256,71 @@ function arv_racing_team_card_markup( $athlete ) {
 	$out .= '</a>';
 
 	return $out;
+}
+
+/**
+ * A roster card photo, sized for the card it sits in.
+ *
+ * The cards are 4:5 PNGs. Served as they were, through Photon at 540x675
+ * with no quality set, each came back as a lossless WebP or PNG of 300 to
+ * 700KB, about 26MB for the roster, to fill a card that is never wider than
+ * 256 CSS pixels. Asking Photon for the card's real widths at quality 80
+ * with metadata stripped brings one to about 30KB.
+ *
+ * Built here rather than left to Jetpack's content filter, which rewrites
+ * the src but never adds a quality or a srcset. Without Jetpack (or with
+ * Photon off) this falls back to the plain upload URL, as before.
+ *
+ * The first row loads eagerly: it is on screen on arrival at every width
+ * the grid has. Everything below is lazy.
+ *
+ * @param array $athlete
+ * @param bool  $eager
+ * @return string
+ */
+function arv_racing_team_photo_markup( $athlete, $eager ) {
+	$src    = $athlete['photo'];
+	$srcset = array();
+
+	if ( function_exists( 'jetpack_photon_url' ) ) {
+		$original = arv_racing_team_unphoton( $src );
+
+		foreach ( array( 280, 400, 540 ) as $w ) {
+			$h        = (int) round( $w * 5 / 4 );
+			$srcset[] = esc_url( jetpack_photon_url( $original, array( 'resize' => $w . ',' . $h, 'quality' => 80, 'strip' => 'all' ) ) ) . ' ' . $w . 'w';
+		}
+
+		$src = jetpack_photon_url( $original, array( 'resize' => '400,500', 'quality' => 80, 'strip' => 'all' ) );
+	}
+
+	$out = '<img class="arv-team__photo" src="' . esc_url( $src ) . '"';
+
+	if ( $srcset ) {
+		// Matches the grid: 2 columns under 600px, 3 to 900px, 4 above,
+		// inside a container that stops growing at about 1100px.
+		$out .= ' srcset="' . implode( ', ', $srcset ) . '"'
+			. ' sizes="(min-width: 1100px) 256px, (min-width: 900px) 23vw, (min-width: 600px) 30vw, 45vw"';
+	}
+
+	$out .= ' alt="' . esc_attr( $athlete['name'] ) . '" width="540" height="675" decoding="async"'
+		. ( $eager ? ' fetchpriority="high"' : ' loading="lazy"' ) . ' />';
+
+	return $out;
+}
+
+/**
+ * The original upload URL behind a Photon URL, so its arguments can be set
+ * fresh rather than appended to an existing ?fit=.
+ *
+ * @param string $url
+ * @return string
+ */
+function arv_racing_team_unphoton( $url ) {
+	if ( preg_match( '~^https?://i[0-3]\.wp\.com/(.+?)(?:\?.*)?$~', $url, $m ) ) {
+		return 'https://' . $m[1];
+	}
+
+	return $url;
 }
 
 /**
