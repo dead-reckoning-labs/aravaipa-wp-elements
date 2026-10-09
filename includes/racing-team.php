@@ -295,14 +295,326 @@ function arv_athlete_profile_content( $content ) {
 		return $content;
 	}
 
+	// The bio is tidied on the way out rather than in the database: what
+	// the athlete wrote stays exactly as they wrote it, only the paste
+	// debris around it goes (see arv_athlete_profile_bio_markup()).
+	$handles = array();
+	$bio     = arv_athlete_profile_bio_markup( $content, $handles );
+
+	// The Instagram handles the bio carried move into the links row, which
+	// is the one place a handle now appears. Most bios ended on the same
+	// handle the links row already showed, so the page printed it twice,
+	// three times on a bio that had it pasted twice.
+	$athlete['bio_handles'] = $handles;
+
 	return arv_athlete_profile_meta_markup( $athlete )
-		. $content
+		. ( '' !== $bio ? '<div class="arv-athlete__bio">' . $bio . '</div>' : '' )
+		. arv_athlete_profile_links_markup( $athlete )
 		. ( function_exists( 'arv_athlete_profile_upcoming_markup' ) ? arv_athlete_profile_upcoming_markup( $athlete ) : '' )
 		. ( function_exists( 'arv_athlete_profile_season_results_markup' ) ? arv_athlete_profile_season_results_markup( $athlete ) : '' )
 		. arv_athlete_profile_results_markup( $athlete )
 		. arv_athlete_profile_videos_markup( $athlete )
-		. ( function_exists( 'arv_athlete_profile_articles_markup' ) ? arv_athlete_profile_articles_markup( $athlete ) : '' )
-		. arv_athlete_profile_links_markup( $athlete );
+		. ( function_exists( 'arv_athlete_profile_articles_markup' ) ? arv_athlete_profile_articles_markup( $athlete ) : '' );
+}
+
+/**
+ * The bio, with the debris the old roster migration and email pastes left
+ * in it taken out.
+ *
+ * What comes out, and only this:
+ *  - A paragraph (or list) that is nothing but an Instagram handle. Its
+ *    handle is collected into $handles for the links row instead.
+ *  - The same handle hanging off the end of the last prose paragraph after
+ *    a line break ("...in the summer.<br>@co.dowe").
+ *  - Empty paragraphs and divs, including an Instagram link with no text.
+ *  - Gmail's <div dir="auto"> lines, which are turned back into paragraphs:
+ *    consecutive lines become one paragraph with line breaks, and the empty
+ *    div between them becomes the paragraph break it was standing in for.
+ *
+ * The athlete's own words are never touched.
+ *
+ * @param string $html
+ * @param array  $handles Filled with the Instagram handles found, no "@".
+ * @return string
+ */
+function arv_athlete_profile_bio_markup( $html, &$handles ) {
+	$handles = array();
+	$html    = trim( (string) $html );
+
+	if ( '' === $html || ! class_exists( 'DOMDocument' ) ) {
+		return $html;
+	}
+
+	$doc      = new DOMDocument();
+	$previous = libxml_use_internal_errors( true );
+	$loaded   = $doc->loadHTML(
+		'<?xml encoding="UTF-8"><div id="arv-bio-root">' . $html . '</div>',
+		LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+	);
+	libxml_clear_errors();
+	libxml_use_internal_errors( $previous );
+
+	$root = $loaded ? $doc->getElementById( 'arv-bio-root' ) : null;
+
+	if ( ! $root ) {
+		return $html;
+	}
+
+	$group = null;
+
+	foreach ( iterator_to_array( $root->childNodes ) as $node ) {
+		if ( XML_TEXT_NODE === $node->nodeType ) {
+			if ( '' === arv_athlete_bio_text( $node ) ) {
+				continue;
+			}
+			$group = null;
+			continue;
+		}
+
+		if ( XML_ELEMENT_NODE !== $node->nodeType ) {
+			continue;
+		}
+
+		if ( arv_athlete_bio_is_handle_block( $node ) ) {
+			arv_athlete_bio_collect_handles( $node, $handles );
+			$root->removeChild( $node );
+			continue;
+		}
+
+		if ( arv_athlete_bio_is_empty( $node ) ) {
+			$root->removeChild( $node );
+			$group = null;
+			continue;
+		}
+
+		arv_athlete_bio_strip_trailing_handle( $node, $handles );
+
+		// A Gmail line: a div holding only inline content.
+		if ( 'div' === strtolower( $node->nodeName ) && ! arv_athlete_bio_has_block_child( $node ) ) {
+			if ( $group ) {
+				$group->appendChild( $doc->createElement( 'br' ) );
+			} else {
+				$group = $doc->createElement( 'p' );
+				$root->insertBefore( $group, $node );
+			}
+
+			while ( $node->firstChild ) {
+				$group->appendChild( $node->firstChild );
+			}
+
+			$root->removeChild( $node );
+			continue;
+		}
+
+		$group = null;
+	}
+
+	$out = '';
+
+	foreach ( $root->childNodes as $child ) {
+		$out .= $doc->saveHTML( $child );
+	}
+
+	$handles = array_values( array_unique( $handles ) );
+
+	return trim( $out );
+}
+
+/**
+ * Visible text of a node, with non-breaking spaces folded and trimmed.
+ *
+ * @param DOMNode $node
+ * @return string
+ */
+function arv_athlete_bio_text( $node ) {
+	return trim( str_replace( "\xC2\xA0", ' ', $node->textContent ) );
+}
+
+/**
+ * Whether a node shows nothing: no text and no media.
+ *
+ * @param DOMElement $node
+ * @return bool
+ */
+function arv_athlete_bio_is_empty( $node ) {
+	if ( '' !== arv_athlete_bio_text( $node ) ) {
+		return false;
+	}
+
+	if ( in_array( strtolower( $node->nodeName ), array( 'img', 'iframe', 'video', 'hr', 'figure' ), true ) ) {
+		return false;
+	}
+
+	foreach ( array( 'img', 'iframe', 'video', 'svg', 'picture' ) as $tag ) {
+		if ( $node->getElementsByTagName( $tag )->length ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Whether a block is nothing but one or more Instagram handles.
+ *
+ * @param DOMElement $node
+ * @return bool
+ */
+function arv_athlete_bio_is_handle_block( $node ) {
+	$text = arv_athlete_bio_text( $node );
+
+	if ( '' === $text ) {
+		// An Instagram link with no text in it at all: still the handle line,
+		// just an empty one.
+		return '' !== arv_athlete_bio_first_ig_href( $node );
+	}
+
+	return (bool) preg_match( '/^(@[A-Za-z0-9_.]+[\s,]*)+$/', $text );
+}
+
+/**
+ * The first Instagram link's href inside a node, or ''.
+ *
+ * @param DOMElement $node
+ * @return string
+ */
+function arv_athlete_bio_first_ig_href( $node ) {
+	foreach ( $node->getElementsByTagName( 'a' ) as $a ) {
+		if ( false !== stripos( $a->getAttribute( 'href' ), 'instagram.com' ) ) {
+			return $a->getAttribute( 'href' );
+		}
+	}
+
+	return '';
+}
+
+/**
+ * The handle an Instagram link points at.
+ *
+ * Read off the href, not the link text: the text was typed by hand and is
+ * where the typos are (@00cyril.garica00 linking to 00cyril.garcia00,
+ * @shiftdev linking to shftdev). The text is the fallback for a link to a
+ * single post, whose URL carries no handle.
+ *
+ * @param string $href
+ * @param string $text
+ * @return string Handle without "@", or ''.
+ */
+function arv_athlete_bio_handle_from_link( $href, $text ) {
+	$path     = (string) wp_parse_url( $href, PHP_URL_PATH );
+	$segments = array_values( array_filter( explode( '/', $path ) ) );
+
+	if ( ! empty( $segments ) && ! in_array( strtolower( $segments[0] ), array( 'p', 'reel', 'reels', 'stories', 'tv', 'explore' ), true )
+		&& preg_match( '/^[A-Za-z0-9_.]+$/', $segments[0] ) ) {
+		return $segments[0];
+	}
+
+	if ( preg_match( '/@([A-Za-z0-9_.]+)/', $text, $m ) ) {
+		return $m[1];
+	}
+
+	return '';
+}
+
+/**
+ * Collect every handle in a handle-only block.
+ *
+ * @param DOMElement $node
+ * @param array      $handles
+ */
+function arv_athlete_bio_collect_handles( $node, &$handles ) {
+	$found = false;
+
+	foreach ( $node->getElementsByTagName( 'a' ) as $a ) {
+		$href = $a->getAttribute( 'href' );
+
+		if ( false === stripos( $href, 'instagram.com' ) ) {
+			continue;
+		}
+
+		$handle = arv_athlete_bio_handle_from_link( $href, arv_athlete_bio_text( $a ) );
+
+		if ( '' !== $handle ) {
+			$handles[] = $handle;
+			$found     = true;
+		}
+	}
+
+	// A bare "@handle" typed with no link at all.
+	if ( ! $found && preg_match_all( '/@([A-Za-z0-9_.]+)/', arv_athlete_bio_text( $node ), $m ) ) {
+		foreach ( $m[1] as $handle ) {
+			$handles[] = rtrim( $handle, '.' );
+		}
+	}
+}
+
+/**
+ * Take an Instagram handle off the end of a prose paragraph.
+ *
+ * Only when it is the very last thing in the paragraph and sits on its own
+ * line after a <br>, which is how the credit line was pasted in. A handle
+ * mentioned mid-sentence is part of what the athlete wrote and stays.
+ *
+ * @param DOMElement $node
+ * @param array      $handles
+ */
+function arv_athlete_bio_strip_trailing_handle( $node, &$handles ) {
+	$last = $node->lastChild;
+
+	while ( $last && XML_TEXT_NODE === $last->nodeType && '' === trim( $last->textContent ) ) {
+		$last = $last->previousSibling;
+	}
+
+	if ( ! $last || XML_ELEMENT_NODE !== $last->nodeType || 'a' !== strtolower( $last->nodeName ) ) {
+		return;
+	}
+
+	$href = $last->getAttribute( 'href' );
+	$text = arv_athlete_bio_text( $last );
+
+	if ( false === stripos( $href, 'instagram.com' ) || ! preg_match( '/^@[A-Za-z0-9_.]+$/', $text ) ) {
+		return;
+	}
+
+	$before = $last->previousSibling;
+
+	while ( $before && XML_TEXT_NODE === $before->nodeType && '' === trim( $before->textContent ) ) {
+		$before = $before->previousSibling;
+	}
+
+	if ( ! $before || 'br' !== strtolower( $before->nodeName ) ) {
+		return;
+	}
+
+	$handle = arv_athlete_bio_handle_from_link( $href, $text );
+
+	if ( '' !== $handle ) {
+		$handles[] = $handle;
+	}
+
+	// The link, the line break before it and any whitespace in between.
+	while ( $node->lastChild && $node->lastChild !== $before ) {
+		$node->removeChild( $node->lastChild );
+	}
+	$node->removeChild( $before );
+}
+
+/**
+ * Whether an element holds block-level children.
+ *
+ * @param DOMElement $node
+ * @return bool
+ */
+function arv_athlete_bio_has_block_child( $node ) {
+	$blocks = array( 'div', 'p', 'ul', 'ol', 'table', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'figure', 'section', 'iframe' );
+
+	foreach ( $node->childNodes as $child ) {
+		if ( XML_ELEMENT_NODE === $child->nodeType && in_array( strtolower( $child->nodeName ), $blocks, true ) ) {
+			return true;
+		}
+	}
+
+	return false;
 }
 add_filter( 'the_content', 'arv_athlete_profile_content' );
 
@@ -315,7 +627,9 @@ add_filter( 'the_content', 'arv_athlete_profile_content' );
 function arv_athlete_profile_meta_markup( $athlete ) {
 	$out = '<div class="arv-athlete__meta">';
 
-	if ( '' !== $athlete['hometown'] ) {
+	// The hometown is printed across the bottom of every card photo, so it
+	// only goes in as text when there is no photo to carry it.
+	if ( '' !== $athlete['hometown'] && empty( $athlete['photo'] ) ) {
 		$out .= '<span class="arv-athlete__hometown">' . esc_html( $athlete['hometown'] ) . '</span>';
 	}
 
@@ -345,7 +659,16 @@ function arv_athlete_profile_meta_markup( $athlete ) {
 		$out .= '<span class="arv-athlete__tag">' . esc_html( $tag ) . '</span>';
 	}
 
-	if ( 'alumni' === $athlete['status'] ) {
+	// Alumni sit in a division called "Notable Alumni", so the extra tag
+	// printed "NOTABLE ALUMNI · ALUMNI". Only added when no tag says it.
+	$says_alumni = false;
+	foreach ( $tags as $tag ) {
+		if ( false !== stripos( $tag, 'alumni' ) ) {
+			$says_alumni = true;
+		}
+	}
+
+	if ( 'alumni' === $athlete['status'] && ! $says_alumni ) {
 		$out .= '<span class="arv-athlete__tag arv-athlete__tag--alumni">' . esc_html__( 'Alumni', 'aravaipa-elements' ) . '</span>';
 	}
 
@@ -415,12 +738,15 @@ function arv_athlete_profile_results_markup( $athlete ) {
 		return '';
 	}
 
-	$out = '<div class="arv-athlete__results"><h2>' . esc_html__( 'Results', 'aravaipa-elements' ) . '</h2>';
+	// Not plain "Results": on most profiles this sits directly under the
+	// synced "2026 Results", and two headings saying Results read as the
+	// same list printed twice. This one is the hand-picked career record.
+	$out = '<div class="arv-athlete__results"><h2>' . esc_html__( 'Career Highlights', 'aravaipa-elements' ) . '</h2>';
 
 	foreach ( $years as $heading => $results ) {
 		$out .= '<h3 class="arv-athlete__results-year">' . esc_html( $heading ) . '</h3><ul class="arv-athlete__results-list">';
 		foreach ( $results as $result ) {
-			$out .= '<li>' . esc_html( $result ) . '</li>';
+			$out .= '<li>' . esc_html( arv_athlete_fix_ordinal( $result ) ) . '</li>';
 		}
 		$out .= '</ul>';
 	}
@@ -428,6 +754,17 @@ function arv_athlete_profile_results_markup( $athlete ) {
 	$out .= '</div>';
 
 	return $out;
+}
+
+/**
+ * Correct a leading 11st, 12nd or 13rd, which the hand-typed results carry
+ * ("11st Defi des Couleurs"). Only the leading place is touched.
+ *
+ * @param string $result
+ * @return string
+ */
+function arv_athlete_fix_ordinal( $result ) {
+	return preg_replace( '/^(\d*1[123])(?:st|nd|rd)\b/i', '$1th', $result );
 }
 
 /**
@@ -628,13 +965,7 @@ function arv_athlete_video_meta( $url ) {
 }
 
 /**
- * Social and results links, shown after the bio.
- *
- * Results, videos and tagged articles are deliberately not rendered here
- * yet: this ships the page and the data model first, wiring in the
- * existing results, films and articles stores is the next step, once every
- * athlete carries a real UltraSignup ID to join against rather than a name
- * that might not match.
+ * Social and results links, one row directly under the bio.
  *
  * @param array $athlete
  * @return string
@@ -642,10 +973,28 @@ function arv_athlete_video_meta( $url ) {
 function arv_athlete_profile_links_markup( $athlete ) {
 	$links = array();
 
-	if ( '' !== $athlete['instagram'] ) {
-		$links[] = array(
-			'url'   => 'https://www.instagram.com/' . ltrim( $athlete['instagram'], '@' ),
-			'label' => $athlete['instagram'],
+	// Handles the bio carried win over the stored field: they come from the
+	// link the athlete actually pasted, where the field was typed off its
+	// text and carries its typos. The field covers everyone else.
+	$handles = ! empty( $athlete['bio_handles'] ) ? $athlete['bio_handles'] : array();
+
+	if ( empty( $handles ) && '' !== $athlete['instagram'] ) {
+		$handles[] = ltrim( trim( $athlete['instagram'] ), '@' );
+	}
+
+	$seen = array();
+
+	foreach ( $handles as $handle ) {
+		$key = strtolower( $handle );
+
+		if ( '' === $handle || isset( $seen[ $key ] ) ) {
+			continue;
+		}
+
+		$seen[ $key ] = true;
+		$links[]      = array(
+			'url'   => 'https://www.instagram.com/' . $handle . '/',
+			'label' => '@' . $handle,
 			'icon'  => 'instagram',
 		);
 	}
@@ -666,7 +1015,7 @@ function arv_athlete_profile_links_markup( $athlete ) {
 		return '';
 	}
 
-	$out = '<ul class="arv-athlete__links">';
+	$out = '<ul class="arv-athlete__links" aria-label="' . esc_attr__( 'Links', 'aravaipa-elements' ) . '">';
 
 	foreach ( $links as $link ) {
 		$out .= '<li><a href="' . esc_url( $link['url'] ) . '" target="_blank" rel="noopener">'
