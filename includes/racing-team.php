@@ -302,17 +302,34 @@ function arv_racing_team_photo_markup( $athlete, $eager ) {
 			. ' sizes="(min-width: 1100px) 256px, (min-width: 900px) 23vw, (min-width: 600px) 30vw, 45vw"';
 	}
 
-	// data-no-lazy keeps WP Rocket's script lazyload off these in favour of
-	// the browser's own. WordPress prefixes sizes with "auto" on a
-	// loading="lazy" image, which is only valid while the image is natively
-	// lazy: WP Rocket swapped the attribute out, the browser then read the
-	// sizes as invalid, assumed 100vw and fetched the 540w file for a 244px
-	// card on every row below the first.
-	$out .= ' alt="' . esc_attr( $athlete['name'] ) . '" width="540" height="675" decoding="async" data-no-lazy="1"'
+	$out .= ' alt="' . esc_attr( $athlete['name'] ) . '" width="540" height="675" decoding="async"'
 		. ( $eager ? ' fetchpriority="high"' : ' loading="lazy"' ) . ' />';
 
 	return $out;
 }
+
+/**
+ * Take WordPress's "auto" back off a roster photo's sizes.
+ *
+ * Core prefixes sizes with "auto" on any loading="lazy" image, which is
+ * only valid while the image stays natively lazy. WP Rocket's lazyload
+ * then strips loading="lazy" on this site (swapping in its own script),
+ * the browser reads the leftover "auto" as an invalid sizes list, assumes
+ * 100vw, and every card below the first row fetched the 540w file for a
+ * 244px slot. Runs on wp_content_img_tag, which core applies after it has
+ * added the prefix.
+ *
+ * @param string $image
+ * @return string
+ */
+function arv_racing_team_strip_auto_sizes( $image ) {
+	if ( false === strpos( $image, 'arv-team__photo' ) ) {
+		return $image;
+	}
+
+	return preg_replace( '/\bsizes="auto,\s*/', 'sizes="', $image );
+}
+add_filter( 'wp_content_img_tag', 'arv_racing_team_strip_auto_sizes', 20 );
 
 /**
  * The original upload URL behind a Photon URL, so its arguments can be set
