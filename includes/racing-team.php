@@ -302,7 +302,13 @@ function arv_racing_team_photo_markup( $athlete, $eager ) {
 			. ' sizes="(min-width: 1100px) 256px, (min-width: 900px) 23vw, (min-width: 600px) 30vw, 45vw"';
 	}
 
-	$out .= ' alt="' . esc_attr( $athlete['name'] ) . '" width="540" height="675" decoding="async"'
+	// data-no-lazy keeps WP Rocket's script lazyload off these in favour of
+	// the browser's own. WordPress prefixes sizes with "auto" on a
+	// loading="lazy" image, which is only valid while the image is natively
+	// lazy: WP Rocket swapped the attribute out, the browser then read the
+	// sizes as invalid, assumed 100vw and fetched the 540w file for a 244px
+	// card on every row below the first.
+	$out .= ' alt="' . esc_attr( $athlete['name'] ) . '" width="540" height="675" decoding="async" data-no-lazy="1"'
 		. ( $eager ? ' fetchpriority="high"' : ' loading="lazy"' ) . ' />';
 
 	return $out;
