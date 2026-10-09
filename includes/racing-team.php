@@ -303,7 +303,10 @@ function arv_racing_team_photo_markup( $athlete, $eager ) {
 	}
 
 	$out .= ' alt="' . esc_attr( $athlete['name'] ) . '" width="540" height="675" decoding="async"'
-		. ( $eager ? ' fetchpriority="high"' : ' loading="lazy"' ) . ' />';
+		// data-no-lazy on the first row: WP Rocket's lazyload otherwise
+		// swaps even the on-screen cards for a placeholder and loads them
+		// by script, which delays the largest image on the page.
+		. ( $eager ? ' fetchpriority="high" data-no-lazy="1"' : ' loading="lazy"' ) . ' />';
 
 	return $out;
 }
