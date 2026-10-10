@@ -21,9 +21,17 @@
 			return;
 		}
 
+		var id = link.getAttribute('data-yt-id') || '';
+
+		// Only a real YouTube video id goes into the embed URL; anything
+		// else falls through to the plain link.
+		if (!/^[A-Za-z0-9_-]{6,20}$/.test(id)) {
+			return;
+		}
+
 		event.preventDefault();
 
-		frame.src = 'https://www.youtube-nocookie.com/embed/' + link.getAttribute('data-yt-id') + '?autoplay=1';
+		frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1';
 		frame.title = link.getAttribute('data-yt-title') || '';
 
 		document.querySelectorAll('.arv-watch-race__seg.is-active').forEach(function (el) {

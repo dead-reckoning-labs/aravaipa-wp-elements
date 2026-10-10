@@ -26,12 +26,18 @@
 			return;
 		}
 
-		event.preventDefault();
-
-		var id = link.getAttribute( 'data-yt-id' );
+		var id = link.getAttribute( 'data-yt-id' ) || '';
 		var title = link.getAttribute( 'data-yt-title' ) || '';
 
-		frame.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1';
+		// Only a real YouTube video id goes into the embed URL; anything
+		// else falls through to the plain link.
+		if ( ! /^[A-Za-z0-9_-]{6,20}$/.test( id ) ) {
+			return;
+		}
+
+		event.preventDefault();
+
+		frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent( id ) + '?autoplay=1';
 		frame.title = title;
 
 		var caption = section.querySelector( '.arv-films__now-title' );

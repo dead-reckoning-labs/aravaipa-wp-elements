@@ -175,12 +175,12 @@ export function matchEpisode( episode, videos ) {
 
 const decode = ( s ) =>
 	String( s || '' )
-		.replace( /&amp;/g, '&' )
 		.replace( /&lt;/g, '<' )
 		.replace( /&gt;/g, '>' )
 		.replace( /&quot;/g, '"' )
 		.replace( /&#0?39;/g, "'" )
-		.replace( /&#(\d+);/g, ( _, d ) => String.fromCharCode( +d ) );
+		.replace( /&#(\d+);/g, ( _, d ) => String.fromCharCode( +d ) )
+		.replace( /&amp;/g, '&' );
 
 const tag = ( xml, name ) => {
 	const m = xml.match( new RegExp( `<${ name }[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${ name }>` ) );

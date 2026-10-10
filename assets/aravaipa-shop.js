@@ -61,7 +61,8 @@
 			options.hidden = true;
 		}
 
-		buy.href = data.url;
+		// Only an http(s) link becomes the buy button, never a script URL.
+		buy.href = /^https?:\/\//i.test(data.url || '') ? data.url : '#';
 
 		lastFocus = document.activeElement;
 		drawer.hidden = false;
