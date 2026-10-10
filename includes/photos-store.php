@@ -75,14 +75,51 @@ function arv_photos_store_get() {
 			// to show. See arv_photos_card().
 			'cover' => isset( $row['cover'] ) ? (string) $row['cover'] : '',
 			// When the race actually ran, so the newest one is first. See
-			// arv_photos_race_date().
+			// arv_photos_race_date(), then arv_photos_stored_iso().
 			'iso'  => arv_photos_race_date( $race, $year, $dates, $index ),
 		);
+
+		if ( '' === $out[ count( $out ) - 1 ]['iso'] ) {
+			$out[ count( $out ) - 1 ]['iso'] = arv_photos_stored_iso( $row, $year );
+		}
 	}
 
 	usort( $out, 'arv_photos_compare' );
 
 	return $out;
+}
+
+/**
+ * A race date written onto the gallery row itself, for when neither the
+ * results store nor the calendar has one.
+ *
+ * The calendar only ever holds a race's next edition, so the day a race
+ * rolls over to next year its date for this year is gone from it, and until
+ * that year's results are imported nothing else knows it either. Every
+ * September 2026 race lost its date that way within a week of running, and
+ * the cards fell out of date order to the bottom of the 2026 page, where
+ * they read as missing. The lookup still wins when it has an answer; this
+ * only fills the gap.
+ *
+ * Only a real Y-m-d in the row's own year is accepted, so a typo cannot
+ * move a card into another year's order.
+ *
+ * @param array $row  A raw stored row.
+ * @param int   $year The row's year.
+ * @return string
+ */
+function arv_photos_stored_iso( $row, $year ) {
+	$iso = isset( $row['iso'] ) ? trim( (string) $row['iso'] ) : '';
+
+	if ( ! $year || ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $iso, $m ) ) {
+		return '';
+	}
+
+	if ( (int) $m[1] !== (int) $year || ! checkdate( (int) $m[2], (int) $m[3], (int) $m[1] ) ) {
+		return '';
+	}
+
+	return $iso;
 }
 
 /**
@@ -1150,6 +1187,35 @@ function arv_photos_shortcode( $atts ) {
 }
 
 /**
+ * The URL year as the render cache should see it.
+ *
+ * Only a year the store actually has, else 0, which is what the render
+ * itself falls back to for anything else. Keying on the raw value would let
+ * ?photo_year=1, ?photo_year=2, and so on each pay a cold render and leave
+ * a week-long transient behind. Read off the raw option rather than through
+ * arv_photos_store_get(), which resolves a date for every row and is the
+ * cost this cache exists to skip.
+ *
+ * @param array $stored The raw store.
+ * @return int
+ */
+function arv_photos_cache_year( $stored ) {
+	$asked = (int) arv_photos_requested_year();
+
+	if ( ! $asked ) {
+		return 0;
+	}
+
+	foreach ( (array) $stored as $row ) {
+		if ( is_array( $row ) && isset( $row['year'] ) && (int) $row['year'] === $asked ) {
+			return $asked;
+		}
+	}
+
+	return 0;
+}
+
+/**
  * The Photos render through the render cache, for the shortcode and the
  * Cornerstone element alike. The element used to call arv_photos_render()
  * directly and paid the full build on every uncached view.
@@ -1164,9 +1230,16 @@ function arv_photos_shortcode( $atts ) {
 function arv_photos_cached( $atts ) {
 	$before = arv_photos_covers_deferred();
 
+	$stored = get_option( ARV_PHOTOS_OPTION, array() );
+
 	return arv_cached_render(
 		'photos',
-		array( $atts, get_option( ARV_PHOTOS_OPTION, array() ) ),
+		// The year from the URL is part of what gets rendered, so it is part
+		// of the key. Without it, whichever ?photo_year= was asked for first
+		// after the store last changed was served for every year for a week:
+		// /photos/?photo_year=2026 showed 2024's cards, and so did plain
+		// /photos/.
+		array( $atts, $stored, arv_photos_cache_year( $stored ) ),
 		function () use ( $atts ) {
 			return arv_photos_render( $atts );
 		},
@@ -1210,6 +1283,14 @@ function arv_photos_store_set( $rows ) {
 
 		if ( '' !== $cover && preg_match( '#^https?://#i', $cover ) ) {
 			$clean[ count( $clean ) - 1 ]['cover'] = $cover;
+		}
+
+		// A hand-set race date, kept only when it is a real day in the
+		// row's own year. See arv_photos_stored_iso().
+		$iso = arv_photos_stored_iso( $row, $clean[ count( $clean ) - 1 ]['year'] );
+
+		if ( '' !== $iso ) {
+			$clean[ count( $clean ) - 1 ]['iso'] = $iso;
 		}
 	}
 

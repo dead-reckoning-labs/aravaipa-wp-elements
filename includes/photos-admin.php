@@ -232,6 +232,26 @@ function arv_photos_admin_stored_cover( $stored, $url ) {
 	return '';
 }
 
+/**
+ * A hand-set race date already stored against a gallery link, if any.
+ *
+ * Same reason as the cover above: not on the form, so carried over by link
+ * rather than lost on save. See arv_photos_stored_iso().
+ *
+ * @param array  $stored
+ * @param string $url
+ * @return string
+ */
+function arv_photos_admin_stored_iso( $stored, $url ) {
+	foreach ( $stored as $row ) {
+		if ( is_array( $row ) && isset( $row['url'], $row['iso'] ) && $row['url'] === $url ) {
+			return (string) $row['iso'];
+		}
+	}
+
+	return '';
+}
+
 function arv_photos_admin_save() {
 	if ( ! isset( $_POST['arv_photos_save'] ) || ! check_admin_referer( 'arv_photos_save' ) ) {
 		return null;
@@ -303,6 +323,7 @@ function arv_photos_admin_save() {
 			// Not on the form. Carried over from the stored row with the same
 			// link, so saving this screen does not quietly drop a chosen cover.
 			'cover' => arv_photos_admin_stored_cover( $stored, $url ),
+			'iso'   => arv_photos_admin_stored_iso( $stored, $url ),
 		);
 
 		if ( $new ) {
