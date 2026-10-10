@@ -61,7 +61,14 @@
 			options.hidden = true;
 		}
 
-		buy.href = data.url;
+		// Only an http(s) link becomes the buy button, never a script URL.
+		var url = String(data.url || '');
+
+		if (/^https?:\/\//i.test(url)) {
+			buy.href = url;
+		} else {
+			buy.removeAttribute('href');
+		}
 
 		lastFocus = document.activeElement;
 		drawer.hidden = false;

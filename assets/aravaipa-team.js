@@ -187,7 +187,8 @@
 
 			var id = button.getAttribute('data-arv-video-id');
 
-			if (!id) {
+			// Only a real YouTube video id goes into the embed URL.
+			if (!id || !/^[A-Za-z0-9_-]{6,20}$/.test(id)) {
 				return;
 			}
 
@@ -209,7 +210,7 @@
 		frame.className = 'arv-athlete__video-frame';
 		// autoplay: the click was the request to watch, so making them
 		// press play a second time inside the player is a wasted step.
-		frame.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+		frame.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0';
 		frame.title = title;
 		frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
 		frame.allowFullscreen = true;
@@ -250,7 +251,8 @@
 
 		var hires = img.getAttribute('data-arv-video-hires');
 
-		if (!hires) {
+		// Only an https thumbnail URL is ever swapped in.
+		if (!hires || !/^https:\/\//i.test(hires)) {
 			return;
 		}
 

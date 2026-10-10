@@ -63,10 +63,10 @@ const sleep = ( ms ) => new Promise( ( r ) => setTimeout( r, ms ) );
 const decode = ( s ) =>
 	s
 		.replace( /&nbsp;/g, ' ' )
-		.replace( /&amp;/g, '&' )
 		.replace( /&quot;/g, '"' )
 		.replace( /&#0?39;/g, "'" )
-		.replace( /&#(\d+);/g, ( _, d ) => String.fromCharCode( +d ) );
+		.replace( /&#(\d+);/g, ( _, d ) => String.fromCharCode( +d ) )
+		.replace( /&amp;/g, '&' );
 
 /**
  * One request, retried on the failures that are worth retrying.
