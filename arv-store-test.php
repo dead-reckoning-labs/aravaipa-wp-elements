@@ -1446,6 +1446,38 @@ $gone = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' =
 $gone_week = preg_match( '/<section class="arv-results__week".*?<\/section>/s', $gone, $gm ) ? $gm[0] : '';
 t( 'and drops out after a few days',    false === strpos( $gone_week, 'Rock Hawk' ) );
 
+// Through the Monday night after the race, and gone on the Tuesday.
+$week_of = function () {
+	$html = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
+	return preg_match( '/<section class="arv-results__week".*?<\/section>/s', $html, $m ) ? $m[0] : '';
+};
+$GLOBALS['NOW'] = '2026-08-31';
+t( 'still listed the Monday after',     false !== strpos( $week_of(), 'Rock Hawk' ) );
+$GLOBALS['NOW'] = '2026-09-01';
+t( 'and gone on the Tuesday',           false === strpos( $week_of(), 'Rock Hawk' ) );
+
+// Closed entries alone do not make it race week. On 2026-10-10 Javelina sat
+// here three weeks out because its entries had closed, and races whose
+// calendar row had rolled to next year came back as COMPLETED, their stale
+// close date reading as closed.
+$cache =& arv_race_store_cache();
+$cache_before = $cache;
+foreach ( $cache as $k => $list ) {
+	foreach ( $list as $i => $r ) {
+		if ( 'Rock Hawk Trail Races' === $r['name'] ) {
+			$cache[ $k ][ $i ]['iso'] = '2027-08-28';
+		}
+		if ( 'Black Bear Trail Races' === $r['name'] ) {
+			$cache[ $k ][ $i ]['iso'] = '2026-09-19';
+		}
+	}
+}
+$GLOBALS['NOW'] = '2026-08-31';
+$stale = $week_of();
+t( 'a rolled-over race with a stale close date is not listed', false === strpos( $stale, 'Rock Hawk' ) );
+t( 'nor a race weeks out whose entries closed',               false === strpos( $stale, 'Black Bear' ) );
+$cache = $cache_before;
+
 // Out of race week entirely: no block rather than an empty one.
 $GLOBALS['NOW'] = '2026-08-01';
 $quiet = arv_results_render( array( 'mod_id' => 'e1', 'class' => '', 'upcoming' => 'true' ) );
