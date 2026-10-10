@@ -28,10 +28,14 @@
  * does not write to WordPress either. Feed its --json into
  * scripts/import-photos.mjs territory deliberately by hand, so a bad match
  * run can never overwrite the store on its own.
+ *
+ * For new galleries, do not do that: scripts/ingest-photos.mjs runs the same
+ * walk every night and appends only what is new, never replacing the store.
  */
 
 import { readFileSync } from 'node:fs';
-import { raceMatcher, normalise, yearFrom, IS_RIDE } from './lib/race-match.mjs';
+import { raceMatcher } from './lib/race-match.mjs';
+import { ACCOUNTS, smugmugApi, walkAccount } from './lib/smugmug.mjs';
 
 const KEY = process.env.SMUGMUG_API_KEY;
 
@@ -46,57 +50,14 @@ const args = Object.fromEntries(
   )
 );
 
-// The accounts to walk, and who each one is. Aravaipa's own first.
-const ACCOUNTS = [
-  { nick: 'Aravaipa', by: 'Aravaipa Photo Gallery' },
-  { nick: 'lwp', by: "Let's Wander Photography" },
-  { nick: 'springvelvet', by: 'Spring Velvet Photography' },
-];
-
-// How many photographs are actually behind a node, albums nested inside it
-// included. A race folder is created on SmugMug when the race is scheduled,
-// not when it is shot, so the upcoming half of a season sits there as real,
-// correctly-named, completely empty folders. Discovery matched all of them
-// happily, and posting that set would have put eight dead galleries on the
-// photos page: "Cave Creek Thriller 2026" linking to nothing, three months
-// before the race is run. Counted rather than guessed from the date, because
-// a race can be shot and posted late, and a folder can be seeded early.
-const photoCount = async (nodeId, depth = 0) => {
-  if (depth > 2) return 0;
-
-  const kids = await api(`node/${nodeId}!children?count=200`);
-  let total = 0;
-
-  for (const child of kids?.Response?.Node ?? []) {
-    if (child.Type === 'Album' && child.Uris?.Album?.Uri) {
-      const album = await api(child.Uris.Album.Uri.replace('/api/v2/', ''));
-      total += album?.Response?.Album?.ImageCount ?? 0;
-    } else if (child.Type === 'Folder') {
-      total += await photoCount(child.NodeID, depth + 1);
-    }
-  }
-
-  return total;
-};
-
-const api = async path => {
-  const url = new URL(`https://api.smugmug.com/api/v2/${path}`);
-  url.searchParams.set('APIKey', KEY);
-
-  const res = await fetch(url, { headers: { Accept: 'application/json' }, redirect: 'follow' });
-
-  if (!res.ok) return null;
-
-  return res.json().catch(() => null);
-};
-
 // ---------------------------------------------------------------------------
-// The matcher lives in scripts/lib/race-match.mjs now, shared with the
-// Zenfolio walker, which asks the identical question of a different host.
-// Two copies would drift, and the drift would be the expensive kind: both
-// would still accept and reject galleries, just not the same ones, so the
-// same race could arrive under one name from one host and another from the
-// other, or a stranger's race be published as Aravaipa's on one and not it.
+// The matcher lives in scripts/lib/race-match.mjs, shared with the Zenfolio
+// walker, and the account walk (accounts, photo counts, the container rule,
+// outermost-match-wins) lives in scripts/lib/smugmug.mjs, shared with the
+// nightly ingest. Two copies would drift, and the drift would be the
+// expensive kind: both would still accept and reject galleries, just not
+// the same ones, so a stranger's race could be published as Aravaipa's on
+// one path and not the other.
 // ---------------------------------------------------------------------------
 
 const raceNames = String(
@@ -112,130 +73,25 @@ if (!raceNames.length) {
 }
 
 const raceFor = raceMatcher(raceNames);
-
-const yearFromUpload = node => {
-  const m = String(node.DateAdded ?? '').match(/^(20[12]\d)/);
-  return m ? Number(m[1]) : 0;
+const match = name => {
+  const race = raceFor(name);
+  return race ? { race } : null;
 };
 
-// ---------------------------------------------------------------------------
-
+const api = smugmugApi(KEY);
 const accepted = [];
 const rejected = [];
 
-/**
- * Is this folder a container of races, rather than a race itself?
- *
- * Only containers are descended into. Without this the walk goes inside
- * other promoters' event folders and matches whatever is in them: Let's
- * Wander's "Oregon 200 Miler 2025" holds a gallery called "Brian
- * Thrasher", which matched Aravaipa's Thrasher Night Runs on the surname.
- *
- * A container is what is left over when the year is removed: "2025 Race
- * Photography" leaves "race photography", "2026 Events" leaves "events",
- * and both are generic. "Oregon 200 Miler 2025" leaves "oregon 200 miler",
- * which is the name of somebody's race.
- */
-const CONTAINER_WORDS = new Set(
-  'events event races race photography photos photo running runs run gallery galleries archive'.split(' ')
-);
-
-const isContainer = name => {
-  const words = normalise(name).replace(/\b20[12]\d\b/g, ' ').split(' ').filter(Boolean);
-
-  // A bare year is the commonest container of all ("2026").
-  return words.length === 0 || words.every(w => CONTAINER_WORDS.has(w));
-};
-
-/**
- * Walk a node's subtree, accepting the OUTERMOST folder that names a race.
- *
- * Depth matters and is not the same on every account. Aravaipa's own is
- * root > "2026 Events" > "Coldwater Rumble" > "Finish Line 1", so the race
- * is two levels down. Spring Velvet's is root > "Rock River Canyon 50K &
- * 27K Trail Race" > albums, so the race is one level down. Testing at a
- * fixed depth found 0 of Spring Velvet's, because it was reading her album
- * names instead of her folder names.
- *
- * Taking the outermost match is what stops one race being accepted five
- * times over, once per "Finish Line N" album inside it.
- */
-async function walk( node, account, ancestors, depth ) {
-  // Four levels is past any of these accounts' real nesting and stops a
-  // pathological tree from walking forever.
-  if ( depth > 3 ) return;
-
-  const trail = [ ...ancestors, node.Name ];
-  const race = raceFor( node.Name );
-
-  if ( race ) {
-    if ( IS_RIDE.test( node.Name ) ) {
-      rejected.push({ account: account.nick, name: node.Name, parent: ancestors.join(' / '), why: 'Aravaipa Rides, belongs on aravaiparides.com' });
-      return;
-    }
-
-    const year = yearFrom( ...trail.slice().reverse() ) || yearFromUpload( node );
-
-    if ( ! year ) {
-      rejected.push({ account: account.nick, name: node.Name, parent: ancestors.join(' / '), why: `matched ${race} but no year` });
-      return;
-    }
-
-    const photos = await photoCount( node.NodeID );
-
-    if ( photos === 0 ) {
-      rejected.push({ account: account.nick, name: node.Name, parent: ancestors.join(' / '), why: 'matched a race but holds no photographs yet' });
-      return;
-    }
-
-    accepted.push({ race, year, by: account.by, url: node.WebUri, photos });
-    // Outermost wins: do not descend into this race's own albums.
-    return;
-  }
-
-  if ( ! node.HasChildren ) {
-    rejected.push({ account: account.nick, name: node.Name, parent: ancestors.join(' / '), why: 'no Aravaipa race in the name' });
-    return;
-  }
-
-  // Not a race, and not a container of races either: another promoter's
-  // event, or a wedding, or a trip. Do not go looking inside it.
-  if ( depth > 0 && ! isContainer( node.Name ) ) {
-    rejected.push({ account: account.nick, name: node.Name, parent: ancestors.join(' / '), why: 'not an Aravaipa race, and not a container' });
-    return;
-  }
-
-  const kids = await api(`node/${node.NodeID}!children?count=200`);
-  const children = kids?.Response?.Node ?? [];
-
-  if ( ! children.length ) {
-    rejected.push({ account: account.nick, name: node.Name, parent: ancestors.join(' / '), why: 'no Aravaipa race in the name' });
-    return;
-  }
-
-  for ( const child of children ) {
-    await walk( child, account, trail, depth + 1 );
-  }
-}
-
 for (const account of ACCOUNTS) {
-  const user = await api(`user/${account.nick}`);
-  const rootUri = user?.Response?.User?.Uris?.Node?.Uri;
-
-  if (!rootUri) {
+  try {
+    const res = await walkAccount({ api, account, match });
+    // Same row shape this script has always emitted.
+    accepted.push(...res.accepted.map(({ race, year, by, url, photos }) => ({ race, year, by, url, photos })));
+    rejected.push(...res.rejected);
+    console.error(`${account.nick}: ${res.accepted.length} galleries matched an Aravaipa race`);
+  } catch (e) {
     console.error(`${account.nick}: could not read the account, skipped`);
-    continue;
   }
-
-  const before = accepted.length;
-  const rootId = rootUri.split('/').pop();
-  const top = await api(`node/${rootId}!children?count=200`);
-
-  for (const outer of top?.Response?.Node ?? []) {
-    await walk( outer, account, [], 0 );
-  }
-
-  console.error(`${account.nick}: ${accepted.length - before} galleries matched an Aravaipa race`);
 }
 
 console.error(`\n${accepted.length} accepted, ${rejected.length} rejected\n`);
