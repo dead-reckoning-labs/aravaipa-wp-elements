@@ -809,13 +809,12 @@ function arv_results_race_key( $name ) {
  * @param string $today Y-m-d in site time.
  * @return string
  */
-function arv_results_race_week( $today, $grace = 3 ) {
+function arv_results_race_week( $today ) {
 	if ( ! function_exists( 'arv_race_store_get' ) ) {
 		return '';
 	}
 
-	$races  = array();
-	$cutoff = gmdate( 'Y-m-d', strtotime( $today . ' -' . (int) $grace . ' days' ) );
+	$races = array();
 
 	// Sunday of the week we are in, so the coming weekend joins the block on
 	// Monday morning rather than waiting for entries to close. The old rule
@@ -830,19 +829,23 @@ function arv_results_race_week( $today, $grace = 3 ) {
 		$action = arv_upcoming_races_action( $race, $today );
 		$last   = ( '' !== $race['end'] ) ? $race['end'] : $race['iso'];
 
-		// Race week itself, plus a few days the other side of it. Without
-		// the tail a race drops out of this block the moment it finishes,
-		// which is the exact hour people come looking for it: it would go
-		// from "live" straight to gone, and the finished state would never
-		// be seen by anyone.
-		$recent = ( 'results' === $action['phase'] && $last >= $cutoff );
+		// The Monday after the race's last day: a finished race stays here
+		// through that Monday night and is gone on Tuesday. Without the tail
+		// a race drops out of this block the moment it finishes, which is the
+		// exact hour people come looking for it.
+		$last_ts  = strtotime( $last . ' 00:00:00 UTC' );
+		$tail_end = gmdate( 'Y-m-d', $last_ts + ( ( 8 - (int) gmdate( 'N', $last_ts ) ) % 7 ) * DAY_IN_SECONDS );
 
-		// Still to come, and lands before the week is out. This is what puts
-		// next weekend behind last weekend on a Monday, each with its own
-		// countdown.
-		$ahead = ( $today <= $last && $race['iso'] <= $week_end );
+		// Only this week's races, by date and nothing else. The phase used
+		// to let a race in on its own, and 'live' starts the day entries
+		// close: Javelina sat here three weeks out because its entries had
+		// closed, and every race whose calendar row had rolled to next year
+		// came back as COMPLETED, because its stale close date read as
+		// closed. The phase still picks the button; it no longer picks who
+		// is listed.
+		$in_week = ( $race['iso'] <= $week_end && $today <= $tail_end );
 
-		if ( ! ( 'live' === $action['phase'] || $recent || $ahead ) || '' === $action['url'] ) {
+		if ( ! $in_week || '' === $action['url'] ) {
 			continue;
 		}
 
