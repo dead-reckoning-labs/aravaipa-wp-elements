@@ -105,11 +105,13 @@ export const folderSignature = ( name ) =>
  *      the same name bar the year. "McDowell Mountain Frenzy Mayhem" is on
  *      the Mayhem card although the name only matches Frenzy; next year's
  *      folder of the same name goes where this year's went.
- *   2. History by matched race: galleries already in the store that matched
- *      the same race name. "Coldwater Rumble" galleries live on the card
- *      called Coldwater Hundred. When that history is split across cards,
- *      the name's own card (3) is used only if it is one of them.
- *   3. The card whose race key is the matched name's key.
+ *   2. The card whose race key is the matched name's own key. This comes
+ *      before name history: Let's Wander's "McDowell Mt Frenzy 2025" is a
+ *      Frenzy gallery, even though the only other folder that matched the
+ *      Frenzy name ("McDowell Mountain Frenzy Mayhem") sits on Mayhem.
+ *   3. History by matched race, for a name with no card of its own:
+ *      "Coldwater Rumble" galleries live on the card called Coldwater
+ *      Hundred.
  *   4. The one card whose key's words contain, or are contained in, the
  *      matched name's ("Big Pine" and "Flagstaff Extreme Big Pine"). Same
  *      relationship arv_photos_race_date() accepts, and like it, only when
@@ -124,11 +126,13 @@ export const folderSignature = ( name ) =>
 function resolver( { context, keyOf, history } ) {
 	const cardKeys = [ ...new Set( context.rows.map( ( r ) => r.key ) ) ];
 
-	const byNameKey = ( name ) => {
+	const ownCard = ( name ) => {
 		const key = keyOf.get( name ) ?? null;
-		if ( key && cardKeys.includes( key ) ) return key;
+		return key && cardKeys.includes( key ) ? key : null;
+	};
 
-		const words = ( key ?? normalise( name ) ).split( ' ' ).filter( Boolean );
+	const containingCard = ( name ) => {
+		const words = ( keyOf.get( name ) ?? normalise( name ) ).split( ' ' ).filter( Boolean );
 		if ( ! words.length ) return null;
 
 		const hits = cardKeys.filter( ( k ) => {
@@ -156,19 +160,12 @@ function resolver( { context, keyOf, history } ) {
 		const keys = new Set();
 
 		for ( const name of names ) {
-			const before = past.filter( ( h ) => h.race === name );
-			const viaHistory = fromHistory( before );
-			let key = viaHistory?.key ?? byNameKey( name );
+			let key = ownCard( name );
 
-			// History split across cards ("McDowell Mountain Frenzy" folders
-			// on the Frenzy card, and the one "Frenzy Mayhem" folder on the
-			// Mayhem card) still allows the name's own card, provided the
-			// store has filed this name there before. Otherwise it is a
-			// question, not a guess.
-			if ( viaHistory?.why ) {
-				const own = byNameKey( name );
-				if ( ! own || ! before.some( ( h ) => h.key === own ) ) return viaHistory;
-				key = own;
+			if ( ! key ) {
+				const viaHistory = fromHistory( past.filter( ( h ) => h.race === name ) );
+				if ( viaHistory?.why ) return viaHistory;
+				key = viaHistory?.key ?? containingCard( name );
 			}
 
 			keys.add( key );

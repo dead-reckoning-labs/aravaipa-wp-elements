@@ -32,6 +32,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $arv_ingest_option = defined( 'ARV_PHOTOS_OPTION' ) ? ARV_PHOTOS_OPTION : 'arv_race_photos';
+
+// Self-test only: point the whole run (write, backup, prune) at a scratch
+// copy of the store so the commit path can be exercised on the live site
+// without touching /photos/. Nothing but this exact prefix is accepted.
+$arv_ingest_selftest = (string) getenv( 'ARV_INGEST_SELFTEST_OPTION' );
+if ( '' !== $arv_ingest_selftest ) {
+	if ( 0 !== strpos( $arv_ingest_selftest, 'arv_race_photos_selftest' ) ) {
+		echo 'ARV_INGEST_JSON ' . base64_encode( '{"ok":false,"error":"self-test option must start with arv_race_photos_selftest"}' ) . "\n";
+		return;
+	}
+	$arv_ingest_option = $arv_ingest_selftest;
+}
 $arv_ingest_prefix = $arv_ingest_option . '_bak_ingest_';
 
 /**

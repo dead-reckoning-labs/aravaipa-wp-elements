@@ -131,5 +131,14 @@ t( 'at the cap adds them all', 15 === p.add.length );
 p = planIngest( { discovered: [ discovered2025[ 0 ], discovered2025[ 0 ] ], context } );
 t( 'a gallery listed twice is counted once', 1 === p.present.length );
 
+p = planIngest( {
+	discovered: [
+		g( 'McDowell Mountain Frenzy', 2025, 'https://aravaipa.smugmug.com/2025-Events/McDowell-Mountain-Frenzy-Mayhem', 'McDowell Mountain Frenzy Mayhem' ),
+		g( 'McDowell Mountain Frenzy', 2026, 'https://lwp.smugmug.com/2026/McDowell-Mt-Frenzy-2026', 'McDowell Mt Frenzy 2026', { by: "Let's Wander Photography", account: 'lwp' } ),
+	],
+	context,
+} );
+t( 'one odd folder in the history does not pull a race off its own card', 'McDowell Mountain Frenzy' === p.add[ 0 ]?.race );
+
 console.log( `\n${ pass } passed, ${ fail } failed` );
 process.exit( fail ? 1 : 0 );
