@@ -5426,6 +5426,35 @@ $complete_key = array_values( array_filter( array_keys( $GLOBALS['_transients'] 
 t( 'and a complete render keeps the week',    WEEK_IN_SECONDS === $GLOBALS['_transient_ttl'][ $complete_key[0] ] );
 $GLOBALS['_transients'] = array();
 
+echo "\nphotos, the URL year in the render cache:\n";
+// The cache was keyed on the store alone, so the first ?photo_year= asked
+// for after a store change was served for every year: on 2026-10-10
+// /photos/?photo_year=2026 and plain /photos/ both showed 2024's cards.
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Year Two', 'year' => 2025, 'by' => 'A', 'url' => 'https://yr.test/25', 'cover' => 'https://cdn.test/25.jpg' ),
+	array( 'race' => 'Year One', 'year' => 2024, 'by' => 'A', 'url' => 'https://yr.test/24', 'cover' => 'https://cdn.test/24.jpg' ),
+);
+$GLOBALS['_transients'] = array();
+$_GET['photo_year'] = '2024';
+$y24 = arv_photos_shortcode( array() );
+$_GET['photo_year'] = '2025';
+$y25 = arv_photos_shortcode( array() );
+unset( $_GET['photo_year'] );
+$yall = arv_photos_shortcode( array() );
+t( 'the first year asked for renders that year',   false !== strpos( $y24, 'Year One' ) && false === strpos( $y24, 'Year Two' ) );
+t( 'a second year is not served the first',        false !== strpos( $y25, 'Year Two' ) && false === strpos( $y25, 'Year One' ) );
+t( 'and no year is not served either of them',     false !== strpos( $yall, 'Year One' ) && false !== strpos( $yall, 'Year Two' ) );
+$render_keys = function () { return array_values( array_filter( array_keys( $GLOBALS['_transients'] ), function ( $k ) { return 0 === strpos( $k, 'arv_render_photos_' ); } ) ); };
+t( 'one cache entry per year shown',               3 === count( $render_keys() ) );
+$_GET['photo_year'] = '1234';
+$junk = arv_photos_shortcode( array() );
+$_GET['photo_year'] = 'abc';
+arv_photos_shortcode( array() );
+unset( $_GET['photo_year'] );
+t( 'a year with no galleries shares the all-years entry', 3 === count( $render_keys() ) );
+t( 'and renders all years, as the page always did',      false !== strpos( $junk, 'Year One' ) && false !== strpos( $junk, 'Year Two' ) );
+$GLOBALS['_transients'] = array();
+
 echo "\nyoutube card thumbnails:\n";
 // Photon 302s i.ytimg.com back to the original, so a 480px card was
 // downloading a 1280x720 maxresdefault. hqdefault is about 30KB.
@@ -5745,6 +5774,28 @@ t( 'a date is read off the results store',  '2026-01-17' === arv_photos_race_dat
 t( 'the right year of a repeating race',    '2025-01-18' === arv_photos_race_date( 'Coldwater Rumble', 2025 ) );
 t( 'an unknown race has no date',           '' === arv_photos_race_date( 'Nothing At All', 2026 ) );
 t( 'and neither does a yearless row',       '' === arv_photos_race_date( 'Coldwater Rumble', 0 ) );
+
+// The calendar holds only a race's next edition, so a race that has rolled
+// over and has no results imported yet has no date for the year it just ran.
+// A date written on the gallery row fills that gap, and only that gap.
+$photos_before_iso = $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ];
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = array(
+	array( 'race' => 'Zzz Unknown Race', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/zzz', 'iso' => '2026-09-13' ),
+	array( 'race' => 'Coldwater Rumble', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/cw26', 'iso' => '2026-05-05' ),
+	array( 'race' => 'Yyy Typo Race', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/yyy', 'iso' => '2025-09-13' ),
+	array( 'race' => 'Xxx Bad Day', 'year' => 2026, 'by' => 'A', 'url' => 'https://x.test/xxx', 'iso' => '2026-02-30' ),
+);
+$by_url = array();
+foreach ( arv_photos_store_get() as $r ) { $by_url[ $r['url'] ] = $r['iso']; }
+t( 'a stored date dates an otherwise undated gallery', '2026-09-13' === $by_url['https://x.test/zzz'] );
+t( 'but the results store still wins over it',         '2026-01-17' === $by_url['https://x.test/cw26'] );
+t( 'a stored date in another year is ignored',         '' === $by_url['https://x.test/yyy'] );
+t( 'and so is a day that does not exist',              '' === $by_url['https://x.test/xxx'] );
+arv_photos_store_set( $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] );
+$kept = array_column( $GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ], 'iso', 'url' );
+t( 'saving the store keeps a valid stored date',       isset( $kept['https://x.test/zzz'] ) && '2026-09-13' === $kept['https://x.test/zzz'] );
+t( 'and drops an invalid one',                         ! isset( $kept['https://x.test/yyy'] ) && ! isset( $kept['https://x.test/xxx'] ) );
+$GLOBALS['ARV_OPTIONS'][ ARV_PHOTOS_OPTION ] = $photos_before_iso;
 
 // A photographer names a gallery for the race, not for whatever this
 // plugin's canonical row is called, and arv_results_race_key() drops some
