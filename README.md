@@ -172,6 +172,17 @@ Regression-tested in `scripts/test/name-matcher.test.mjs`, run with `bun scripts
 
 A race the site itself marks cancelled (Tushars Ultras, wildfire) is now dropped rather than parsed as a normally-scheduled date with no register button.
 
+## Photo galleries, nightly
+
+New race galleries reach `/photos/` on their own. `scripts/ingest-photos.mjs` runs every night (launchd on the Vaip mini, `com.vaip.photo-ingest`, 03:30) and:
+
+- walks the Aravaipa, Let's Wander and Spring Velvet SmugMug accounts for this year and last, with the same match-or-reject walker `discover-smugmug.mjs` uses (`scripts/lib/smugmug.mjs`), keeping only galleries with photographs in them and no password;
+- diffs them against the live `arv_race_photos` option by URL and appends only new rows. It never modifies or deletes a row, which is the opposite of `import-photos.mjs` (that one replaces the whole store and must not be re-run);
+- files each row under the card already on `/photos/` for that race, using where the store filed the same folder or race name before (`scripts/lib/photo-ingest.mjs`), and writes the race date on the row while the calendar or results still know it;
+- sends anything it is not sure of to a review list instead: a tie between two cards, a race with no card yet, a second gallery from the same photographer for the same card and year, or more than 15 new rows in one run (then nothing is added).
+
+The WordPress side is `scripts/photos-ingest.php`, run with `wp eval-file` under php8.3. Before writing it takes a backup option `arv_race_photos_bak_ingest_<stamp>` (autoload no, newest 7 kept), applies the append against the option as it is at write time (the hourly cover cron rewrites it), and reads it back. The runner re-checks 90 seconds later and appends again if the cover cron overwrote it. Tests: `bun scripts/test/photo-ingest.test.mjs`.
+
 ## Search and filter
 
 The Season Calendar carries a search box and state / month / open-only filters above the list once it holds more than five races.

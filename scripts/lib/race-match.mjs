@@ -121,3 +121,42 @@ export const yearFrom = ( ...names ) => {
 
 	return 0;
 };
+
+/**
+ * Like raceMatcher(), but says when the answer was a coin toss.
+ *
+ * raceMatcher() keeps the first race to reach the longest phrase, so two
+ * races that match a folder equally well resolve by list order, silently.
+ * That is fine for a report a person reads, and not for a job that writes
+ * to the site unattended: the nightly ingest sends a tie to review instead.
+ *
+ * @param {string[]} raceNames
+ * @return {(name: string) => ({race: string, tied: string[]}|null)}
+ */
+export function raceMatcherWithTies( raceNames ) {
+	const table = raceNames.map( ( race ) => ( { race, phrases: phrasesFor( race ) } ) );
+
+	return ( name ) => {
+		const hay = ` ${ normalise( name ) } `;
+		let bestLen = 0;
+		let best = [];
+
+		for ( const { race, phrases } of table ) {
+			// Longest phrase first, so the first hit is this race's best.
+			for ( const phrase of phrases ) {
+				if ( phrase.length < bestLen ) break;
+				if ( ! hay.includes( ` ${ phrase } ` ) ) continue;
+
+				if ( phrase.length > bestLen ) {
+					bestLen = phrase.length;
+					best = [ race ];
+				} else if ( ! best.includes( race ) ) {
+					best.push( race );
+				}
+				break;
+			}
+		}
+
+		return best.length ? { race: best[ 0 ], tied: best.slice( 1 ) } : null;
+	};
+}
