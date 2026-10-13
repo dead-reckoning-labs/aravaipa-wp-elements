@@ -500,6 +500,32 @@ function arv_live_auto_run( $dry_run = false, $today = null ) {
 	return $log;
 }
 
+/**
+ * A mistyped or short URL (/bobcat/) 404s and WordPress guesses the closest
+ * slug by prefix. The auto-created /live-results/<race>/ pages share their
+ * slug stems with the race pages, so the guess started landing on live timing
+ * instead of the race page. Same guess as core, minus anything under
+ * /live-results/.
+ */
+function arv_live_guess_404_permalink( $pre ) {
+	$name = get_query_var( 'name' );
+	if ( null !== $pre || ! $name ) {
+		return $pre;
+	}
+	$parent = get_page_by_path( ARV_LIVE_PARENT_PATH );
+	if ( ! $parent ) {
+		return $pre;
+	}
+	global $wpdb;
+	$types = array_values( get_post_types( array( 'public' => true ) ) );
+	$in    = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+	$args  = array_merge( array( $wpdb->esc_like( $name ) . '%' ), $types, array( $parent->ID, $parent->ID ) );
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in is only placeholders.
+	$id = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name LIKE %s AND post_type IN ($in) AND post_status = 'publish' AND post_parent <> %d AND ID <> %d ORDER BY ID ASC LIMIT 1", $args ) );
+	return $id ? get_permalink( (int) $id ) : false;
+}
+add_filter( 'pre_redirect_guess_404_permalink', 'arv_live_guess_404_permalink' );
+
 function arv_live_auto_cron_schedule() {
 	if ( ! wp_next_scheduled( 'arv_live_auto_cron' ) ) {
 		wp_schedule_event( time(), 'daily', 'arv_live_auto_cron' );
