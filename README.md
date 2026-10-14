@@ -20,6 +20,7 @@ Each appears in the Cornerstone builder's element list under its own name.
 | **Aravaipa Race Map** | Nothing. New: every race as a pin, with a popup carrying the basics and links to Race Info and registration |
 | **Aravaipa Race Status** | The hand-written registration button on each race's own page, which is why some still point at a registration that closed months ago |
 | **Aravaipa Season Calendar** | The full-year race table on /races/, which mixed already-run races with a live Register button on 46 of its 72 rows |
+| **Aravaipa Course Map** | Course PDFs, Strava embeds and CalTopo screenshots. New: one distance's course from its CalTopo map, with an elevation profile coloured by grade, aid stations with mileage, mile markers, laps, 3D, a flyover, full screen, a share link and a GPX for watches |
 
 ## Repeating rows
 
@@ -341,3 +342,21 @@ python3 -m http.server 8899           # then open /preview.html
 ## Possible next step
 
 Aravaipa already has an ops engine consolidating UltraSignup registration data. These elements take their values by hand today; a follow up could have Distance Cards and Race Hero read live registration status and entrant counts from that API instead, so a race page stops being a thing anyone has to remember to update when registration closes.
+
+
+## Course Map
+
+Give it the CalTopo map (link or ID) the course team already keeps, and optionally which line on it (blank picks the longest). Also available as a shortcode for raw content blocks:
+
+```
+[arv_course_map caltopo="PMU2Q4J" name="Half Marathon" pdf="https://.../course.pdf" logo="https://.../logo.png"]
+Lykin gulch Aid | Lykins Gulch | | Water, electrolyte
+Golden Pond Aid | Golden Pond | 9:30 AM | Water, snacks
+[/arv_course_map]
+```
+
+Aid rows are `CalTopo marker title | Display name | Cutoff | Services`, all optional after the first column. Without them, markers whose title says Aid, AS or Station (or that use CalTopo's first aid symbol) within 120 m of the line become aid stations, named from the marker with the "Aid" suffix dropped, and a marker passed more than once gets every mileage.
+
+The CalTopo map is cached for 12 hours, and the last good copy is kept indefinitely, so a CalTopo outage or a map made private keeps showing the last course instead of nothing. Elevation, gain and grade are worked out in the browser from the same terrain tiles the 3D view uses. On a loop course, every mid-race return to the line's first point is a lap turn.
+
+`#course-<distance>` on the page URL (what Share hands out) opens the tab holding that map and scrolls to it.
