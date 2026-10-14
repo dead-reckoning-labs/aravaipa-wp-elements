@@ -11401,3 +11401,420 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	font-size: var(--arv-fs-meta);
 	font-style: italic;
 }
+
+/* ------------------------------------------------------------------ */
+/* Aravaipa Course Map                                                 */
+/* ------------------------------------------------------------------ */
+
+/* Square, hairline-ruled and black on white, the same visual language as
+ * the race pages' results and course record tables, so the map reads as
+ * part of the page and not a third-party widget dropped onto it. */
+.arv-cmap {
+	display: block;
+	margin: 0 0 14px;
+	border-top: 1px solid #111;
+	border-bottom: 1px solid #111;
+	color: #111;
+	font-family: Lato, sans-serif;
+	text-align: left;
+}
+
+.arv-cmap__stage {
+	position: relative;
+	min-width: 0;
+}
+
+.arv-cmap__map {
+	height: 520px;
+	background: #f1ecbc;
+}
+
+.arv-cmap .maplibregl-map {
+	font-family: Lato, sans-serif;
+}
+
+.arv-cmap .maplibregl-ctrl-group {
+	border: 1px solid #111;
+	border-radius: 0;
+	box-shadow: none !important;
+}
+
+.arv-cmap .maplibregl-ctrl-group button {
+	width: 30px;
+	height: 30px;
+	border-radius: 0 !important;
+}
+
+.arv-cmap .maplibregl-ctrl-group button + button {
+	border-top: 1px solid #d6d6d6;
+}
+
+.arv-cmap .maplibregl-ctrl-attrib {
+	font-size: 10px;
+}
+
+.arv-cmap__bar {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 5;
+	display: flex;
+	border: 1px solid #111;
+	background: #fff;
+}
+
+.arv-cmap__tools {
+	top: 46px;
+}
+
+.arv-cmap__bar button {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 !important;
+	padding: 7px 10px !important;
+	border: 0 !important;
+	border-right: 1px solid #d6d6d6 !important;
+	border-radius: 0 !important;
+	background: #fff !important;
+	box-shadow: none !important;
+	color: #111 !important;
+	font: 900 0.7rem/1 Lato, sans-serif !important;
+	letter-spacing: 0.12em;
+	text-shadow: none !important;
+	text-transform: uppercase;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+.arv-cmap__bar button:last-child {
+	border-right: 0 !important;
+}
+
+.arv-cmap__bar button.is-on {
+	background: #111 !important;
+	color: #fff !important;
+}
+
+.arv-cmap__bar svg {
+	display: block;
+}
+
+.arv-cmap__pin {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	width: 52px;
+	height: 52px;
+	border: 2px solid #111;
+	border-radius: 50%;
+	background: #fff;
+}
+
+.arv-cmap__pin.is-plain {
+	width: 16px;
+	height: 16px;
+	border: 3px solid #fff;
+	background: #111;
+}
+
+.arv-cmap__pin img {
+	width: 80% !important;
+	max-width: none !important;
+	height: auto !important;
+}
+
+.arv-cmap__pin span,
+.arv-cmap__aid span {
+	position: absolute;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.arv-cmap__pin span {
+	top: 50%;
+	left: calc(100% + 6px);
+	transform: translateY(-50%);
+	padding: 3px 6px;
+	border: 1px solid #111;
+	background: #fff;
+	color: #111;
+	font: 900 11px/1.2 Lato, sans-serif;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.arv-cmap__aid {
+	box-sizing: border-box;
+	width: 12px;
+	height: 12px;
+	border: 2px solid #111;
+	border-radius: 50%;
+	background: #fff;
+	cursor: pointer;
+}
+
+.arv-cmap__aid span {
+	bottom: 14px;
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 3px 6px;
+	background: #111;
+	color: #fff;
+	font: 700 11px/1.2 Lato, sans-serif;
+}
+
+.arv-cmap.is-narrow .arv-cmap__pin:not(.is-plain) span {
+	display: none;
+}
+
+.arv-cmap.is-narrow .arv-cmap__aid span {
+	padding: 2px 4px;
+	font-size: 10px;
+}
+
+/* Hidden when zoomed out far enough that a 100 mile course would be a
+ * string of overlapping numbers. */
+.arv-cmap__mile {
+	display: none;
+	min-width: 16px;
+	padding: 1px 3px;
+	box-sizing: border-box;
+	border: 1px solid #fff;
+	background: #111;
+	color: #fff;
+	font: 900 10px/14px Lato, sans-serif;
+	text-align: center;
+	pointer-events: none;
+}
+
+.arv-cmap.show-miles .arv-cmap__mile {
+	display: block;
+}
+
+.arv-cmap__me {
+	display: none;
+	box-sizing: border-box;
+	width: 16px;
+	height: 16px;
+	border: 3px solid #111;
+	border-radius: 50%;
+	background: #fff;
+}
+
+.arv-cmap__info {
+	padding: 10px 0 0;
+	border-top: 1px solid #111;
+	background: #fff;
+}
+
+.arv-cmap__top {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0 0 4px;
+}
+
+.arv-cmap__read {
+	min-width: 0;
+	min-height: 1.4em;
+	overflow: hidden;
+	color: #555;
+	font-size: 0.78rem;
+	font-variant-numeric: tabular-nums;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.arv-cmap__read b {
+	color: #000;
+}
+
+.arv-cmap__links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	font-size: 0.8rem;
+	white-space: nowrap;
+}
+
+.arv-cmap__links a {
+	font-weight: 700;
+}
+
+.arv-cmap__prof {
+	position: relative;
+	border-bottom: 1px solid #111;
+	cursor: crosshair;
+	touch-action: pan-y;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.arv-cmap__prof svg {
+	display: block;
+	width: 100%;
+	height: 120px;
+}
+
+.arv-cmap__cur {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	display: none;
+	width: 1px;
+	background: #111;
+	pointer-events: none;
+}
+
+.arv-cmap__dot,
+.arv-cmap__aidp {
+	position: absolute;
+	box-sizing: border-box;
+	border-radius: 50%;
+	background: #fff;
+	pointer-events: none;
+}
+
+.arv-cmap__dot {
+	display: none;
+	width: 12px;
+	height: 12px;
+	margin: -6px 0 0 -6px;
+	border: 3px solid #111;
+}
+
+.arv-cmap__prof.is-on .arv-cmap__cur,
+.arv-cmap__prof.is-on .arv-cmap__dot {
+	display: block;
+}
+
+.arv-cmap__aidp {
+	width: 10px;
+	height: 10px;
+	margin: -5px 0 0 -5px;
+	border: 2px solid #111;
+}
+
+.arv-cmap__lap {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	border-left: 1px dashed #111;
+	pointer-events: none;
+}
+
+.arv-cmap__lap.is-first {
+	left: 0;
+	border-left: 0;
+}
+
+.arv-cmap__lap span {
+	position: absolute;
+	top: 4px;
+	left: 5px;
+	color: #111;
+	font: 900 10px/1 Lato, sans-serif;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.arv-cmap__axis {
+	position: relative;
+	height: 1.5em;
+	margin: 3px 0 0;
+	color: #777;
+	font-size: 0.68rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.arv-cmap__axis span {
+	position: absolute;
+	top: 0;
+	transform: translateX(-50%);
+	white-space: nowrap;
+}
+
+.arv-cmap__axis span:first-child {
+	transform: none;
+}
+
+.arv-cmap__axis span:last-child {
+	transform: translateX(-100%);
+}
+
+.arv-cmap__legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 14px;
+	margin: 2px 0 14px;
+	color: #555;
+	font-size: 0.68rem;
+}
+
+.arv-cmap__legend span {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.arv-cmap__legend i {
+	display: block;
+	width: 10px;
+	height: 10px;
+}
+
+.arv-cmap.is-full {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 2147483000;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: 100vw;
+	height: 100vh;
+	height: 100dvh;
+	margin: 0;
+	padding: 0 12px;
+	border: 0;
+	background: #fff;
+}
+
+.arv-cmap.is-full .arv-cmap__stage {
+	flex: 1;
+	margin: 0 -12px;
+}
+
+.arv-cmap.is-full .arv-cmap__map {
+	height: 100% !important;
+}
+
+.arv-cmap.is-full .arv-cmap__legend {
+	margin-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 860px) {
+	.arv-cmap__map {
+		height: 420px;
+	}
+
+	.arv-cmap__top {
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.arv-cmap__prof svg {
+		height: 90px;
+	}
+
+	.arv-cmap__hint {
+		display: none;
+	}
+}

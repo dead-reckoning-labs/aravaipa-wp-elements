@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.99.89
+ * Version:           0.99.90
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.99.89' );
+define( 'ARV_ELEMENTS_VERSION', '0.99.90' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -102,6 +102,10 @@ require_once ARV_ELEMENTS_PATH . 'includes/watch-store.php';
 // arv_watch_youtube_id() it parses URLs with, and unconditionally because
 // it registers a shortcode.
 require_once ARV_ELEMENTS_PATH . 'includes/race-video.php';
+
+// One distance's interactive course map, built from its CalTopo map.
+// Loaded unconditionally because it registers a shortcode.
+require_once ARV_ELEMENTS_PATH . 'includes/course-map.php';
 
 // Aravaipa's films, read from the same system's YouTube playlists. Loaded
 // unconditionally for the same reason.
@@ -254,6 +258,7 @@ function arv_elements_register() {
 		'media-hub',
 		'media-latest',
 		'race-video',
+		'course-map',
 	);
 
 	foreach ( $elements as $element ) {
