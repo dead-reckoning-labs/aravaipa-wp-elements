@@ -11676,6 +11676,7 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 
 .arv-cmap__tip {
 	position: absolute;
+	z-index: 2;
 	top: -34px;
 	display: none;
 	padding: 5px 8px;
@@ -11720,8 +11721,10 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	pointer-events: none;
 }
 
+/* Hidden while scrubbing: the cursor label carries the aid name then,
+ * and the two overlapping read as neither. */
 .arv-cmap__prof.is-on .arv-cmap__aidl {
-	opacity: 0.35;
+	opacity: 0;
 }
 
 .arv-cmap__actions {
