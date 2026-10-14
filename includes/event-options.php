@@ -7,7 +7,8 @@
  * stay registered. [arv_event_options event="louisville-2026"] renders the
  * form; each submission is kept as a private arv_event_request post so the
  * team can work the list in wp-admin (Event Requests), mark each one done,
- * and export CSV. The runner gets a confirmation email and info@ gets a copy.
+ * and export CSV. The runner gets a confirmation email and info@ gets one
+ * daily digest of new requests.
  *
  * Every name is checked against the event's Momentum roster, so a typo or a
  * non-registrant is flagged on the list instead of looking like a real
@@ -193,7 +194,7 @@ function arv_event_options_handle() {
 		exit;
 	}
 	$match = arv_event_options_match( $ev, $name );
-	$id    = wp_insert_post(
+	wp_insert_post(
 		array(
 			'post_type'   => 'arv_event_request',
 			'post_status' => 'private',
@@ -216,20 +217,83 @@ function arv_event_options_handle() {
 		$email,
 		'We got your request: ' . $ev['name'],
 		"Hi {$name},\n\nThanks for letting us know. Here is what we received:\n\n{$summary}\nOur team will process your request and follow up within a few business days. Questions? Reply to this email or write to info@aravaiparunning.com.\n\nThe Aravaipa Team\n",
-		array( 'Reply-To: info@aravaiparunning.com' )
-	);
-	$flag = 'yes' === $match ? '' : ( 'no' === $match ? ' [NAME NOT ON ROSTER]' : ' [roster check unavailable]' );
-	wp_mail(
-		$ev['notify'],
-		'[' . $ev['name'] . '] ' . $label . ': ' . $name . $flag,
-		$summary . "On roster: {$match}\nAdmin: " . admin_url( 'post.php?post=' . (int) $id . '&action=edit' ) . "\n",
-		array( 'Reply-To: ' . $name . ' <' . $email . '>' )
+		array( 'From: Aravaipa Running <info@aravaiparunning.com>', 'Reply-To: info@aravaiparunning.com' )
 	);
 	wp_safe_redirect( add_query_arg( 'arv_evopt', 'sent', $back ) );
 	exit;
 }
 add_action( 'admin_post_nopriv_arv_event_options', 'arv_event_options_handle' );
 add_action( 'admin_post_arv_event_options', 'arv_event_options_handle' );
+
+// One email a day to each event's notify address instead of one per request:
+// a copy per submission buried info@ the morning the Louisville email went
+// out. The digest lists what came in since the last one, flags names not on
+// the roster, and links to the Event Requests list. Nothing new, no email.
+add_action(
+	'init',
+	function () {
+		if ( ! wp_next_scheduled( 'arv_evopt_digest' ) ) {
+			// Start from now, so the first digest doesn't resend what info@ already got.
+			add_option( 'arv_evopt_digest_last', current_time( 'mysql' ), '', false );
+			$next = new DateTime( 'tomorrow 07:00', new DateTimeZone( 'America/Denver' ) );
+			$now  = new DateTime( 'today 07:00', new DateTimeZone( 'America/Denver' ) );
+			wp_schedule_event( time() < $now->getTimestamp() ? $now->getTimestamp() : $next->getTimestamp(), 'daily', 'arv_evopt_digest' );
+		}
+	}
+);
+add_action( 'arv_evopt_digest', 'arv_event_options_digest' );
+
+function arv_event_options_digest() {
+	$since   = (string) get_option( 'arv_evopt_digest_last', '' );
+	$now     = current_time( 'mysql' );
+	$events  = arv_event_options_events();
+	$choices = arv_event_options_choices();
+	$args    = array(
+		'post_type'   => 'arv_event_request',
+		'post_status' => 'any',
+		'numberposts' => -1,
+		'orderby'     => 'date',
+		'order'       => 'ASC',
+	);
+	if ( '' !== $since ) {
+		$args['date_query'] = array( array( 'after' => $since, 'inclusive' => false ) );
+	}
+	$by_event = array();
+	foreach ( get_posts( $args ) as $p ) {
+		$by_event[ (string) get_post_meta( $p->ID, '_evopt_event', true ) ][] = $p;
+	}
+	foreach ( $by_event as $slug => $posts ) {
+		if ( ! isset( $events[ $slug ] ) ) {
+			continue;
+		}
+		$ev     = $events[ $slug ];
+		$counts = array_fill_keys( array_keys( $choices ), 0 );
+		$lines  = array();
+		foreach ( $posts as $p ) {
+			$m      = function ( $k ) use ( $p ) {
+				return (string) get_post_meta( $p->ID, $k, true );
+			};
+			$choice = $m( '_evopt_choice' );
+			if ( isset( $counts[ $choice ] ) ) {
+				++$counts[ $choice ];
+			}
+			$flag    = 'yes' === $m( '_evopt_roster' ) ? '' : ( 'no' === $m( '_evopt_roster' ) ? '  [name not on roster, match by email]' : '  [roster check unavailable]' );
+			$note    = $m( '_evopt_note' );
+			$lines[] = '- ' . $m( '_evopt_name' ) . ' <' . $m( '_evopt_email' ) . '>, ' . $m( '_evopt_distance' ) . ': ' . ( $choices[ $choice ] ?? $choice ) . $flag . ( '' !== $note ? "\n  Note: " . $note : '' );
+		}
+		$tally = array();
+		foreach ( $counts as $k => $n ) {
+			$tally[] = $choices[ $k ] . ': ' . $n;
+		}
+		wp_mail(
+			$ev['notify'],
+			'[' . $ev['name'] . '] ' . count( $posts ) . ' new request' . ( 1 === count( $posts ) ? '' : 's' ),
+			"New since the last digest:\n" . implode( "\n", $tally ) . "\n\n" . implode( "\n", $lines ) . "\n\nWork the list and export CSV here:\n" . admin_url( 'edit.php?post_type=arv_event_request' ) . "\n",
+			array( 'From: Aravaipa Running <info@aravaiparunning.com>' )
+		);
+	}
+	update_option( 'arv_evopt_digest_last', $now, false );
+}
 
 // wp-admin list: the columns the team works from, a status they can flip,
 // and a CSV export.
