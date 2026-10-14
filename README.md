@@ -357,6 +357,6 @@ Golden Pond Aid | Golden Pond | 9:30 AM | Water, snacks
 
 Aid rows are `CalTopo marker title | Display name | Cutoff | Services`, all optional after the first column. Without them, markers whose title says Aid, AS or Station (or that use CalTopo's first aid symbol) within 120 m of the line become aid stations, named from the marker with the "Aid" suffix dropped, and a marker passed more than once gets every mileage.
 
-The CalTopo map is cached for 12 hours, and the last good copy is kept indefinitely, so a CalTopo outage or a map made private keeps showing the last course instead of nothing. Elevation, gain and grade are worked out in the browser from the same terrain tiles the 3D view uses. On a loop course, every mid-race return to the line's first point is a lap turn.
+The CalTopo map is cached for 12 hours, and the last good copy is kept indefinitely, so a CalTopo outage or a map made private keeps showing the last course instead of nothing. Elevation, gain and grade are worked out in the browser (set `gain` to the race's published figure in feet to show that instead, so the map agrees with the page) from the same terrain tiles the 3D view uses. On a loop course, every mid-race return to the line's first point is a lap turn.
 
 `#course-<distance>` on the page URL (what Share hands out) opens the tab holding that map and scrolls to it.

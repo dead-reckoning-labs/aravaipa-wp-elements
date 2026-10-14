@@ -935,7 +935,7 @@
 
 			R0 =
 				'<b>' + fmtMi( c.total ) + ' mi</b> · ' +
-				ft( P.gain ).toLocaleString() + ' ft gain · ' +
+				( cfg.gain || ft( P.gain ) ).toLocaleString() + ' ft gain · ' +
 				ft( P.lo ).toLocaleString() + ' to ' + ft( P.hi ).toLocaleString() + ' ft' +
 				'<span class="arv-cmap__hint"> · ' + hint + '</span>';
 			read.innerHTML = R0;
