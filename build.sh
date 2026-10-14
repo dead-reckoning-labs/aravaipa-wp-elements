@@ -85,7 +85,7 @@ for inc in "${INCLUDES[@]}"; do
 	cp "includes/$inc" "$STAGE/includes/"
 done
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/aravaipa-course-map.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
@@ -163,9 +163,12 @@ done < <(grep -hv '^[[:space:]]*[*/]' includes/elements/*.php | grep -oE 'ARV_LO
 # cp is a one-line mistake that produces a 404 for the file and a feature
 # that silently does nothing on the live site, with the plugin otherwise
 # looking fine. Derived from the enqueues themselves so the two cannot drift.
+# Scans includes/ as well as the main file: elements enqueue their own
+# scripts at render time, and the Course Map's first release shipped
+# without its script because this only looked at $NAME.php.
 while read -r js; do
-	[ -f "$STAGE/assets/$js" ] || { echo "assets/$js is enqueued by $NAME.php but not packaged" >&2; missing=1; }
-done < <(grep -oE "ARV_ELEMENTS_URL \. 'assets/[a-z-]+\.js'" "$NAME.php" | sed -E "s#.*assets/##; s#'##")
+	[ -f "$STAGE/assets/$js" ] || { echo "assets/$js is enqueued but not packaged" >&2; missing=1; }
+done < <(grep -rhoE "ARV_ELEMENTS_URL \. 'assets/[a-z-]+\.js'" "$NAME.php" includes | sed -E "s#.*assets/##; s#'##" | sort -u)
 [ "$missing" -eq 0 ] || exit 1
 
 # .arv-calendar__row sets its own unconditional `display: flex`, which has
