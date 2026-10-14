@@ -22,6 +22,7 @@ cs_register_element(
 				'name'    => cs_value( '', 'markup' ),
 				'pdf'     => cs_value( '', 'markup' ),
 				'logo'    => cs_value( '', 'markup' ),
+				'gain'    => cs_value( '', 'markup' ),
 				'aid'     => cs_value( '', 'markup' ),
 			),
 			'omega'
@@ -65,6 +66,11 @@ function arv_course_map_element_builder() {
 				'label' => __( 'Race logo for the start pin (optional)', 'aravaipa-elements' ),
 			),
 			array(
+				'key'   => 'gain',
+				'type'  => 'text',
+				'label' => __( 'Published elevation gain in feet (blank to measure)', 'aravaipa-elements' ),
+			),
+			array(
 				'key'         => 'aid',
 				'type'        => 'textarea',
 				'label'       => __( 'Aid stations', 'aravaipa-elements' ),
@@ -80,7 +86,7 @@ function arv_course_map_element_builder() {
  */
 function arv_course_map_element_render( $data ) {
 	$a = array();
-	foreach ( array( 'caltopo', 'line', 'name', 'pdf', 'logo', 'aid' ) as $k ) {
+	foreach ( array( 'caltopo', 'line', 'name', 'pdf', 'logo', 'aid', 'gain' ) as $k ) {
 		$a[ $k ] = isset( $data[ $k ] ) ? $data[ $k ] : '';
 	}
 

@@ -239,7 +239,7 @@ function arv_cmap_aid_rows( $text ) {
 /**
  * The map's markup: an empty container and its config as inline JSON.
  *
- * @param array $a caltopo, line, name, pdf, logo, aid.
+ * @param array $a caltopo, line, name, pdf, logo, aid, gain.
  * @return string
  */
 function arv_course_map_render( $a ) {
@@ -283,6 +283,10 @@ function arv_course_map_render( $a ) {
 		'line'    => $line['coords'],
 		'marks'   => $course['marks'],
 		'aid'     => (object) arv_cmap_aid_rows( isset( $a['aid'] ) ? $a['aid'] : '' ),
+		// The race's published gain, in feet. A DEM and a GPS watch never
+		// agree on a flat course, and a map that says 140 ft under a stat
+		// card that says 240 ft looks like one of them is wrong.
+		'gain'    => isset( $a['gain'] ) ? (int) preg_replace( '~[^0-9]~', '', (string) $a['gain'] ) : 0,
 	);
 
 	arv_course_map_enqueue();
@@ -342,6 +346,7 @@ function arv_course_map_shortcode( $atts, $content = '' ) {
 			'name'    => '',
 			'pdf'     => '',
 			'logo'    => '',
+			'gain'    => '',
 		),
 		$atts,
 		'arv_course_map'
