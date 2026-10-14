@@ -40,6 +40,10 @@
 
 	var ICON_FS = '<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 5V1h4M8 1h4v4M12 8v4H8M5 12H1V8"/></svg>';
 	var ICON_PLAY = '<svg width="11" height="12" viewBox="0 0 11 12" fill="currentColor"><path d="M1 0.5l9.5 5.5L1 11.5z"/></svg>';
+	var ICON_WATCH = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="10" height="10"/><path d="M6 4V1h6v3M6 14v3h6v-3M9 7v2.5l1.5 1"/></svg>';
+	var ICON_PDF = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 1h7l4 4v12H4z"/><path d="M11 1v4h4M7 10h5M7 13h5"/></svg>';
+	var ICON_OUT = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H2v13h13v-6M11 2h5v5M16 2L8 10"/></svg>';
+	var ICON_SHARE = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12V2M5 5.5L9 1.5l4 4M3 9v8h12V9"/></svg>';
 	var ICON_STOP = '<svg width="11" height="12" viewBox="0 0 11 12" fill="currentColor"><path d="M1 1h3.5v10H1zM6.5 1H10v10H6.5z"/></svg>';
 
 	function esc( v ) {
@@ -539,16 +543,21 @@
 			'</div>' +
 			'</div>' +
 			'<div class="arv-cmap__info">' +
-			'<div class="arv-cmap__top"><div class="arv-cmap__read"></div>' +
-			'<div class="arv-cmap__links"><a href="#" class="arv-cmap__share">Share</a><a href="#" class="arv-cmap__gpx" title="For Garmin, COROS, Suunto, Strava or Apple Watch">Watch (GPX)</a>' +
-			( cfg.pdf ? '<a href="' + esc( cfg.pdf ) + '">PDF map</a>' : '' ) +
-			'<a href="' + esc( cfg.caltopo ) + '" target="_blank" rel="noopener">CalTopo</a></div></div>' +
-			'<div class="arv-cmap__prof"><svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"></svg><div class="arv-cmap__cur"></div><div class="arv-cmap__dot"></div></div>' +
+			'<div class="arv-cmap__read"></div>' +
+			'<div class="arv-cmap__prof"><svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"></svg><div class="arv-cmap__cur"></div><div class="arv-cmap__dot"></div><div class="arv-cmap__tip"></div></div>' +
 			'<div class="arv-cmap__axis"></div>' +
 			'<div class="arv-cmap__legend">' +
 			GRADES.map( function ( g ) {
 				return '<span><i style="background:' + g[ 1 ] + '"></i>' + g[ 2 ] + '</span>';
 			} ).join( '' ) +
+			'</div>' +
+			// Real buttons, not a row of small text links: these are the
+			// things a runner actually leaves the page for.
+			'<div class="arv-cmap__actions">' +
+			'<a href="#" class="arv-cmap__gpx">' + ICON_WATCH + '<span>Send to watch <small>GPX</small></span></a>' +
+			( cfg.pdf ? '<a href="' + esc( cfg.pdf ) + '" target="_blank" rel="noopener">' + ICON_PDF + '<span>Course map <small>PDF</small></span></a>' : '' ) +
+			'<a href="' + esc( cfg.caltopo ) + '" target="_blank" rel="noopener">' + ICON_OUT + '<span>Open in CalTopo</span></a>' +
+			'<a href="#" class="arv-cmap__share">' + ICON_SHARE + '<span>Share course</span></a>' +
 			'</div>' +
 			'</div>';
 
@@ -560,6 +569,7 @@
 			prof = q( '.arv-cmap__prof' ),
 			svg = q( '.arv-cmap__prof svg' ),
 			cur = q( '.arv-cmap__cur' ),
+			tip = q( '.arv-cmap__tip' ),
 			dot = q( '.arv-cmap__dot' ),
 			bb = cfg.line.reduce(
 				function ( b, p ) {
@@ -632,6 +642,30 @@
 			el.classList.toggle( 'show-miles', m.getZoom() >= 12.5 );
 		}
 		m.on( 'zoom', mileVis );
+
+		/**
+		 * Keeps marker labels inside the map. A label is centred on its
+		 * marker, so an aid station near the edge (Lykins Gulch on a phone)
+		 * had half its name hanging off the side. Nudged by margin, which
+		 * stacks with the centring transform instead of replacing it.
+		 */
+		function clampLabels() {
+			var box = mapEl.getBoundingClientRect();
+			el.querySelectorAll( '.arv-cmap__aid span, .arv-cmap__pin span' ).forEach( function ( sp ) {
+				sp.style.marginLeft = '0px';
+				var r = sp.getBoundingClientRect(),
+					dx = 0;
+				if ( r.left < box.left + 4 ) {
+					dx = box.left + 4 - r.left;
+				} else if ( r.right > box.right - 4 ) {
+					dx = box.right - 4 - r.right;
+				}
+				sp.style.marginLeft = dx + 'px';
+			} );
+		}
+		m.on( 'move', clampLabels );
+		m.on( 'resize', clampLabels );
+		m.on( 'idle', clampLabels );
 
 		var me = marker( '', 'arv-cmap__me', c.pts[ 0 ], 5 ),
 			meEl = me.getElement();
@@ -852,9 +886,9 @@
 				navigator.share( { title: title, url: url } ).catch( function () {} );
 			} else if ( navigator.clipboard ) {
 				navigator.clipboard.writeText( url ).then( function () {
-					share.textContent = 'Link copied';
+					share.querySelector( 'span' ).textContent = 'Link copied';
 					setTimeout( function () {
-						share.textContent = 'Share';
+						share.querySelector( 'span' ).textContent = 'Share course';
 					}, 2000 );
 				} );
 			} else {
@@ -934,11 +968,36 @@
 			ax.innerHTML = h;
 
 			R0 =
-				'<b>' + fmtMi( c.total ) + ' mi</b> · ' +
-				( cfg.gain || ft( P.gain ) ).toLocaleString() + ' ft gain · ' +
-				ft( P.lo ).toLocaleString() + ' to ' + ft( P.hi ).toLocaleString() + ' ft' +
-				'<span class="arv-cmap__hint"> · ' + hint + '</span>';
+				'<div class="arv-cmap__stats"><span><b>' + fmtMi( c.total ) + '</b> mi</span><span><b>' +
+				( cfg.gain || ft( P.gain ) ).toLocaleString() + '</b> ft gain</span><span><b>' +
+				S.aid.length + '</b> aid stop' + ( 1 === S.aid.length ? '' : 's' ) + '</span></div>' +
+				'<div class="arv-cmap__sub">' + hint + '</div>';
 			read.innerHTML = R0;
+
+			// Aid names on the profile itself, so scrubbing it reads as a
+			// list of stops. Any label that would collide with the one
+			// before it moves up a row, and past two rows is dropped: a 100
+			// mile course with 20 aid stations keeps its dots and loses only
+			// the names that cannot fit.
+			var rows = [ -Infinity, -Infinity ],
+				w = prof.offsetWidth;
+			S.aid.forEach( function ( a ) {
+				var l = document.createElement( 'span' );
+				l.className = 'arv-cmap__aidl';
+				l.textContent = a.name;
+				prof.appendChild( l );
+				var x = ( a.at / c.total ) * w,
+					lw = l.offsetWidth,
+					left = Math.max( 0, Math.min( w - lw, x - lw / 2 ) ),
+					row = left >= rows[ 0 ] + 6 ? 0 : left >= rows[ 1 ] + 6 ? 1 : -1;
+				if ( row < 0 ) {
+					l.remove();
+					return;
+				}
+				l.style.left = ( left / w ) * 100 + '%';
+				l.style.top = 'calc(' + Y( P.ele[ indexAt( c, a.at ) ] ) + '% - ' + ( 26 + row * 22 ) + 'px)';
+				rows[ row ] = left + lw;
+			} );
 		}
 
 		function show( i ) {
@@ -956,19 +1015,27 @@
 			var near = S.aid.filter( function ( a ) {
 					return Math.abs( a.at - d ) < 130;
 				} )[ 0 ],
-				txt = '<b>Mile ' + fmtMi( d ) + '</b> · ' + ft( P.ele[ i ] ).toLocaleString() + ' ft · ' + Math.round( P.grade[ i ] ) + '%';
+				txt = '<b>Mile ' + fmtMi( d ) + '</b><span>' + ft( P.ele[ i ] ).toLocaleString() + ' ft</span><span>' + Math.round( P.grade[ i ] ) + '% grade</span>';
 			if ( near ) {
 				var next = S.aid.filter( function ( a ) {
 						return a.at > near.at + 400;
 					} )[ 0 ],
 					to = next ? next.at - near.at : c.total - near.at;
 				txt =
-					'<b>' + esc( near.name ) + '</b> · mi ' + fmtMi( near.at ) +
-					( near.row && near.row.cut ? ' · cutoff ' + esc( near.row.cut ) : '' ) +
-					( near.row && near.row.svc ? ' · ' + esc( near.row.svc ) : '' ) +
-					' · ' + fmtMi( to ) + ' mi to ' + ( next ? esc( next.name ) : 'finish' );
+					'<b>Mile ' + fmtMi( near.at ) + '</b><em>' + esc( near.name ) + '</em>' +
+					( near.row && near.row.cut ? '<span>Cutoff ' + esc( near.row.cut ) + '</span>' : '' ) +
+					( near.row && near.row.svc ? '<span>' + esc( near.row.svc ) + '</span>' : '' ) +
+					'<span>' + fmtMi( to ) + ' mi to ' + ( next ? esc( next.name ) : 'finish' ) + '</span>';
 			}
-			read.innerHTML = txt;
+			read.innerHTML = '<div class="arv-cmap__live">' + txt + '</div>';
+
+			// A label riding the cursor, since on a phone a finger covers
+			// the profile and the readout above it is out of sight.
+			tip.innerHTML = '<b>Mi ' + fmtMi( d ) + '</b>' + ( near ? '<span>' + esc( near.name ) + '</span>' : '<i>' + ft( P.ele[ i ] ).toLocaleString() + ' ft</i>' );
+			var pw = prof.offsetWidth,
+				tw = tip.offsetWidth,
+				tx = ( d / c.total ) * pw;
+			tip.style.left = Math.max( 0, Math.min( pw - tw, tx - tw / 2 ) ) + 'px';
 		}
 
 		function hide() {
