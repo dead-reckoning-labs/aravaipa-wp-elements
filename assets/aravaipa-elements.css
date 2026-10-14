@@ -11610,43 +11610,161 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	background: #fff;
 }
 
-.arv-cmap__top {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
-	gap: 12px;
-	margin: 0 0 4px;
-}
-
 .arv-cmap__read {
-	min-width: 0;
-	min-height: 1.4em;
-	overflow: hidden;
-	color: #555;
-	font-size: 0.78rem;
+	min-height: 62px;
+	margin: 0 0 10px;
 	font-variant-numeric: tabular-nums;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 
-.arv-cmap__read b {
-	color: #000;
-}
-
-.arv-cmap__links {
+.arv-cmap__stats {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px 16px;
+	gap: 4px 22px;
+	color: #555;
 	font-size: 0.8rem;
-	white-space: nowrap;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
 }
 
-.arv-cmap__links a {
-	font-weight: 700;
+.arv-cmap__stats b {
+	margin-right: 4px;
+	color: #000;
+	font-size: 1.5rem;
+	font-weight: 900;
+	letter-spacing: 0;
+}
+
+.arv-cmap__sub {
+	margin-top: 4px;
+	color: #777;
+	font-size: 0.78rem;
+}
+
+/* The scrub readout: black, big, and the same height as the stats it
+ * replaces, so the profile under it does not jump while a finger is on it. */
+.arv-cmap__live {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 14px;
+	box-sizing: border-box;
+	min-height: 62px;
+	padding: 10px 14px;
+	background: #111;
+	color: #fff;
+	font-size: 0.85rem;
+}
+
+.arv-cmap__live b {
+	font-size: 1.35rem;
+	font-weight: 900;
+}
+
+.arv-cmap__live em {
+	padding: 4px 8px;
+	background: #e2702a;
+	color: #111;
+	font-style: normal;
+	font-weight: 900;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.arv-cmap__live span {
+	color: #ddd;
+}
+
+.arv-cmap__tip {
+	position: absolute;
+	top: -34px;
+	display: none;
+	padding: 5px 8px;
+	background: #111;
+	color: #fff;
+	font: 700 12px/1.2 Lato, sans-serif;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.arv-cmap__tip b {
+	font-weight: 900;
+}
+
+.arv-cmap__tip span {
+	margin-left: 8px;
+	color: #e2702a;
+	font-weight: 900;
+	text-transform: uppercase;
+}
+
+.arv-cmap__tip i {
+	margin-left: 8px;
+	color: #ccc;
+	font-style: normal;
+}
+
+.arv-cmap__prof.is-on .arv-cmap__tip {
+	display: block;
+}
+
+.arv-cmap__aidl {
+	position: absolute;
+	padding: 2px 5px;
+	background: #fff;
+	border: 1px solid #111;
+	color: #111;
+	font: 900 10px/1.2 Lato, sans-serif;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.arv-cmap__prof.is-on .arv-cmap__aidl {
+	opacity: 0.35;
+}
+
+.arv-cmap__actions {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+	gap: 8px;
+	margin: 0 0 16px;
+}
+
+.arv-cmap__actions a {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	border: 2px solid #111;
+	background: #fff;
+	color: #111 !important;
+	font: 900 0.8rem/1.2 Lato, sans-serif;
+	letter-spacing: 0.08em;
+	text-decoration: none !important;
+	text-transform: uppercase;
+}
+
+.arv-cmap__actions a:hover,
+.arv-cmap__actions a:focus-visible {
+	background: #111;
+	color: #fff !important;
+}
+
+.arv-cmap__actions svg {
+	flex: none;
+}
+
+.arv-cmap__actions small {
+	margin-left: 4px;
+	color: #e2702a;
+	font-size: 0.7rem;
+	font-weight: 900;
 }
 
 .arv-cmap__prof {
 	position: relative;
+	margin-top: 40px;
 	border-bottom: 1px solid #111;
 	cursor: crosshair;
 	touch-action: pan-y;
@@ -11805,16 +11923,16 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 		height: 420px;
 	}
 
-	.arv-cmap__top {
-		flex-direction: column;
-		gap: 4px;
-	}
-
 	.arv-cmap__prof svg {
 		height: 90px;
 	}
 
-	.arv-cmap__hint {
-		display: none;
+	.arv-cmap__actions {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.arv-cmap__actions a {
+		padding: 11px 10px;
+		font-size: 0.72rem;
 	}
 }
