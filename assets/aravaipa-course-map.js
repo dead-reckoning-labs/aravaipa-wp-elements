@@ -591,9 +591,25 @@
 			fitBoundsOptions: { padding: 40 },
 			scrollZoom: false,
 			maxPitch: 75,
+			// iPhones report a pixel ratio of 3. A 3x canvas plus the
+			// terrain's own render targets is enough GPU memory for iOS
+			// Safari to drop the WebGL context mid-flight; 2x is visibly
+			// the same on a map.
+			pixelRatio: Math.min( window.devicePixelRatio || 1, 2 ),
 			attributionControl: { compact: true },
 		} );
 		m.addControl( new maplibregl.NavigationControl( { visualizePitch: true } ), 'top-left' );
+
+		// If the browser drops the GL context anyway, come back flat: a 2D
+		// map that works beats a 3D one that went blank.
+		m.on( 'webglcontextlost', function () {
+			stopFly();
+			setTilt( false );
+		} );
+		m.on( 'webglcontextrestored', function () {
+			m.setTerrain( null );
+			fit( false );
+		} );
 
 		function marker( html, cls, ll, z ) {
 			var e = document.createElement( 'div' );
@@ -653,6 +669,14 @@
 			var box = mapEl.getBoundingClientRect();
 			el.querySelectorAll( '.arv-cmap__aid span, .arv-cmap__pin span' ).forEach( function ( sp ) {
 				sp.style.marginLeft = '0px';
+				// Only labels whose marker is on screen: pulling the label
+				// of an off-screen marker into view would float a name over
+				// the wrong place.
+				var mk = sp.parentNode.getBoundingClientRect(),
+					cx = mk.left + mk.width / 2;
+				if ( cx < box.left || cx > box.right ) {
+					return;
+				}
 				var r = sp.getBoundingClientRect(),
 					dx = 0;
 				if ( r.left < box.left + 4 ) {
@@ -1146,11 +1170,27 @@
 			raf = 0,
 			bFly = q( '.arv-cmap__fly' );
 
+		/**
+		 * Phones fly flat. With terrain on, nothing drapes (route included)
+		 * until the elevation tiles under the camera arrive, and a camera
+		 * moving at flyover speed on a phone connection outruns them: the
+		 * first iPhone test was an empty yellow screen with a dot on it.
+		 * Without terrain the base map falls back to the tiles it already
+		 * has while new ones load, so the flight always shows something.
+		 * Desktop keeps the relief, and waits briefly for tiles instead.
+		 */
+		var terrain = { source: 'dem', exaggeration: 1.5 },
+			flatFly = false;
+
 		function stopFly() {
 			if ( ! flying ) {
 				return;
 			}
 			flying = false;
+			if ( flatFly ) {
+				flatFly = false;
+				m.setTerrain( terrain );
+			}
 			cancelAnimationFrame( raf );
 			bFly.classList.remove( 'is-on' );
 			bFly.innerHTML = ICON_PLAY + '<span>Fly</span>';
@@ -1170,14 +1210,22 @@
 			bFly.classList.add( 'is-on' );
 			bFly.innerHTML = ICON_STOP + '<span>Stop</span>';
 			setTilt( true );
+			if ( touch || el.classList.contains( 'is-narrow' ) ) {
+				flatFly = true;
+				m.setTerrain( null );
+			}
 
 			var dur = Math.min( 120, Math.max( 30, mi( c.total ) * 3 ) ) * 1000,
-				zoom = 15.3,
+				// A phone shows less ground per tile than a desktop, so it can
+				// sit a little higher and ask for fewer tiles per second.
+				zoom = el.classList.contains( 'is-narrow' ) ? 14.6 : 15.3,
 				look = function ( d ) {
 					return bearing( c.pts[ indexAt( c, d ) ], c.pts[ indexAt( c, Math.min( c.total, d + 300 ) ) ] );
 				},
 				br = look( 0 ),
-				t0 = null;
+				prog = 0,
+				last = null,
+				waited = 0;
 
 			m.flyTo( { center: c.pts[ 0 ], zoom: zoom, pitch: 60, bearing: br, duration: 1800 } );
 			m.once( 'moveend', function () {
@@ -1188,10 +1236,22 @@
 					if ( ! flying ) {
 						return;
 					}
-					if ( null === t0 ) {
-						t0 = ts;
+					var dt = null === last ? 0 : Math.min( 100, ts - last );
+					last = ts;
+					// Hold position until the ground under the camera has
+					// loaded. With terrain on, nothing (route included)
+					// draws until its elevation tiles arrive, so on a phone
+					// connection a camera that never waits flies over an
+					// empty yellow screen. Capped, so one missing tile
+					// cannot stall the flight for good.
+					if ( ! flatFly && ! m.areTilesLoaded() && waited < 1200 ) {
+						waited += dt;
+						raf = requestAnimationFrame( step );
+						return;
 					}
-					var f = Math.min( 1, ( ts - t0 ) / dur ),
+					waited = 0;
+					prog += dt / dur;
+					var f = Math.min( 1, prog ),
 						d = f * c.total,
 						i = indexAt( c, d );
 					br += angle( look( d ), br ) * 0.035;
@@ -1270,7 +1330,10 @@
 			runs = gradeRuns( c, P.grade );
 			drawProfile();
 			// Flat courses barely register in 3D at true scale.
-			m.setTerrain( { source: 'dem', exaggeration: P.hi - P.lo < 120 ? 2.2 : 1.3 } );
+			terrain = { source: 'dem', exaggeration: P.hi - P.lo < 120 ? 2.2 : 1.3 };
+			if ( ! flatFly ) {
+				m.setTerrain( terrain );
+			}
 		} );
 		elevations( cfg.line ).then( function ( e ) {
 			lineEle = e;
