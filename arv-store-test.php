@@ -306,6 +306,7 @@ require_once __DIR__ . '/includes/media-latest.php';
 require_once __DIR__ . '/includes/weather.php';
 require_once __DIR__ . '/includes/live-page.php';
 require_once __DIR__ . '/includes/elements/results.php';
+require_once __DIR__ . '/includes/race-schema-racegoat.php';
 
 $pass = 0; $fail = 0;
 /**
@@ -7359,6 +7360,64 @@ arv_race_cutoff_store_set( array() );
 $GLOBALS['NOW_TS'] = null;
 $GLOBALS['ARV_OPTIONS'] = array();
 arv_race_store_import( $ROWS, true );
+
+// --- Race page SportsEvent, enriched for races sold on our own platform ---
+echo "\nRaceGoat SportsEvent\n";
+t( 'slug from an event URL',            'baldface-scramble-2027' === arv_rg_slug( 'https://racegoat.com/events/baldface-scramble-2027' ) );
+t( 'no slug from UltraSignup',          '' === arv_rg_slug( 'https://ultrasignup.com/register.aspx?did=130611' ) );
+t( 'MI is Eastern',                     'America/Detroit' === arv_rg_zone( 'Munising, MI' ) );
+t( 'western UP is Central',             'America/Menominee' === arv_rg_zone( 'Ironwood, MI' ) );
+t( 'WI is Central',                     'America/Chicago' === arv_rg_zone( 'La Pointe, WI' ) );
+t( 'TN is not guessed',                 '' === arv_rg_zone( 'Chattanooga, TN' ) );
+
+$bf = "[cs_content_seo]Start Times\n\nSaturday, June 1929K - 7:30 am14K - 8:30 am\n\n[/cs_content_seo][cs_content_seo]Bib Pickup 6:30am[/cs_content_seo]";
+t( 'first gun from the page',           '07:30' === arv_rg_page_start_time( $bf ) );
+t( 'twilight is not a gun',             '06:00' === arv_rg_page_start_time( 'Start Times Saturday, July 31 Civil Twilight - 5:50 am Sunrise - 6:26 am 50K - 6:00 am Marathon - 7:00 am' ) );
+t( 'an evening start',                  '19:00' === arv_rg_page_start_time( 'Start Times 7:00PM - 27K Start 7:30PM - 13K Start' ) );
+t( 'a date glued to the time',          '07:00' === arv_rg_page_start_time( 'Start Times Saturday, May 17:00am &ndash; 24 Hour' ) );
+t( 'a distance glued after the time',   '06:00' === arv_rg_page_start_time( 'Start Times Sunrise - 6:26 am50K - 6:00 amMarathon - 7:00 am' ) );
+t( 'no block, no time',                 '' === arv_rg_page_start_time( 'Bib pickup 6:30am' ) );
+
+t( 'NH in June is -04:00',              '2027-06-19T07:30:00-04:00' === arv_rg_start_date( array( 'name' => 'Baldface Scramble', 'iso' => '2027-06-19', 'location' => 'Chatham, NH' ), $bf ) );
+t( 'AZ in February is -07:00 at 07:00', '2027-02-07T07:00:00-07:00' === arv_rg_start_date( array( 'name' => 'X', 'iso' => '2027-02-07', 'location' => 'Vail, AZ' ), '' ) );
+t( 'unknown zone keeps the bare date',  '' === arv_rg_start_date( array( 'name' => 'X', 'iso' => '2027-02-07', 'location' => 'Chattanooga, TN' ), '' ) );
+t( 'price holds until the day before',  '2026-12-31' === arv_rg_price_valid_until( 'Goes up to $125.00 on Jan 1, 2027' ) );
+
+$embed = array( 'status' => 'open', 'opensOn' => null, 'distances' => array(
+	array( 'name' => '29K', 'priceCents' => 11500, 'state' => 'open', 'left' => null, 'priceNoteTitle' => 'Goes up to $125.00 on Jan 1, 2027' ),
+	array( 'name' => '14K', 'priceCents' => 7500, 'state' => 'soldout', 'left' => 0 ),
+) );
+$offers = arv_rg_offers( $embed, 'https://racegoat.com/events/baldface-scramble-2027' );
+t( 'one offer per distance',            2 === count( $offers ) );
+t( 'price in dollars',                  115.0 === $offers[0]['price'] && 'USD' === $offers[0]['priceCurrency'] );
+t( 'open is InStock',                   'https://schema.org/InStock' === $offers[0]['availability'] );
+t( 'sold out distance is SoldOut',      'https://schema.org/SoldOut' === $offers[1]['availability'] );
+
+$GLOBALS['_transients'] = array(); $GLOBALS['_http_queue'] = array(); $GLOBALS['_http_calls'] = 0;
+$GLOBALS['QUERIED_ID'] = 70381;
+$GLOBALS['POST_FIELD'][70381]['post_content'] = $bf;
+$GLOBALS['PERMALINK'][70381] = 'https://www.aravaiparunning.com/white-mountain-endurance/baldface-scramble/';
+arv_test_queue_response( array( 'code' => 200, 'body' => json_encode( $embed ) ) );
+$rg_race = array( 'name' => 'Baldface Scramble', 'iso' => '2027-06-19', 'location' => 'Chatham, NH', 'lat' => '44.2361858231926', 'lng' => '-71.0181529306965', 'register' => 'https://racegoat.com/events/baldface-scramble-2027', 'distances' => '29KM, 14KM' );
+$base = array( '@type' => 'SportsEvent', 'name' => 'Baldface Scramble', 'startDate' => '2027-06-19', 'location' => array( '@type' => 'Place', 'name' => 'WMNF' ), 'offers' => array( '@type' => 'Offer', 'url' => $rg_race['register'], 'availability' => 'https://schema.org/InStock' ) );
+$rich = arv_rg_enrich_event( $base, $rg_race );
+t( 'enriched start has an offset',      '2027-06-19T07:30:00-04:00' === $rich['startDate'] );
+t( 'enriched offers are per distance',  2 === count( $rich['offers'] ) && 'https://racegoat.com/events/baldface-scramble-2027' === $rich['offers'][0]['url'] );
+t( 'geo added',                         isset( $rich['location']['geo']['latitude'] ) );
+t( 'url is the canonical permalink',    'https://www.aravaiparunning.com/white-mountain-endurance/baldface-scramble/' === $rich['url'] );
+arv_rg_enrich_event( $base, $rg_race );
+t( 'embed cached, fetched once',        1 === $GLOBALS['_http_calls'] );
+
+$GLOBALS['_transients'] = array(); $GLOBALS['_http_calls'] = 0;
+$down = arv_rg_enrich_event( $base, $rg_race );
+t( 'API down keeps the single offer',   isset( $down['offers']['@type'] ) && 'Offer' === $down['offers']['@type'] );
+arv_rg_enrich_event( $base, $rg_race );
+t( 'a failure is cached too',           1 === $GLOBALS['_http_calls'] );
+
+$us = $base; $us['offers']['url'] = 'https://ultrasignup.com/register.aspx?did=1';
+t( 'UltraSignup race untouched',        $us === arv_rg_enrich_event( $us, array_merge( $rg_race, array( 'register' => 'https://ultrasignup.com/register.aspx?did=1' ) ) ) );
+t( 'missing data never fatals',         is_array( arv_rg_enrich_event( array( '@type' => 'SportsEvent' ), array( 'register' => 'https://racegoat.com/events/x-2027' ) ) ) );
+$GLOBALS['QUERIED_ID'] = 0;
 
 
 echo "\n$pass passed, $fail failed\n";

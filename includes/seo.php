@@ -220,6 +220,13 @@ function arv_seo_race_schema() {
 		return;
 	}
 
+	// A page that already carries its own SportsEvent (pasted into a raw
+	// content element) keeps it alone: two events for one race is a
+	// contradiction for a validator, not extra coverage.
+	if ( function_exists( 'arv_rg_page_has_own_event' ) && arv_rg_page_has_own_event( (int) get_queried_object_id() ) ) {
+		return;
+	}
+
 	$today  = arv_upcoming_races_today();
 	$action = arv_upcoming_races_action( $race, $today );
 
