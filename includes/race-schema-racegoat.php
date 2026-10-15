@@ -289,7 +289,11 @@ function arv_rg_price_valid_until( $note ) {
 function arv_rg_offers( $embed, $url ) {
 	$offers = array();
 	$status = isset( $embed['status'] ) ? strtolower( (string) $embed['status'] ) : '';
-	$opens  = isset( $embed['opensOn'] ) && is_string( $embed['opensOn'] ) ? $embed['opensOn'] : '';
+	// opensAt is the ISO instant registration opens (every race); opensOn is only a display string.
+	$opens = isset( $embed['opensAt'] ) && is_string( $embed['opensAt'] ) ? $embed['opensAt'] : '';
+	if ( '' === $opens || false === strtotime( $opens ) ) {
+		$opens = isset( $embed['opensOn'] ) && is_string( $embed['opensOn'] ) ? $embed['opensOn'] : '';
+	}
 
 	foreach ( (array) ( isset( $embed['distances'] ) ? $embed['distances'] : array() ) as $d ) {
 		if ( ! is_array( $d ) || ! isset( $d['priceCents'] ) || ! is_numeric( $d['priceCents'] ) ) {
