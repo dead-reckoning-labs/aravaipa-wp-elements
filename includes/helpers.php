@@ -518,7 +518,7 @@ function arv_races_link_target( $url ) {
  */
 function arv_link_aria_label( $label, $name ) {
 	$label = trim( (string) $label );
-	$name  = trim( wp_strip_all_tags( (string) $name ) );
+	$name  = trim( strip_tags( (string) $name ) );
 
 	if ( '' === $label || '' === $name ) {
 		return '';

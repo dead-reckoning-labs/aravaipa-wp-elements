@@ -521,6 +521,39 @@ function arv_race_store_region_for( $race ) {
 }
 
 /**
+ * Every race whose page is the given URL, in store order.
+ *
+ * Several races can share one page (Javelina Jundred and Jackass Night Trail
+ * both live on /javelina/), and the page's schema should describe all of
+ * them. arv_race_store_find_by_page() keeps returning the first, for the
+ * callers that want one.
+ *
+ * @param string $page_url Defaults to the current request.
+ * @return array[]
+ */
+function arv_race_store_find_all_by_page( $page_url = '' ) {
+	if ( '' === $page_url ) {
+		$page_url = home_url( add_query_arg( array() ) );
+	}
+
+	$path = trim( (string) wp_parse_url( $page_url, PHP_URL_PATH ), '/' );
+	$out  = array();
+
+	if ( '' === $path ) {
+		return $out;
+	}
+
+	foreach ( arv_race_store_get() as $race ) {
+		$race_path = trim( (string) wp_parse_url( $race['page'], PHP_URL_PATH ), '/' );
+		if ( '' !== $race_path && $race_path === $path ) {
+			$out[] = $race;
+		}
+	}
+
+	return $out;
+}
+
+/**
  * One race, looked up for a single race page.
  *
  * Matched on the page URL rather than a name, so dropping a status element

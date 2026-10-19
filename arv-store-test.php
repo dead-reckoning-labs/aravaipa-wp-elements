@@ -5715,8 +5715,8 @@ $arv_hiatus_full = arv_season_calendar_hiatus(
 t( 'name is present',              false !== strpos( $arv_hiatus_full, 'Rough Canyon Trail Runs' ) );
 t( 'location is present',          false !== strpos( $arv_hiatus_full, 'Grand Junction, CO' ) );
 t( 'logo renders as an img',       false !== strpos( $arv_hiatus_full, '<img src="https://example.com/logo.png"' ) );
-t( 'Race Info links to the page',  false !== strpos( $arv_hiatus_full, 'href="https://example.com/rough-canyon/">Race Info' ) );
-t( 'Past Results links to it',     false !== strpos( $arv_hiatus_full, 'href="https://example.com/race-results/rough-canyon/">Past Results' ) );
+t( 'Race Info links to the page',  false !== strpos( $arv_hiatus_full, 'href="https://example.com/rough-canyon/" aria-label="Race Info: Rough Canyon Trail Runs">Race Info' ) );
+t( 'Past Results links to it',     false !== strpos( $arv_hiatus_full, 'href="https://example.com/race-results/rough-canyon/" aria-label="Past Results: Rough Canyon Trail Runs">Past Results' ) );
 // The name is not a link: two destinations means no single anchor can
 // wrap the row the way a dated row's does, on pain of one anchor nested
 // inside another, which is invalid HTML browsers tear apart.
@@ -7418,6 +7418,44 @@ $us = $base; $us['offers']['url'] = 'https://ultrasignup.com/register.aspx?did=1
 t( 'UltraSignup race untouched',        $us === arv_rg_enrich_event( $us, array_merge( $rg_race, array( 'register' => 'https://ultrasignup.com/register.aspx?did=1' ) ) ) );
 t( 'missing data never fatals',         is_array( arv_rg_enrich_event( array( '@type' => 'SportsEvent' ), array( 'register' => 'https://racegoat.com/events/x-2027' ) ) ) );
 $GLOBALS['QUERIED_ID'] = 0;
+
+echo "\naccessibility, link names and schema for agents:\n";
+t( 'Register names the race',          ' aria-label="Register for Pass Mountain"' === arv_link_aria_label( 'Register', 'Pass Mountain' ) );
+t( 'other labels lead with the words', ' aria-label="Race Info: Pass Mountain"' === arv_link_aria_label( 'Race Info', 'Pass Mountain' ) );
+t( 'no name, no label',                '' === arv_link_aria_label( 'Race Info', '' ) );
+t( 'name is escaped',                  false !== strpos( arv_link_aria_label( 'Race Info', 'A "B" & C' ), '&quot;B&quot; &amp; C' ) );
+
+$a11y_race = array( 'name' => 'Test Jundred', 'iso' => '2026-10-31', 'end' => '2026-11-01', 'register' => 'https://ultrasignup.com/register.aspx?did=1', 'page' => 'https://www.aravaiparunning.com/test/', 'image' => '', 'distances' => '100 Mile, 100K', 'venue' => 'Park', 'location' => 'Fountain Hills, AZ', 'live' => '', 'closes' => '2026-10-05' );
+t( 'pre-race live reads as closed',    'closed' === arv_seo_race_schema_phase( $a11y_race, 'live', '2026-10-19' ) );
+t( 'race day stays live',              'live' === arv_seo_race_schema_phase( $a11y_race, 'live', '2026-10-31' ) );
+t( 'other phases untouched',           'upcoming' === arv_seo_race_schema_phase( $a11y_race, 'upcoming', '2026-10-19' ) );
+$GLOBALS['ARV_OPTIONS']['arv_race_prices'] = array( 'Test Jundred' => array( array( 'name' => '100 Mile', 'price' => 525 ), array( 'name' => '100K', 'price' => '375' ), array( 'name' => 'bad', 'price' => 'x' ) ) );
+$a11y_ev = arv_upcoming_races_event_schema( $a11y_race, 'closed' );
+t( 'one offer per priced distance',    isset( $a11y_ev['offers'][1] ) && ! isset( $a11y_ev['offers'][2] ) );
+t( 'offer carries the price',          525.0 === (float) $a11y_ev['offers'][0]['price'] && 'USD' === $a11y_ev['offers'][0]['priceCurrency'] && '100 Mile' === $a11y_ev['offers'][0]['name'] );
+t( 'closed offers say sold out',       'https://schema.org/SoldOut' === $a11y_ev['offers'][1]['availability'] );
+t( 'endDate kept',                     '2026-11-01' === $a11y_ev['endDate'] );
+t( 'no prices on a platform race',     array() === arv_race_prices_for( array_merge( $a11y_race, array( 'register' => 'https://racegoat.com/events/test-2027' ) ) ) );
+t( 'past race has no offer',           ! isset( arv_upcoming_races_event_schema( $a11y_race, 'results' )['offers'] ) );
+unset( $GLOBALS['ARV_OPTIONS']['arv_race_prices'] );
+t( 'no prices keeps a single offer',   'Offer' === arv_upcoming_races_event_schema( $a11y_race, 'closed' )['offers']['@type'] );
+
+$GLOBALS['meta'][ 9101 ]['_cornerstone_data'] = '[{"_type":"raw-content","raw_content":"<div data-racegoat-race=\\"arizona-trail-race-2027\\"></div>"}]';
+t( 'slug read from the layout',        'arizona-trail-race-2027' === arv_rg_page_slug( 9101 ) );
+t( 'no embed, no slug',                '' === arv_rg_page_slug( 9102 ) );
+$GLOBALS['_transients'][ 'arv_rg_embed_' . md5( 'arizona-trail-race-2027' ) ] = array( 'ok' => 1, 'data' => array(
+	'name' => 'Arizona Trail Race', 'date' => 'Sun, Feb 7, 2027', 'place' => 'Vail, AZ', 'status' => 'open', 'opensAt' => '2026-10-07T16:00:00.000Z',
+	'stay' => array( 'mapUrl' => 'https://www.stay22.com/embed/gm?aid=racegoat&lat=32.04987&lng=-110.637123&venue=La+Posta+Quemada+Ranch' ),
+	'distances' => array( array( 'name' => '8 Mile Trail Race', 'priceCents' => 6000, 'state' => 'open', 'left' => null ) ),
+) );
+$GLOBALS['PERMALINK'][ 9101 ] = 'https://www.aravaiparunning.com/arizona-trail-race/';
+$a11y_atr = arv_rg_page_event( 9101 );
+t( 'page event from the embed',        'SportsEvent' === ( $a11y_atr['@type'] ?? '' ) && 'Arizona Trail Race' === $a11y_atr['name'] );
+t( 'its date',                         0 === strpos( (string) $a11y_atr['startDate'], '2027-02-07' ) );
+t( 'its venue and geo',                'La Posta Quemada Ranch' === $a11y_atr['location']['name'] && isset( $a11y_atr['location']['geo'] ) );
+t( 'its price',                        isset( $a11y_atr['offers'][0]['price'] ) && 60.0 === (float) $a11y_atr['offers'][0]['price'] );
+t( 'its url is the page',              'https://www.aravaiparunning.com/arizona-trail-race/' === $a11y_atr['url'] );
+t( 'no embed, no event',               array() === arv_rg_page_event( 9102 ) );
 
 
 echo "\n$pass passed, $fail failed\n";

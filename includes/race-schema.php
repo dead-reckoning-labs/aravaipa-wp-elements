@@ -274,9 +274,99 @@ function arv_upcoming_races_event_schema( $race, $phase = 'upcoming' ) {
 				: 'https://schema.org/SoldOut',
 			'category'     => 'primary',
 		);
+
+		// Published entry fees, where someone has recorded them (see
+		// arv_race_prices_for()). One Offer per distance, same shape the
+		// platform enrichment produces for races sold there, so an agent
+		// asking "how much is the 100K" gets a number either way.
+		$prices = arv_race_prices_for( $race );
+		if ( ! empty( $prices ) ) {
+			$single = $event['offers'];
+			$event['offers'] = array();
+			foreach ( $prices as $price ) {
+				$event['offers'][] = array_merge(
+					array(
+						'@type'         => 'Offer',
+						'name'          => $price['name'],
+						'price'         => $price['price'],
+						'priceCurrency' => 'USD',
+					),
+					array_diff_key( $single, array( '@type' => 1 ) )
+				);
+			}
+		}
 	}
 
 	return $event;
+}
+
+/**
+ * The phase the race page schema describes.
+ *
+ * arv_upcoming_races_action() switches a race to "live" once its entries
+ * close, because the button's job then is the start list. The schema's job is
+ * different: before race day the honest description is still "entries were
+ * sold and are gone", which is an offer marked sold out (pointing at the
+ * waitlist where there is one), not no offer at all. Javelina, twelve days
+ * out with a waitlist, carried no offer and so no price.
+ *
+ * @param array  $race
+ * @param string $phase
+ * @param string $today
+ * @return string
+ */
+function arv_seo_race_schema_phase( $race, $phase, $today ) {
+	if ( 'live' !== $phase || $today >= $race['iso'] ) {
+		return $phase;
+	}
+
+	return '' !== arv_race_waitlist_for( $race ) ? 'waitlist' : 'closed';
+}
+
+/**
+ * Entry fees for a race not sold on the platform, from the arv_race_prices
+ * option.
+ *
+ * UltraSignup does not publish prices in any form worth scraping, and the
+ * race pages state them as prose. The option is the one place a person
+ * records them, keyed by the race's store name:
+ *
+ *     array( 'Javelina Jundred Presented by: HOKA' => array(
+ *         array( 'name' => '100 Mile', 'price' => 525 ), ... ) )
+ *
+ * Nothing is guessed: a race with no row emits an offer without a price,
+ * same as before.
+ *
+ * @param array $race
+ * @return array[] Each { name, price }.
+ */
+function arv_race_prices_for( $race ) {
+	$all = function_exists( 'get_option' ) ? get_option( 'arv_race_prices', array() ) : array();
+	$all = apply_filters( 'arv_race_prices', is_array( $all ) ? $all : array() );
+	$key = isset( $race['name'] ) ? (string) $race['name'] : '';
+
+	if ( '' === $key || empty( $all[ $key ] ) || ! is_array( $all[ $key ] ) ) {
+		return array();
+	}
+
+	// A race sold on the platform gets live prices from its embed instead
+	// (arv_rg_enrich_event()); a hand-kept copy would only drift from them.
+	if ( function_exists( 'arv_rg_slug' ) && '' !== arv_rg_slug( isset( $race['register'] ) ? $race['register'] : '' ) ) {
+		return array();
+	}
+
+	$out = array();
+	foreach ( $all[ $key ] as $row ) {
+		if ( ! is_array( $row ) || empty( $row['name'] ) || ! isset( $row['price'] ) || ! is_numeric( $row['price'] ) || (float) $row['price'] <= 0 ) {
+			continue;
+		}
+		$out[] = array(
+			'name'  => (string) $row['name'],
+			'price' => round( (float) $row['price'], 2 ),
+		);
+	}
+
+	return $out;
 }
 
 /**
