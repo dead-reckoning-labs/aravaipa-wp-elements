@@ -2774,7 +2774,8 @@ function arv_results_race_page( $editions, $name ) {
 	$out .= '<h1 class="arv-results__race-title">' . esc_html( $name ) . '</h1>';
 
 	if ( '' !== $race_page ) {
-		$out .= '<a class="arv-results__race-info" href="' . esc_url( $race_page ) . '">'
+		$out .= '<a class="arv-results__race-info" href="' . esc_url( $race_page ) . '"'
+			. arv_link_aria_label( __( 'Race Info', 'aravaipa-elements' ), $name ) . '>'
 			. esc_html( __( 'Race Info', 'aravaipa-elements' ) )
 			. '<svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true" focusable="false">'
 			. '<path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'

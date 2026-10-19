@@ -93,11 +93,13 @@
 		html += '<p class="arv-map__popup-actions">';
 		if ( pin.ctaUrl && pin.cta ) {
 			html += '<a class="arv-map__popup-cta arv-map__popup-cta--' + escapeHtml( pin.phase ) +
-				'" href="' + escapeHtml( pin.ctaUrl ) + '" target="_blank" rel="noopener">' +
+				'" href="' + escapeHtml( pin.ctaUrl ) + '" target="_blank" rel="noopener"' +
+				' aria-label="' + escapeHtml( ( pin.cta === 'Register' ? 'Register for ' : pin.cta + ': ' ) + pin.name ) + '">' +
 				escapeHtml( pin.cta ) + '</a>';
 		}
 		if ( pin.page ) {
-			html += '<a class="arv-map__popup-info" href="' + escapeHtml( pin.page ) + '">Race Info</a>';
+			html += '<a class="arv-map__popup-info" href="' + escapeHtml( pin.page ) + '" aria-label="' +
+				escapeHtml( 'Race Info: ' + pin.name ) + '">Race Info</a>';
 		}
 		html += '</p></div>';
 
@@ -117,12 +119,20 @@
 	 * buy" everywhere else on the site, and a map of every race is not an
 	 * offer. The register button inside the popup stays red.
 	 */
-	function raceIcon() {
+	//
+	// Leaflet makes each pin a keyboard button whose only content is this
+	// SVG, so without the hidden name it is a button called nothing at all.
+	// The name is in the HTML rather than a title attribute, which would
+	// add a hover tooltip on top of the popup.
+	function raceIcon( pin ) {
+		var label = pin && pin.name ? pin.name + ( pin.date ? ', ' + pin.date : '' ) : '';
+
 		return window.L.divIcon( {
 			className: 'arv-map__pin',
 			html: '<svg viewBox="0 0 24 34" width="24" height="34" aria-hidden="true">' +
 				'<path d="M12 0C5.4 0 0 5.4 0 12c0 8.4 12 22 12 22s12-13.6 12-22C24 5.4 18.6 0 12 0z" fill="#2a5e6b"/>' +
-				'<circle cx="12" cy="12" r="4.4" fill="#ffffff"/></svg>',
+				'<circle cx="12" cy="12" r="4.4" fill="#ffffff"/></svg>' +
+				( label ? '<span class="arv-sr">' + escapeHtml( label ) + '</span>' : '' ),
 			iconSize: [ 24, 34 ],
 			// Anchored at the point of the pin, not its centre, so it marks
 			// the venue rather than hovering above it.
@@ -138,13 +148,23 @@
 	 * few / a lot / most of the calendar", and a radius that grows smoothly
 	 * with the count just makes two adjacent clusters hard to tell apart.
 	 */
+	//
+	// The bubble is a keyboard button too, and its only text is the count,
+	// so it read as a button called "14". The hidden label says what the
+	// number counts and names the first few races in it, which is what
+	// someone who cannot see the map needs to decide whether to open it.
 	function clusterIcon( cluster ) {
 		var count = cluster.getChildCount();
 		var size  = count < 10 ? 34 : ( count < 25 ? 42 : 50 );
+		var names = cluster.getAllChildMarkers().map( function ( m ) {
+			return m.options.arvName || '';
+		} ).filter( Boolean );
+		var shown = names.slice( 0, 3 ).join( ', ' );
+		var label = count + ' races' + ( shown ? ': ' + shown + ( names.length > 3 ? ' and ' + ( names.length - 3 ) + ' more' : '' ) : '' ) + '. Zoom in';
 
 		return window.L.divIcon( {
 			className: 'arv-map__cluster',
-			html: '<span>' + count + '</span>',
+			html: '<span aria-hidden="true">' + count + '</span><span class="arv-sr">' + escapeHtml( label ) + '</span>',
 			iconSize: [ size, size ],
 		} );
 	}
@@ -585,7 +605,7 @@
 		} ).addTo( map );
 
 		var markers = config.pins.map( function ( pin ) {
-			return window.L.marker( [ pin.lat, pin.lng ], { icon: raceIcon() } )
+			return window.L.marker( [ pin.lat, pin.lng ], { icon: raceIcon( pin ), arvName: pin.name } )
 				.bindPopup( popupHtml( pin ), {
 					// Leaflet pans a popup into view by default, but only far
 					// enough to clear the container edge by 5px. This map has

@@ -771,13 +771,15 @@ function arv_upcoming_races_render( $data ) {
 			// already on is the kind of thing that quietly accumulates
 			// windows.
 			$cards .= '<a class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '" href="' . esc_url( $action['url'] ) . '"'
-				. arv_races_link_target( $action['url'] ) . '>' . esc_html( $primary_label ) . '</a>';
+				. arv_races_link_target( $action['url'] ) . arv_link_aria_label( $primary_label, $race['name'] ) . '>' . esc_html( $primary_label ) . '</a>';
 		}
 		if ( '' !== $card_url ) {
 			// Always present, and always the secondary of the pair, so the
 			// buttons keep the same shape whatever phase a race is in and the
 			// eye is not re-learning the layout down the list.
-			$cards .= '<a class="arv-races__details" href="' . esc_url( $card_url ) . '">' . esc_html( __( 'Race Details', 'aravaipa-elements' ) ) . '</a>';
+			$cards .= '<a class="arv-races__details" href="' . esc_url( $card_url ) . '"'
+				. arv_link_aria_label( __( 'Race Details', 'aravaipa-elements' ), $race['name'] ) . '>'
+				. esc_html( __( 'Race Details', 'aravaipa-elements' ) ) . '</a>';
 		}
 		$cards .= '</div>';
 

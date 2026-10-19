@@ -214,12 +214,6 @@ function arv_seo_race_schema() {
 		return;
 	}
 
-	$race = arv_race_store_find_by_page();
-
-	if ( null === $race ) {
-		return;
-	}
-
 	// A page that already carries its own SportsEvent (pasted into a raw
 	// content element) keeps it alone: two events for one race is a
 	// contradiction for a validator, not extra coverage.
@@ -227,21 +221,46 @@ function arv_seo_race_schema() {
 		return;
 	}
 
+	$races = function_exists( 'arv_race_store_find_all_by_page' )
+		? arv_race_store_find_all_by_page()
+		: array_filter( array( arv_race_store_find_by_page() ) );
+
 	$today  = arv_upcoming_races_today();
-	$action = arv_upcoming_races_action( $race, $today );
+	$events = array();
 
-	$event = arv_upcoming_races_event_schema( $race, $action['phase'] );
+	// Every race the page is for, not just the first. /javelina/ sells the
+	// Jundred and Jackass Night Trail from one page, and only the first
+	// store row used to get an event.
+	foreach ( $races as $race ) {
+		$action = arv_upcoming_races_action( $race, $today );
+		$event  = arv_upcoming_races_event_schema( $race, arv_seo_race_schema_phase( $race, $action['phase'], $today ) );
 
-	/**
-	 * Filters the SportsEvent node for a single race page.
-	 *
-	 * @param array $event
-	 * @param array $race
-	 */
-	$event = apply_filters( 'arv_seo_race_event', $event, $race );
+		/**
+		 * Filters the SportsEvent node for a single race page.
+		 *
+		 * @param array $event
+		 * @param array $race
+		 */
+		$events[] = apply_filters( 'arv_seo_race_event', $event, $race );
+	}
 
-	echo arv_seo_schema_script( array( $event ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	// A race page that is not in the store yet but sells on the platform
+	// (the Arizona Trail Race, new for 2027) still gets an event, built from
+	// the platform's own public embed: name, date, venue and live prices.
+	if ( empty( $events ) && function_exists( 'arv_rg_page_event' ) ) {
+		$event = arv_rg_page_event( (int) get_queried_object_id() );
+		if ( ! empty( $event ) ) {
+			$events[] = $event;
+		}
+	}
+
+	if ( empty( $events ) ) {
+		return;
+	}
+
+	echo arv_seo_schema_script( $events ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
+
 add_action( 'wp_head', 'arv_seo_race_schema', 3 );
 
 /**

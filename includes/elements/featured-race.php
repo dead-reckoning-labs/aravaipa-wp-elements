@@ -332,7 +332,7 @@ function arv_featured_race_render( $data ) {
 	$out .= '<div class="arv-featured__actions">';
 	if ( '' !== $action['url'] ) {
 		$out .= '<a class="arv-featured__cta arv-featured__cta--' . esc_attr( $action['phase'] ) . '" href="'
-			. esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] ) . '>' . esc_html( $label ) . '</a>';
+			. esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] ) . arv_link_aria_label( $label, $race['name'] ) . '>' . esc_html( $label ) . '</a>';
 	} else {
 		// Entries closed with nowhere to send anyone: a label, not a button,
 		// same distinction every other element on this site draws.
@@ -340,7 +340,9 @@ function arv_featured_race_render( $data ) {
 			. esc_html( $label ) . '</span>';
 	}
 	if ( '' !== $race['page'] ) {
-		$out .= '<a class="arv-featured__info" href="' . esc_url( $race['page'] ) . '">' . esc_html( __( 'Race Info', 'aravaipa-elements' ) ) . '</a>';
+		$out .= '<a class="arv-featured__info" href="' . esc_url( $race['page'] ) . '"'
+			. arv_link_aria_label( __( 'Race Info', 'aravaipa-elements' ), $race['name'] ) . '>'
+			. esc_html( __( 'Race Info', 'aravaipa-elements' ) ) . '</a>';
 	}
 	$out .= '</div>';
 

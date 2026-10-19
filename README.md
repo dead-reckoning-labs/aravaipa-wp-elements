@@ -154,6 +154,17 @@ Two blocks, both of which the site had none of before.
 
 **Organization and WebSite**, from `includes/seo.php`, on the front page only, along with a meta description. That file also stands down entirely if Yoast, Rank Math, All in One SEO or SEOPress is ever activated, so it can never produce a second competing description. The front page description is filterable via `arv_seo_front_page_description`, and the Organization node via `arv_seo_organization`.
 
+**Race pages** get one `SportsEvent` per store race whose page they are (the Javelina page describes both the Jundred and Jackass Night Trail). Before race day a race whose entries have closed keeps an offer marked sold out, pointing at the waitlist where there is one, instead of dropping the offer. Prices: races on RaceGoat get live per-distance prices from the embed; other races get them only from the `arv_race_prices` option (`race name => [ {name, price}, ... ]`), which a person fills in from the published fees. A race page the store does not know yet but which carries a RaceGoat embed (`data-racegoat-race`, read from post_content or the Cornerstone layout) gets an event built from that embed.
+
+## Accessibility tree
+
+Screen readers and AI agents that read only the accessibility tree (Meta's assistant, among others) see a different page from the one on screen. Four things the plugin does sitewide so they see the race information:
+
+- **Closed accordion and inactive tab panels stay in the tree.** The X theme hides them with `display:none` plus `aria-hidden`, which took cutoffs, aid stations, the schedule and two of three distances' course details off every race page. `includes/layout-fixes.php` swaps that for a visually hidden clip, and `assets/aravaipa-a11y.js` removes the `aria-hidden` and keeps links in a closed panel out of the tab order. Nothing changes on screen.
+- **No images named "Image".** Cornerstone falls back to that word when an image has no alt in the element or the media library; it is now an empty (decorative) alt. Real alt text belongs in the media library, which Cornerstone prefers.
+- **Generic buttons name their race.** Register, Race Info, Race Details, Results and View races carry an `aria-label` (`arv_link_aria_label()`) starting with the visible words, so ninety-seven "Race Info" links on /races/ are each for a named race.
+- **Map pins and cluster bubbles have names**: the race and date for a pin, the count and first few races for a cluster, the region for a region map pin.
+
 ## Where the race data actually comes from
 
 `scripts/fetch-races.mjs` was rebuilt this session after two real problems surfaced, both worth recording because they were silent: nothing errored, the generator just quietly produced less and worse data than the site actually has.

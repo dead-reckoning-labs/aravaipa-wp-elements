@@ -453,7 +453,8 @@ function arv_season_calendar_row( $race, $today, $grace = 2 ) {
 	// hand edge of the list stays a straight line whatever state each race is
 	// in, rather than buttons appearing and disappearing down the column.
 	if ( '' !== $href ) {
-		$out .= '<a class="arv-calendar__info" href="' . esc_url( $href ) . '">'
+		$out .= '<a class="arv-calendar__info" href="' . esc_url( $href ) . '"'
+			. arv_link_aria_label( __( 'Race Info', 'aravaipa-elements' ), $race['name'] ) . '>'
 			. esc_html( __( 'Race Info', 'aravaipa-elements' ) ) . '</a>';
 	}
 
@@ -504,7 +505,8 @@ function arv_season_calendar_action( $race, $today ) {
 	// sending someone to another tab of the site they are already on is the
 	// kind of thing that quietly accumulates windows down a list this long.
 	return '<a class="arv-calendar__action arv-calendar__action--' . esc_attr( $action['phase'] ) . '" href="'
-		. esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] ) . '>'
+		. esc_url( $action['url'] ) . '"' . arv_races_link_target( $action['url'] )
+		. arv_link_aria_label( $action['label'], $race['name'] ) . '>'
 		. esc_html( $action['label'] ) . '</a>';
 }
 
@@ -568,11 +570,13 @@ function arv_season_calendar_hiatus( $raw ) {
 		if ( '' !== $info || '' !== $results ) {
 			$out .= '<span class="arv-calendar__actions">';
 			if ( '' !== $results ) {
-				$out .= '<a class="arv-calendar__info" href="' . esc_url( $results ) . '">'
+				$out .= '<a class="arv-calendar__info" href="' . esc_url( $results ) . '"'
+					. arv_link_aria_label( __( 'Past Results', 'aravaipa-elements' ), $name ) . '>'
 					. esc_html__( 'Past Results', 'aravaipa-elements' ) . '</a>';
 			}
 			if ( '' !== $info ) {
-				$out .= '<a class="arv-calendar__info" href="' . esc_url( $info ) . '">'
+				$out .= '<a class="arv-calendar__info" href="' . esc_url( $info ) . '"'
+					. arv_link_aria_label( __( 'Race Info', 'aravaipa-elements' ), $name ) . '>'
 					. esc_html__( 'Race Info', 'aravaipa-elements' ) . '</a>';
 			}
 			$out .= '</span>';

@@ -441,3 +441,105 @@ function arv_rg_enrich_event( $event, $race ) {
 	return $event;
 }
 add_filter( 'arv_seo_race_event', 'arv_rg_enrich_event', 10, 2 );
+
+/**
+ * The platform event slug a page embeds, or ''.
+ *
+ * Read from post_content first, then the Cornerstone layout: a Cornerstone
+ * page keeps its raw-content elements (where the embed snippet is pasted)
+ * only in _cornerstone_data.
+ *
+ * @param int $post_id
+ * @return string
+ */
+function arv_rg_page_slug( $post_id ) {
+	if ( ! $post_id || ! function_exists( 'get_post_field' ) ) {
+		return '';
+	}
+
+	$sources = array( (string) get_post_field( 'post_content', $post_id ) );
+	if ( function_exists( 'get_post_meta' ) ) {
+		$sources[] = (string) get_post_meta( $post_id, '_cornerstone_data', true );
+	}
+
+	foreach ( $sources as $haystack ) {
+		$haystack = stripslashes( $haystack );
+		if ( preg_match( '#data-racegoat-race=["\']([a-z0-9][a-z0-9-]*)["\']#i', $haystack, $m )
+			|| preg_match( '#racegoat\.com/events/([a-z0-9][a-z0-9-]*)#i', $haystack, $m ) ) {
+			return strtolower( $m[1] );
+		}
+	}
+
+	return '';
+}
+
+/**
+ * A SportsEvent for a race page the store does not know, from the platform
+ * embed the page carries.
+ *
+ * Built by handing the embed's facts to the same builder and enrichment every
+ * store race goes through, so it gets the same start time, geo, description
+ * and per-distance prices rather than a second, drifting implementation.
+ *
+ * @param int $post_id
+ * @return array Empty when the page embeds nothing usable.
+ */
+function arv_rg_page_event( $post_id ) {
+	$slug = arv_rg_page_slug( $post_id );
+	if ( '' === $slug || ! function_exists( 'arv_upcoming_races_event_schema' ) ) {
+		return array();
+	}
+
+	$embed = arv_rg_embed( $slug );
+	if ( ! is_array( $embed ) || empty( $embed['name'] ) || empty( $embed['date'] ) ) {
+		return array();
+	}
+
+	$ts = strtotime( (string) $embed['date'] );
+	if ( false === $ts ) {
+		return array();
+	}
+
+	$venue = '';
+	$lat   = '';
+	$lng   = '';
+	if ( ! empty( $embed['stay']['mapUrl'] ) ) {
+		$query = array();
+		parse_str( (string) wp_parse_url( (string) $embed['stay']['mapUrl'], PHP_URL_QUERY ), $query );
+		$venue = isset( $query['venue'] ) ? (string) $query['venue'] : '';
+		$lat   = isset( $query['lat'] ) ? (string) $query['lat'] : '';
+		$lng   = isset( $query['lng'] ) ? (string) $query['lng'] : '';
+	}
+
+	$distances = array();
+	foreach ( (array) ( isset( $embed['distances'] ) ? $embed['distances'] : array() ) as $d ) {
+		if ( is_array( $d ) && ! empty( $d['name'] ) ) {
+			$distances[] = (string) $d['name'];
+		}
+	}
+
+	$race = array(
+		'name'      => (string) $embed['name'],
+		'iso'       => gmdate( 'Y-m-d', $ts ),
+		'display'   => '',
+		'distances' => implode( ', ', $distances ),
+		'venue'     => $venue,
+		'location'  => isset( $embed['place'] ) ? (string) $embed['place'] : '',
+		'lat'       => $lat,
+		'lng'       => $lng,
+		'register'  => 'https://racegoat.com/events/' . $slug,
+		'page'      => function_exists( 'get_permalink' ) ? (string) get_permalink( $post_id ) : '',
+		'image'     => '',
+		'end'       => '',
+		'live'      => '',
+		'closes'    => '',
+		'confirmed' => true,
+		'guessed'   => false,
+	);
+
+	$today  = arv_upcoming_races_today();
+	$status = isset( $embed['status'] ) ? strtolower( (string) $embed['status'] ) : '';
+	$phase  = ( $today > $race['iso'] ) ? 'results' : ( 'open' === $status ? 'upcoming' : 'closed' );
+
+	return arv_rg_enrich_event( arv_upcoming_races_event_schema( $race, $phase ), $race );
+}
