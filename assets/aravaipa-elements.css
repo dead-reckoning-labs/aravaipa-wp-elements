@@ -11939,3 +11939,21 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 		font-size: 0.72rem;
 	}
 }
+
+/* Visually hidden, still read by screen readers and by agents reading the
+   accessibility tree. Used for names on controls whose visible content is
+   only a shape or a number (map pins, cluster bubbles). !important because
+   it lands inside components whose own span rules (the cluster bubble's
+   round badge) would otherwise outrank a single class. */
+.arv-sr {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	margin: -1px !important;
+	padding: 0 !important;
+	border: 0 !important;
+	overflow: hidden !important;
+	clip: rect(0, 0, 0, 0) !important;
+	clip-path: inset(50%) !important;
+	white-space: nowrap !important;
+}

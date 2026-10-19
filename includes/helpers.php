@@ -502,6 +502,37 @@ function arv_races_link_target( $url ) {
 	return ' target="_blank" rel="noopener"';
 }
 
+/**
+ * aria-label naming the race a generic button belongs to.
+ *
+ * A list of races renders the same few words down the page: "Register",
+ * "Race Info", "Results". Read out of context, which is how a screen reader's
+ * link list and an AI agent reading the accessibility tree both see them,
+ * that is ninety-seven links called "Race Info" and no way to tell which
+ * race any of them is for. The label starts with the visible words, so voice
+ * control ("click Register") still matches it.
+ *
+ * @param string $label The visible button text.
+ * @param string $name  The race (or region) name.
+ * @return string Attribute with a leading space, or '' when there is no name.
+ */
+function arv_link_aria_label( $label, $name ) {
+	$label = trim( (string) $label );
+	$name  = trim( wp_strip_all_tags( (string) $name ) );
+
+	if ( '' === $label || '' === $name ) {
+		return '';
+	}
+
+	$text = ( 'register' === strtolower( $label ) )
+		/* translators: %s: race name. */
+		? sprintf( __( 'Register for %s', 'aravaipa-elements' ), $name )
+		/* translators: 1: visible button text, 2: race name. */
+		: sprintf( __( '%1$s: %2$s', 'aravaipa-elements' ), $label, $name );
+
+	return ' aria-label="' . esc_attr( $text ) . '"';
+}
+
 /* ------------------------------------------------------------------ *
  * Moved here from the Results element. Four elements write a distance
  * now (results, the season calendar, the featured race and the live

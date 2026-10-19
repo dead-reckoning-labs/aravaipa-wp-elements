@@ -230,7 +230,11 @@ function arv_region_map_render( $data ) {
 		// link inside a link is invalid HTML. The card's own button and the
 		// region's Instagram are now links of their own.
 		$pins .= '<div class="' . esc_attr( $classes ) . '" style="left:' . esc_attr( $x ) . '%;top:' . esc_attr( $y ) . '%">';
-		$pins .= '<a class="arv-region-map__pin-link" href="' . esc_url( $url ) . '">';
+		// Named outright: on a phone the label beside the dot is hidden to
+		// stop the names colliding, which left nine links called nothing.
+		/* translators: %s: region name. */
+		$pin_label = sprintf( __( '%s races', 'aravaipa-elements' ), '' !== trim( $full ) ? trim( $full ) : $name );
+		$pins     .= '<a class="arv-region-map__pin-link" href="' . esc_url( $url ) . '" aria-label="' . esc_attr( $pin_label ) . '">';
 		$pins .= '<span class="arv-region-map__dot"></span>';
 		$pins .= '<span class="arv-region-map__name">' . esc_html( $name ) . '</span>';
 		$pins .= '</a>';
@@ -257,7 +261,9 @@ function arv_region_map_render( $data ) {
 			$pins .= '<span class="arv-region-map__detail-text">' . esc_html( $detail ) . '</span>';
 		}
 		$pins .= '<span class="arv-region-map__detail-actions">';
-		$pins .= '<a class="arv-region-map__cta" href="' . esc_url( $url ) . '">' . esc_html( __( 'View races', 'aravaipa-elements' ) ) . '</a>';
+		$pins .= '<a class="arv-region-map__cta" href="' . esc_url( $url ) . '"'
+			. arv_link_aria_label( __( 'View races', 'aravaipa-elements' ), '' !== trim( $full ) ? $full : $name ) . '>'
+			. esc_html( __( 'View races', 'aravaipa-elements' ) ) . '</a>';
 		$pins .= arv_region_map_social_link( $social, 'arv-region-map__social' );
 		$pins .= '</span>';
 		$pins .= '</span>';

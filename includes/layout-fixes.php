@@ -45,3 +45,25 @@ add_action(
 	},
 	99
 );
+
+/*
+ * No more images named "Image".
+ *
+ * A Cornerstone image with no alt text of its own falls back to the media
+ * library's alt, and when that is empty too, to the literal word "Image".
+ * Screen readers and AI agents then read "Image" nineteen times down a race
+ * page, which is worse than nothing: it says there is something there and
+ * gives no way to know what. An empty alt marks the picture as decorative
+ * instead. The fix for a picture that does carry information (a qualifier
+ * badge, a register graphic) is real alt text in the media library, which
+ * Cornerstone already prefers over this fallback.
+ */
+add_filter(
+	'cs_apply_image_atts',
+	function ( $atts ) {
+		if ( is_array( $atts ) && ( ! isset( $atts['alt'] ) || 'Image' === $atts['alt'] ) ) {
+			$atts['alt'] = '';
+		}
+		return $atts;
+	}
+);
