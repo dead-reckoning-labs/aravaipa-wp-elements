@@ -444,6 +444,18 @@ function arv_elements_assets() {
 		ARV_ELEMENTS_VERSION,
 		true
 	);
+
+	// Keeps closed accordion and tab panels in the accessibility tree, so
+	// screen readers and AI agents can read a race page's cutoffs, aid
+	// stations and schedule without clicking each one open. No-ops on pages
+	// with no accordions or tabs.
+	wp_enqueue_script(
+		'aravaipa-a11y',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-a11y.js',
+		array(),
+		ARV_ELEMENTS_VERSION,
+		true
+	);
 }
 add_action( 'wp_enqueue_scripts', 'arv_elements_assets' );
 
