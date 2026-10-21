@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Bump when the rewrite rules this file registers change. */
-define( 'ARV_ADV_REWRITE_VERSION', '1' );
+define( 'ARV_ADV_REWRITE_VERSION', '2' );
 
 /**
  * Meta keys, by kind. Scalars are sanitized as text (or int), JSON keys are
@@ -127,14 +127,27 @@ function arv_adv_register() {
 		}
 	}
 
-	// Rewrite rules for a new post type only exist after a flush. Once per
-	// version, soft (no .htaccess write), rather than on every request.
-	if ( get_option( 'arv_adv_rewrite_version' ) !== ARV_ADV_REWRITE_VERSION ) {
-		flush_rewrite_rules( false );
+}
+add_action( 'init', 'arv_adv_register' );
+
+/**
+ * Rewrite rules for a new post type only exist after a flush. Once per
+ * version, soft (no .htaccess write), and on wp_loaded rather than inside
+ * init: the 0.101.0 deploy flushed from init and the stored rules came out
+ * without the adventure ones, so this waits until every plugin has finished
+ * registering, then checks the rules really are there before recording it.
+ */
+function arv_adv_maybe_flush() {
+	if ( get_option( 'arv_adv_rewrite_version' ) === ARV_ADV_REWRITE_VERSION ) {
+		return;
+	}
+	flush_rewrite_rules( false );
+	$rules = get_option( 'rewrite_rules' );
+	if ( is_array( $rules ) && isset( $rules['adventures/([^/]+)(?:/([0-9]+))?/?$'] ) ) {
 		update_option( 'arv_adv_rewrite_version', ARV_ADV_REWRITE_VERSION, false );
 	}
 }
-add_action( 'init', 'arv_adv_register' );
+add_action( 'wp_loaded', 'arv_adv_maybe_flush' );
 
 /**
  * Read one meta field. JSON fields come back decoded (array), scalars as

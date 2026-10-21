@@ -996,6 +996,9 @@ body.arv-adv-page .entry-content.content {
 	margin-top: 0;
 }
 
+/* Contact Form 7 inside the interest form. The site's own submit styling
+   sets white text with a stronger selector, which reads white-on-yellow here,
+   hence the !important on the colour only. */
 /* Contact Form 7 inside the interest form. CF7 wraps every control in a
    span and adds its own hidden fields, spinner and response box. */
 body .arv-adv .aa-cf7 .wpcf7-form-control-wrap {
@@ -1010,11 +1013,11 @@ body .arv-adv .aa-interest-form select {
 body .arv-adv .aa-interest-form input[type="submit"] {
 	width: auto;
 	display: inline-flex; align-items: center; justify-content: center; min-width: 150px; height: auto; margin: 0; padding: 10px 26px; border: 0; border-radius: 45px;
-	background: var(--aa-yellow); color: #000; font-family: var(--aa-body); font-size: 17px; font-weight: 500; line-height: 1.6; text-transform: none; letter-spacing: 0; text-shadow: none;
+	background: var(--aa-yellow); color: #000 !important; font-family: var(--aa-body); font-size: 17px; font-weight: 500; line-height: 1.6; text-transform: none; letter-spacing: 0; text-shadow: none;
 	box-shadow: 0 2px 6px rgba(0,0,0,0.25); cursor: pointer; transition: background 0.15s ease;
 }
 body .arv-adv .aa-interest-form input[type="submit"]:hover {
-	background: #e9be00; color: #000;
+	background: #e9be00; color: #000 !important;
 }
 body .arv-adv .aa-interest-form .aa-submit {
 	display: flex; align-items: center; gap: 12px;
