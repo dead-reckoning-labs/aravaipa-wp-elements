@@ -371,3 +371,16 @@ Aid rows are `CalTopo marker title | Display name | Cutoff | Services`, all opti
 The CalTopo map is cached for 12 hours, and the last good copy is kept indefinitely, so a CalTopo outage or a map made private keeps showing the last course instead of nothing. Elevation, gain and grade are worked out in the browser (set `gain` to the race's published figure in feet to show that instead, so the map agrees with the page) from the same terrain tiles the 3D view uses. On a loop course, every mid-race return to the line's first point is a lap turn.
 
 `#course-<distance>` on the page URL (what Share hands out) opens the tab holding that map and scrolls to it.
+
+## Aravaipa Adventures
+
+Guided trips (race trips, training camps, adventures) as an `adventure` post type, rendered entirely by the plugin from the approved v3 design.
+
+- **A trip** is an `adventure` post at `/adventures/<slug>/`. Title = trip name, slug = departure (`madeira-2027`). WP Admin, Adventures. "Trip details" holds the plain fields (type, destination, dates, difficulty, airport, host, price...). "Trip content (JSON)" holds overview, highlights, itinerary, included, not included, race and photos, one JSON box each; a box that does not parse is not saved and the screen says which. Photos are Media Library IDs.
+- **The landing** is an ordinary page whose content is `[arv_adventures]` (template "Blank - No Container | Header, Footer"). Its non-trip copy (FAQs, partner photos, photo credits) is the `arv_adventures_landing` option, written by the importer.
+- **Templates:** `includes/templates/single-adventure.php` wraps `arv_adv_render_trip()` in the theme's own `get_header()` / `get_footer()`. Markup lives in `includes/adventures-render.php`.
+- **Styles:** `assets/aravaipa-adventures.css`, every selector under `body .arv-adv` and every class `aa-` prefixed, enqueued only on trip pages and the landing.
+- **Logo:** on those pages only, the X theme's `x_option_x_logo` filter hands the masthead the Aravaipa Adventures lockup (`assets/adventures/`). No option changes.
+- **Interest form:** a Contact Form 7 form (ID in `arv_adventures_form_id`) with Turnstile; entries in Flamingo, mail to info@. The `adv-trip` select is filled from the trips by `includes/adventures-form.php`.
+- **Unpublished** trips and the landing get `noindex, nofollow`; WordPress already hides them from logged-out visitors and sitemaps.
+- **Import:** `node scripts/adventures/export.mjs <astro site> > adventures.json`, then `wp eval-file scripts/adventures/import.php adventures.json <public dir>`. Creates drafts, matches by slug on re-run, uploads each photo once.
