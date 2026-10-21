@@ -540,6 +540,69 @@ function arv_adv_meta_description() {
 add_action( 'wp_head', 'arv_adv_meta_description', 2 );
 
 /**
+ * Share cards. A trip's card is the attachment in _arv_adv_og_card; the
+ * landing's is the arv_adventures_og_card option. Both are 1200x630 images
+ * with the Adventures logo baked in, so iMessage, Slack and social previews
+ * show the brand rather than whatever photo Jetpack guesses.
+ */
+function arv_adv_share_context() {
+	$landing_id = (int) get_option( 'arv_adventures_landing_id' );
+	if ( $landing_id && is_page( $landing_id ) ) {
+		return array(
+			'card'  => (int) get_option( 'arv_adventures_og_card' ),
+			'title' => 'Aravaipa Adventures',
+			'desc'  => 'Race trips, training camps, and guided trail running adventures, from Arizona to Patagonia.',
+		);
+	}
+	if ( is_singular( 'adventure' ) ) {
+		$id = get_queried_object_id();
+		return array(
+			'card'  => (int) get_post_meta( $id, '_arv_adv_og_card', true ),
+			'title' => get_the_title( $id ) . ' | Aravaipa Adventures',
+			'desc'  => arv_adv_meta( $id, 'tagline' ),
+		);
+	}
+	return null;
+}
+
+function arv_adv_og_tags( $tags ) {
+	$ctx = arv_adv_share_context();
+	if ( ! $ctx ) {
+		return $tags;
+	}
+	$tags['og:title']           = $ctx['title'];
+	$tags['twitter:text:title'] = $ctx['title'];
+	$tags['og:site_name']       = 'Aravaipa Adventures';
+	if ( '' !== $ctx['desc'] ) {
+		$tags['og:description']      = $ctx['desc'];
+		$tags['twitter:description'] = $ctx['desc'];
+	}
+	$url = $ctx['card'] ? wp_get_attachment_url( $ctx['card'] ) : '';
+	if ( $url ) {
+		$tags['og:image']            = $url;
+		$tags['og:image:width']      = 1200;
+		$tags['og:image:height']     = 630;
+		$tags['og:image:alt']        = $ctx['title'];
+		$tags['twitter:image']       = $url;
+		$tags['twitter:image:alt']   = $ctx['title'];
+	}
+	return $tags;
+}
+add_filter( 'jetpack_open_graph_tags', 'arv_adv_og_tags', 99 );
+
+function arv_adv_title_parts( $parts ) {
+	$landing_id = (int) get_option( 'arv_adventures_landing_id' );
+	if ( $landing_id && is_page( $landing_id ) ) {
+		$parts['title'] = 'Aravaipa Adventures';
+		unset( $parts['site'] );
+	} elseif ( is_singular( 'adventure' ) ) {
+		$parts['site'] = 'Aravaipa Adventures';
+	}
+	return $parts;
+}
+add_filter( 'document_title_parts', 'arv_adv_title_parts', 99 );
+
+/**
  * Breadcrumbs on a trip: Home > Adventures > Trip, in the theme's own markup.
  *
  * @param string $out  Breadcrumb HTML from earlier filters.
