@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.100.0
+ * Version:           0.101.2
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.100.0' );
+define( 'ARV_ELEMENTS_VERSION', '0.101.2' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -198,6 +198,13 @@ require_once ARV_ELEMENTS_PATH . 'includes/update-emails.php';
 // cannot clear the web-user-owned page cache over SSH.
 require_once ARV_ELEMENTS_PATH . 'includes/cache-purge.php';
 
+// Aravaipa Adventures: the adventure post type, its trip page and landing
+// ([arv_adventures]), and the CF7 interest form's trip list. Front end and
+// admin both: the post type has to exist on every request.
+require_once ARV_ELEMENTS_PATH . 'includes/adventures.php';
+require_once ARV_ELEMENTS_PATH . 'includes/adventures-render.php';
+require_once ARV_ELEMENTS_PATH . 'includes/adventures-form.php';
+
 // Admin only: every hook in updater.php answers questions WordPress only
 // asks inside wp-admin (the Plugins screen, the update cron that runs
 // alongside it). Loading it on the front end would just be dead weight on
@@ -218,6 +225,9 @@ if ( is_admin() ) {
 	// for the same reason: it registers a menu and answers a form, and does
 	// nothing at all on a page a visitor requests.
 	require_once ARV_ELEMENTS_PATH . 'includes/photos-admin.php';
+
+	// The trip editing screen: metaboxes, JSON validation, list columns.
+	require_once ARV_ELEMENTS_PATH . 'includes/adventures-admin.php';
 }
 
 /**

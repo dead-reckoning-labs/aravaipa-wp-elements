@@ -44,12 +44,12 @@ fi
 
 # Lint every file that will ship. A parse error reaching the live site
 # takes down the whole thing, not just the builder.
-for f in "$NAME.php" includes/*.php includes/elements/*.php; do
+for f in "$NAME.php" includes/*.php includes/elements/*.php includes/templates/*.php; do
 	php -l "$f" > /dev/null
 done
 
 rm -rf "$STAGE" "$OUT/$NAME.zip"
-mkdir -p "$STAGE/includes/elements" "$STAGE/assets/logos" "$STAGE/assets/plugin"
+mkdir -p "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures"
 
 cp "$NAME.php" "$STAGE/"
 # Read from the require_once calls rather than a list kept beside them. The
@@ -85,13 +85,17 @@ for inc in "${INCLUDES[@]}"; do
 	cp "includes/$inc" "$STAGE/includes/"
 done
 cp includes/elements/*.php "$STAGE/includes/elements/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/aravaipa-course-map.js assets/aravaipa-a11y.js assets/us-outline.svg "$STAGE/assets/"
+# Page templates the plugin hands to template_include (the Adventures trip
+# page). Not require_once'd, so the derivation above cannot see them.
+cp includes/templates/*.php "$STAGE/includes/templates/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/aravaipa-course-map.js assets/aravaipa-a11y.js assets/aravaipa-adventures.css assets/aravaipa-adventures.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/adventures/* "$STAGE/assets/adventures/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
 
 # WordPress convention: an empty index.php in every directory so a server
 # with directory listing enabled serves nothing instead of the file tree.
-for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin"; do
+for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures"; do
 	printf '<?php // Silence is golden.' > "$d/index.php"
 done
 
