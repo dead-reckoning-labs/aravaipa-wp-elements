@@ -157,6 +157,28 @@ body .arv-adv .aa-hero-meta {
 body .arv-adv .aa-hero-meta span + span::before {
 	content: "/"; margin-right: 28px; opacity: 0.55; font-weight: 400;
 }
+body .arv-adv .aa-hero.aa-hero-brand {
+	align-items: center; text-align: center;
+}
+body .arv-adv .aa-hero.aa-hero-brand::before {
+	background: linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0.55) 100%);
+}
+body .arv-adv .aa-hero.aa-hero-brand .aa-container {
+	padding: 48px 0;
+}
+body .arv-adv .aa-hero-logo {
+	max-width: none; margin: 0 auto; letter-spacing: 0;
+}
+body .arv-adv .aa-hero-logo img {
+	display: block; width: min(820px, 88vw); height: auto; margin: 0 auto;
+	filter: drop-shadow(0 2px 14px rgba(0,0,0,0.55));
+}
+body .arv-adv .aa-hero.aa-hero-brand .aa-hero-sub {
+	margin: 26px auto 32px; text-shadow: 0 1px 10px rgba(0,0,0,0.5);
+}
+body .arv-adv .aa-hero.aa-hero-brand .aa-hero-actions {
+	justify-content: center;
+}
 body .arv-adv .aa-hero-actions {
 	display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
 }
