@@ -336,8 +336,8 @@ function arv_adv_render_landing() {
 
 	$o = '<div class="arv-adv arv-adv-landing">';
 
-	$o .= '<section class="aa-hero" style="' . esc_attr( arv_adv_bg( $photo( 'hero' ) ) ) . '"><div class="aa-container">'
-		. '<h1 class="aa-hero-title">Aravaipa Adventures</h1>'
+	$o .= '<section class="aa-hero aa-hero-brand" style="' . esc_attr( arv_adv_bg( $photo( 'hero' ) ) ) . '"><div class="aa-container">'
+		. '<h1 class="aa-hero-title aa-hero-logo"><img src="' . esc_url( ARV_ELEMENTS_URL . 'assets/adventures/aravaipa-adventures-logo-photo.svg' ) . '" alt="Aravaipa Adventures" width="1889" height="395" /></h1>'
 		. '<p class="aa-hero-sub">Race trips, training camps, and guided trail running adventures, from Arizona to Patagonia.</p>'
 		. '<div class="aa-hero-actions"><a class="aa-btn aa-btn-yellow" href="#trips">Find Your Next Adventure</a><a class="aa-btn aa-btn-line" href="#interest">Interest List</a></div>'
 		. '</div></section>';
