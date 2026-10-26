@@ -119,6 +119,9 @@ function arv_adv_host_line( $trip ) {
 
 	$logo = ! empty( $config['partner_logo'] ) ? arv_adv_img( $config['partner_logo'], 'thumbnail', array( 'alt' => 'Trail Run Adventures logo', 'width' => '60', 'height' => '60' ) ) : '';
 	$line = 'Run in partnership with ' . $tra . ', guided on the ground by their team and local mountain guides, with an Aravaipa trip lead. ' . $about . '.';
+	if ( ! empty( $config['coaching']['url'] ) && 0 === strpos( (string) $config['coaching']['url'], 'https://' ) ) {
+		$line .= ' Want to train for it? <a href="' . esc_url( arv_adv_landing_url() . '#coaching' ) . '">Coaching with Anna Frost</a>.';
+	}
 	return array( $logo, $line, $line );
 }
 
@@ -299,6 +302,30 @@ function arv_adv_render_trip( $trip ) {
 }
 
 /**
+ * Coaching with Anna Frost (Trail Run Adventures), bottom of the landing.
+ * Off unless the landing config has a coaching.url (https). Photo from coaching.photo ({id, url, alt}).
+ *
+ * @param array $config Landing config.
+ * @return string
+ */
+function arv_adv_render_coaching( $config ) {
+	$c = isset( $config['coaching'] ) && is_array( $config['coaching'] ) ? $config['coaching'] : array();
+	$url = isset( $c['url'] ) ? (string) $c['url'] : '';
+	if ( 0 !== strpos( $url, 'https://' ) ) {
+		return '';
+	}
+	$photo = isset( $c['photo'] ) && is_array( $c['photo'] ) ? $c['photo'] : array();
+	$img   = arv_adv_img( $photo, 'large', array( 'alt' => 'Anna Frost running in the mountains', 'sizes' => '(max-width: 979px) 100vw, 560px' ) );
+	return '<section class="aa-section aa-gray aa-coaching" id="coaching"><div class="aa-container aa-split">'
+		. ( $img ? '<div class="aa-split-media aa-landscape">' . $img . '<p class="aa-caption">Photo: Trail Run Adventures</p></div>' : '' )
+		. '<div class="aa-split-text"><span class="aa-kicker">Train with Anna</span><h2 class="aa-display">Coaching with Anna Frost</h2>'
+		. '<p>Want to arrive at your next adventure fitter, stronger, and more confident? Anna Frost, a professional mountain and ultra runner with more than 20 years of international racing, offers personalized online coaching for runners of every level.</p>'
+		. '<p>Whether you are building toward one of our trips, a destination race, or simply want to run better, her Full On Coaching program gets you ready for every mile.</p>'
+		. '<a class="aa-btn aa-btn-dark" href="' . esc_url( $url ) . '" target="_blank" rel="noopener">Learn more about coaching</a>'
+		. '</div></div></section>';
+}
+
+/**
  * The landing body ([arv_adventures]).
  *
  * @return string
@@ -408,6 +435,8 @@ function arv_adv_render_landing() {
 		. arv_adv_faq_rows( $faqs ) . '</div></div></section>';
 
 	$o .= arv_adv_render_form( $photo( 'form' ), 'Aravaipa Adventures Interest List' );
+
+	$o .= arv_adv_render_coaching( $config );
 
 	// Photo credits, folded so they cost the page nothing until opened.
 	$credits = isset( $config['credits'] ) && is_array( $config['credits'] ) ? $config['credits'] : array();
