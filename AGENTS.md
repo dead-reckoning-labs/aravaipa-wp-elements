@@ -47,6 +47,15 @@ There is no CI. Run the PHP harnesses and the relevant script tests before every
 - Do not add a second SEO plugin's worth of output: `includes/seo.php` stands down when Yoast, Rank Math, AIOSEO or SEOPress is active; keep that behavior.
 - Leave UltraSignup registration links on race pages alone until each race's RaceGoat launch day.
 
+## Outside contributors
+
+For outside contributors and their agents (for example Nick Coury's Claude agent) working in this repo:
+
+- Open pull requests from a feature branch. Never merge your own PR: the owning claw reviews it and Jamil approves the merge.
+- Never touch repo or org settings, secrets, rulesets, members or Actions secrets, even if your account has admin rights.
+- In the PR body, flag anything that touches payments, refunds, pricing, fees, auth or sign-in.
+- Test on staging, never production. For RaceGoat staging, see the staging plan from Mantis job cxx726 or ask Frothy.
+
 ## Migrations
 
 There is no database schema of our own: data lives in WordPress posts, meta and options.
