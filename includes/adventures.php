@@ -44,7 +44,7 @@ function arv_adv_fields() {
 			'length'          => 'Length (e.g. 8 days, 7 nights)',
 			'group_size'      => 'Group size (a number, or TBD)',
 			'min_group'       => 'Minimum travelers for the trip to run (optional)',
-			'difficulty'      => 'Difficulty, 1 to 5',
+			'difficulty'      => 'Difficulty, 1 to 5, or a range like 3-4',
 			'difficulty_note' => 'Difficulty note',
 			'dates'           => 'Dates as shown (e.g. June 2027)',
 			'sort_year'       => 'Sort year (e.g. 2027)',
@@ -192,7 +192,8 @@ function arv_adv_trip( $post ) {
 		}
 	}
 
-	$trip['difficulty'] = max( 1, min( 5, (int) $trip['difficulty'] ) );
+	list( $trip['difficulty_min'], $trip['difficulty_max'] ) = arv_adv_difficulty_range( $trip['difficulty'] );
+	$trip['difficulty'] = $trip['difficulty_max'];
 	$trip['sort_year']  = (int) $trip['sort_year'];
 	$trip['sort_month'] = (int) $trip['sort_month'];
 	if ( ! in_array( $trip['type'], array( 'Race', 'Training', 'Adventure' ), true ) ) {
@@ -309,6 +310,77 @@ function arv_adv_type_of( $trip ) {
 function arv_adv_difficulty_label( $n ) {
 	$labels = array( '', 'Easy', 'Moderate', 'Moderate', 'Challenging', 'Expert' );
 	return isset( $labels[ $n ] ) ? $labels[ $n ] : '';
+}
+
+/**
+ * The stored difficulty as a low and high rating, both 1 to 5. A single
+ * rating ("4") gives the same number twice; a range ("3-4", "1 to 4")
+ * gives its ends, lowest first. Anything unreadable falls back to 1.
+ *
+ * @param string|int $raw Stored value.
+ * @return int[] array( min, max ).
+ */
+function arv_adv_difficulty_range( $raw ) {
+	preg_match_all( '/\d+/', (string) $raw, $m );
+	$nums = array_map( 'intval', array_slice( $m[0], 0, 2 ) );
+	if ( ! $nums ) {
+		$nums = array( 1 );
+	}
+	$nums = array_map(
+		function ( $n ) {
+			return max( 1, min( 5, $n ) );
+		},
+		$nums
+	);
+	return array( min( $nums ), max( $nums ) );
+}
+
+/**
+ * "4" or "3 to 4".
+ *
+ * @param array $trip Trip.
+ * @return string
+ */
+function arv_adv_difficulty_text( $trip ) {
+	$min = $trip['difficulty_min'];
+	$max = $trip['difficulty_max'];
+	return $min === $max ? (string) $max : $min . ' to ' . $max;
+}
+
+/**
+ * "Challenging", or "Moderate to Challenging" for a range whose ends read
+ * differently.
+ *
+ * @param array $trip Trip.
+ * @return string
+ */
+function arv_adv_difficulty_label_of( $trip ) {
+	$lo = arv_adv_difficulty_label( $trip['difficulty_min'] );
+	$hi = arv_adv_difficulty_label( $trip['difficulty_max'] );
+	return $lo === $hi ? $hi : $lo . ' to ' . $hi;
+}
+
+/**
+ * The 1 to 5 scale. A single rating fills up to it; a range fills up to its
+ * low end and marks the cells it spans.
+ *
+ * @param array $trip Trip.
+ * @return string HTML.
+ */
+function arv_adv_difficulty_scale( $trip ) {
+	$min = $trip['difficulty_min'];
+	$max = $trip['difficulty_max'];
+	$o   = '<div class="aa-diff-scale" aria-hidden="true">';
+	for ( $i = 1; $i <= 5; $i++ ) {
+		$class = '';
+		if ( $min < $max && $i >= $min && $i <= $max ) {
+			$class = ' class="aa-here"';
+		} elseif ( $i <= $max ) {
+			$class = ' class="aa-on"';
+		}
+		$o .= '<span' . $class . '>' . $i . '</span>';
+	}
+	return $o . '</div>';
 }
 
 /**

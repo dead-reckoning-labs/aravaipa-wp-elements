@@ -137,7 +137,7 @@ function arv_adv_render_trip( $trip ) {
 	$photos   = $trip['photos'];
 	$config   = arv_adv_landing_config();
 	$host     = arv_adv_host_line( $trip );
-	$diff     = $trip['difficulty'];
+	$diff     = arv_adv_difficulty_text( $trip );
 	$group    = is_numeric( $trip['group_size'] ) ? 'Max ' . (int) $trip['group_size'] . ' runners' : $trip['group_size'];
 	$race_facts = ! empty( $race['facts'] ) && is_array( $race['facts'] ) ? $race['facts'] : array(
 		array( 'Race Entry', 'TBD, being confirmed with the race and our partner.' ),
@@ -160,7 +160,7 @@ function arv_adv_render_trip( $trip ) {
 		array( 'Trip Type', arv_adv_badge( $trip ) ),
 		array( 'Length', esc_html( $trip['length'] ) ),
 		array( 'Group Size', esc_html( $group ) ),
-		array( 'Difficulty', esc_html( $diff . ' of 5 (' . arv_adv_difficulty_label( $diff ) . ')' ) ),
+		array( 'Difficulty', esc_html( $diff . ' of 5 (' . arv_adv_difficulty_label_of( $trip ) . ')' ) ),
 		array( 'Fly Into', esc_html( $trip['airport'] ) ),
 	);
 	if ( ! empty( $race['name'] ) ) {
@@ -250,12 +250,9 @@ function arv_adv_render_trip( $trip ) {
 		. ( '' !== $trip['min_group'] ? ' Minimum ' . (int) $trip['min_group'] . ' travelers for the trip to run.' : '' ) . ' Flights not included.';
 
 	$o .= '<section class="aa-section aa-gray" id="dates"><div class="aa-container aa-plan-grid"><div>'
-		. '<span class="aa-kicker">Difficulty</span><h2 class="aa-display">' . esc_html( arv_adv_difficulty_label( $diff ) . ', ' . $diff . ' of 5' ) . '</h2>'
-		. '<div class="aa-diff-scale" aria-hidden="true">';
-	for ( $i = 1; $i <= 5; $i++ ) {
-		$o .= '<span' . ( $i <= $diff ? ' class="aa-on"' : '' ) . '>' . $i . '</span>';
-	}
-	$o .= '</div><p>' . esc_html( $trip['difficulty_note'] ) . '</p>'
+		. '<span class="aa-kicker">Difficulty</span><h2 class="aa-display">' . esc_html( arv_adv_difficulty_label_of( $trip ) . ', ' . $diff . ' of 5' ) . '</h2>'
+		. arv_adv_difficulty_scale( $trip );
+	$o .= '<p>' . esc_html( $trip['difficulty_note'] ) . '</p>'
 		. '<div class="aa-partner-line">' . $host[0] . '<p>' . $host[1] . '</p></div>'
 		. '</div><aside class="aa-price-panel"><h3>Dates and Pricing</h3><dl class="aa-price-rows">'
 		. '<div><dt>Trip Dates</dt><dd>' . esc_html( $trip['dates'] ) . '</dd></div>'
