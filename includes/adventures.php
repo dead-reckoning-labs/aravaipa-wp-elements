@@ -561,9 +561,39 @@ function arv_adv_logo( $value ) {
 	if ( is_admin() || ! arv_adv_is_adventures_page() ) {
 		return $value;
 	}
-	return ARV_ELEMENTS_URL . 'assets/adventures/aravaipa-adventures-logo.svg';
+	return ARV_ELEMENTS_URL . 'assets/adventures/aravaipa-adventures-logo.svg?ver=' . ARV_ELEMENTS_VERSION;
 }
 add_filter( 'x_option_x_logo', 'arv_adv_logo' );
+
+/**
+ * Browser tab and home screen icon. WordPress prints the site icon links
+ * through get_site_icon_url, so on Adventures pages each size points at the
+ * Adventures mountain instead; every other page keeps the Aravaipa Running
+ * icon and the site icon setting itself is never changed.
+ *
+ * @param string $url  Site icon URL.
+ * @param int    $size Requested size in pixels.
+ * @return string
+ */
+function arv_adv_site_icon( $url, $size ) {
+	if ( is_admin() || ! arv_adv_is_adventures_page() ) {
+		return $url;
+	}
+	$file = (int) $size <= 32 ? 'aa-favicon-32.png' : ( (int) $size <= 180 ? 'aa-favicon-180.png' : 'aa-favicon-512.png' );
+	return ARV_ELEMENTS_URL . 'assets/adventures/' . $file . '?ver=' . ARV_ELEMENTS_VERSION;
+}
+add_filter( 'get_site_icon_url', 'arv_adv_site_icon', 999, 2 );
+
+/**
+ * Scalable tab icon for browsers that take one, ahead of the PNG links.
+ */
+function arv_adv_svg_icon() {
+	if ( ! arv_adv_is_adventures_page() ) {
+		return;
+	}
+	echo '<link rel="icon" type="image/svg+xml" href="' . esc_url( ARV_ELEMENTS_URL . 'assets/adventures/aa-favicon.svg?ver=' . ARV_ELEMENTS_VERSION ) . '" />' . "\n";
+}
+add_action( 'wp_head', 'arv_adv_svg_icon', 98 );
 
 /**
  * @param mixed $value Logo text option.
