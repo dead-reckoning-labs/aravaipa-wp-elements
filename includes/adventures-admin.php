@@ -50,6 +50,8 @@ function arv_adv_admin_choices() {
 			'3' => '3 (Moderate)',
 			'4' => '4 (Challenging)',
 			'5' => '5 (Expert)',
+			'1-4' => '1 to 4 (Easy to Challenging)',
+			'3-4' => '3 to 4 (Moderate to Challenging)',
 		),
 	);
 }
@@ -72,8 +74,13 @@ function arv_adv_admin_details( $post ) {
 		$value = (string) get_post_meta( $post->ID, '_arv_adv_' . $key, true );
 		echo '<tr><th scope="row"><label for="arv-adv-' . esc_attr( $key ) . '">' . esc_html( $label ) . '</label></th><td>';
 		if ( isset( $choices[ $key ] ) ) {
+			$options = $choices[ $key ];
+			if ( '' !== $value && ! isset( $options[ $value ] ) ) {
+				// Keep a stored value the list does not offer, so saving does not overwrite it.
+				$options[ $value ] = $value;
+			}
 			echo '<select id="arv-adv-' . esc_attr( $key ) . '" name="' . esc_attr( $name ) . '">';
-			foreach ( $choices[ $key ] as $v => $l ) {
+			foreach ( $options as $v => $l ) {
 				echo '<option value="' . esc_attr( $v ) . '"' . selected( $value, (string) $v, false ) . '>' . esc_html( $l ) . '</option>';
 			}
 			echo '</select>';
