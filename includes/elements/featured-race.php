@@ -113,6 +113,11 @@ cs_register_element(
 				// reasoning as price_note: the next deadline gets a line
 				// here, not a re-invented field.
 				'deadline_note' => cs_value( '', 'markup' ),
+				// The last day the note is true, Y-m-d. Blank shows it for as
+				// long as entries are open, which was right for a cutoff tied
+				// to the start; a swag cutoff two weeks before the start would
+				// otherwise keep urging people for a date already gone.
+				'deadline_until' => cs_value( '', 'markup' ),
 			),
 			'omega'
 		),
@@ -158,6 +163,12 @@ function arv_featured_race_builder() {
 					'type'        => 'text',
 					'label'       => __( 'Deadline note (optional)', 'aravaipa-elements' ),
 					'description' => __( 'A short urgency line above the button, e.g. "Order by September 1 to guarantee your goody pack before the challenge begins." Leave blank to show none.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'deadline_until',
+					'type'        => 'text',
+					'label'       => __( 'Deadline note until (optional)', 'aravaipa-elements' ),
+					'description' => __( 'The last day the deadline note shows, as YYYY-MM-DD, e.g. 2026-11-15. Leave blank to show it for as long as entries are open.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'perks',
@@ -325,7 +336,11 @@ function arv_featured_race_render( $data ) {
 	// (Entries Closed, Join Waitlist): those states already answer the
 	// question this line exists to create urgency about.
 	$deadline_note = isset( $data['deadline_note'] ) ? trim( (string) $data['deadline_note'] ) : '';
-	if ( '' !== $deadline_note && 'upcoming' === $action['phase'] ) {
+	$deadline_until = isset( $data['deadline_until'] ) ? trim( (string) $data['deadline_until'] ) : '';
+	if ( '' !== $deadline_until && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $deadline_until ) ) {
+		$deadline_until = '';
+	}
+	if ( '' !== $deadline_note && 'upcoming' === $action['phase'] && ( '' === $deadline_until || $today <= $deadline_until ) ) {
 		$out .= '<p class="arv-featured__deadline">' . esc_html( $deadline_note ) . '</p>';
 	}
 

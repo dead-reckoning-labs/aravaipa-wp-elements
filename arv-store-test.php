@@ -628,6 +628,23 @@ t( 'hidden on a sold-out race',     false === strpos( $mog, 'arv-featured__deadl
 t( 'which still shows the waitlist', false !== strpos( $mog, 'Join Waitlist' ) );
 $GLOBALS['NOW'] = '2026-08-26';
 
+// A swag cutoff two weeks before the start (Merry Vertmas, November 15) must
+// drop off on its own date, not keep urging people until the start.
+$until = array(
+	'race_page'      => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'deadline_note'  => 'Sign up by September 10 to get your swag pack before the start.',
+	'deadline_until' => '2026-09-10',
+);
+$GLOBALS['NOW'] = '2026-09-10';
+t( 'a dated deadline note shows on its last day', false !== strpos( arv_featured_race_render( $until ), 'arv-featured__deadline' ) );
+$GLOBALS['NOW'] = '2026-09-11';
+$past = arv_featured_race_render( $until );
+t( 'and is hidden the day after',                 false === strpos( $past, 'arv-featured__deadline' ) );
+t( 'while Register stays',                        false !== strpos( $past, '>Register<' ) );
+$until['deadline_until'] = 'Nov 15';
+t( 'a malformed until date falls back to showing it', false !== strpos( arv_featured_race_render( $until ), 'arv-featured__deadline' ) );
+$GLOBALS['NOW'] = '2026-08-26';
+
 
 echo "\nshared registration links:\n";
 // Two pairs of unrelated races on the live site share a registration URL:
