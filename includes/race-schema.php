@@ -155,6 +155,21 @@ function arv_upcoming_races_action( $race, $today, $lead = 5 ) {
 		);
 	}
 
+	// A virtual challenge on Obsession has no start line and no live board:
+	// it runs for weeks and keeps taking entries until its last day. Without
+	// this, Merry Vertmas turned into "Live Results" with nowhere to link on
+	// December 1 and the featured block lost both its buttons for the whole
+	// 25 days it was actually running. A board of its own, or a published
+	// close date that has passed, still wins.
+	if ( $today <= $last && '' === $race['live'] && arv_race_is_obsession_challenge( $race['register'] )
+		&& ! ( '' !== $race['closes'] && $today > $race['closes'] ) ) {
+		return array(
+			'phase' => 'upcoming',
+			'label' => __( 'Register', 'aravaipa-elements' ),
+			'url'   => $race['register'],
+		);
+	}
+
 	if ( $today <= $last ) {
 		return array(
 			'phase' => 'live',
@@ -168,6 +183,20 @@ function arv_upcoming_races_action( $race, $today, $lead = 5 ) {
 		'label' => __( 'Results', 'aravaipa-elements' ),
 		'url'   => $results,
 	);
+}
+
+/**
+ * Whether a registration URL is a challenge on obsession.run.
+ *
+ * @param string $url
+ * @return bool
+ */
+function arv_race_is_obsession_challenge( $url ) {
+	$host = strtolower( (string) parse_url( (string) $url, PHP_URL_HOST ) );
+	$path = (string) parse_url( (string) $url, PHP_URL_PATH );
+
+	return in_array( $host, array( 'obsession.run', 'www.obsession.run' ), true )
+		&& 0 === strpos( $path, '/challenges/' );
 }
 
 /**

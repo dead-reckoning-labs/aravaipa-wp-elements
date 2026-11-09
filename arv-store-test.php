@@ -482,6 +482,16 @@ t( 'styled with the waitlist phase class',         false !== strpos( $mog, 'arv-
 $GLOBALS['ARV_OPTIONS'] = array();
 $GLOBALS['NOW'] = '2026-08-26';
 
+$GLOBALS['NOW'] = '2026-10-15';
+$jallmid = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'host_label' => 'Hosted on Obsession.run',
+	'card_cta'  => 'Register on Obsession.run',
+) );
+t( 'featured obsession challenge mid-run keeps Register',  false !== strpos( $jallmid, 'arv-featured__cta--upcoming' ) && false !== strpos( $jallmid, '>Register<' ) );
+t( 'and its obsession card button',                        false !== strpos( $jallmid, 'arv-featured__card-cta' ) );
+$GLOBALS['NOW'] = '2026-08-26';
+
 echo "\nfeatured race card:\n";
 $card = arv_featured_race_render( array(
 	'race_page'  => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
@@ -3490,6 +3500,24 @@ $nodate = array(
 );
 t( 'no close date still flips on lead', 'Live Results' === arv_upcoming_races_action( $nodate, '2026-08-31' )['label'] );
 t( 'and sells before the window opens', 'Register' === arv_upcoming_races_action( $nodate, '2026-08-30' )['label'] );
+
+// A virtual Obsession challenge keeps selling entries while it runs. It used
+// to flip to "Live Results" with no link on its first day, which emptied the
+// home page promo for Merry Vertmas for all of December 1 to 25.
+$vertmas = array(
+	'name' => 'Merry Vertmas', 'iso' => '2026-12-01', 'end' => '2026-12-25', 'closes' => '',
+	'live' => '', 'page' => 'https://www.aravaiparunning.com/virtual/merry-vertmas/',
+	'register' => 'https://obsession.run/challenges/merry-vertmas',
+);
+foreach ( array( '2026-11-10', '2026-11-27', '2026-12-01', '2026-12-10', '2026-12-25' ) as $day ) {
+	$a = arv_upcoming_races_action( $vertmas, $day );
+	t( "obsession challenge sells on $day", 'upcoming' === $a['phase'] && 'Register' === $a['label'] && 'https://obsession.run/challenges/merry-vertmas' === $a['url'] );
+}
+t( 'obsession challenge shows results the day after it ends', 'results' === arv_upcoming_races_action( $vertmas, '2026-12-26' )['phase'] );
+t( 'obsession challenge with its own board still goes live', 'Live Results' === arv_upcoming_races_action( array_merge( $vertmas, array( 'live' => 'https://live.aravaiparunning.com/#/vertmas-2026' ) ), '2026-12-10' )['label'] );
+t( 'obsession challenge past a published close date stops selling', 'Register' !== arv_upcoming_races_action( array_merge( $vertmas, array( 'closes' => '2026-12-05' ) ), '2026-12-10' )['label'] );
+t( 'a non-obsession virtual race is unchanged', 'Live Results' === arv_upcoming_races_action( array_merge( $vertmas, array( 'register' => 'https://ultrasignup.com/register.aspx?did=1' ) ), '2026-12-10' )['label'] );
+t( 'obsession host check wants a challenge path', ! arv_race_is_obsession_challenge( 'https://obsession.run/clubs/aravaipa' ) && ! arv_race_is_obsession_challenge( 'https://notobsession.run/challenges/x' ) );
 
 // ------------------------------------------------ Removing a stale race --
 // The import writes but never unwrites. Its key is register-url plus name,
