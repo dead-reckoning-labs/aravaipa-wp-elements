@@ -486,15 +486,19 @@ function arv_featured_race_card( $data, $action ) {
 		$out .= '</ul>';
 
 		if ( '' !== $app_label ) {
-			$app = '<span class="arv-featured__app-label">' . esc_html( $app_label ) . '</span>';
-			if ( '' !== $app_with ) {
-				$app .= ' <span class="arv-featured__app-with">' . esc_html( sprintf( __( 'with %s', 'aravaipa-elements' ), $app_with ) ) . '</span>';
-			}
-			$out .= '' !== $app_url
-				? '<a class="arv-featured__app" href="' . esc_url( $app_url ) . '" target="_blank" rel="noopener">' . $app
-					. '<svg class="arv-featured__app-arrow" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">'
+			// The arrow rides inside the last span so it wraps with the words
+			// rather than dropping onto a line of its own.
+			$arrow = '' !== $app_url
+				? '<svg class="arv-featured__app-arrow" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">'
 					. '<path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-					. '</svg></a>'
+					. '</svg>'
+				: '';
+			$app = '' !== $app_with
+				? '<span class="arv-featured__app-label">' . esc_html( $app_label ) . '</span> '
+					. '<span class="arv-featured__app-with">' . esc_html( sprintf( __( 'with %s', 'aravaipa-elements' ), $app_with ) ) . $arrow . '</span>'
+				: '<span class="arv-featured__app-label">' . esc_html( $app_label ) . $arrow . '</span>';
+			$out .= '' !== $app_url
+				? '<a class="arv-featured__app" href="' . esc_url( $app_url ) . '" target="_blank" rel="noopener">' . $app . '</a>'
 				: '<p class="arv-featured__app">' . $app . '</p>';
 		}
 
@@ -656,7 +660,7 @@ function arv_featured_race_sync_tile( $name ) {
 		if ( $logo['tile'] ) {
 			return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile arv-featured__sync-tile--app">' . $img . '</span>' . $named . '</li>';
 		}
-		return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile arv-featured__sync-tile--wordmark">' . $img . '</span></li>';
+		return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile arv-featured__sync-tile--wordmark arv-featured__sync-tile--' . esc_attr( $key ) . '">' . $img . '</span></li>';
 	}
 
 	return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile arv-featured__sync-tile--type">' . esc_html( $name ) . '</span></li>';

@@ -3716,9 +3716,19 @@
 	height: 100%;
 }
 
-/* Wordmarks are wide, so their tile grows sideways to keep them legible. */
+/* Wordmarks are wide, so their tile grows sideways to keep them legible.
+   Polar's file is the bare wordmark and Wahoo's carries more air around a
+   lighter one, so each gets the height that makes them read the same size. */
 .arv-featured__sync-tile--wordmark {
 	padding: 0 0.55rem;
+}
+
+.arv-featured__sync-tile--polar .arv-featured__sync-logo {
+	height: 0.8rem;
+}
+
+.arv-featured__sync-tile--wahoo .arv-featured__sync-logo {
+	height: 1.3rem;
 }
 
 /* A platform with no web-licensed mark is its name in our own type, ink on
@@ -3758,11 +3768,13 @@
 }
 
 .arv-featured__app-with {
-	opacity: 0.8;
+	opacity: 0.85;
+	white-space: nowrap;
 }
 
 .arv-featured__app-arrow {
-	flex: 0 0 auto;
+	margin-left: 0.35rem;
+	vertical-align: -0.05em;
 	color: var(--arv-teal);
 }
 
