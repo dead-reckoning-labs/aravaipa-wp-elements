@@ -295,6 +295,62 @@ function arv_adv_types() {
 }
 
 /**
+ * The trip types that have at least one of these trips, in arv_adv_types()
+ * order. The landing filter only offers these, so a type with nothing
+ * published (training camps while they are drafted) has no empty tab, and
+ * it comes back by itself when one of its trips is published again.
+ *
+ * @param array $trips Trips, as from arv_adv_trips().
+ * @return array<string, array{label: string, plural: string, key: string}>
+ */
+function arv_adv_visible_types( $trips ) {
+	$have = array();
+	foreach ( $trips as $t ) {
+		$have[ arv_adv_type_of( $t )['key'] ] = true;
+	}
+	$out = array();
+	foreach ( arv_adv_types() as $type => $info ) {
+		if ( isset( $have[ $info['key'] ] ) ) {
+			$out[ $type ] = $info;
+		}
+	}
+	return $out;
+}
+
+/**
+ * Landing copy that names the trip types: the hero line (also the share
+ * description) and the two intro paragraphs. The camp wording only shows
+ * while a Training trip is visible.
+ *
+ * @param bool $camps At least one Training trip is visible.
+ * @return array{hero: string, lede: string, more: string}
+ */
+function arv_adv_landing_copy( $camps ) {
+	if ( $camps ) {
+		return array(
+			'hero' => 'Race trips, training camps, and guided trail running adventures, from Arizona to Patagonia.',
+			'lede' => 'For years Aravaipa Running has built trail races in the Arizona desert and beyond. Aravaipa Adventures takes that same crew mentality on the road, to the trails our runners already dream about: race weeks that finish at the Ultra Fitz Roy or Ultra Skyrunning Madeira, the Milford, Routeburn, and Kepler tracks, the Julian Alps, a chartered boat through the Lofoten islands, the Hardrock loop in Colorado\'s San Juans run in stages, and a training camp on our own Cocodona 250 course at home in Arizona.',
+			'more' => 'We handle the hotels, transfers, meals, and logistics, so the only thing on your plate is the mountain in front of you. Race trips build the week around a world-class event. Training camps put you on a race course before race day. Adventures are pure exploration, point to point through ranges we love.',
+		);
+	}
+	return array(
+		'hero' => 'Race trips and guided trail running adventures, from Madeira to Patagonia.',
+		'lede' => 'For years Aravaipa Running has built trail races in the desert and mountains of the Southwest and beyond. Aravaipa Adventures takes that same crew mentality on the road, to the trails our runners already dream about: race weeks that finish at the Ultra Fitz Roy or Ultra Skyrunning Madeira, the Milford, Routeburn, and Kepler tracks, the Julian Alps, and a chartered boat through the Lofoten islands.',
+		'more' => 'We handle the hotels, transfers, meals, and logistics, so the only thing on your plate is the mountain in front of you. Race trips build the week around a world-class event. Adventures are pure exploration, point to point through ranges we love.',
+	);
+}
+
+/**
+ * Landing copy for these trips.
+ *
+ * @param array $trips Trips, as from arv_adv_trips().
+ * @return array{hero: string, lede: string, more: string}
+ */
+function arv_adv_landing_copy_for( $trips ) {
+	return arv_adv_landing_copy( array_key_exists( 'Training', arv_adv_visible_types( $trips ) ) );
+}
+
+/**
  * @param array $trip Trip.
  * @return array{label: string, plural: string, key: string}
  */
@@ -628,6 +684,130 @@ function arv_adv_robots( $robots ) {
 add_filter( 'wp_robots', 'arv_adv_robots' );
 
 /**
+ * Where an adventure request should go instead of a 404, if anywhere. A trip
+ * that is taken off the site for now (draft, pending review or private)
+ * sends visitors who cannot see it back to the landing with a temporary
+ * 302, so old links and shares still land somewhere useful and the trip
+ * can come back at the same URL. Editors who can see it get the trip.
+ *
+ * @param string $status   The trip's post status.
+ * @param bool   $can_view The visitor may view this trip.
+ * @param string $landing  Landing URL.
+ * @return array{0: string, 1: int}|null [url, status code], or null to leave the request alone.
+ */
+function arv_adv_unpublished_redirect( $status, $can_view, $landing ) {
+	if ( $can_view || ! in_array( $status, array( 'draft', 'pending', 'private' ), true ) ) {
+		return null;
+	}
+	return array( $landing, 302 );
+}
+
+/**
+ * template_redirect: an adventure URL that 404s because its trip is not
+ * published goes to the landing (see arv_adv_unpublished_redirect).
+ */
+function arv_adv_redirect_unpublished() {
+	if ( ! is_404() ) {
+		return;
+	}
+	$slug = (string) get_query_var( 'adventure' );
+	if ( '' === $slug && 'adventure' === get_query_var( 'post_type' ) ) {
+		$slug = (string) get_query_var( 'name' );
+	}
+	if ( '' === $slug ) {
+		return;
+	}
+	$posts = get_posts(
+		array(
+			'post_type'        => 'adventure',
+			'name'             => $slug,
+			'post_status'      => array( 'draft', 'pending', 'private' ),
+			'posts_per_page'   => 1,
+			'suppress_filters' => true,
+		)
+	);
+	if ( ! $posts ) {
+		return;
+	}
+	$go = arv_adv_unpublished_redirect( $posts[0]->post_status, current_user_can( 'read_post', $posts[0]->ID ), arv_adv_landing_url() );
+	if ( $go ) {
+		wp_safe_redirect( $go[0], $go[1] );
+		exit;
+	}
+}
+add_action( 'template_redirect', 'arv_adv_redirect_unpublished', 1 );
+
+/**
+ * Attachment ids of a list of photo objects ({id, ...}), skipping empties.
+ *
+ * @param array $photos Photo objects.
+ * @return int[]
+ */
+function arv_adv_photo_ids( $photos ) {
+	$ids = array();
+	foreach ( $photos as $p ) {
+		if ( is_array( $p ) && ! empty( $p['id'] ) ) {
+			$ids[] = (int) $p['id'];
+		}
+	}
+	return array_values( array_unique( $ids ) );
+}
+
+/**
+ * Photos a trip page shows of its own: hero, story, form and gallery.
+ *
+ * @param array $trip Trip.
+ * @return int[]
+ */
+function arv_adv_trip_photo_ids( $trip ) {
+	$ph = $trip['photos'];
+	return arv_adv_photo_ids( array_merge( array( $ph['hero'], $ph['intro'], $ph['form'] ), (array) $ph['gallery'] ) );
+}
+
+/**
+ * Photos the landing renders: its own picks (hero, panorama, who, form,
+ * partner photo and logo, coaching photo while coaching shows) and the tile
+ * photo of every visible trip.
+ *
+ * @param array $config Landing config.
+ * @param array $trips  Visible trips.
+ * @return int[]
+ */
+function arv_adv_landing_photo_ids( $config, $trips ) {
+	$photos = array();
+	foreach ( array( 'hero', 'pano', 'who', 'form', 'partner_photo', 'partner_logo' ) as $key ) {
+		$photos[] = isset( $config[ $key ] ) ? $config[ $key ] : array();
+	}
+	$c = isset( $config['coaching'] ) && is_array( $config['coaching'] ) ? $config['coaching'] : array();
+	if ( isset( $c['url'], $c['photo'] ) && 0 === strpos( (string) $c['url'], 'https://' ) ) {
+		$photos[] = $c['photo'];
+	}
+	foreach ( $trips as $t ) {
+		$photos[] = $t['photos']['hero'];
+	}
+	return arv_adv_photo_ids( $photos );
+}
+
+/**
+ * The credits (landing config list) for the photos a page actually shows.
+ * Credits for anything else stay in the config, so a trip that comes back
+ * brings its credits with it.
+ *
+ * @param array $credits Credits [{photo: {id}, label, html}].
+ * @param int[] $ids     Photo ids on the page.
+ * @return array
+ */
+function arv_adv_credits_for( $credits, $ids ) {
+	$out = array();
+	foreach ( $credits as $c ) {
+		if ( is_array( $c ) && ! empty( $c['photo']['id'] ) && in_array( (int) $c['photo']['id'], $ids, true ) ) {
+			$out[] = $c;
+		}
+	}
+	return $out;
+}
+
+/**
  * Meta description on a trip, from its tagline.
  */
 function arv_adv_meta_description() {
@@ -653,7 +833,7 @@ function arv_adv_share_context() {
 		return array(
 			'card'  => (int) get_option( 'arv_adventures_og_card' ),
 			'title' => 'Aravaipa Adventures',
-			'desc'  => 'Race trips, training camps, and guided trail running adventures, from Arizona to Patagonia.',
+			'desc'  => arv_adv_landing_copy_for( arv_adv_trips() )['hero'],
 		);
 	}
 	if ( is_singular( 'adventure' ) ) {
