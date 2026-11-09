@@ -49,7 +49,7 @@ for f in "$NAME.php" includes/*.php includes/elements/*.php includes/templates/*
 done
 
 rm -rf "$STAGE" "$OUT/$NAME.zip"
-mkdir -p "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures"
+mkdir -p "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations"
 
 cp "$NAME.php" "$STAGE/"
 # Read from the require_once calls rather than a list kept beside them. The
@@ -92,10 +92,13 @@ cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-cal
 cp assets/adventures/* "$STAGE/assets/adventures/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
+# Official watch and app marks for the Featured Race card, byte for byte as
+# Obsession ships them (assets/integrations/README.md).
+cp assets/integrations/*.png assets/integrations/*.svg "$STAGE/assets/integrations/"
 
 # WordPress convention: an empty index.php in every directory so a server
 # with directory listing enabled serves nothing instead of the file tree.
-for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures"; do
+for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations"; do
 	printf '<?php // Silence is golden.' > "$d/index.php"
 done
 
@@ -160,6 +163,12 @@ while read -r logo; do
 # an example in the resolver's own doc block is not mistaken for a real
 # reference to a file called name.png.
 done < <(grep -hv '^[[:space:]]*[*/]' includes/elements/*.php | grep -oE 'ARV_LOGO:[A-Za-z0-9._-]+' | sed 's/ARV_LOGO://' | sort -u)
+[ "$missing" -eq 0 ] || exit 1
+
+# Same for the Featured Race card's watch and app marks.
+while read -r mark; do
+	[ -f "$STAGE/assets/integrations/$mark" ] || { echo "assets/integrations/$mark referenced but not packaged" >&2; missing=1; }
+done < <(grep -rhoE "assets/integrations/[A-Za-z0-9._-]+\.(png|svg)" includes | sed 's#assets/integrations/##' | sort -u)
 [ "$missing" -eq 0 ] || exit 1
 
 # Every script the plugin enqueues has to be in the payload. This list is

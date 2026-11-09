@@ -482,6 +482,16 @@ t( 'styled with the waitlist phase class',         false !== strpos( $mog, 'arv-
 $GLOBALS['ARV_OPTIONS'] = array();
 $GLOBALS['NOW'] = '2026-08-26';
 
+$GLOBALS['NOW'] = '2026-10-15';
+$jallmid = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'host_label' => 'Hosted on Obsession.run',
+	'card_cta'  => 'Register on Obsession.run',
+) );
+t( 'featured obsession challenge mid-run keeps Register',  false !== strpos( $jallmid, 'arv-featured__cta--upcoming' ) && false !== strpos( $jallmid, '>Register<' ) );
+t( 'and its obsession card button',                        false !== strpos( $jallmid, 'arv-featured__card-cta' ) );
+$GLOBALS['NOW'] = '2026-08-26';
+
 echo "\nfeatured race card:\n";
 $card = arv_featured_race_render( array(
 	'race_page'  => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
@@ -495,9 +505,10 @@ t( 'the host is named',              false !== strpos( $card, 'Hosted on Obsessi
 t( 'and links out to the platform',  false !== strpos( $card, 'obsession.run/challenges' ) );
 t( 'the price shows',                false !== strpos( $card, '$52.89' ) );
 t( 'and the increase is called out', false !== strpos( $card, 'September 1' ) );
-t( 'each sync gets its own row',     2 === substr_count( $card, 'arv-featured__sync"' ) );
-t( 'Strava named',                   false !== strpos( $card, 'Syncs with Strava' ) );
-t( 'Coros named',                    false !== strpos( $card, 'Syncs with Coros' ) );
+t( 'syncs row: one list, one label',  1 === substr_count( $card, 'arv-featured__sync-row' ) && 1 === substr_count( $card, 'Syncs with' ) );
+t( 'syncs row: a tile per platform',  2 === substr_count( $card, 'class="arv-featured__sync"' ) );
+t( 'Strava named',                   false !== strpos( $card, 'title="Strava"' ) );
+t( 'Coros named',                    false !== strpos( $card, 'title="Coros"' ) );
 
 // Each brand's own published artwork and its own colour, not a redrawn
 // approximation. The hex values are the ones Strava and COROS ship in their
@@ -506,7 +517,34 @@ t( 'Coros named',                    false !== strpos( $card, 'Syncs with Coros'
 t( 'Strava gets its own mark',       false !== strpos( $card, '#FC4C02' ) );
 t( 'Coros gets its own mark',        false !== strpos( $card, '#F8273B' ) );
 t( 'and not the invented hexagon',   false === strpos( $card, '#F2323C' ) );
-t( 'both marks are rendered',        2 === substr_count( $card, 'arv-featured__sync-mark' ) );
+t( 'both inline marks are rendered', 2 === substr_count( $card, 'arv-featured__sync-mark' ) );
+t( 'no app line unless one is set',  false === strpos( $card, 'arv-featured__app' ) );
+
+// What Obsession connects today: the official Garmin Connect tile, Polar and
+// Wahoo files bundled from Obsession, COROS inline, all in one row.
+$watches = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'syncs'     => 'Garmin Connect, COROS, Polar, Wahoo',
+	'app_label' => 'Obsession iPhone app',
+	'app_with'  => 'Apple Health',
+	'app_url'   => 'https://obsession.run/iphone',
+) );
+t( 'syncs row lists all four watches',  4 === substr_count( $watches, 'class="arv-featured__sync"' ) && 1 === substr_count( $watches, 'Syncs with' ) );
+t( 'syncs row uses the bundled Garmin Connect tile', false !== strpos( $watches, 'assets/integrations/garmin-connect-tile.png' ) );
+t( 'and names it in full beside the tile',          false !== strpos( $watches, '>Garmin Connect</span>' ) );
+t( 'syncs row uses the bundled Polar and Wahoo marks', false !== strpos( $watches, 'assets/integrations/polar-logo.svg' ) && false !== strpos( $watches, 'assets/integrations/wahoo-logo.png' ) );
+t( 'with their names as alt text',     false !== strpos( $watches, 'alt="Polar"' ) && false !== strpos( $watches, 'alt="Wahoo"' ) );
+t( 'syncs row keeps the inline COROS mark', false !== strpos( $watches, '#F8273B' ) );
+t( 'syncs row inlines no base64 image', false === strpos( $watches, 'src="data:' ) );
+t( 'iphone app line shows',            false !== strpos( $watches, '>Obsession iPhone app</span>' ) );
+t( 'iphone app line names Apple Health in type', false !== strpos( $watches, 'with Apple Health' ) && false === strpos( $watches, 'apple-health' ) );
+t( 'iphone app line links out in a new tab', false !== strpos( $watches, 'href="https://obsession.run/iphone" target="_blank" rel="noopener"' ) );
+$applabel_only = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'syncs'     => 'COROS',
+	'app_label' => 'Obsession iPhone app',
+) );
+t( 'iphone app line without a link is plain text', false !== strpos( $applabel_only, '<p class="arv-featured__app">' ) && false === strpos( $applabel_only, 'arv-featured__app-with' ) );
 
 // A platform with no mark on file must still list, just without a logo,
 // rather than falling back to some other brand's colours.
@@ -514,7 +552,7 @@ $unknown = arv_featured_race_render( array(
 	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
 	'syncs'     => 'Strava, Whoop',
 ) );
-t( 'an unknown platform still lists',    false !== strpos( $unknown, 'Syncs with Whoop' ) );
+t( 'an unknown platform still lists',    false !== strpos( $unknown, 'arv-featured__sync-tile--type">Whoop<' ) );
 t( 'but borrows no other brand mark',    1 === substr_count( $unknown, 'arv-featured__sync-mark' ) );
 
 // The card has to disappear entirely for a plain in-person race, or every
@@ -616,6 +654,23 @@ $mog = arv_featured_race_render( array(
 ) );
 t( 'hidden on a sold-out race',     false === strpos( $mog, 'arv-featured__deadline' ) );
 t( 'which still shows the waitlist', false !== strpos( $mog, 'Join Waitlist' ) );
+$GLOBALS['NOW'] = '2026-08-26';
+
+// A swag cutoff two weeks before the start (Merry Vertmas, November 15) must
+// drop off on its own date, not keep urging people until the start.
+$until = array(
+	'race_page'      => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'deadline_note'  => 'Sign up by September 10 to get your swag pack before the start.',
+	'deadline_until' => '2026-09-10',
+);
+$GLOBALS['NOW'] = '2026-09-10';
+t( 'a dated deadline note shows on its last day', false !== strpos( arv_featured_race_render( $until ), 'arv-featured__deadline' ) );
+$GLOBALS['NOW'] = '2026-09-11';
+$past = arv_featured_race_render( $until );
+t( 'and is hidden the day after',                 false === strpos( $past, 'arv-featured__deadline' ) );
+t( 'while Register stays',                        false !== strpos( $past, '>Register<' ) );
+$until['deadline_until'] = 'Nov 15';
+t( 'a malformed until date falls back to showing it', false !== strpos( arv_featured_race_render( $until ), 'arv-featured__deadline' ) );
 $GLOBALS['NOW'] = '2026-08-26';
 
 
@@ -3490,6 +3545,24 @@ $nodate = array(
 );
 t( 'no close date still flips on lead', 'Live Results' === arv_upcoming_races_action( $nodate, '2026-08-31' )['label'] );
 t( 'and sells before the window opens', 'Register' === arv_upcoming_races_action( $nodate, '2026-08-30' )['label'] );
+
+// A virtual Obsession challenge keeps selling entries while it runs. It used
+// to flip to "Live Results" with no link on its first day, which emptied the
+// home page promo for Merry Vertmas for all of December 1 to 25.
+$vertmas = array(
+	'name' => 'Merry Vertmas', 'iso' => '2026-12-01', 'end' => '2026-12-25', 'closes' => '',
+	'live' => '', 'page' => 'https://www.aravaiparunning.com/virtual/merry-vertmas/',
+	'register' => 'https://obsession.run/challenges/merry-vertmas',
+);
+foreach ( array( '2026-11-10', '2026-11-27', '2026-12-01', '2026-12-10', '2026-12-25' ) as $day ) {
+	$a = arv_upcoming_races_action( $vertmas, $day );
+	t( "obsession challenge sells on $day", 'upcoming' === $a['phase'] && 'Register' === $a['label'] && 'https://obsession.run/challenges/merry-vertmas' === $a['url'] );
+}
+t( 'obsession challenge shows results the day after it ends', 'results' === arv_upcoming_races_action( $vertmas, '2026-12-26' )['phase'] );
+t( 'obsession challenge with its own board still goes live', 'Live Results' === arv_upcoming_races_action( array_merge( $vertmas, array( 'live' => 'https://live.aravaiparunning.com/#/vertmas-2026' ) ), '2026-12-10' )['label'] );
+t( 'obsession challenge past a published close date stops selling', 'Register' !== arv_upcoming_races_action( array_merge( $vertmas, array( 'closes' => '2026-12-05' ) ), '2026-12-10' )['label'] );
+t( 'a non-obsession virtual race is unchanged', 'Live Results' === arv_upcoming_races_action( array_merge( $vertmas, array( 'register' => 'https://ultrasignup.com/register.aspx?did=1' ) ), '2026-12-10' )['label'] );
+t( 'obsession host check wants a challenge path', ! arv_race_is_obsession_challenge( 'https://obsession.run/clubs/aravaipa' ) && ! arv_race_is_obsession_challenge( 'https://notobsession.run/challenges/x' ) );
 
 // ------------------------------------------------ Removing a stale race --
 // The import writes but never unwrites. Its key is register-url plus name,

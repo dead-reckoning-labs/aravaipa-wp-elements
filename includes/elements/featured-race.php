@@ -67,14 +67,18 @@ cs_register_element(
 				//                       now shows the $59 price outright,
 				//                       so this does too, with no further
 				//                       increase to advertise.
-				//   syncs               Strava and Coros are both shipped
-				//                       integrations in the Obsession
-				//                       codebase (src/app/settings has a real
-				//                       coros-section.tsx with tokens,
-				//                       backfill and sync state, and Strava
-				//                       has its own importer). Garmin is
-				//                       deliberately absent: it is still in
-				//                       coming-soon-section.tsx.
+				//   syncs               what Obsession connects today, in the
+				//                       order of its own "Sync Your Runs"
+				//                       strip on obsession.run
+				//                       (src/lib/connect-sources.ts):
+				//                       Garmin Connect, COROS, Polar, Wahoo.
+				//                       Strava is left off while Obsession
+				//                       is at its Strava limit and hides it
+				//                       from new runners; Suunto and Health
+				//                       Connect are switched off there.
+				//                       Apple Health is not a watch account,
+				//                       it comes through the iPhone app, so
+				//                       it has its own line (app_*).
 				'host_label' => cs_value( 'Hosted on Obsession.run', 'markup' ),
 				'host_url'   => cs_value( 'https://obsession.run/challenges/jallucinations', 'markup' ),
 				'host_logo'  => cs_value( 'https://www.aravaiparunning.com/wp-content/uploads/obsession-app-icon.png', 'markup' ),
@@ -88,7 +92,14 @@ cs_register_element(
 				// above just retired, so leaving it blank rather than
 				// deleting the field keeps it ready for the next one.
 				'price_note' => cs_value( '', 'markup' ),
-				'syncs'      => cs_value( 'Strava, Coros', 'markup' ),
+				'syncs'      => cs_value( 'Garmin Connect, COROS, Polar, Wahoo', 'markup' ),
+				// One line under the logo row for the phone app, linking the
+				// page Obsession itself sends every "get the iPhone app" tap
+				// to (its join steps for the public beta until the App Store
+				// listing is live). Blank app_label shows no line.
+				'app_label'  => cs_value( '', 'markup' ),
+				'app_with'   => cs_value( '', 'markup' ),
+				'app_url'    => cs_value( '', 'markup' ),
 
 				// What you actually get, lifted verbatim from the "The Experience"
 				// block on the challenge's own page on obsession.run rather than
@@ -113,6 +124,11 @@ cs_register_element(
 				// reasoning as price_note: the next deadline gets a line
 				// here, not a re-invented field.
 				'deadline_note' => cs_value( '', 'markup' ),
+				// The last day the note is true, Y-m-d. Blank shows it for as
+				// long as entries are open, which was right for a cutoff tied
+				// to the start; a swag cutoff two weeks before the start would
+				// otherwise keep urging people for a date already gone.
+				'deadline_until' => cs_value( '', 'markup' ),
 			),
 			'omega'
 		),
@@ -160,10 +176,40 @@ function arv_featured_race_builder() {
 					'description' => __( 'A short urgency line above the button, e.g. "Order by September 1 to guarantee your goody pack before the challenge begins." Leave blank to show none.', 'aravaipa-elements' ),
 				),
 				array(
+					'key'         => 'deadline_until',
+					'type'        => 'text',
+					'label'       => __( 'Deadline note until (optional)', 'aravaipa-elements' ),
+					'description' => __( 'The last day the deadline note shows, as YYYY-MM-DD, e.g. 2026-11-15. Leave blank to show it for as long as entries are open.', 'aravaipa-elements' ),
+				),
+				array(
 					'key'         => 'perks',
 					'type'        => 'text',
 					'label'       => __( 'Perks (optional)', 'aravaipa-elements' ),
 					'description' => __( 'Comma separated, shown as a short list on the card, e.g. "100-mile goal, 33 daily games". What a registrant gets. Leave blank to show none.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'syncs',
+					'type'        => 'text',
+					'label'       => __( 'Syncs with (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Comma separated, shown on the card as one row of logos under a single "Syncs with" label, e.g. "Garmin Connect, COROS, Polar, Wahoo". Garmin Connect, COROS, Polar, Wahoo and Strava show their official marks; any other name shows as a plain name tile. Leave blank to show none.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'app_label',
+					'type'        => 'text',
+					'label'       => __( 'App line (optional)', 'aravaipa-elements' ),
+					'description' => __( 'One line under the logo row, e.g. "Obsession iPhone app". Leave blank to show none.', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'app_with',
+					'type'        => 'text',
+					'label'       => __( 'App line: works with (optional)', 'aravaipa-elements' ),
+					'description' => __( 'What the app brings in, shown after the app name, e.g. "Apple Health".', 'aravaipa-elements' ),
+				),
+				array(
+					'key'         => 'app_url',
+					'type'        => 'text',
+					'label'       => __( 'App line link (optional)', 'aravaipa-elements' ),
+					'description' => __( 'Where the app line links, e.g. https://obsession.run/iphone. Opens in a new tab. Leave blank for plain text.', 'aravaipa-elements' ),
 				),
 				array(
 					'key'         => 'card_cta',
@@ -325,7 +371,11 @@ function arv_featured_race_render( $data ) {
 	// (Entries Closed, Join Waitlist): those states already answer the
 	// question this line exists to create urgency about.
 	$deadline_note = isset( $data['deadline_note'] ) ? trim( (string) $data['deadline_note'] ) : '';
-	if ( '' !== $deadline_note && 'upcoming' === $action['phase'] ) {
+	$deadline_until = isset( $data['deadline_until'] ) ? trim( (string) $data['deadline_until'] ) : '';
+	if ( '' !== $deadline_until && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $deadline_until ) ) {
+		$deadline_until = '';
+	}
+	if ( '' !== $deadline_note && 'upcoming' === $action['phase'] && ( '' === $deadline_until || $today <= $deadline_until ) ) {
 		$out .= '<p class="arv-featured__deadline">' . esc_html( $deadline_note ) . '</p>';
 	}
 
@@ -379,6 +429,9 @@ function arv_featured_race_card( $data, $action ) {
 	$syncs      = isset( $data['syncs'] ) ? arv_parse_list( $data['syncs'] ) : array();
 	$perks      = isset( $data['perks'] ) ? arv_parse_list( $data['perks'] ) : array();
 	$card_cta   = isset( $data['card_cta'] ) ? trim( (string) $data['card_cta'] ) : '';
+	$app_label  = isset( $data['app_label'] ) ? trim( (string) $data['app_label'] ) : '';
+	$app_with   = isset( $data['app_with'] ) ? trim( (string) $data['app_with'] ) : '';
+	$app_url    = isset( $data['app_url'] ) ? trim( (string) $data['app_url'] ) : '';
 
 	if ( '' === $host_label && '' === $price && empty( $syncs ) && empty( $perks ) ) {
 		return '';
@@ -420,18 +473,36 @@ function arv_featured_race_card( $data, $action ) {
 		$out .= '</ul>';
 	}
 
+	// One row, one label. A "Syncs with X" line per platform was fine for
+	// two and bloats the card at four or more, so the marks sit together as
+	// small tiles under a single label and wrap as a group on a phone.
 	if ( ! empty( $syncs ) ) {
-		$out .= '<ul class="arv-featured__syncs">';
+		$out .= '<div class="arv-featured__syncs">'
+			. '<span class="arv-featured__syncs-label">' . esc_html__( 'Syncs with', 'aravaipa-elements' ) . '</span>'
+			. '<ul class="arv-featured__sync-row" aria-label="' . esc_attr__( 'Sources that sync your runs', 'aravaipa-elements' ) . '">';
 		foreach ( $syncs as $sync ) {
-			$out .= '<li class="arv-featured__sync">'
-				. arv_featured_race_sync_mark( $sync )
-				. '<span>' . esc_html( sprintf( __( 'Syncs with %s', 'aravaipa-elements' ), $sync ) ) . '</span>'
-				. '<svg class="arv-featured__tick" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">'
-				. '<path d="M2.5 8.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
-				. '</svg>'
-				. '</li>';
+			$out .= arv_featured_race_sync_tile( $sync );
 		}
 		$out .= '</ul>';
+
+		if ( '' !== $app_label ) {
+			// The arrow rides inside the last span so it wraps with the words
+			// rather than dropping onto a line of its own.
+			$arrow = '' !== $app_url
+				? '<svg class="arv-featured__app-arrow" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false">'
+					. '<path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+					. '</svg>'
+				: '';
+			$app = '' !== $app_with
+				? '<span class="arv-featured__app-label">' . esc_html( $app_label ) . '</span> '
+					. '<span class="arv-featured__app-with">' . esc_html( sprintf( __( 'with %s', 'aravaipa-elements' ), $app_with ) ) . $arrow . '</span>'
+				: '<span class="arv-featured__app-label">' . esc_html( $app_label ) . $arrow . '</span>';
+			$out .= '' !== $app_url
+				? '<a class="arv-featured__app" href="' . esc_url( $app_url ) . '" target="_blank" rel="noopener">' . $app . '</a>'
+				: '<p class="arv-featured__app">' . $app . '</p>';
+		}
+
+		$out .= '</div>';
 	}
 
 	// Only while entries are open, and only when there is somewhere to send
@@ -500,8 +571,8 @@ function arv_featured_race_fees( $text ) {
  * logo for somebody else's brand on a public page.
  *
  * Anything not recognised falls back to no mark at all rather than a
- * generic placeholder: the tick beside it already says the integration
- * exists, and an invented logo for a brand would be worse than none.
+ * generic placeholder: the tile then shows the name in our own type, and an
+ * invented logo for a brand would be worse than none.
  *
  * @param string $name Platform name as written in the syncs list.
  * @return string
@@ -529,4 +600,68 @@ function arv_featured_race_sync_mark( $name ) {
 	}
 
 	return '';
+}
+
+/**
+ * The official file for a platform whose mark is an image, not inline SVG.
+ *
+ * Copied byte for byte from Obsession's public/integrations, the same files
+ * obsession.run shows on its "Sync Your Runs" strip; provenance and license
+ * notes are in assets/integrations/README.md. Apple Health is deliberately
+ * absent: Apple licenses its HealthKit artwork for iOS app UI only, so on
+ * the web it is its name in our type, as Obsession does.
+ *
+ * @param string $key Lowercased platform name.
+ * @return array{file:string,tile:bool}|null tile is true for an app tile
+ *                                         that fills the square whole.
+ */
+function arv_featured_race_sync_logo( $key ) {
+	$logos = array(
+		'garmin connect' => array( 'file' => 'garmin-connect-tile.png', 'tile' => true ),
+		'garmin'         => array( 'file' => 'garmin-connect-tile.png', 'tile' => true ),
+		'polar'          => array( 'file' => 'polar-logo.svg', 'tile' => false ),
+		'wahoo'          => array( 'file' => 'wahoo-logo.png', 'tile' => false ),
+	);
+
+	return isset( $logos[ $key ] ) ? $logos[ $key ] : null;
+}
+
+/**
+ * One tile in the "Syncs with" row.
+ *
+ * A white square-ish tile with a neutral hairline, the mark contained in it,
+ * the way Obsession and every app store show a partner icon: these marks are
+ * drawn for white and sit muddy straight on the card's near-black.
+ *
+ * Marks that are a symbol rather than a wordmark (the Garmin Connect app
+ * tile, COROS, Strava) carry the name beside them, as obsession.run does and
+ * as Garmin's guidelines require for its tile ("use the full app name and
+ * tile"). Polar and Wahoo are wordmarks, so a second name would read twice;
+ * they keep it as alt and title. Anything else is its name in our type.
+ *
+ * @param string $name Platform name as written in the syncs list.
+ * @return string
+ */
+function arv_featured_race_sync_tile( $name ) {
+	$name  = trim( (string) $name );
+	$key   = strtolower( $name );
+	$title = ' title="' . esc_attr( $name ) . '"';
+	$named = '<span class="arv-featured__sync-name">' . esc_html( 'garmin' === $key ? 'Garmin Connect' : $name ) . '</span>';
+
+	$mark = arv_featured_race_sync_mark( $name );
+	if ( '' !== $mark ) {
+		return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile">' . $mark . '</span>' . $named . '</li>';
+	}
+
+	$logo = arv_featured_race_sync_logo( $key );
+	if ( null !== $logo ) {
+		$img = '<img class="arv-featured__sync-logo" src="' . esc_url( ARV_ELEMENTS_URL . 'assets/integrations/' . $logo['file'] ) . '"'
+			. ' alt="' . esc_attr( $logo['tile'] ? '' : $name ) . '"' . $title . ' loading="lazy" decoding="async" />';
+		if ( $logo['tile'] ) {
+			return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile arv-featured__sync-tile--app">' . $img . '</span>' . $named . '</li>';
+		}
+		return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile arv-featured__sync-tile--wordmark arv-featured__sync-tile--' . esc_attr( $key ) . '">' . $img . '</span></li>';
+	}
+
+	return '<li class="arv-featured__sync"' . $title . '><span class="arv-featured__sync-tile arv-featured__sync-tile--type">' . esc_html( $name ) . '</span></li>';
 }
