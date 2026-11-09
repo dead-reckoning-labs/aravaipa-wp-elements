@@ -505,9 +505,10 @@ t( 'the host is named',              false !== strpos( $card, 'Hosted on Obsessi
 t( 'and links out to the platform',  false !== strpos( $card, 'obsession.run/challenges' ) );
 t( 'the price shows',                false !== strpos( $card, '$52.89' ) );
 t( 'and the increase is called out', false !== strpos( $card, 'September 1' ) );
-t( 'each sync gets its own row',     2 === substr_count( $card, 'arv-featured__sync"' ) );
-t( 'Strava named',                   false !== strpos( $card, 'Syncs with Strava' ) );
-t( 'Coros named',                    false !== strpos( $card, 'Syncs with Coros' ) );
+t( 'syncs row: one list, one label',  1 === substr_count( $card, 'arv-featured__sync-row' ) && 1 === substr_count( $card, 'Syncs with' ) );
+t( 'syncs row: a tile per platform',  2 === substr_count( $card, 'class="arv-featured__sync"' ) );
+t( 'Strava named',                   false !== strpos( $card, 'title="Strava"' ) );
+t( 'Coros named',                    false !== strpos( $card, 'title="Coros"' ) );
 
 // Each brand's own published artwork and its own colour, not a redrawn
 // approximation. The hex values are the ones Strava and COROS ship in their
@@ -516,7 +517,34 @@ t( 'Coros named',                    false !== strpos( $card, 'Syncs with Coros'
 t( 'Strava gets its own mark',       false !== strpos( $card, '#FC4C02' ) );
 t( 'Coros gets its own mark',        false !== strpos( $card, '#F8273B' ) );
 t( 'and not the invented hexagon',   false === strpos( $card, '#F2323C' ) );
-t( 'both marks are rendered',        2 === substr_count( $card, 'arv-featured__sync-mark' ) );
+t( 'both inline marks are rendered', 2 === substr_count( $card, 'arv-featured__sync-mark' ) );
+t( 'no app line unless one is set',  false === strpos( $card, 'arv-featured__app' ) );
+
+// What Obsession connects today: the official Garmin Connect tile, Polar and
+// Wahoo files bundled from Obsession, COROS inline, all in one row.
+$watches = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'syncs'     => 'Garmin Connect, COROS, Polar, Wahoo',
+	'app_label' => 'Obsession iPhone app',
+	'app_with'  => 'Apple Health',
+	'app_url'   => 'https://obsession.run/iphone',
+) );
+t( 'syncs row lists all four watches',  4 === substr_count( $watches, 'class="arv-featured__sync"' ) && 1 === substr_count( $watches, 'Syncs with' ) );
+t( 'syncs row uses the bundled Garmin Connect tile', false !== strpos( $watches, 'assets/integrations/garmin-connect-tile.png' ) );
+t( 'and names it in full beside the tile',          false !== strpos( $watches, '>Garmin Connect</span>' ) );
+t( 'syncs row uses the bundled Polar and Wahoo marks', false !== strpos( $watches, 'assets/integrations/polar-logo.svg' ) && false !== strpos( $watches, 'assets/integrations/wahoo-logo.png' ) );
+t( 'with their names as alt text',     false !== strpos( $watches, 'alt="Polar"' ) && false !== strpos( $watches, 'alt="Wahoo"' ) );
+t( 'syncs row keeps the inline COROS mark', false !== strpos( $watches, '#F8273B' ) );
+t( 'syncs row inlines no base64 image', false === strpos( $watches, 'src="data:' ) );
+t( 'iphone app line shows',            false !== strpos( $watches, '>Obsession iPhone app</span>' ) );
+t( 'iphone app line names Apple Health in type', false !== strpos( $watches, 'with Apple Health' ) && false === strpos( $watches, 'apple-health' ) );
+t( 'iphone app line links out in a new tab', false !== strpos( $watches, 'href="https://obsession.run/iphone" target="_blank" rel="noopener"' ) );
+$applabel_only = arv_featured_race_render( array(
+	'race_page' => 'https://www.aravaiparunning.com/virtual/javelina-jallucinations/',
+	'syncs'     => 'COROS',
+	'app_label' => 'Obsession iPhone app',
+) );
+t( 'iphone app line without a link is plain text', false !== strpos( $applabel_only, '<p class="arv-featured__app">' ) && false === strpos( $applabel_only, 'arv-featured__app-with' ) );
 
 // A platform with no mark on file must still list, just without a logo,
 // rather than falling back to some other brand's colours.
@@ -524,7 +552,7 @@ $unknown = arv_featured_race_render( array(
 	'race_page' => 'https://www.aravaiparunning.com/bear-chase-series/rock-hawk/',
 	'syncs'     => 'Strava, Whoop',
 ) );
-t( 'an unknown platform still lists',    false !== strpos( $unknown, 'Syncs with Whoop' ) );
+t( 'an unknown platform still lists',    false !== strpos( $unknown, 'arv-featured__sync-tile--type">Whoop<' ) );
 t( 'but borrows no other brand mark',    1 === substr_count( $unknown, 'arv-featured__sync-mark' ) );
 
 // The card has to disappear entirely for a plain in-person race, or every
