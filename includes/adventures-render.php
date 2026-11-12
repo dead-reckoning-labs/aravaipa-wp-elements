@@ -126,6 +126,36 @@ function arv_adv_host_line( $trip ) {
 }
 
 /**
+ * Photo Credits, folded so they cost the page nothing until opened. Each
+ * row carries its photo id so a check can match it to the page's images.
+ *
+ * @param array  $credits Credits to list [{photo: {id}, label, html}].
+ * @param string $intro   Paragraph before the list (HTML, optional).
+ * @param string $outro   Paragraph after the list (HTML, optional).
+ * @return string HTML, empty when there is nothing to credit.
+ */
+function arv_adv_render_credits( $credits, $intro = '', $outro = '' ) {
+	if ( ! $credits ) {
+		return '';
+	}
+	$o = '<section class="aa-credits" id="credits"><div class="aa-container"><details><summary>Photo Credits</summary><div class="aa-credits-inner">';
+	if ( '' !== (string) $intro ) {
+		$o .= '<p>' . wp_kses_post( $intro ) . '</p>';
+	}
+	$o .= '<ul class="aa-credits-list">';
+	foreach ( $credits as $c ) {
+		$photo = isset( $c['photo'] ) && is_array( $c['photo'] ) ? $c['photo'] : array();
+		$o    .= '<li data-photo="' . (int) ( isset( $photo['id'] ) ? $photo['id'] : 0 ) . '">' . arv_adv_img( $photo, 'thumbnail', array( 'alt' => '' ) )
+			. '<div><strong>' . esc_html( isset( $c['label'] ) ? $c['label'] : '' ) . '</strong><br />' . wp_kses_post( isset( $c['html'] ) ? $c['html'] : '' ) . '</div></li>';
+	}
+	$o .= '</ul>';
+	if ( '' !== (string) $outro ) {
+		$o .= '<p>' . wp_kses_post( $outro ) . '</p>';
+	}
+	return $o . '</div></details></div></section>';
+}
+
+/**
  * The trip page body.
  *
  * @param array $trip Trip.
@@ -295,6 +325,10 @@ function arv_adv_render_trip( $trip ) {
 		$o .= '</div></div></section>';
 	}
 
+	// Photo credits for this trip's own photos only.
+	$credits = isset( $config['credits'] ) && is_array( $config['credits'] ) ? $config['credits'] : array();
+	$o      .= arv_adv_render_credits( arv_adv_credits_for( $credits, arv_adv_trip_photo_ids( $trip ) ), isset( $config['credits_intro'] ) ? $config['credits_intro'] : '' );
+
 	return $o . '</div>';
 }
 
@@ -334,6 +368,7 @@ function arv_adv_render_landing() {
 		return isset( $config[ $key ] ) && is_array( $config[ $key ] ) ? $config[ $key ] : array();
 	};
 
+	$copy      = arv_adv_landing_copy_for( $trips );
 	$seasons   = array();
 	$countries = array();
 	foreach ( $trips as $t ) {
@@ -362,7 +397,7 @@ function arv_adv_render_landing() {
 
 	$o .= '<section class="aa-hero aa-hero-brand" style="' . esc_attr( arv_adv_bg( $photo( 'hero' ) ) ) . '"><div class="aa-container">'
 		. '<h1 class="aa-hero-title aa-hero-logo"><img src="' . esc_url( ARV_ELEMENTS_URL . 'assets/adventures/aravaipa-adventures-logo-photo.svg?ver=' . ARV_ELEMENTS_VERSION ) . '" alt="Aravaipa Adventures" width="1889" height="395" /></h1>'
-		. '<p class="aa-hero-sub">Race trips, training camps, and guided trail running adventures, from Arizona to Patagonia.</p>'
+		. '<p class="aa-hero-sub">' . esc_html( $copy['hero'] ) . '</p>'
 		. '<div class="aa-hero-actions"><a class="aa-btn aa-btn-yellow" href="#trips">Find Your Next Adventure</a><a class="aa-btn aa-btn-line" href="#interest">Interest List</a></div>'
 		. '</div></section>';
 
@@ -375,14 +410,14 @@ function arv_adv_render_landing() {
 
 	$o .= '<section class="aa-section aa-tight" style="padding-top:40px"><div class="aa-container aa-intro-grid"><div>'
 		. '<span class="aa-kicker">Aravaipa Adventures</span><h2 class="aa-display">Small groups. Great guides. Real trail, run every day.</h2></div><div>'
-		. '<p class="aa-lede">For years Aravaipa Running has built trail races in the Arizona desert and beyond. Aravaipa Adventures takes that same crew mentality on the road, to the trails our runners already dream about: race weeks that finish at the Ultra Fitz Roy or Ultra Skyrunning Madeira, the Milford, Routeburn, and Kepler tracks, the Julian Alps, a chartered boat through the Lofoten islands, the Hardrock loop in Colorado\'s San Juans run in stages, and a training camp on our own Cocodona 250 course at home in Arizona.</p>'
-		. '<p>We handle the hotels, transfers, meals, and logistics, so the only thing on your plate is the mountain in front of you. Race trips build the week around a world-class event. Training camps put you on a race course before race day. Adventures are pure exploration, point to point through ranges we love.</p>'
+		. '<p class="aa-lede">' . esc_html( $copy['lede'] ) . '</p>'
+		. '<p>' . esc_html( $copy['more'] ) . '</p>'
 		. '<a class="aa-text-link" href="#trips">See the Trips</a></div></div></section>';
 
 	$pano = $photo( 'pano' );
 	$o   .= '<div class="aa-pano" style="' . esc_attr( arv_adv_bg( $pano ) ) . '" role="img" aria-label="' . esc_attr( isset( $pano['alt'] ) ? $pano['alt'] : '' ) . '"></div>';
 
-	$types   = arv_adv_types();
+	$types   = arv_adv_visible_types( $trips );
 	$o      .= '<section class="aa-section" id="trips"><div class="aa-container">'
 		. '<div class="aa-trips-head"><div><span class="aa-kicker">The Trips</span><h2 class="aa-display" style="margin:0">Trips open for interest</h2></div><a class="aa-text-link" href="#interest">Join the Interest List</a></div>'
 		. '<div class="aa-trip-filter" role="group" aria-label="Filter trips by type"><button type="button" data-filter="all" aria-pressed="true">All</button>';
@@ -435,24 +470,15 @@ function arv_adv_render_landing() {
 
 	$o .= arv_adv_render_coaching( $config );
 
-	// Photo credits, folded so they cost the page nothing until opened.
+	// Photo credits for the photos this page shows. The outro credits the
+	// partner photo and logo, so it goes with them.
 	$credits = isset( $config['credits'] ) && is_array( $config['credits'] ) ? $config['credits'] : array();
-	if ( $credits ) {
-		$o .= '<section class="aa-credits" id="credits"><div class="aa-container"><details><summary>Photo Credits</summary><div class="aa-credits-inner">';
-		if ( ! empty( $config['credits_intro'] ) ) {
-			$o .= '<p>' . wp_kses_post( $config['credits_intro'] ) . '</p>';
-		}
-		$o .= '<ul class="aa-credits-list">';
-		foreach ( $credits as $c ) {
-			$o .= '<li>' . arv_adv_img( isset( $c['photo'] ) ? $c['photo'] : array(), 'thumbnail', array( 'alt' => '' ) )
-				. '<div><strong>' . esc_html( isset( $c['label'] ) ? $c['label'] : '' ) . '</strong><br />' . wp_kses_post( isset( $c['html'] ) ? $c['html'] : '' ) . '</div></li>';
-		}
-		$o .= '</ul>';
-		if ( ! empty( $config['credits_outro'] ) ) {
-			$o .= '<p>' . wp_kses_post( $config['credits_outro'] ) . '</p>';
-		}
-		$o .= '</div></details></div></section>';
-	}
+	$partner = arv_adv_photo_ids( array( $photo( 'partner_photo' ), $photo( 'partner_logo' ) ) );
+	$o      .= arv_adv_render_credits(
+		arv_adv_credits_for( $credits, arv_adv_landing_photo_ids( $config, $trips ) ),
+		isset( $config['credits_intro'] ) ? $config['credits_intro'] : '',
+		$partner && isset( $config['credits_outro'] ) ? $config['credits_outro'] : ''
+	);
 
 	return $o . '</div>';
 }
