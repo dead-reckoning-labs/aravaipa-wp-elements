@@ -8,8 +8,8 @@
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
  * Text Domain:       aravaipa-elements
- * Requires at least: 6.0
- * Requires PHP:      7.4
+ * Requires at least: 6.8
+ * Requires PHP:      8.3
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
