@@ -765,6 +765,9 @@ function arv_results_render( $data ) {
  * @return string
  */
 function arv_results_race_key( $name ) {
+	// Apostrophes first: Momentum writes "Thats No Moon" where the calendar
+	// writes "That's No Moon", and "that s" never matches "thats".
+	$name  = preg_replace( "/['\x{2019}`]/u", '', (string) $name );
 	$light = strtolower( trim( preg_replace( '/[^a-z0-9]+/i', ' ', $name ) ) );
 	$light = trim( preg_replace( '/\s+/', ' ', $light ) );
 
