@@ -547,14 +547,18 @@ function arv_results_render( $data ) {
 		// Merged in front, then de-duplicated by the same key the store uses,
 		// so the scraped row wins the moment it exists: it carries the
 		// UltraSignup and UltraRunning links this one cannot know yet.
+		// Keyed by the race key, not the raw name: the calendar says
+		// "Javelina Jundred Presented by: HOKA" and "Bobcat Trail Races"
+		// where the stored row says "Javelina Jundred" and "Bobcat Trail
+		// Race", and an exact-name key listed each of those races twice.
 		$have = array();
 		foreach ( $rows as $row ) {
-			$have[ strtolower( $row['name'] ) . '|' . $row['iso'] ] = true;
+			$have[ arv_results_race_key( $row['name'] ) . '|' . $row['iso'] ] = true;
 		}
 
 		$extra = array();
 		foreach ( arv_results_live_rows( $today, ARV_RESULTS_LIVE_MERGE_GRACE ) as $row ) {
-			if ( isset( $have[ strtolower( $row['name'] ) . '|' . $row['iso'] ] ) ) {
+			if ( isset( $have[ arv_results_race_key( $row['name'] ) . '|' . $row['iso'] ] ) ) {
 				continue;
 			}
 			$extra[] = $row;
