@@ -236,7 +236,7 @@ function arv_adv_render_trip( $trip ) {
 	// (the stored days stay in the meta, hidden, until the line is cleared).
 	$soon = trim( (string) ( isset( $trip['details_soon'] ) ? $trip['details_soon'] : '' ) );
 	if ( '' !== $soon ) {
-		$o .= '<section class="aa-section" id="itinerary"><div class="aa-container aa-itin-grid"><div class="aa-itin-side"><span class="aa-kicker">Itinerary</span><h2 class="aa-display">Coming Soon</h2></div>'
+		$o .= '<section class="aa-section" id="itinerary"><div class="aa-container aa-itin-grid"><div class="aa-itin-side"><span class="aa-kicker">Itinerary</span><h2 class="aa-display">The Plan</h2></div>'
 			. '<div class="aa-itin-soon"><p class="aa-lede">' . esc_html( $soon ) . '</p><p>We are finalizing the plan with our partner on the ground. '
 			. ( '' !== $book ? 'Booking is open now, and everyone booked gets the full plan as soon as it is ready.' : 'Join the interest list and you will get the full plan as soon as it is ready.' )
 			. '</p></div></div></section>';

@@ -357,7 +357,7 @@ body .arv-adv .aa-itin-soon {
 	align-self: center; max-width: 620px;
 }
 body .arv-adv .aa-itin-soon .aa-lede {
-	margin-top: 0;
+	margin: 0 0 14px; font-family: var(--aa-head); font-weight: 700; font-size: 28px; line-height: 1.2; letter-spacing: -0.5px; color: #111;
 }
 /* Next season, coming soon: one photo with the line over it. */
 body .arv-adv .aa-soon {
