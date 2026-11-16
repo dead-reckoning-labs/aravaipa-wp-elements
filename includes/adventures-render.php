@@ -174,6 +174,7 @@ function arv_adv_render_trip( $trip ) {
 		array( 'Race Week', 'We handle packet pickup, shuttles to the start, and the post-race celebration.' ),
 	);
 
+	$book = isset( $trip['book_url'] ) ? trim( (string) $trip['book_url'] ) : '';
 	$o  = '<div class="arv-adv">';
 
 	// Hero.
@@ -182,7 +183,10 @@ function arv_adv_render_trip( $trip ) {
 		. '<h1 class="aa-hero-title">' . esc_html( $trip['name'] ) . '</h1>'
 		. ( '' !== $trip['subtitle'] ? '<p class="aa-hero-sub aa-trip-subtitle">' . esc_html( $trip['subtitle'] ) . '</p>' : '' )
 		. '<div class="aa-hero-meta"><span>' . esc_html( $trip['destination'] ) . '</span><span>' . esc_html( $trip['length'] ) . '</span></div>'
-		. '<div class="aa-hero-actions"><a class="aa-btn aa-btn-yellow" href="#interest">Interest List</a><a class="aa-btn aa-btn-line" href="#itinerary">Itinerary</a></div>'
+		. '<div class="aa-hero-actions">' . ( '' !== $book
+			? '<a class="aa-btn aa-btn-yellow" href="' . esc_url( $book ) . '" target="_blank" rel="noopener">Book Now</a>'
+			: '<a class="aa-btn aa-btn-yellow" href="#interest">Interest List</a>' )
+		. '<a class="aa-btn aa-btn-line" href="#itinerary">Itinerary</a></div>'
 		. '</div></section>';
 
 	// At a glance.
@@ -272,7 +276,7 @@ function arv_adv_render_trip( $trip ) {
 	foreach ( $trip['not_included'] as $x ) {
 		$o .= '<li>' . esc_html( $x ) . '</li>';
 	}
-	$o .= '</ul></div></div><p class="aa-small-note" style="margin-top:22px">Draft: inclusions are planned, not final. Items marked TBD are still being confirmed.</p></div></section>';
+	$o .= '</ul></div></div>' . ( '' !== $book ? '' : '<p class="aa-small-note" style="margin-top:22px">Draft: inclusions are planned, not final. Items marked TBD are still being confirmed.</p>' ) . '</div></section>';
 
 	// Difficulty + dates and pricing.
 	$fine = '' !== $trip['fineprint'] ? $trip['fineprint']
@@ -290,10 +294,14 @@ function arv_adv_render_trip( $trip ) {
 		. '<div><dt>Group Size</dt><dd>' . esc_html( is_numeric( $trip['group_size'] ) ? 'Max ' . (int) $trip['group_size'] : $trip['group_size'] ) . '</dd></div>'
 		. '<div><dt>Trip Price</dt><dd>' . esc_html( $trip['price'] ) . '</dd></div>'
 		. '<div><dt>Single Room</dt><dd>' . esc_html( $trip['single_room'] ) . '</dd></div>'
-		. '<div><dt>Registration Opens</dt><dd>' . esc_html( $trip['reg_opens'] ) . '</dd></div>'
+		. ( '' !== $book
+			? '<div><dt>Booking</dt><dd>Open now</dd></div>'
+			: '<div><dt>Registration Opens</dt><dd>' . esc_html( $trip['reg_opens'] ) . '</dd></div>' )
 		. '</dl><p class="aa-fineprint">' . esc_html( $fine ) . '</p>'
-		. '<a class="aa-btn aa-btn-yellow" href="#interest">Join the Interest List</a>'
-		. '<p class="aa-small-note">*Draft trip. Dates, inclusions, and pricing are not final.</p>'
+		. ( '' !== $book
+			? '<a class="aa-btn aa-btn-yellow" href="' . esc_url( $book ) . '" target="_blank" rel="noopener">Book Now</a>'
+			: '<a class="aa-btn aa-btn-yellow" href="#interest">Join the Interest List</a>'
+				. '<p class="aa-small-note">*Draft trip. Dates, inclusions, and pricing are not final.</p>' )
 		. '</aside></div></section>';
 
 	// Need to know.

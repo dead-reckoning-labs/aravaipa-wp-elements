@@ -54,6 +54,7 @@ function arv_adv_fields() {
 			'price'           => 'Trip price (TBD until set)',
 			'single_room'     => 'Single room line',
 			'reg_opens'       => 'Registration opens',
+			'book_url'        => 'Book Now link (WeTravel trip URL; empty = Interest List only)',
 			'gallery_credit'  => 'Gallery credit line',
 			'note'            => 'Small note under the story (optional)',
 			'fineprint'       => 'Fine print in the pricing panel (optional, replaces the default)',
