@@ -215,7 +215,7 @@ $trips = array(
 			'_arv_adv_itinerary'   => $days,
 			'_arv_adv_included'    => json_encode( array( 'Seven nights lodging, shared room', 'Ultra Skyrunning Madeira race registration, any distance' ) ),
 			'_arv_adv_race'        => json_encode( array( 'name' => 'Ultra Skyrunning Madeira', 'url' => 'https://www.ultraskymarathon.com/', 'date' => 'June 2027', 'blurb' => 'Skyrunning on the island.', 'facts' => array( array( 'Race Entry', 'Included, any distance' ) ) ) ),
-			'_arv_adv_photos'      => json_encode( array( 'hero' => ph( $mad_hero, 'Hiker on the PR1 ridge' ), 'gallery' => array( ph( 86002 ) ) ) ),
+			'_arv_adv_photos'      => json_encode( array( 'hero' => ph( $mad_hero, 'Runners on a cliffside trail above the sea' ) + array( 'focal' => '72% 50%' ), 'gallery' => array( ph( 86002 ) ) ) ),
 		),
 	),
 	array(
@@ -440,6 +440,28 @@ function check_round3( $tag, $outdir = '' ) {
 		}
 	}
 	check( $tag . 'hero photos', ! $why, implode( '; ', $why ) );
+
+	// A hero focal point reaches the trip hero and the landing tile.
+	$why = array();
+	foreach ( $t as $k => $p ) {
+		$f = isset( $p[0]['photos']['hero']['focal'] ) ? (string) $p[0]['photos']['hero']['focal'] : '';
+		if ( '' === $f ) {
+			continue;
+		}
+		if ( false === strpos( $p[1], 'background-position:' . $f . '"' ) ) {
+			$why[] = $k . ' hero has no background-position ' . $f;
+		}
+		if ( 1 !== preg_match( '#<a class="aa-tile" href="[^"]*/' . preg_quote( $p[0]['slug'], '#' ) . '/".*?object-position:' . preg_quote( $f, '#' ) . '.*?</a>#s', $landing ) ) {
+			$why[] = $k . ' tile has no object-position ' . $f;
+		}
+	}
+	if ( '' === $tag && ! isset( $t['madeira'][0]['photos']['hero']['focal'] ) ) {
+		$why[] = 'fixture lost the Madeira focal';
+	}
+	if ( '' !== arv_adv_focal( array( 'focal' => '1px;background:red' ) ) || '72% 50%' !== arv_adv_focal( array( 'focal' => '72% 50%' ) ) ) {
+		$why[] = 'focal sanitizing';
+	}
+	check( $tag . 'hero focal', ! $why, implode( '; ', $why ) );
 
 	check( $tag . 'em dash', 1 !== preg_match( '/\x{2014}/u', $all . $share_desc ) );
 }

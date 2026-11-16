@@ -67,7 +67,7 @@ function arv_adv_fields() {
 			'included'     => 'Included: ["Seven nights ...", "..."]',
 			'not_included' => 'Not included: ["Flights ...", "..."]',
 			'race'         => 'Race (or {} for none): {"name": "", "url": "", "date": "", "blurb": "", "facts": [["Race Entry", "TBD"]]}',
-			'photos'       => 'Photos: {"hero": {"id": 123, "alt": "", "credit": ""}, "intro": {...}, "form": {...}, "gallery": [{"id": 124, "alt": "", "credit": ""}]}',
+			'photos'       => 'Photos: {"hero": {"id": 123, "alt": "", "credit": "", "focal": "50% 50% (optional crop point)"}, "intro": {...}, "form": {...}, "gallery": [{"id": 124, "alt": "", "credit": ""}]}',
 		),
 	);
 }
@@ -539,7 +539,23 @@ function arv_adv_img( $photo, $size = 'large', $atts = array() ) {
  */
 function arv_adv_bg( $photo ) {
 	$url = arv_adv_img_url( $photo, 'full' );
-	return '' === $url ? '' : 'background-image:url(' . esc_url( $url ) . ')';
+	if ( '' === $url ) {
+		return '';
+	}
+	$focal = arv_adv_focal( $photo );
+	return 'background-image:url(' . esc_url( $url ) . ')' . ( '' !== $focal ? ';background-position:' . $focal : '' );
+}
+
+/**
+ * Focal point of a photo ({focal: "72% 50%"}), as a CSS position, so a
+ * crop keeps the runners in frame. Empty when unset or not a plain position.
+ *
+ * @param array $photo Photo.
+ * @return string
+ */
+function arv_adv_focal( $photo ) {
+	$f = is_array( $photo ) && isset( $photo['focal'] ) ? trim( (string) $photo['focal'] ) : '';
+	return 1 === preg_match( '/^(?:(?:\d{1,3}%|left|right|center|top|bottom)\s*){1,2}$/', $f ) ? $f : '';
 }
 
 /**

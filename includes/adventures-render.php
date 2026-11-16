@@ -47,7 +47,7 @@ function arv_adv_tile( $trip, $eager = false ) {
 	$soon   = isset( $trip['details_soon'] ) ? rtrim( trim( (string) $trip['details_soon'] ), '.' ) : '';
 
 	return '<a class="aa-tile" href="' . esc_url( $trip['url'] ) . '" data-type="' . esc_attr( $type['key'] ) . '">'
-		. '<div class="aa-tile-media">' . arv_adv_img( $trip['photos']['hero'], 'large', array( 'alt' => '', 'loading' => $eager ? 'eager' : 'lazy', 'sizes' => '(max-width: 600px) 100vw, (max-width: 979px) 50vw, 600px' ) ) . '</div>'
+		. '<div class="aa-tile-media">' . arv_adv_img( $trip['photos']['hero'], 'large', array_merge( array( 'alt' => '', 'loading' => $eager ? 'eager' : 'lazy', 'sizes' => '(max-width: 600px) 100vw, (max-width: 979px) 50vw, 600px' ), '' !== arv_adv_focal( $trip['photos']['hero'] ) ? array( 'style' => 'object-position:' . arv_adv_focal( $trip['photos']['hero'] ) ) : array() ) ) . '</div>'
 		. '<span class="aa-tile-top">' . arv_adv_badge( $trip ) . '<span class="aa-tile-len">' . esc_html( $trip['length'] ) . '</span></span>'
 		. '<div class="aa-tile-body">'
 		. '<span class="aa-tile-dest">' . esc_html( $trip['destination'] ) . '</span>'
