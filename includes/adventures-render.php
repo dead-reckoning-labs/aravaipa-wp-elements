@@ -276,7 +276,7 @@ function arv_adv_render_trip( $trip ) {
 
 	// Difficulty + dates and pricing.
 	$fine = '' !== $trip['fineprint'] ? $trip['fineprint']
-		: 'Pricing is being finalized. A deposit holds your spot, with the balance due 90 days before departure. Twin share by default, single room upgrade available.'
+		: ( 'TBD' !== $trip['price'] ? 'Price is per person, twin share by default, single room upgrade available. A deposit holds your spot, with the balance due 90 days before departure.' : 'Pricing is being finalized. A deposit holds your spot, with the balance due 90 days before departure. Twin share by default, single room upgrade available.' )
 		. ( '' !== $trip['min_group'] ? ' Minimum ' . (int) $trip['min_group'] . ' travelers for the trip to run.' : '' ) . ' Flights not included.';
 
 	$o .= '<section class="aa-section aa-gray" id="dates"><div class="aa-container aa-plan-grid"><div>'
@@ -458,7 +458,7 @@ function arv_adv_render_landing() {
 		$first = false;
 	}
 	$o .= arv_adv_render_coming_soon( arv_adv_coming_soon( $config, $trips ) );
-	$o .= '<p class="aa-grid-note">Race entry details are being confirmed for each race trip. Dates are the planned month and may shift as itineraries are confirmed.</p></div></section>';
+	$o .= '<p class="aa-grid-note">Each trip page lists what is included, race entry on race trips, and the dates as they are confirmed.</p></div></section>';
 
 	$o .= '<section class="aa-section aa-gray" id="how"><div class="aa-container"><span class="aa-kicker">How It Works</span><h2 class="aa-display" style="max-width:760px">Every detail handled, so you can just run.</h2><div class="aa-numbered" style="--aa-n:4">';
 	foreach ( $how as $i => $h ) {
