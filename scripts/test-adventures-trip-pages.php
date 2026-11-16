@@ -141,11 +141,13 @@ $GLOBALS['t_options'] = array(
 );
 $outdir = ! empty( $argv[2] ) ? rtrim( $argv[2], '/' ) : '';
 
-// Jay's prices (second note, Nov 16). Patagonia has none yet.
+// Jay's prices (second note, Nov 16; New Zealand and Patagonia from his
+// third note the same day, Patagonia at the WeTravel price).
 $prices = array(
 	'madeira-2027'     => '$3,895',
 	'slovenia-2027'    => '$5,595',
-	'new-zealand-2028' => '$4,195',
+	'patagonia-2027'   => '$4,895',
+	'new-zealand-2028' => '$4,695',
 );
 $hidden = '/lofoten|norway|softrock|hardrock|san juan|colorado|cocodona|training camp/i';
 $trips  = arv_adv_trips( false );

@@ -349,6 +349,16 @@ body .arv-adv .aa-tile-name {
 body .arv-adv .aa-tile-name em {
 	font-style: normal; opacity: 0.85; white-space: nowrap;
 }
+body .arv-adv .aa-tile-soon {
+	display: block; margin-top: 6px; font-size: 14px; opacity: 0.85;
+}
+/* Itinerary not final yet: the coming-soon line in place of the days. */
+body .arv-adv .aa-itin-soon {
+	align-self: center; max-width: 620px;
+}
+body .arv-adv .aa-itin-soon .aa-lede {
+	margin-top: 0;
+}
 /* Next season, coming soon: one photo with the line over it. */
 body .arv-adv .aa-soon {
 	position: relative; overflow: hidden; background: #333; color: #fff; min-height: 480px; display: flex; align-items: flex-end;
