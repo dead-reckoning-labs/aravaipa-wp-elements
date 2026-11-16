@@ -172,7 +172,9 @@ foreach ( $trips as $trip ) {
 	check( $slug . ' no em dash', 1 !== preg_match( '/\x{2014}/u', $html ) );
 	check( $slug . ' no not-a-hotel line', 1 !== preg_match( '/not a hotel/i', $text ) );
 	if ( 'new-zealand-2028' === $slug ) {
-		check( $slug . ' dates December 5-12, 2027', false !== strpos( $text, 'December 5-12, 2027' ) && 1 !== preg_match( '/november|dates TBA|coming soon/i', $text ) );
+		// Other trips' tiles under More adventures may say coming soon (Patagonia).
+		$own_text = html_entity_decode( strip_tags( preg_replace( '#<a class="aa-tile".*?</a>#s', '', $html ) ), ENT_QUOTES );
+		check( $slug . ' dates December 5-12, 2027', false !== strpos( $text, 'December 5-12, 2027' ) && 1 !== preg_match( '/november|dates TBA|coming soon/i', $own_text ) );
 		check( $slug . ' Milford Track not optional, a few hours on it', 1 !== preg_match( '/optional[^.]*Milford Track|Milford Track[^.]*optional/i', $text ) && 1 === preg_match( '/few hours[^.]*Milford Track/i', $text ) );
 		$own = json_encode( array( $trip['tagline'], $trip['overview'], $trip['highlights'], $trip['itinerary'], $trip['included'], $trip['not_included'], $trip['difficulty_note'], $trip['note'] ) );
 		check( $slug . ' no future Ultra or Endurance version', 1 !== preg_match( '/\bUltra\b|Endurance/', $own ) );
