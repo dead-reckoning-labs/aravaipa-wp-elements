@@ -36,7 +36,7 @@ define( 'ARV_ADV_REWRITE_VERSION', '2' );
 function arv_adv_fields() {
 	return array(
 		'scalar' => array(
-			'type'            => 'Trip type: Race, Training or Adventure',
+			'type'            => 'Trip type: Race or Adventure (Training is retired and hidden)',
 			'destination'     => 'Destination (e.g. Madeira, Portugal)',
 			'region'          => 'Region (e.g. Atlantic Ocean)',
 			'subtitle'        => 'Subtitle under the trip name (optional)',
@@ -256,7 +256,14 @@ function arv_adv_trips( $with_unpublished = null ) {
 		)
 	);
 
-	$trips = array_map( 'arv_adv_trip', $posts );
+	$trips = array_values(
+		array_filter(
+			array_map( 'arv_adv_trip', $posts ),
+			static function ( $t ) {
+				return ! in_array( $t['type'], arv_adv_retired_types(), true );
+			}
+		)
+	);
 
 	usort(
 		$trips,
@@ -281,11 +288,6 @@ function arv_adv_types() {
 			'plural' => 'Race Trips',
 			'key'    => 'race',
 		),
-		'Training'  => array(
-			'label'  => 'Training Camp',
-			'plural' => 'Training Camps',
-			'key'    => 'training',
-		),
 		'Adventure' => array(
 			'label'  => 'Adventure',
 			'plural' => 'Adventures',
@@ -295,10 +297,21 @@ function arv_adv_types() {
 }
 
 /**
+ * Trip types the site no longer offers. Posts may still carry them (the
+ * admin keeps reading the old value), but no visitor or editor preview
+ * lists such a trip on the landing, in the form or under More adventures.
+ *
+ * @return string[]
+ */
+function arv_adv_retired_types() {
+	return array( 'Training' );
+}
+
+/**
  * The trip types that have at least one of these trips, in arv_adv_types()
  * order. The landing filter only offers these, so a type with nothing
- * published (training camps while they are drafted) has no empty tab, and
- * it comes back by itself when one of its trips is published again.
+ * published has no empty tab, and it comes back by itself when one of its
+ * trips is published again.
  *
  * @param array $trips Trips, as from arv_adv_trips().
  * @return array<string, array{label: string, plural: string, key: string}>
@@ -319,23 +332,15 @@ function arv_adv_visible_types( $trips ) {
 
 /**
  * Landing copy that names the trip types: the hero line (also the share
- * description) and the two intro paragraphs. The camp wording only shows
- * while a Training trip is visible.
+ * description) and the two intro paragraphs. It names only places the
+ * published trips go, so a trip taken off the site is never promised here.
  *
- * @param bool $camps At least one Training trip is visible.
  * @return array{hero: string, lede: string, more: string}
  */
-function arv_adv_landing_copy( $camps ) {
-	if ( $camps ) {
-		return array(
-			'hero' => 'Race trips, training camps, and guided trail running adventures, from Arizona to Patagonia.',
-			'lede' => 'For years Aravaipa Running has built trail races in the Arizona desert and beyond. Aravaipa Adventures takes that same crew mentality on the road, to the trails our runners already dream about: race weeks that finish at the Ultra Fitz Roy or Ultra Skyrunning Madeira, the Milford, Routeburn, and Kepler tracks, the Julian Alps, a chartered boat through the Lofoten islands, the Hardrock loop in Colorado\'s San Juans run in stages, and a training camp on our own Cocodona 250 course at home in Arizona.',
-			'more' => 'We handle the hotels, transfers, meals, and logistics, so the only thing on your plate is the mountain in front of you. Race trips build the week around a world-class event. Training camps put you on a race course before race day. Adventures are pure exploration, point to point through ranges we love.',
-		);
-	}
+function arv_adv_landing_copy() {
 	return array(
 		'hero' => 'Race trips and guided trail running adventures, from Madeira to Patagonia.',
-		'lede' => 'For years Aravaipa Running has built trail races in the desert and mountains of the Southwest and beyond. Aravaipa Adventures takes that same crew mentality on the road, to the trails our runners already dream about: race weeks that finish at the Ultra Fitz Roy or Ultra Skyrunning Madeira, the Milford, Routeburn, and Kepler tracks, the Julian Alps, and a chartered boat through the Lofoten islands.',
+		'lede' => 'For years Aravaipa Running has built trail races in the desert and mountains of the Southwest and beyond. Aravaipa Adventures takes that same crew mentality on the road, to the trails our runners already dream about: race weeks that finish at the Ultra Fitz Roy or Ultra Skyrunning Madeira, the Julian Alps, and New Zealand\'s Routeburn and Kepler tracks with a few hours on the Milford.',
 		'more' => 'We handle the hotels, transfers, meals, and logistics, so the only thing on your plate is the mountain in front of you. Race trips build the week around a world-class event. Adventures are pure exploration, point to point through ranges we love.',
 	);
 }
@@ -343,11 +348,12 @@ function arv_adv_landing_copy( $camps ) {
 /**
  * Landing copy for these trips.
  *
- * @param array $trips Trips, as from arv_adv_trips().
+ * @param array $trips Trips, as from arv_adv_trips() (kept for callers).
  * @return array{hero: string, lede: string, more: string}
  */
-function arv_adv_landing_copy_for( $trips ) {
-	return arv_adv_landing_copy( array_key_exists( 'Training', arv_adv_visible_types( $trips ) ) );
+function arv_adv_landing_copy_for( $trips = array() ) {
+	unset( $trips );
+	return arv_adv_landing_copy();
 }
 
 /**
@@ -738,6 +744,45 @@ function arv_adv_redirect_unpublished() {
 add_action( 'template_redirect', 'arv_adv_redirect_unpublished', 1 );
 
 /**
+ * The coming-soon season block, from the landing config's coming_soon
+ * entry ({year, photo: {id, alt}, title, text, cta, off}) with defaults:
+ * the year after the last season of trips, the panorama photo and stock
+ * copy. Null when switched off, when it has no photo, or once a trip for
+ * that year is visible (the real season takes its place).
+ *
+ * @param array $config Landing config.
+ * @param array $trips  Visible trips.
+ * @return array{year: int, photo: array, title: string, text: string, cta: string}|null
+ */
+function arv_adv_coming_soon( $config, $trips ) {
+	$c = isset( $config['coming_soon'] ) && is_array( $config['coming_soon'] ) ? $config['coming_soon'] : array();
+	if ( ! empty( $c['off'] ) ) {
+		return null;
+	}
+	$years = array( (int) gmdate( 'Y' ) );
+	foreach ( $trips as $t ) {
+		$years[] = (int) $t['sort_year'];
+	}
+	$year = ! empty( $c['year'] ) ? (int) $c['year'] : max( $years ) + 1;
+	foreach ( $trips as $t ) {
+		if ( (int) $t['sort_year'] === $year ) {
+			return null;
+		}
+	}
+	$photo = ! empty( $c['photo']['id'] ) ? $c['photo'] : ( isset( $config['pano'] ) && is_array( $config['pano'] ) ? $config['pano'] : array() );
+	if ( empty( $photo['id'] ) ) {
+		return null;
+	}
+	return array(
+		'year'  => $year,
+		'photo' => $photo,
+		'title' => ! empty( $c['title'] ) ? (string) $c['title'] : $year . ' destinations and dates coming soon!',
+		'text'  => ! empty( $c['text'] ) ? (string) $c['text'] : 'We are developing new trips to explore new areas, alongside the favorites. Join the Interest List and you will hear first when the ' . $year . ' season is announced.',
+		'cta'   => ! empty( $c['cta'] ) ? (string) $c['cta'] : 'Join the Interest List',
+	);
+}
+
+/**
  * Attachment ids of a list of photo objects ({id, ...}), skipping empties.
  *
  * @param array $photos Photo objects.
@@ -766,8 +811,8 @@ function arv_adv_trip_photo_ids( $trip ) {
 
 /**
  * Photos the landing renders: its own picks (hero, panorama, who, form,
- * partner photo and logo, coaching photo while coaching shows) and the tile
- * photo of every visible trip.
+ * partner photo and logo, coaching photo while coaching shows), the tile
+ * photo of every visible trip and the coming-soon season photo.
  *
  * @param array $config Landing config.
  * @param array $trips  Visible trips.
@@ -784,6 +829,10 @@ function arv_adv_landing_photo_ids( $config, $trips ) {
 	}
 	foreach ( $trips as $t ) {
 		$photos[] = $t['photos']['hero'];
+	}
+	$soon = arv_adv_coming_soon( $config, $trips );
+	if ( $soon ) {
+		$photos[] = $soon['photo'];
 	}
 	return arv_adv_photo_ids( $photos );
 }
