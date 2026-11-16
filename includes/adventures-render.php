@@ -110,11 +110,11 @@ function arv_adv_host_line( $trip ) {
 	$config  = arv_adv_landing_config();
 
 	if ( 'tbd' === $trip['host'] ) {
-		return array( $icon, 'Hosted by Aravaipa Adventures, with a guide team and shuttle crew that know the San Juans. Hosts to be announced.', 'Aravaipa Adventures hosts this trip. The guide team and shuttle crew are being confirmed and will be announced with dates and pricing.' );
+		return array( $icon, 'Hosted by Aravaipa Adventures. The guide team and shuttle crew will be announced with dates and pricing.', 'Aravaipa Adventures hosts this trip. The guide team and shuttle crew are being confirmed and will be announced with dates and pricing.' );
 	}
 	if ( 'aravaipa' === $trip['host'] ) {
 		$race = ! empty( $trip['race']['name'] ) ? $trip['race']['name'] : 'race';
-		return array( $icon, 'Hosted by Aravaipa race staff, the team that designs, marks, and runs the ' . esc_html( $race ) . '. Runs are led and supported by our crew.', 'Aravaipa race staff host this camp directly: the same team that designs the course and runs race week.' );
+		return array( $icon, 'Hosted by Aravaipa race staff, the team that designs, marks, and runs the ' . esc_html( $race ) . '. Runs are led and supported by our crew.', 'Aravaipa race staff host this trip directly: the same team that designs the course and runs race week.' );
 	}
 
 	$logo = ! empty( $config['partner_logo'] ) ? arv_adv_img( $config['partner_logo'], 'thumbnail', array( 'alt' => 'Trail Run Adventures logo', 'width' => '60', 'height' => '60' ) ) : '';
@@ -357,6 +357,27 @@ function arv_adv_render_coaching( $config ) {
 }
 
 /**
+ * The next season while it has no published trips: one photo with a
+ * coming-soon line, a note on new trips in development and the Interest
+ * List button. Sits under the last season of trips; the filter leaves it
+ * alone since it holds no tiles.
+ *
+ * @param array|null $soon From arv_adv_coming_soon().
+ * @return string
+ */
+function arv_adv_render_coming_soon( $soon ) {
+	if ( ! $soon ) {
+		return '';
+	}
+	$img = arv_adv_img( $soon['photo'], 'full', array( 'alt' => isset( $soon['photo']['alt'] ) ? $soon['photo']['alt'] : '', 'sizes' => '(max-width: 1240px) 100vw, 1200px' ) );
+	return '<div class="aa-season aa-season-soon"><div class="aa-season-label">' . (int) $soon['year'] . ' <small>Season</small></div>'
+		. '<div class="aa-soon">' . ( $img ? '<div class="aa-soon-media">' . $img . '</div>' : '' )
+		. '<div class="aa-soon-body"><h3 class="aa-soon-title">' . esc_html( $soon['title'] ) . '</h3>'
+		. '<p>' . esc_html( $soon['text'] ) . '</p>'
+		. '<a class="aa-btn aa-btn-yellow" href="#interest">' . esc_html( $soon['cta'] ) . '</a></div></div></div>';
+}
+
+/**
  * The landing body ([arv_adventures]).
  *
  * @return string
@@ -436,6 +457,7 @@ function arv_adv_render_landing() {
 		$o    .= '</div></div>';
 		$first = false;
 	}
+	$o .= arv_adv_render_coming_soon( arv_adv_coming_soon( $config, $trips ) );
 	$o .= '<p class="aa-grid-note">Race entry details are being confirmed for each race trip. Dates are the planned month and may shift as itineraries are confirmed.</p></div></section>';
 
 	$o .= '<section class="aa-section aa-gray" id="how"><div class="aa-container"><span class="aa-kicker">How It Works</span><h2 class="aa-display" style="max-width:760px">Every detail handled, so you can just run.</h2><div class="aa-numbered" style="--aa-n:4">';
@@ -455,8 +477,8 @@ function arv_adv_render_landing() {
 	$o .= '<section class="aa-partner" id="partner"><div class="aa-partner-media">' . arv_adv_img( $photo( 'partner_photo' ), 'large', array( 'alt' => 'Trail Run Adventures founders', 'sizes' => '(max-width: 979px) 100vw, 50vw' ) ) . '<p class="aa-caption">Photo: Trail Run Adventures</p></div>'
 		. '<div class="aa-partner-text">' . arv_adv_img( $photo( 'partner_logo' ), 'thumbnail', array( 'class' => 'aa-partner-logo', 'alt' => 'Trail Run Adventures logo', 'width' => '76', 'height' => '76' ) )
 		. '<span class="aa-kicker aa-on-dark">Our partner on the ground</span><h2 class="aa-display">Trail Run Adventures</h2>'
-		. '<p>Every Aravaipa Adventures trip is run with Trail Run Adventures, a family-run company founded in 2016 by Anna Frost and her husband, Ron "Braz" Braselton. They run small-group, fully guided trail running trips to Madeira, New Zealand, Japan, the Julian Alps, Norway\'s Lofoten islands, Patagonia, and the Tour du Mont Blanc, with the lodging, meals, and local guides all handled and trips built for runners of every ability.</p>'
-		. '<div class="aa-founders"><div><h3>Anna Frost</h3><p>"Frosty" is a professional mountain, trail, and ultra runner with decades of international racing, including Hardrock 100 podiums and six Skyrunner World Series wins. She splits her time between Durango, Colorado and her native New Zealand, and often runs right alongside guests.</p></div>'
+		. '<p>Every Aravaipa Adventures trip is run with Trail Run Adventures, a family-run company founded in 2016 by Anna Frost and her husband, Ron "Braz" Braselton. They run small-group, fully guided trail running trips to Madeira, New Zealand, Japan, the Julian Alps, Patagonia, and the Tour du Mont Blanc, with the lodging, meals, and local guides all handled and trips built for runners of every ability.</p>'
+		. '<div class="aa-founders"><div><h3>Anna Frost</h3><p>"Frosty" is a professional mountain, trail, and ultra runner with decades of international racing, including six Skyrunner World Series wins. She splits her time between the US and her native New Zealand, and often runs right alongside guests.</p></div>'
 		. '<div><h3>Ron "Braz" Braselton</h3><p>A trail lover who built his travels around races and new cultures, and that is how Trail Run Adventures was born. He co-guides every trip and is known for anticipating the details: the right trail, the right amount of water, the right meal at the right time.</p></div></div>'
 		. '<p>Aravaipa brings the race-day know-how and the community. Trail Run Adventures brings the routes, the local guides, and years of running these exact trips.</p>'
 		. '<a class="aa-btn aa-btn-yellow" href="https://www.trailrunadventures.com" target="_blank" rel="noopener">trailrunadventures.com</a>'

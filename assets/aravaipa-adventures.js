@@ -18,6 +18,9 @@
 			});
 			Array.prototype.forEach.call(root.querySelectorAll('#trips .aa-season'), function (season) {
 				var grid = season.querySelector('.aa-tile-grid');
+				if (!grid) {
+					return;
+				}
 				var shown = 0;
 				Array.prototype.forEach.call(grid.querySelectorAll('.aa-tile'), function (t) {
 					var on = f === 'all' || t.getAttribute('data-type') === f;

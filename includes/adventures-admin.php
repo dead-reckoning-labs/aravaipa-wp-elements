@@ -36,7 +36,7 @@ function arv_adv_admin_choices() {
 	return array(
 		'type'       => array(
 			'Race'      => 'Race Trip',
-			'Training'  => 'Training Camp',
+			'Training'  => 'Training (retired, hidden from the site)',
 			'Adventure' => 'Adventure',
 		),
 		'host'       => array(

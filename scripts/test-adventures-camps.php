@@ -1,6 +1,6 @@
 <?php
 /**
- * Adventures with a trip type taken off the site (training camps drafted),
+ * Adventures with a trip type taken off the site (training camps, retired),
  * without WordPress: filter tabs, camp-free copy, the draft redirect and
  * per-page photo credits.
  *
@@ -223,13 +223,13 @@ $vis = arv_adv_visible_types( $out_trips );
 check( 'filter hides empty type', ! isset( $vis['Training'] ) && false === strpos( $landing, 'data-filter="training"' ) && false === strpos( $landing, 'Training Camps' ) );
 check( 'filter keeps race and adventure', isset( $vis['Race'], $vis['Adventure'] ) && false !== strpos( $landing, 'data-filter="race"' ) && false !== strpos( $landing, 'data-filter="adventure"' ) && false !== strpos( $landing, 'data-filter="all"' ) );
 
-$copy = arv_adv_landing_copy( false );
+$copy = arv_adv_landing_copy();
 check( 'hero copy without camps', 1 !== preg_match( '/training camp|arizona|cocodona/i', $copy['hero'] ) && false !== strpos( $landing, '<p class="aa-hero-sub">' . esc_html( $copy['hero'] ) . '</p>' ) );
-check( 'hero copy with camps', 'Race trips, training camps, and guided trail running adventures, from Arizona to Patagonia.' === arv_adv_landing_copy( true )['hero'] );
+check( 'one copy version, whatever is published', arv_adv_landing_copy_for( $out_trips ) === $copy );
 check( 'intro copy without camps', 1 !== preg_match( '/training camp|cocodona|hardrock loop|arizona/i', $copy['lede'] . ' ' . $copy['more'] ) && false !== strpos( $landing, esc_html( $copy['lede'] ) ) && false !== strpos( $landing, esc_html( $copy['more'] ) ) );
-check( 'intro copy with camps', false !== strpos( arv_adv_landing_copy( true )['lede'], 'Cocodona 250 course' ) && false !== strpos( arv_adv_landing_copy( true )['more'], 'Training camps put you on a race course' ) );
+check( 'copy names no hidden trips', 1 !== preg_match( '/lofoten|norway|hardrock|san juan|colorado|cocodona|training/i', implode( ' ', $copy ) ) );
 check( 'no camp text on the landing', 1 !== preg_match( '/training camp|cocodona/i', $text ), 'found camp text' );
-check( 'no em or en dashes in copy', 1 !== preg_match( '/\x{2013}|\x{2014}/u', implode( ' ', arv_adv_landing_copy( false ) ) . implode( ' ', arv_adv_landing_copy( true ) ) ) );
+check( 'no em or en dashes in copy', 1 !== preg_match( '/\x{2013}|\x{2014}/u', implode( ' ', arv_adv_landing_copy() ) ) );
 
 $GLOBALS['t_is_page'] = true;
 $share                = arv_adv_share_context();
@@ -256,13 +256,12 @@ check( 'trip credits scoped to trip', same_set( credit_ids( $madeira ), array( 1
 check( 'trip credits are on the page', ! array_diff( credit_ids( $madeira ), rendered_ids( $madeira ) ) && ! array_diff( credit_ids( $norway ), rendered_ids( $norway ) ) );
 check( 'trip page has Photo Credits', false !== strpos( $madeira, '<summary>Photo Credits</summary>' ) );
 
-// Editors still see the camp, and every camp mention comes back.
+// Training camps are retired: editors previewing drafts do not get them back.
 $GLOBALS['t_editor'] = true;
 $ed_trips            = arv_adv_trips();
 $ed_landing          = arv_adv_render_landing();
-check( 'filter shows training when a camp is visible', 3 === count( $ed_trips ) && false !== strpos( $ed_landing, 'data-filter="training"' ) );
-check( 'camp copy returns when a camp is visible', false !== strpos( $ed_landing, esc_html( arv_adv_landing_copy( true )['hero'] ) ) );
-check( 'camp credits return when a camp is visible', (bool) array_intersect( credit_ids( $ed_landing ), array( 301 ) ) && ! array_intersect( credit_ids( $ed_landing ), array( 302, 303 ) ) );
+check( 'editors get no training camp', 2 === count( $ed_trips ) && false === strpos( $ed_landing, 'data-filter="training"' ) && 1 !== preg_match( '/training camp|cocodona/i', $ed_landing ) );
+check( 'camp credits stay hidden for editors', ! array_intersect( credit_ids( $ed_landing ), array( 301, 302, 303 ) ) );
 $GLOBALS['t_editor'] = false;
 
 // Draft redirect.
