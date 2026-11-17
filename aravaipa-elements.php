@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.101.13
+ * Version:           0.101.14
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.101.13' );
+define( 'ARV_ELEMENTS_VERSION', '0.101.14' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -205,6 +205,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/adventures.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-render.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-form.php';
 
+// Volunteer List: every upcoming race with one Volunteer button, RaceGoat
+// inline when the race's shifts are live there, else its iVolunteer event.
+// [aravaipa_volunteer_list] and the volunteer-list element.
+require_once ARV_ELEMENTS_PATH . 'includes/volunteer-list.php';
+
 // Admin only: every hook in updater.php answers questions WordPress only
 // asks inside wp-admin (the Plugins screen, the update cron that runs
 // alongside it). Loading it on the front end would just be dead weight on
@@ -273,6 +278,7 @@ function arv_elements_register() {
 		'media-latest',
 		'race-video',
 		'course-map',
+		'volunteer-list',
 	);
 
 	foreach ( $elements as $element ) {
