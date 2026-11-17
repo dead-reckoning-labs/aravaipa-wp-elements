@@ -506,7 +506,10 @@ function arv_vol_render( $args = array() ) {
 		$full = '<a class="arv-vol__full" href="' . esc_url( $row['url'] ) . '" target="_blank" rel="noopener">Open full page</a>';
 		if ( 'racegoat' === $row['mode'] ) {
 			$h .= '<div class="arv-vol__panel" id="' . esc_attr( $pid ) . '" hidden data-racegoat-org="' . esc_attr( ARV_VOL_RG_ORG ) . '" data-racegoat-slug="' . esc_attr( $row['rg_slug'] ) . '">';
-			$h .= '<template><div data-racegoat-volunteer="' . esc_attr( ARV_VOL_RG_ORG ) . '" data-racegoat-races="' . esc_attr( $row['rg_slug'] ) . '" data-racegoat-theme="host" data-racegoat-branding="none" data-racegoat-title="none"></div></template>';
+			// Inline signup form (racegoat PR 1736): guests sign up right here; the
+			// confirmation link comes by email. Allowed POST origins are the two
+			// aravaiparunning.com hosts.
+			$h .= '<template><div data-racegoat-volunteer-signup="' . esc_attr( $row['rg_slug'] ) . '" data-racegoat-theme="host" data-racegoat-branding="none" data-racegoat-title="none"></div></template>';
 			$h .= '<div class="arv-vol__slot"></div>' . $full;
 			$h .= '</div>';
 		} elseif ( ! empty( $row['ivol_own'] ) ) {

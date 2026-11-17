@@ -150,7 +150,7 @@ function rows_of( $html ) {
 		preg_match( '#<a class="arv-vol__btn[^"]*"[^>]*>([^<]*)</a>#', $p, $e );
 		preg_match( '#data-arv-vol-frame="([^"]*)"#', $p, $f );
 		preg_match_all( '#<a class="arv-vol__full" href="([^"]*)" target="_blank" rel="noopener">Open full page</a>#', $p, $g );
-		preg_match( '#data-racegoat-races="([^"]*)"#', $p, $d );
+		preg_match( '#data-racegoat-volunteer-signup="([^"]*)"#', $p, $d );
 		$out[ html_entity_decode( $b[1], ENT_QUOTES ) ] = array(
 			'mode'     => $a[3],
 			'href'     => html_entity_decode( $c[1], ENT_QUOTES ),
@@ -211,7 +211,7 @@ ok( ! isset( $rows['Pass Mountain'] ), 'past race left out' );
 ok( ! isset( $rows['Merry Vertmas'] ) && false === strpos( $html, 'Worldwide' ), 'virtual (Worldwide) race left out' );
 
 ok( 'racegoat' === $rows['Coldwater Hundred']['mode'] && 'coldwater-hundred' === $rows['Coldwater Hundred']['slug'], 'Coldwater: in feed, slug from its race page widget, RaceGoat row' );
-ok( false !== strpos( $html, 'data-racegoat-volunteer="aravaipa" data-racegoat-races="coldwater-hundred" data-racegoat-theme="host" data-racegoat-branding="none" data-racegoat-title="none"' ), 'Coldwater panel carries the RaceGoat volunteer widget markup' );
+ok( false !== strpos( $html, 'data-racegoat-volunteer-signup="coldwater-hundred" data-racegoat-theme="host" data-racegoat-branding="none" data-racegoat-title="none"' ), 'Coldwater panel carries the inline volunteer signup widget markup' );
 ok( 'https://racegoat.com/events/coldwater-hundred/volunteer' === $rows['Coldwater Hundred']['href'], 'Coldwater button falls back to its RaceGoat shift board without scripts' );
 ok( 'racegoat' === $rows['Ram Party']['mode'] && 'ram-party-2027' === $rows['Ram Party']['slug'], 'slug from a RaceGoat register URL' );
 ok( 'racegoat' === $rows['Sinister Night Rides']['mode'] && 'sinister-night-rides-2027' === $rows['Sinister Night Rides']['slug'], 'slug from an exact name match in the same month of the feed' );
@@ -260,7 +260,7 @@ ok( false === strpos( $js, 'sandbox' ), 'no sandbox on the iVolunteer iframe (it
 $css = file_get_contents( ARV_ELEMENTS_PATH . 'assets/aravaipa-elements.css' );
 ok( preg_match( '#\.arv-vol__frame \{[^}]*height: 80vh;[^}]*min-height: 560px;[^}]*max-height: 900px;#s', $css ) === 1, 'iframe height 80vh, 560 to 900 px' );
 
-$racegoat_markup = substr_count( $html, 'data-racegoat-volunteer=' );
+$racegoat_markup = substr_count( $html, 'data-racegoat-volunteer-signup=' );
 ok( 4 === $racegoat_markup, "widget markup only on the 4 launched feed races (got $racegoat_markup)" );
 
 ok( false !== strpos( $html, 'data-region="arizona"' ) && false !== strpos( $html, '>Arizona</button>' ) && false !== strpos( $html, '>Colorado</button>' ) && false !== strpos( $html, '>Nevada</button>' ), 'region chips Arizona, Colorado, Nevada from the data' );
@@ -289,7 +289,7 @@ foreach ( array( 'error' => 'WP_Error', 500 => 'HTTP 500', 'badjson' => 'bad JSO
 	$h = arv_vol_render( array( 'races' => $races, 'today' => '2026-11-17', 'now' => $now ) );
 	$r = rows_of( $h );
 	$all_iv = count( $r ) === 8 && count( array_filter( $r, function ( $x ) { return 'ivolunteer' === $x['mode']; } ) ) === 8;
-	ok( $all_iv && false === strpos( $h, 'data-racegoat-volunteer=' ), "feed $label: every row falls back to iVolunteer" );
+	ok( $all_iv && false === strpos( $h, 'data-racegoat-volunteer' ), "feed $label: every row falls back to iVolunteer" );
 	ok( $IV . 'cwr27' === $r['Coldwater Hundred']['href'], "feed $label: Coldwater falls back to its own iVolunteer event" );
 	ok( isset( $GLOBALS['t_transients'][ ARV_VOL_FEED_KEY ] ) && empty( $GLOBALS['t_transients'][ ARV_VOL_FEED_KEY ]['ok'] ) && ARV_VOL_FEED_FAIL_TTL === $GLOBALS['t_ttl'][ ARV_VOL_FEED_KEY ], "feed $label: failure cached 15 min" );
 	$c = count( $GLOBALS['t_requests'] );
