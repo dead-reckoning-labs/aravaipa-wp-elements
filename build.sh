@@ -88,7 +88,7 @@ cp includes/elements/*.php "$STAGE/includes/elements/"
 # Page templates the plugin hands to template_include (the Adventures trip
 # page). Not require_once'd, so the derivation above cannot see them.
 cp includes/templates/*.php "$STAGE/includes/templates/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/aravaipa-course-map.js assets/aravaipa-a11y.js assets/aravaipa-adventures.css assets/aravaipa-adventures.js assets/us-outline.svg "$STAGE/assets/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/aravaipa-course-map.js assets/aravaipa-a11y.js assets/aravaipa-adventures.css assets/aravaipa-adventures.js assets/aravaipa-volunteer.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/adventures/* "$STAGE/assets/adventures/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"

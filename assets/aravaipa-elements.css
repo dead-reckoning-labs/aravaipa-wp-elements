@@ -12072,3 +12072,248 @@ body:has( .arv-media-subnav ) .x-breadcrumb-wrap {
 	clip-path: inset(50%) !important;
 	white-space: nowrap !important;
 }
+
+/* Volunteer List (includes/volunteer-list.php). The season calendar's row
+   look: month label, stacked day, name over town, one button on the right.
+   Square corners, hairline rules only, no shadows. */
+.arv-vol {
+	text-align: left;
+	padding: 2rem 0;
+	background: #ffffff;
+	color: #272727;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.arv-vol__inner {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 0 1.25rem;
+	box-sizing: border-box;
+}
+
+.arv-vol__heading {
+	margin: 0 0 0.5rem;
+	font-size: clamp(28px, 4vw, 40px);
+	font-weight: 700;
+}
+
+.arv-vol__intro {
+	margin: 0 0 1.5rem;
+	max-width: 40rem;
+	font-size: var(--arv-fs-lead);
+	line-height: 1.6;
+	opacity: 0.72;
+}
+
+.arv-vol__tabs,
+.arv-vol__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	margin: 0 0 0.8rem;
+}
+
+.arv-vol__tabs[hidden],
+.arv-vol__chips[hidden] {
+	display: none;
+}
+
+.arv-vol__tabs {
+	gap: 1.25rem;
+	margin-bottom: 1rem;
+}
+
+.arv-vol__tab {
+	padding: 0.35rem 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: var(--arv-fs-meta);
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	opacity: 0.55;
+	cursor: pointer;
+}
+
+.arv-vol__tab[aria-pressed="true"] {
+	opacity: 1;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-vol__chip {
+	padding: 0.35rem 0.7rem;
+	border: 1px solid rgba(128, 128, 128, 0.35);
+	border-radius: 2px;
+	background: #ffffff;
+	color: inherit;
+	font: inherit;
+	font-size: var(--arv-fs-label);
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
+.arv-vol__chip[aria-pressed="true"] {
+	background: #272727;
+	border-color: #272727;
+	color: #ffffff;
+}
+
+.arv-vol__list {
+	margin-top: 1.25rem;
+}
+
+.arv-vol__month[hidden] {
+	display: none;
+}
+
+.arv-vol__month + .arv-vol__month {
+	margin-top: 1.75rem;
+}
+
+.arv-vol__month-name {
+	display: flex;
+	align-items: center;
+	gap: 0.9rem;
+	margin: 0 0 0.6rem;
+	padding: 0;
+	border: 0;
+	font-size: var(--arv-fs-meta);
+	font-weight: 700;
+	letter-spacing: 2.5px;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-vol__month-name::after {
+	content: "";
+	flex: 1 1 auto;
+	height: 1px;
+	background: rgba(128, 128, 128, 0.22);
+}
+
+.arv-vol__row {
+	border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+}
+
+.arv-vol__row[hidden] {
+	display: none;
+}
+
+.arv-vol__main {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.7rem 0;
+}
+
+.arv-vol__day {
+	flex: 0 0 3.1rem;
+	display: flex;
+	flex-direction: column;
+	line-height: 1.1;
+}
+
+.arv-vol__day-month {
+	font-size: var(--arv-fs-micro);
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-vol__day-num {
+	font-size: var(--arv-fs-name);
+	font-weight: 700;
+}
+
+.arv-vol__body {
+	flex: 1 1 auto;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.arv-vol__name,
+.arv-vol__name:link,
+.arv-vol__name:visited {
+	font-weight: 700;
+	font-size: var(--arv-fs-lead);
+	color: inherit;
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.arv-vol__where {
+	font-size: var(--arv-fs-meta);
+	opacity: 0.65;
+}
+
+.arv-vol__btn,
+.arv-vol__btn:link,
+.arv-vol__btn:visited {
+	flex: 0 0 auto;
+	padding: 0.5rem 0.9rem;
+	border: 1px solid var(--arv-accent, #ff2a13);
+	border-radius: 2px;
+	background: var(--arv-accent, #ff2a13);
+	color: #ffffff;
+	font-size: var(--arv-fs-btn);
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.arv-vol__btn[aria-expanded="true"] {
+	background: #ffffff;
+	color: var(--arv-accent, #ff2a13);
+}
+
+.arv-vol__panel {
+	padding: 0 0 1rem;
+}
+
+.arv-vol__panel[hidden] {
+	display: none;
+}
+
+.arv-vol__empty {
+	margin: 1rem 0 0;
+	opacity: 0.7;
+}
+
+.arv-vol__empty[hidden] {
+	display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.arv-vol__name:hover {
+		color: var(--arv-accent, #ff2a13);
+	}
+	.arv-vol__chip:hover {
+		border-color: #272727;
+	}
+}
+
+.arv-vol__btn:focus-visible,
+.arv-vol__chip:focus-visible,
+.arv-vol__tab:focus-visible {
+	outline: 2px solid var(--arv-accent, #ff2a13);
+	outline-offset: 2px;
+}
+
+@media (max-width: 619px) {
+	.arv-vol { padding: 1.5rem 0; }
+	.arv-vol__inner { padding: 0 1rem; }
+	.arv-vol__main { gap: 0.75rem; }
+	.arv-vol__day { flex-basis: 2.4rem; }
+	.arv-vol__btn,
+	.arv-vol__btn:link,
+	.arv-vol__btn:visited { padding: 0.45rem 0.7rem; }
+}

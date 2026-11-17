@@ -205,6 +205,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/adventures.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-render.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-form.php';
 
+// Volunteer List: every upcoming race with one Volunteer button, RaceGoat
+// inline when the race's shifts are live there, else its iVolunteer event.
+// [aravaipa_volunteer_list] and the volunteer-list element.
+require_once ARV_ELEMENTS_PATH . 'includes/volunteer-list.php';
+
 // Admin only: every hook in updater.php answers questions WordPress only
 // asks inside wp-admin (the Plugins screen, the update cron that runs
 // alongside it). Loading it on the front end would just be dead weight on
@@ -273,6 +278,7 @@ function arv_elements_register() {
 		'media-latest',
 		'race-video',
 		'course-map',
+		'volunteer-list',
 	);
 
 	foreach ( $elements as $element ) {
