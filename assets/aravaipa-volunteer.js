@@ -27,7 +27,7 @@
       f.className = "arv-vol__frame";
       f.setAttribute("loading", "eager");
       f.setAttribute("title", panel.getAttribute("data-arv-vol-title") || "Volunteer signup");
-      f.src = IVOL + m[1];
+      f.src = IVOL + encodeURIComponent(m[1]);
       slot.appendChild(f);
       return;
     }
