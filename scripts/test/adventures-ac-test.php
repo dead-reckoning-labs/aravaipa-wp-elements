@@ -326,6 +326,14 @@ $GLOBALS['t_fail'] = array();
 do_action( 'arv_adv_ac_retry', ...$retry_args );
 ok( 0 === count( $GLOBALS['t_sched'] ) && 2 === get_option( 'arv_adv_ac_last_ok' )['attempt'], 'retry succeeds once the API is back' );
 
+// The CLI test signup path never schedules a retry, even when it fails.
+reset_world( true );
+$GLOBALS['t_fail'] = array( 'POST contactLists' => 500 );
+$tp                = arv_adv_ac_payload( array( 'adv-name' => 'Adventures Test', 'adv-email' => 'jamil+advtest@aravaiparunning.com', 'adv-trip' => 'Madeira Adventure, October 3-9, 2027', 'adv-news' => '' ) );
+$tr                = arv_adv_ac_handle( $tp, false );
+ok( ! $tr['ok'] && 0 === count( $GLOBALS['t_sched'] ), 'test signup failure: no retry scheduled' );
+ok( 1 === count( get_option( 'arv_adv_ac_log' ) ) && false === get_option( 'arv_adv_ac_log' )[0]['retry'], 'test signup failure still logged, retry false' );
+
 // Contact sync failing (503) stops at the first request.
 reset_world( true );
 $GLOBALS['t_fail'] = array( 'POST contact/sync' => 503 );

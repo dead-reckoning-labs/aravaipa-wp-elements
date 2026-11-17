@@ -461,10 +461,12 @@ function arv_adv_ac_push( $p ) {
 /**
  * Push, and on failure log it and schedule the one retry.
  *
- * @param array $p Payload.
+ * @param array $p           Payload.
+ * @param bool  $allow_retry False for the CLI test signup, so a failed test
+ *                           never re-creates the test contact after cleanup.
  * @return array Push result.
  */
-function arv_adv_ac_handle( $p ) {
+function arv_adv_ac_handle( $p, $allow_retry = true ) {
 	$res = arv_adv_ac_push( $p );
 	if ( $res['ok'] ) {
 		update_option(
@@ -479,7 +481,7 @@ function arv_adv_ac_handle( $p ) {
 		return $res;
 	}
 	$attempt = isset( $p['attempt'] ) ? (int) $p['attempt'] : 1;
-	$retry   = 1 === $attempt && 'settings' !== $res['step'];
+	$retry   = $allow_retry && 1 === $attempt && 'settings' !== $res['step'];
 	arv_adv_ac_log(
 		array(
 			'step'    => $res['step'],
@@ -744,7 +746,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 			if ( ! $p ) {
 				WP_CLI::error( 'valid --email required' );
 			}
-			$res = arv_adv_ac_handle( $p );
+			$res = arv_adv_ac_handle( $p, false );
 			WP_CLI::log( 'tags: ' . implode( ' | ', arv_adv_ac_tags_for( $p ) ) );
 			if ( ! $res['ok'] ) {
 				WP_CLI::error( 'push failed at ' . $res['step'] . ' (' . $res['code'] . ') ' . $res['error'] );
@@ -813,12 +815,37 @@ if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 			if ( false === strpos( $email, '+advtest@' ) ) {
 				WP_CLI::error( 'only +advtest@ test addresses can be deleted here' );
 			}
+			$this->clear_test_retries( $email );
 			$c = $this->contact_id( $email );
 			$r = arv_adv_ac_request( 'DELETE', 'contacts/' . $c );
 			if ( $r['error'] ) {
 				WP_CLI::error( 'delete failed: ' . $r['error'] );
 			}
 			WP_CLI::success( 'deleted contact ' . $c );
+		}
+
+		/**
+		 * Unschedule any pending retry for a test address, so wp-cron can
+		 * never re-create the test contact after it is deleted.
+		 *
+		 * @param string $email Test email.
+		 */
+		private function clear_test_retries( $email ) {
+			$n    = 0;
+			$cron = function_exists( '_get_cron_array' ) ? (array) _get_cron_array() : array();
+			foreach ( $cron as $ts => $hooks ) {
+				if ( empty( $hooks['arv_adv_ac_retry'] ) ) {
+					continue;
+				}
+				foreach ( $hooks['arv_adv_ac_retry'] as $ev ) {
+					$a = isset( $ev['args'] ) ? $ev['args'] : array();
+					if ( isset( $a[0]['email'] ) && strtolower( $a[0]['email'] ) === strtolower( $email ) ) {
+						wp_unschedule_event( $ts, 'arv_adv_ac_retry', $a );
+						$n++;
+					}
+				}
+			}
+			WP_CLI::log( 'test retries cleared: ' . $n );
 		}
 
 		/**
