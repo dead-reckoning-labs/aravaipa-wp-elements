@@ -1100,6 +1100,18 @@ body .arv-adv .aa-cf7 .wpcf7-response-output {
 body .arv-adv .aa-cf7.sent .wpcf7-response-output {
 	border-color: var(--aa-slate); color: var(--aa-slate);
 }
+/* The optional newsletter box. The form's own input rule above makes every
+   input full width with no native look, which would turn a checkbox into a
+   wide empty bar, so it gets its native control back here. */
+body .arv-adv .aa-interest-form .aa-news .wpcf7-list-item {
+	margin: 0;
+}
+body .arv-adv .aa-interest-form .aa-news label {
+	display: inline-flex; align-items: center; gap: 10px; margin: 0; font-family: var(--aa-body); font-size: 15px; font-weight: 400; color: var(--aa-ink-2); cursor: pointer;
+}
+body .arv-adv .aa-interest-form .aa-news input[type="checkbox"] {
+	width: 18px; height: 18px; margin: 0; padding: 0; flex: 0 0 auto; -webkit-appearance: auto; appearance: auto; accent-color: var(--aa-slate);
+}
 body .arv-adv .aa-cf7 .wpcf7-turnstile,
 body .arv-adv .aa-cf7 .cf-turnstile {
 	margin: 0;
