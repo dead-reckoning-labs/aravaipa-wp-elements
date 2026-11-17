@@ -1,11 +1,12 @@
 /*
  * Volunteer List (includes/volunteer-list.php): region and division filters,
- * and the inline RaceGoat panel. No-ops on pages without the list.
+ * and the inline signup panels. No-ops on pages without the list.
  *
  * Every row is in the HTML already, so with scripts off the whole list
  * shows and each Volunteer button is a plain link. Here the filter bars are
- * revealed, and a RaceGoat row's button opens a panel under the row that
- * loads RaceGoat's own volunteer widget for that race on first open.
+ * revealed, and a row's button opens a panel under the row that loads, on
+ * first open only, RaceGoat's own volunteer widget for that race or an
+ * iframe of the race's own iVolunteer event page.
  */
 (function () {
   var EMBED = "https://racegoat.com/embed.js";
@@ -13,8 +14,20 @@
   function loadWidget(panel) {
     if (panel.getAttribute("data-loaded")) return;
     panel.setAttribute("data-loaded", "1");
+    var slot = panel.querySelector(".arv-vol__slot") || panel;
+    // iVolunteer row: frame the race's own event page, made only now.
+    var src = panel.getAttribute("data-arv-vol-frame");
+    if (src) {
+      var f = document.createElement("iframe");
+      f.className = "arv-vol__frame";
+      f.setAttribute("loading", "eager");
+      f.setAttribute("title", panel.getAttribute("data-arv-vol-title") || "Volunteer signup");
+      f.src = src;
+      slot.appendChild(f);
+      return;
+    }
     var tpl = panel.querySelector("template");
-    if (tpl) panel.appendChild(tpl.content.cloneNode(true));
+    if (tpl) slot.appendChild(tpl.content.cloneNode(true));
     // embed.js scans the page when it runs and skips widgets it already
     // drew, so running it again picks up only the one just added.
     var s = document.createElement("script");

@@ -13,8 +13,15 @@
  *     widget for that race into it on first open. RaceGoat pages refuse to
  *     be framed, so the widget is the inline form.
  *   - iVolunteer: the race's own event page, stored per race in the
- *     _arv_volunteer_url meta, or the iVolunteer home page when a race has
- *     none. Never another race's event.
+ *     _arv_volunteer_url meta. The button expands the same kind of panel
+ *     and frames that event page in it, created on first open only.
+ *     iVolunteer allows framing from aravaiparunning.com (CSP
+ *     frame-ancestors), so the signup works inside the row.
+ *   - iVolunteer home: a race with no event of its own gets a plain
+ *     "Sign up on iVolunteer" link to the home page, never a frame of the
+ *     whole home page and never another race's event.
+ *
+ * Every inline panel ends with a small "Open full page" link (new tab).
  *
  * A race flips from iVolunteer to RaceGoat on its own the first time it
  * shows up in the feed: nothing here names a race.
@@ -358,6 +365,7 @@ function arv_vol_rows( $races, $today, $now ) {
 			'page'     => isset( $race['page'] ) ? (string) $race['page'] : '',
 			'mode'     => $mode,
 			'rg_slug'  => 'racegoat' === $mode ? $slug : '',
+			'ivol_own' => 'racegoat' !== $mode && ARV_VOL_IVOL_ROOT !== $vurl,
 			'url'      => 'racegoat' === $mode ? 'https://racegoat.com/events/' . $slug . '/volunteer' : $vurl,
 		);
 	}
@@ -483,18 +491,27 @@ function arv_vol_render( $args = array() ) {
 		}
 		$h .= '</div>';
 
-		if ( 'racegoat' === $row['mode'] ) {
+		$inline = 'racegoat' === $row['mode'] || ! empty( $row['ivol_own'] );
+		if ( $inline ) {
 			// A real link first, so the button still works with scripts off;
 			// the script turns it into the toggle for the inline panel.
 			$h .= '<a class="arv-vol__btn" href="' . esc_url( $row['url'] ) . '" target="_blank" rel="noopener" data-arv-vol-open="' . esc_attr( $pid ) . '" aria-controls="' . esc_attr( $pid ) . '" aria-expanded="false">Volunteer</a>';
 		} else {
-			$h .= '<a class="arv-vol__btn" href="' . esc_url( $row['url'] ) . '" target="_blank" rel="noopener">Volunteer</a>';
+			$h .= '<a class="arv-vol__btn arv-vol__btn--out" href="' . esc_url( $row['url'] ) . '" target="_blank" rel="noopener">Sign up on iVolunteer</a>';
 		}
 		$h .= '</div>';
 
+		$full = '<a class="arv-vol__full" href="' . esc_url( $row['url'] ) . '" target="_blank" rel="noopener">Open full page</a>';
 		if ( 'racegoat' === $row['mode'] ) {
 			$h .= '<div class="arv-vol__panel" id="' . esc_attr( $pid ) . '" hidden data-racegoat-org="' . esc_attr( ARV_VOL_RG_ORG ) . '" data-racegoat-slug="' . esc_attr( $row['rg_slug'] ) . '">';
 			$h .= '<template><div data-racegoat-volunteer="' . esc_attr( ARV_VOL_RG_ORG ) . '" data-racegoat-races="' . esc_attr( $row['rg_slug'] ) . '" data-racegoat-theme="host" data-racegoat-branding="none" data-racegoat-title="none"></div></template>';
+			$h .= '<div class="arv-vol__slot"></div>' . $full;
+			$h .= '</div>';
+		} elseif ( ! empty( $row['ivol_own'] ) ) {
+			// The script makes the iframe on first open, so no iVolunteer
+			// page loads until someone asks for it.
+			$h .= '<div class="arv-vol__panel" id="' . esc_attr( $pid ) . '" hidden data-arv-vol-frame="' . esc_url( $row['url'] ) . '" data-arv-vol-title="' . esc_attr( 'Volunteer at ' . $row['name'] . ' on iVolunteer' ) . '">';
+			$h .= '<div class="arv-vol__slot"></div>' . $full;
 			$h .= '</div>';
 		}
 
