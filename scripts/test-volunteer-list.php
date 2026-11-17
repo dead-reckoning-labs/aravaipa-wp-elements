@@ -146,7 +146,10 @@ function rows_of( $html ) {
 	foreach ( $parts as $p ) {
 		preg_match( '#data-region="([^"]*)" data-division="([^"]*)" data-mode="([^"]*)"#', $p, $a );
 		preg_match( '#class="arv-vol__name"[^>]*>(.*?)</#s', $p, $b );
-		preg_match( '#<a class="arv-vol__btn" href="([^"]*)"#', $p, $c );
+		preg_match( '#<a class="arv-vol__btn[^"]*" href="([^"]*)"#', $p, $c );
+		preg_match( '#<a class="arv-vol__btn[^"]*"[^>]*>([^<]*)</a>#', $p, $e );
+		preg_match( '#data-arv-vol-frame="([^"]*)"#', $p, $f );
+		preg_match_all( '#<a class="arv-vol__full" href="([^"]*)" target="_blank" rel="noopener">Open full page</a>#', $p, $g );
 		preg_match( '#data-racegoat-races="([^"]*)"#', $p, $d );
 		$out[ html_entity_decode( $b[1], ENT_QUOTES ) ] = array(
 			'mode'     => $a[3],
@@ -154,6 +157,11 @@ function rows_of( $html ) {
 			'region'   => $a[1],
 			'division' => $a[2],
 			'slug'     => isset( $d[1] ) ? $d[1] : '',
+			'label'    => isset( $e[1] ) ? $e[1] : '',
+			'frame'    => isset( $f[1] ) ? html_entity_decode( $f[1], ENT_QUOTES ) : '',
+			'full'     => array_map( function ( $u ) { return html_entity_decode( $u, ENT_QUOTES ); }, $g[1] ),
+			'toggle'   => false !== strpos( $p, 'data-arv-vol-open=' ),
+			'html'     => $p,
 		);
 	}
 	return $out;
@@ -222,6 +230,36 @@ foreach ( $rows as $name => $r ) {
 	}
 }
 ok( count( $codes ) === count( array_filter( $codes, function ( $v ) { return 1 === count( $v ); } ) ), 'no iVolunteer code shared by two races in the fixture' );
+// v2: inline iVolunteer frames, Sign up on iVolunteer link outs, Open full page links.
+$fo = $rows['Fat Ox'];
+ok( $fo['toggle'] && 'Volunteer' === $fo['label'] && $IV . 'fo26' === $fo['frame'], 'own-event iVolunteer row (fo26) expands a panel that frames its own event' );
+ok( false !== strpos( $fo['html'], 'data-arv-vol-title="Volunteer at Fat Ox on iVolunteer"' ), 'iVolunteer panel carries an iframe title' );
+ok( array( $IV . 'fo26' ) === $fo['full'], 'own-event iVolunteer panel has one Open full page link to its event, new tab, noopener' );
+ok( false === stripos( $html, '<iframe' ), 'no iframe in the HTML: the frame is made on first open (lazy)' );
+ok( $IV . 'wb27' === $rows['Whiskey Basin Trail Runs']['frame'], 'Whiskey Basin panel frames wb27' );
+foreach ( array( 'Devil After Dark', 'Run <b>Around</b> Tucson' ) as $home ) {
+	$r = $rows[ $home ];
+	ok( ! $r['toggle'] && '' === $r['frame'] && 'Sign up on iVolunteer' === $r['label'] && $IV === $r['href'] && array() === $r['full'], "$home (iVolunteer home): plain Sign up on iVolunteer link, no panel, no iframe" );
+	ok( false !== strpos( $r['html'], 'target="_blank" rel="noopener">Sign up on iVolunteer</a>' ), "$home: Sign up on iVolunteer opens a new tab with noopener" );
+}
+ok( false === strpos( $html, 'data-arv-vol-frame="' . $IV . '"' ), 'the iVolunteer home page is never framed' );
+foreach ( array( 'Coldwater Hundred' => 'coldwater-hundred', 'Ram Party' => 'ram-party-2027', 'Sinister Night Rides' => 'sinister-night-rides-2027', 'Mountain Ridge Trail Race' => 'mountain-ridge-2027' ) as $name => $slug ) {
+	$r = $rows[ $name ];
+	ok( $r['toggle'] && '' === $r['frame'] && array( 'https://racegoat.com/events/' . $slug . '/volunteer' ) === $r['full'], "$name: RaceGoat widget panel plus Open full page to racegoat.com/events/$slug/volunteer" );
+	ok( preg_match( '#</template><div class="arv-vol__slot"></div><a class="arv-vol__full"#', $r['html'] ) === 1, "$name: Open full page sits under the widget slot" );
+}
+$js = file_get_contents( ARV_ELEMENTS_PATH . 'assets/aravaipa-volunteer.js' );
+$odd = arv_vol_rows( array( array( 'post_id' => 77, 'name' => 'Odd Code', 'iso' => '2027-02-01', 'location' => 'Mesa, AZ', 'register' => '', 'page' => '', 'volunteer_url' => $IV . 'x?a="><script>' ) ), '2026-11-17', $now );
+ok( 1 === count( $odd ) && empty( $odd[0]['ivol_own'] ), 'an iVolunteer URL that is not a plain event code is never framed' );
+ok( false !== strpos( $js, 'IVOL + encodeURIComponent(m[1])' ) && false === strpos( $js, 'f.src = src' ), 'script rebuilds the frame src from the event code on our iVolunteer site only' );
+$fulls = substr_count( $html, '>Open full page</a>' );
+ok( 6 === $fulls, "Open full page on every inline panel: 4 RaceGoat + 2 own-event iVolunteer (got $fulls)" );
+$js = file_get_contents( ARV_ELEMENTS_PATH . 'assets/aravaipa-volunteer.js' );
+ok( false !== strpos( $js, 'createElement("iframe")' ) && false !== strpos( $js, 'data-arv-vol-frame' ) && false !== strpos( $js, '"title"' ), 'script makes the iVolunteer iframe on open, with a title' );
+ok( false === strpos( $js, 'sandbox' ), 'no sandbox on the iVolunteer iframe (its forms and payment popups need the full page)' );
+$css = file_get_contents( ARV_ELEMENTS_PATH . 'assets/aravaipa-elements.css' );
+ok( preg_match( '#\.arv-vol__frame \{[^}]*height: 80vh;[^}]*min-height: 560px;[^}]*max-height: 900px;#s', $css ) === 1, 'iframe height 80vh, 560 to 900 px' );
+
 $racegoat_markup = substr_count( $html, 'data-racegoat-volunteer=' );
 ok( 4 === $racegoat_markup, "widget markup only on the 4 launched feed races (got $racegoat_markup)" );
 
