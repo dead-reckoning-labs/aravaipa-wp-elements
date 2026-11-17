@@ -199,11 +199,13 @@ require_once ARV_ELEMENTS_PATH . 'includes/update-emails.php';
 require_once ARV_ELEMENTS_PATH . 'includes/cache-purge.php';
 
 // Aravaipa Adventures: the adventure post type, its trip page and landing
-// ([arv_adventures]), and the CF7 interest form's trip list. Front end and
-// admin both: the post type has to exist on every request.
+// ([arv_adventures]), the CF7 interest form's trip list, and its push to
+// ActiveCampaign. Front end and admin both: the post type has to exist on
+// every request.
 require_once ARV_ELEMENTS_PATH . 'includes/adventures.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-render.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-form.php';
+require_once ARV_ELEMENTS_PATH . 'includes/adventures-activecampaign.php';
 
 // Volunteer List: every upcoming race with one Volunteer button, RaceGoat
 // inline when the race's shifts are live there, else its iVolunteer event.

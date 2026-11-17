@@ -179,7 +179,7 @@ if ( function_exists( 'wpcf7_contact_form' ) && ( ! $form_id || ! wpcf7_contact_
 	$form = WPCF7_ContactForm::get_template( array( 'title' => 'Aravaipa Adventures Interest' ) );
 	$form->set_properties(
 		array(
-			'form'     => '<div class="aa-interest-form"><div><label for="aa-f-name">Full Name</label>[text adv-name id:aa-f-name autocomplete:name placeholder "Type your name"]</div><div><label for="aa-f-email">Email<span class="aa-req">*</span></label>[email* adv-email id:aa-f-email autocomplete:email placeholder "Type your email"]</div><div class="aa-full"><label for="aa-f-trip">Trip</label>[select adv-trip id:aa-f-trip "Any trip, keep me posted"]</div><div class="aa-full">[turnstile]</div><div class="aa-full aa-submit">[submit "Submit"]</div></div>',
+			'form'     => '<div class="aa-interest-form"><div><label for="aa-f-name">Full Name</label>[text adv-name id:aa-f-name autocomplete:name placeholder "Type your name"]</div><div><label for="aa-f-email">Email<span class="aa-req">*</span></label>[email* adv-email id:aa-f-email autocomplete:email placeholder "Type your email"]</div><div class="aa-full"><label for="aa-f-trip">Trip</label>[select adv-trip id:aa-f-trip "Any trip, keep me posted"]</div><div class="aa-full aa-news">[acceptance adv-news optional]Also send me Aravaipa Running news[/acceptance]</div><div class="aa-full">[turnstile]</div><div class="aa-full aa-submit">[submit "Submit"]</div></div>',
 			'mail'     => array(
 				'active'             => true,
 				'subject'            => 'Adventures interest: [adv-trip] ([adv-email])',
