@@ -44,13 +44,15 @@ function arv_adv_badge( $trip ) {
 function arv_adv_tile( $trip, $eager = false ) {
 	$type   = arv_adv_type_of( $trip );
 	$suffix = 'Race' === $trip['type'] && ! empty( $trip['race']['name'] ) ? ', ' . $trip['race']['name'] : '';
+	$soon   = isset( $trip['details_soon'] ) ? rtrim( trim( (string) $trip['details_soon'] ), '.' ) : '';
 
 	return '<a class="aa-tile" href="' . esc_url( $trip['url'] ) . '" data-type="' . esc_attr( $type['key'] ) . '">'
-		. '<div class="aa-tile-media">' . arv_adv_img( $trip['photos']['hero'], 'large', array( 'alt' => '', 'loading' => $eager ? 'eager' : 'lazy', 'sizes' => '(max-width: 600px) 100vw, (max-width: 979px) 50vw, 600px' ) ) . '</div>'
+		. '<div class="aa-tile-media">' . arv_adv_img( $trip['photos']['hero'], 'large', array_merge( array( 'alt' => '', 'loading' => $eager ? 'eager' : 'lazy', 'sizes' => '(max-width: 600px) 100vw, (max-width: 979px) 50vw, 600px' ), '' !== arv_adv_focal( $trip['photos']['hero'] ) ? array( 'style' => 'object-position:' . arv_adv_focal( $trip['photos']['hero'] ) ) : array() ) ) . '</div>'
 		. '<span class="aa-tile-top">' . arv_adv_badge( $trip ) . '<span class="aa-tile-len">' . esc_html( $trip['length'] ) . '</span></span>'
 		. '<div class="aa-tile-body">'
 		. '<span class="aa-tile-dest">' . esc_html( $trip['destination'] ) . '</span>'
 		. '<span class="aa-tile-name"><span>' . esc_html( $trip['name'] . $suffix ) . '</span><em>' . esc_html( $trip['dates'] ) . '</em></span>'
+		. ( '' !== $soon ? '<span class="aa-tile-soon">' . esc_html( $soon ) . '</span>' : '' )
 		. '</div></a>';
 }
 
@@ -170,7 +172,7 @@ function arv_adv_render_trip( $trip ) {
 	$diff     = arv_adv_difficulty_text( $trip );
 	$group    = is_numeric( $trip['group_size'] ) ? 'Max ' . (int) $trip['group_size'] . ' runners' : $trip['group_size'];
 	$race_facts = ! empty( $race['facts'] ) && is_array( $race['facts'] ) ? $race['facts'] : array(
-		array( 'Race Entry', 'TBD, being confirmed with the race and our partner.' ),
+		array( 'Race Entry', 'Included in the trip price.' ),
 		array( 'Race Week', 'We handle packet pickup, shuttles to the start, and the post-race celebration.' ),
 	);
 
@@ -230,14 +232,23 @@ function arv_adv_render_trip( $trip ) {
 		$o .= '</div></div></section>';
 	}
 
-	// Itinerary.
-	$o .= '<section class="aa-section" id="itinerary"><div class="aa-container aa-itin-grid"><div class="aa-itin-side"><span class="aa-kicker">Itinerary</span><h2 class="aa-display">Day by Day</h2><p class="aa-small-note">Sample itinerary, subject to change.</p></div><ol class="aa-timeline">';
-	foreach ( array_values( $trip['itinerary'] ) as $i => $d ) {
-		$o .= '<li><div class="aa-day"><small>Day</small><b>' . arv_adv_pad( $i + 1 ) . '</b></div><div><h3>' . esc_html( isset( $d['title'] ) ? $d['title'] : '' ) . '</h3>'
-			. ( ! empty( $d['stats'] ) ? '<p class="aa-itin-stats">' . esc_html( $d['stats'] ) . '</p>' : '' )
-			. '<p>' . esc_html( isset( $d['body'] ) ? $d['body'] : '' ) . '</p></div></li>';
+	// Itinerary, or the coming-soon line while the plan is being finalized
+	// (the stored days stay in the meta, hidden, until the line is cleared).
+	$soon = trim( (string) ( isset( $trip['details_soon'] ) ? $trip['details_soon'] : '' ) );
+	if ( '' !== $soon ) {
+		$o .= '<section class="aa-section" id="itinerary"><div class="aa-container aa-itin-grid"><div class="aa-itin-side"><span class="aa-kicker">Itinerary</span><h2 class="aa-display">The Plan</h2></div>'
+			. '<div class="aa-itin-soon"><p class="aa-lede">' . esc_html( $soon ) . '</p><p>We are finalizing the plan with our partner on the ground. '
+			. ( '' !== $book ? 'Booking is open now, and everyone booked gets the full plan as soon as it is ready.' : 'Join the interest list and you will get the full plan as soon as it is ready.' )
+			. '</p></div></div></section>';
+	} else {
+		$o .= '<section class="aa-section" id="itinerary"><div class="aa-container aa-itin-grid"><div class="aa-itin-side"><span class="aa-kicker">Itinerary</span><h2 class="aa-display">Day by Day</h2><p class="aa-small-note">Sample itinerary, subject to change.</p></div><ol class="aa-timeline">';
+		foreach ( array_values( $trip['itinerary'] ) as $i => $d ) {
+			$o .= '<li><div class="aa-day"><small>Day</small><b>' . arv_adv_pad( $i + 1 ) . '</b></div><div><h3>' . esc_html( isset( $d['title'] ) ? $d['title'] : '' ) . '</h3>'
+				. ( ! empty( $d['stats'] ) ? '<p class="aa-itin-stats">' . esc_html( $d['stats'] ) . '</p>' : '' )
+				. '<p>' . esc_html( isset( $d['body'] ) ? $d['body'] : '' ) . '</p></div></li>';
+		}
+		$o .= '</ol></div></section>';
 	}
-	$o .= '</ol></div></section>';
 
 	// Gallery.
 	$gallery = $photos['gallery'];
@@ -412,8 +423,8 @@ function arv_adv_render_landing() {
 	$how = array(
 		array( 'Small Groups', 'Never more than 12 runners, and as few as 6. Big enough to make friends, small enough that nobody waits on a bus.' ),
 		array( 'Real Guides', 'Run on the ground by Trail Run Adventures and their local guides, with every pace looked after and every detail handled.' ),
-		array( 'Race Week, Handled', 'Race trips build the whole week around the start line: packet pickup, shuttles, and the party after.' ),
-		array( 'Unmistakably Aravaipa', 'An Aravaipa SWAG kit for every traveler, a personalized finisher\'s medal on the final night, and a closing ceremony you will remember.' ),
+		array( 'Race Week, Handled', 'Race entry is included, and race trips build the whole week around the start line: packet pickup, shuttles, and the party after.' ),
+		array( 'Unmistakably Aravaipa', 'The Aravaipa experience our racers already know and love: a community that shows up for each other, long days on great trail, and plenty of fun along the way, now somewhere new.' ),
 	);
 	$who = array(
 		array( 'The Bucket-List Racer', 'You want to run Madeira or Fitz Roy without spending months on logistics.' ),
@@ -466,7 +477,7 @@ function arv_adv_render_landing() {
 		$first = false;
 	}
 	$o .= arv_adv_render_coming_soon( arv_adv_coming_soon( $config, $trips ) );
-	$o .= '<p class="aa-grid-note">Each trip page lists what is included, race entry on race trips, and the dates as they are confirmed.</p></div></section>';
+	$o .= '<p class="aa-grid-note">Race entry is included on every race trip. Each trip page lists what else is included and the dates as they are confirmed.</p></div></section>';
 
 	$o .= '<section class="aa-section aa-gray" id="how"><div class="aa-container"><span class="aa-kicker">How It Works</span><h2 class="aa-display" style="max-width:760px">Every detail handled, so you can just run.</h2><div class="aa-numbered" style="--aa-n:4">';
 	foreach ( $how as $i => $h ) {

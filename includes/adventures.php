@@ -57,6 +57,7 @@ function arv_adv_fields() {
 			'book_url'        => 'Book Now link (WeTravel trip URL; empty = Interest List only)',
 			'gallery_credit'  => 'Gallery credit line',
 			'note'            => 'Small note under the story (optional)',
+			'details_soon'    => 'Coming soon line (optional): replaces the day-by-day itinerary, e.g. Itinerary and trip details coming soon.',
 			'fineprint'       => 'Fine print in the pricing panel (optional, replaces the default)',
 		),
 		'json'   => array(
@@ -66,7 +67,7 @@ function arv_adv_fields() {
 			'included'     => 'Included: ["Seven nights ...", "..."]',
 			'not_included' => 'Not included: ["Flights ...", "..."]',
 			'race'         => 'Race (or {} for none): {"name": "", "url": "", "date": "", "blurb": "", "facts": [["Race Entry", "TBD"]]}',
-			'photos'       => 'Photos: {"hero": {"id": 123, "alt": "", "credit": ""}, "intro": {...}, "form": {...}, "gallery": [{"id": 124, "alt": "", "credit": ""}]}',
+			'photos'       => 'Photos: {"hero": {"id": 123, "alt": "", "credit": "", "focal": "50% 50% (optional crop point)"}, "intro": {...}, "form": {...}, "gallery": [{"id": 124, "alt": "", "credit": ""}]}',
 		),
 	);
 }
@@ -538,7 +539,23 @@ function arv_adv_img( $photo, $size = 'large', $atts = array() ) {
  */
 function arv_adv_bg( $photo ) {
 	$url = arv_adv_img_url( $photo, 'full' );
-	return '' === $url ? '' : 'background-image:url(' . esc_url( $url ) . ')';
+	if ( '' === $url ) {
+		return '';
+	}
+	$focal = arv_adv_focal( $photo );
+	return 'background-image:url(' . esc_url( $url ) . ')' . ( '' !== $focal ? ';background-position:' . $focal : '' );
+}
+
+/**
+ * Focal point of a photo ({focal: "72% 50%"}), as a CSS position, so a
+ * crop keeps the runners in frame. Empty when unset or not a plain position.
+ *
+ * @param array $photo Photo.
+ * @return string
+ */
+function arv_adv_focal( $photo ) {
+	$f = is_array( $photo ) && isset( $photo['focal'] ) ? trim( (string) $photo['focal'] ) : '';
+	return 1 === preg_match( '/^(?:(?:\d{1,3}%|left|right|center|top|bottom)\s*){1,2}$/', $f ) ? $f : '';
 }
 
 /**
@@ -669,6 +686,57 @@ function arv_adv_logo_text( $value ) {
 	return 'Aravaipa Adventures';
 }
 add_filter( 'x_option_x_logo_text', 'arv_adv_logo_text' );
+
+/**
+ * Masthead logo link. The X theme prints the brand anchor with a plain
+ * home_url( '/' ) and no filter, but it wraps the view in
+ * x_before_view_global__brand and x_after_view_global__brand actions. On
+ * Adventures pages the brand view is buffered and its href pointed at the
+ * Adventures home; every other page is never buffered and keeps the
+ * Aravaipa Running home link.
+ *
+ * @param string $html Brand view output.
+ * @param string $url  Link target.
+ * @return string
+ */
+function arv_adv_brand_link( $html, $url ) {
+	return (string) preg_replace_callback(
+		'#(<a\s[^>]*?)href="[^"]*"([^>]*\bclass="[^"]*\bx-brand\b)#',
+		static function ( $m ) use ( $url ) {
+			return $m[1] . 'href="' . esc_url( $url ) . '"' . $m[2];
+		},
+		(string) $html,
+		1
+	);
+}
+
+/**
+ * Start buffering the brand view, on Adventures pages only.
+ */
+function arv_adv_brand_start() {
+	if ( ! arv_adv_is_adventures_page() || is_admin() ) {
+		return;
+	}
+	if ( ob_start() ) {
+		$GLOBALS['arv_adv_brand_ob'] = ob_get_level();
+	}
+}
+
+/**
+ * Print the buffered brand view with the Adventures home link.
+ */
+function arv_adv_brand_end() {
+	$level = isset( $GLOBALS['arv_adv_brand_ob'] ) ? (int) $GLOBALS['arv_adv_brand_ob'] : 0;
+	$GLOBALS['arv_adv_brand_ob'] = 0;
+	if ( ! $level || ob_get_level() !== $level ) {
+		return;
+	}
+	echo arv_adv_brand_link( (string) ob_get_clean(), arv_adv_landing_url() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- theme markup, href escaped above.
+}
+add_action( 'x_before_view_global__brand', 'arv_adv_brand_start' );
+add_action( 'x_after_view_global__brand', 'arv_adv_brand_end' );
+add_action( 'x_before_view_custom__brand', 'arv_adv_brand_start' );
+add_action( 'x_after_view_custom__brand', 'arv_adv_brand_end' );
 
 /**
  * Keep anything that is not published out of search engines, belt and
