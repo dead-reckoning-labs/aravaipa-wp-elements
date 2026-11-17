@@ -365,7 +365,9 @@ function arv_vol_rows( $races, $today, $now ) {
 			'page'     => isset( $race['page'] ) ? (string) $race['page'] : '',
 			'mode'     => $mode,
 			'rg_slug'  => 'racegoat' === $mode ? $slug : '',
-			'ivol_own' => 'racegoat' !== $mode && ARV_VOL_IVOL_ROOT !== $vurl,
+			// Framed only when it is a plain event code on our iVolunteer
+			// site, the same rule the script applies before making the frame.
+			'ivol_own' => 'racegoat' !== $mode && 1 === preg_match( '#^https://aravaiparunning\.ivolunteer\.com/[A-Za-z0-9_-]+/?$#', $vurl ),
 			'url'      => 'racegoat' === $mode ? 'https://racegoat.com/events/' . $slug . '/volunteer' : $vurl,
 		);
 	}

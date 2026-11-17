@@ -248,6 +248,10 @@ foreach ( array( 'Coldwater Hundred' => 'coldwater-hundred', 'Ram Party' => 'ram
 	ok( $r['toggle'] && '' === $r['frame'] && array( 'https://racegoat.com/events/' . $slug . '/volunteer' ) === $r['full'], "$name: RaceGoat widget panel plus Open full page to racegoat.com/events/$slug/volunteer" );
 	ok( preg_match( '#</template><div class="arv-vol__slot"></div><a class="arv-vol__full"#', $r['html'] ) === 1, "$name: Open full page sits under the widget slot" );
 }
+$js = file_get_contents( ARV_ELEMENTS_PATH . 'assets/aravaipa-volunteer.js' );
+$odd = arv_vol_rows( array( array( 'post_id' => 77, 'name' => 'Odd Code', 'iso' => '2027-02-01', 'location' => 'Mesa, AZ', 'register' => '', 'page' => '', 'volunteer_url' => $IV . 'x?a="><script>' ) ), '2026-11-17', $now );
+ok( 1 === count( $odd ) && empty( $odd[0]['ivol_own'] ), 'an iVolunteer URL that is not a plain event code is never framed' );
+ok( false !== strpos( $js, 'IVOL + m[1]' ) && false === strpos( $js, 'f.src = src' ), 'script rebuilds the frame src from the event code on our iVolunteer site only' );
 $fulls = substr_count( $html, '>Open full page</a>' );
 ok( 6 === $fulls, "Open full page on every inline panel: 4 RaceGoat + 2 own-event iVolunteer (got $fulls)" );
 $js = file_get_contents( ARV_ELEMENTS_PATH . 'assets/aravaipa-volunteer.js' );

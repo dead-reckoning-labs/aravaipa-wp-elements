@@ -10,6 +10,7 @@
  */
 (function () {
   var EMBED = "https://racegoat.com/embed.js";
+  var IVOL = "https://aravaiparunning.ivolunteer.com/";
 
   function loadWidget(panel) {
     if (panel.getAttribute("data-loaded")) return;
@@ -18,11 +19,15 @@
     // iVolunteer row: frame the race's own event page, made only now.
     var src = panel.getAttribute("data-arv-vol-frame");
     if (src) {
+      // Only ever our own iVolunteer site: the src is rebuilt from the event
+      // code, so nothing else from the attribute reaches the frame.
+      var m = /^https:\/\/aravaiparunning\.ivolunteer\.com\/([A-Za-z0-9_-]+)\/?$/.exec(src);
+      if (!m) return;
       var f = document.createElement("iframe");
       f.className = "arv-vol__frame";
       f.setAttribute("loading", "eager");
       f.setAttribute("title", panel.getAttribute("data-arv-vol-title") || "Volunteer signup");
-      f.src = src;
+      f.src = IVOL + m[1];
       slot.appendChild(f);
       return;
     }
