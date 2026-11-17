@@ -380,17 +380,17 @@ function arv_adv_ac_push( $p ) {
 		return $fail( 'settings', array( 'code' => 0, 'error' => 'ActiveCampaign not connected' ) );
 	}
 
-	$r = arv_adv_ac_request(
-		'POST',
-		'contact/sync',
-		array(
-			'contact' => array(
-				'email'     => $p['email'],
-				'firstName' => $p['first'],
-				'lastName'  => $p['last'],
-			),
-		)
-	);
+	// Empty name parts are left out: most of these people are already in
+	// the account from race entries, and a blank here would wipe the name
+	// ActiveCampaign already has for them.
+	$contact = array( 'email' => $p['email'] );
+	if ( '' !== $p['first'] ) {
+		$contact['firstName'] = $p['first'];
+	}
+	if ( '' !== $p['last'] ) {
+		$contact['lastName'] = $p['last'];
+	}
+	$r = arv_adv_ac_request( 'POST', 'contact/sync', array( 'contact' => $contact ) );
 	if ( $r['error'] || empty( $r['body']['contact']['id'] ) ) {
 		return $fail( 'contact', $r['error'] ? $r : array( 'code' => $r['code'], 'error' => 'no contact id' ) );
 	}

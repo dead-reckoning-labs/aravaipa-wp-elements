@@ -273,7 +273,12 @@ reset_world( true );
 submit( 'wpcf7_mail_failed', 86051, 'Sam', 'sam@example.com', array( 'Madeira Adventure, October 3-9, 2027' ) );
 ok( seq() === array( 'POST contact/sync', 'POST contactLists', 'POST contactTags', 'POST contactTags' ), 'mail_failed pushes, cached ids reused: ' . implode( ', ', seq() ) );
 $sync = bodies( 'contact/sync' );
-ok( 'Sam' === $sync[0]['contact']['firstName'] && '' === $sync[0]['contact']['lastName'], 'one-word name: empty last name' );
+ok( 'Sam' === $sync[0]['contact']['firstName'] && ! array_key_exists( 'lastName', $sync[0]['contact'] ), 'one-word name: no lastName sent (an existing last name is kept)' );
+ok( '' === arv_adv_ac_payload( array( 'adv-name' => 'Sam', 'adv-email' => 'sam@example.com' ) )['last'], 'one-word name: empty last name in the payload' );
+reset_world( true );
+submit( 'wpcf7_mail_sent', 86051, '', 'blank@example.com', 'Any trip, keep me posted' );
+$sync = bodies( 'contact/sync' );
+ok( array( 'email' => 'blank@example.com' ) === $sync[0]['contact'], 'blank name: only the email is synced' );
 
 // Any trip: only the general tag.
 reset_world( true );
