@@ -343,7 +343,7 @@ function arv_adv_landing_copy() {
 	return array(
 		'hero' => 'Race trips and guided trail running adventures, from Madeira to Patagonia.',
 		'lede' => 'For years Aravaipa Running has built trail races in the desert and mountains of the Southwest and beyond. Aravaipa Adventures takes that same crew mentality on the road, to the trails our runners already dream about: race weeks that finish at the Ultra Fitz Roy or Ultra Skyrunning Madeira, the Julian Alps, and New Zealand\'s Routeburn and Kepler tracks with a few hours on the Milford.',
-		'more' => 'We handle the hotels, transfers, meals, and logistics, so the only thing on your plate is the mountain in front of you. Race trips build the week around a world-class event. Adventures are pure exploration, point to point through ranges we love.',
+		'more' => 'We handle the hotels, transfers, meals, and logistics, so all you have to do is run. Race trips build the week around a world-class event. Adventures are pure exploration, point to point through ranges we love.',
 	);
 }
 
