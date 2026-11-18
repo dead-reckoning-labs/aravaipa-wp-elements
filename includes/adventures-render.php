@@ -422,7 +422,7 @@ function arv_adv_render_landing() {
 
 	$how = array(
 		array( 'Small Groups', 'Never more than 12 runners, and as few as 6. Big enough to make friends, small enough that nobody waits on a bus.' ),
-		array( 'Real Guides', 'Run on the ground by Trail Run Adventures and their local guides, with every pace looked after and every detail handled.' ),
+		array( 'Real Guides', 'Run on the ground by Trail Run Adventures and their local guides, with a guide for every pace.' ),
 		array( 'Race Week, Handled', 'Race entry is included, and race trips build the whole week around the start line: packet pickup, shuttles, and the party after.' ),
 		array( 'Unmistakably Aravaipa', 'The Aravaipa experience our racers already know and love: a community that shows up for each other, long days on great trail, and plenty of fun along the way, now somewhere new.' ),
 	);
