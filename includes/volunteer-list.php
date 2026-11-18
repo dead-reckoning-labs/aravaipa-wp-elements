@@ -528,6 +528,12 @@ function arv_vol_render( $args = array() ) {
 	$h .= '</div>';
 	$h .= '<p class="arv-vol__empty" hidden>No races match. Try another region.</p>';
 	$h .= '</div></section>';
+	// RaceGoat's embed script, once on the page when any row signs up there.
+	// The widgets live in <template>s until a row opens; aravaipa-volunteer.js
+	// clones one in and loads the script again, which draws only new widgets.
+	if ( false !== strpos( $h, 'data-racegoat-volunteer-signup=' ) ) {
+		$h .= '<script src="https://racegoat.com/embed.js" async></script>';
+	}
 
 	return $h;
 }
