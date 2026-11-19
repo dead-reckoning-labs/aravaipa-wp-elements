@@ -419,9 +419,9 @@ foreach ( $regs['regions'] as $rg ) {
 ok( count( $all ) === count( array_unique( $all ) ), 'no state in two regions' );
 
 $GLOBALS['t_now'] = ts( '2026-11-19T22:00:00-07:00' );
-$p                = arv_rt_apply_page_shortcode( array( 'hero_url' => 'https://www.aravaiparunning.com/wp-content/uploads/rt-hero.jpg', 'focal' => '60% 35%' ) );
+$p                = arv_rt_apply_page_shortcode( array( 'hero_url' => 'https://www.aravaiparunning.com/wp-content/uploads/rt-hero.jpg', 'focal' => '60% 35%', 'focal_mobile' => '70% 30%', 'credit' => 'Photo: Howie Stern' ) );
 ok( false !== strpos( $p, '<h1 id="rt-hero-title">Apply for the 2027 Aravaipa Racing Team</h1>' ), 'page title' );
-ok( false !== strpos( $p, 'rt-hero__img' ) && false !== strpos( $p, 'object-position:60% 35%' ), 'hero image with focal point' );
+ok( false !== strpos( $p, 'rt-hero__img' ) && false !== strpos( $p, '--rt-focal:60% 35%;' ) && false !== strpos( $p, '--rt-focal-m:70% 30%;' ) && false !== strpos( $p, '<p class="rt-hero__credit">Photo: Howie Stern</p>' ), 'hero image with focal points and credit' );
 ok( preg_match( '/id="rt-cta"[^>]*>Opens Nov 20</', $p ), 'before open: button reads Opens Nov 20' );
 list( $o_, $c_ ) = arv_rt_apply_window();
 ok( false !== strpos( $p, 'data-opens="' . $o_ . '" data-closes="' . $c_ . '">Opens Nov 20' ), 'button follows the same window' );

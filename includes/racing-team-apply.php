@@ -790,12 +790,15 @@ function arv_rt_apply_page_css() {
 		. '.x-container.offset:has(.rt-v2){margin-top:0;margin-bottom:0}'
 		. 'body:has(.rt-v2){overflow-x:clip}'
 		. '.rt-v2{text-align:left;color:#272727;--rt-red:#ff2a13;--rt-btn:#d41a06;--rt-ink:#272727;--rt-muted:#5f5f5f}'
-		. '.rt-v2 .rt-hero{position:relative;width:100vw;margin-left:calc(50% - 50vw);min-height:min(82vh,760px);display:flex;align-items:flex-end;background:#1d2322;color:#fff;overflow:hidden}'
+		. '.rt-v2 .rt-hero{position:relative;width:100vw;margin-left:calc(50% - 50vw);min-height:min(86vh,800px);display:flex;align-items:flex-end;background:#1d2322;color:#fff;overflow:hidden}'
 		. '.rt-v2 .rt-hero__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;margin:0;max-width:none;border:0}'
-		. '.rt-v2 .rt-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.25) 55%,rgba(0,0,0,.72) 100%)}'
-		. '.rt-v2 .rt-hero__in{position:relative;z-index:1;width:100%;max-width:1200px;margin:0 auto;padding:0 40px 64px;box-sizing:border-box}'
+		. '.rt-v2 .rt-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.38) 34%,rgba(0,0,0,0) 58%),linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%)}'
+		. '.rt-v2 .rt-hero__img{object-position:var(--rt-focal,50% 40%)}'
+		. '.rt-v2 .rt-hero__credit{position:absolute;z-index:1;right:18px;bottom:12px;margin:0;font-size:11px;letter-spacing:.04em;color:rgba(255,255,255,.75)}'
+		. '.rt-v2 .rt-hero__in{position:relative;z-index:1;width:100%;max-width:1440px;margin:0 auto;padding:0 64px 64px;box-sizing:border-box}'
+		. '.rt-v2 .rt-hero__txt{max-width:560px}'
 		. '.rt-v2 .rt-hero__kicker{margin:0 0 14px;font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#fff}'
-		. '.rt-v2 .rt-hero h1{margin:0 0 18px;max-width:900px;font-size:clamp(40px,6.2vw,84px);line-height:.98;font-weight:800;letter-spacing:-.02em;color:#fff;text-transform:none}'
+		. '.rt-v2 .rt-hero h1{margin:0 0 18px;font-size:clamp(40px,4.7vw,70px);line-height:.98;font-weight:800;letter-spacing:-.02em;color:#fff;text-transform:none}'
 		. '.rt-v2 .rt-hero__dates{margin:0 0 30px;font-size:clamp(17px,1.6vw,21px);line-height:1.45;max-width:640px;color:#fff}'
 		. '.rt-v2 .rt-hero__row{display:flex;flex-wrap:wrap;align-items:center;gap:28px 40px}'
 		. '.rt-v2 .rt-cta{display:inline-block;background:var(--rt-btn);color:#fff;text-decoration:none;font-size:19px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:18px 38px;border-radius:2px;line-height:1}'
@@ -853,7 +856,7 @@ function arv_rt_apply_page_css() {
 		. '.rt-v2 .rt-submit .wpcf7-submit{background:var(--rt-btn);padding:20px 48px;font-size:18px;border-radius:2px}'
 		. '.rt-v2 .rt-submit .wpcf7-submit:hover{background:#a91403}'
 		. '@media (max-width:1023px){.rt-v2 .rt-legend{grid-template-columns:repeat(2,minmax(0,1fr))}}'
-		. '@media (max-width:767px){.rt-v2 .rt-hero{min-height:620px}.rt-v2 .rt-hero__in{padding:0 22px 40px}.rt-v2 .rt-hero__row{gap:22px}.rt-v2 .rt-cta{display:block;text-align:center;width:100%;box-sizing:border-box}'
+		. '@media (max-width:767px){.rt-v2 .rt-hero{display:block;min-height:0;background:#1d2322}.rt-v2 .rt-hero__img{position:relative;display:block;height:min(92vw,400px);object-position:var(--rt-focal-m,var(--rt-focal,50% 40%))}.rt-v2 .rt-hero::after{display:none}.rt-v2 .rt-hero__in{padding:28px 22px 36px}.rt-v2 .rt-hero__credit{top:10px;bottom:auto;right:12px}.rt-v2 .rt-hero__row{gap:22px}.rt-v2 .rt-cta{display:block;text-align:center;width:100%;box-sizing:border-box}'
 		. '.rt-v2 .rt-lockup .rt-lockup__hoka{height:26px}.rt-v2 .rt-lockup .rt-lockup__ath{height:28px}.rt-v2 .rt-lockup__x{height:26px}'
 		. '.rt-v2 .rt-wrap{padding:0 22px}.rt-v2 .rt-block{padding-top:56px}.rt-v2 .rt-cols{grid-template-columns:1fr;gap:48px}.rt-v2 .rt-list li{font-size:17px;padding:14px 0}.rt-v2 .rt-lead{font-size:17px;margin-bottom:24px}'
 		. '.rt-v2 .rt-legend{grid-template-columns:1fr;gap:16px;margin-top:24px}.rt-v2 .rt-sec{padding:36px 0;gap:18px}.rt-v2 .rt-n{font-size:36px}.rt-v2 .rt-formblock{padding-bottom:64px}}';
@@ -895,7 +898,8 @@ function arv_rt_apply_page_js() {
 function arv_rt_apply_hero_img( $a ) {
 	$alt   = (string) $a['alt'];
 	$focal = preg_replace( '/[^0-9.% a-z]/', '', strtolower( (string) $a['focal'] ) );
-	$style = $focal ? 'object-position:' . $focal : '';
+	$fm    = preg_replace( '/[^0-9.% a-z]/', '', strtolower( (string) $a['focal_mobile'] ) );
+	$style = ( $focal ? '--rt-focal:' . $focal . ';' : '' ) . ( $fm ? '--rt-focal-m:' . $fm . ';' : '' );
 	$id    = (int) $a['hero'];
 	if ( $id && function_exists( 'wp_get_attachment_image' ) ) {
 		$img = wp_get_attachment_image(
@@ -934,8 +938,10 @@ function arv_rt_apply_page_shortcode( $atts = array() ) {
 		array(
 			'hero'     => (string) get_option( 'arv_rt_apply_hero', '' ),
 			'hero_url' => '',
-			'focal'    => '50% 40%',
-			'alt'      => 'An Aravaipa Racing Team runner racing an Aravaipa trail race',
+			'focal'        => '50% 40%',
+			'focal_mobile' => '',
+			'credit'       => '',
+			'alt'          => 'An Aravaipa Racing Team runner racing an Aravaipa trail race',
 		),
 		is_array( $atts ) ? $atts : array(),
 		'arv_rt_apply_page'
@@ -967,7 +973,7 @@ function arv_rt_apply_page_shortcode( $atts = array() ) {
 
 	$h  = '<style>' . arv_rt_apply_page_css() . '</style>';
 	$h .= '<div class="rt-v2">';
-	$h .= '<section class="rt-hero" aria-labelledby="rt-hero-title">' . arv_rt_apply_hero_img( $a ) . '<div class="rt-hero__in">';
+	$h .= '<section class="rt-hero" aria-labelledby="rt-hero-title">' . arv_rt_apply_hero_img( $a ) . '<div class="rt-hero__in"><div class="rt-hero__txt">';
 	$h .= '<p class="rt-hero__kicker">Aravaipa Racing Team</p>';
 	$h .= '<h1 id="rt-hero-title">Apply for the 2027 Aravaipa Racing Team</h1>';
 	$h .= '<p class="rt-hero__dates">Applications open November 20 and close November 30 at 11:59 PM Arizona time.</p>';
@@ -975,7 +981,7 @@ function arv_rt_apply_page_shortcode( $atts = array() ) {
 	$h .= '<div class="rt-lockup"><a href="https://www.hoka.com/en/us/" target="_blank" rel="noopener"><img class="rt-lockup__hoka" src="' . $up . '2022/10/HOKA_Logo_Process-Blue-300x82.png" srcset="' . $up . '2022/10/HOKA_Logo_Process-Blue-768x210.png 768w, ' . $up . '2022/10/HOKA_Logo_Process-Blue-300x82.png 300w" sizes="160px" width="300" height="82" alt="HOKA"></a>'
 		. '<span class="rt-lockup__x" aria-hidden="true"></span>'
 		. '<a href="https://www.athletico.com/" target="_blank" rel="noopener"><img class="rt-lockup__ath" src="' . $up . 'athletico-physical-therapy-logo-300x72.png" srcset="' . $up . 'athletico-physical-therapy-logo-768x184.png 768w, ' . $up . 'athletico-physical-therapy-logo-300x72.png 300w" sizes="160px" width="300" height="72" alt="Athletico Physical Therapy"></a></div>';
-	$h .= '</div></div></section>';
+	$h .= '</div></div></div>' . ( '' !== trim( (string) $a['credit'] ) ? '<p class="rt-hero__credit">' . esc_html( $a['credit'] ) . '</p>' : '' ) . '</section>';
 
 	$h .= '<div class="rt-body"><div class="rt-wrap">';
 	$h .= '<section class="rt-block rt-cols"><div class="rt-col"><h2 class="rt-h2">What the team asks</h2>' . $list( $asks ) . '</div>';
