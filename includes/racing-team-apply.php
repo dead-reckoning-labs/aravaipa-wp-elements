@@ -542,7 +542,7 @@ function arv_rt_apply_css() {
 	return '.rt-apply{max-width:1080px;margin:0 auto;text-align:left}'
 		. '.rt-apply [hidden]{display:none!important}'
 		. '.rt-state{font-size:20px;line-height:1.5;margin:24px 0}'
-		. '.rt-sec{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:48px;padding:40px 0;border-top:1px solid rgba(0,0,0,.12)}'
+		. '.rt-sec{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:48px;padding:40px 0}'
 		. '.rt-sec-head h3{margin:4px 0 8px;font-size:26px;line-height:1.15;text-transform:none}'
 		. '.rt-sec-head p{margin:0;color:#666;font-size:15px;line-height:1.5}'
 		. '.rt-n{font-size:14px;color:#999;font-variant-numeric:tabular-nums}'
@@ -556,7 +556,7 @@ function arv_rt_apply_css() {
 		. '.rt-form .wpcf7-list-item{margin:0}.rt-form .wpcf7-list-item label{display:inline-flex;gap:8px;align-items:center;min-height:32px;font-size:15px}'
 		. '.rt-f-race-plans .wpcf7-checkbox{max-height:420px;overflow-y:auto;border:1px solid #ddd;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 16px}'
 		. '.rt-consent .wpcf7-list-item label{align-items:flex-start;font-size:15px;line-height:1.5}'
-		. '.rt-submit{padding:32px 0 8px;border-top:1px solid rgba(0,0,0,.12)}'
+		. '.rt-submit{padding:32px 0 8px}'
 		. '.rt-submit .wpcf7-submit{background:#d71f20;color:#fff;border:0;border-radius:0;padding:14px 36px;font-size:16px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;margin-top:12px}'
 		. '@media (max-width:767px){.rt-sec{grid-template-columns:1fr;gap:16px;padding:28px 0}.rt-sec-body{grid-template-columns:1fr}.rt-submit .wpcf7-submit{width:100%}}';
 }
@@ -666,7 +666,7 @@ function arv_rt_apply_export_header() {
  * @return int Rows written.
  */
 function arv_rt_apply_export_csv( $fh ) {
-	fputcsv( $fh, arv_rt_apply_export_header() );
+	fputcsv( $fh, arv_rt_apply_export_header(), ',', '"', '\\' );
 	$n = 0;
 	foreach ( arv_rt_apply_entries() as $r ) {
 		$row = array( $r['at'] );
@@ -685,7 +685,7 @@ function arv_rt_apply_export_csv( $fh ) {
 			$row[] = ( '' !== $v && 'no' !== $v && '0' !== $v ) ? 'yes' : 'no';
 		}
 		$row[] = $r['id'];
-		fputcsv( $fh, $row );
+		fputcsv( $fh, $row, ',', '"', '\\' );
 		++$n;
 	}
 	return $n;
