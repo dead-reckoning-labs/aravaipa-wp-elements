@@ -858,12 +858,14 @@ function arv_rt_apply_run_test( $email ) {
 	$_SERVER['REMOTE_ADDR']     = '127.0.0.1';
 	// Turnstile needs a browser token; the staff test skips only that check.
 	remove_filter( 'wpcf7_spam', 'wpcf7_turnstile_verify_response', 9 );
+	add_filter( 'wpcf7_skip_spam_check', '__return_true' );
 	// A 1x1 PNG stands in for the photo, so the photo copy runs too.
 	$png = wp_tempnam( 'rt-test.png' );
 	file_put_contents( $png, base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 	$GLOBALS['arv_rt_apply_test_files'] = array( 'rt-headshot' => $png );
 	$res = $cf->submit();
 	$GLOBALS['arv_rt_apply_test_files'] = array();
+	remove_filter( 'wpcf7_skip_spam_check', '__return_true' );
 	@unlink( $png ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink
 	return is_array( $res ) ? $res : array( 'status' => 'unknown' );
 }
