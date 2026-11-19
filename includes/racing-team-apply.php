@@ -724,19 +724,33 @@ function arv_rt_apply_map_svg() {
 	$by    = arv_rt_apply_state_regions();
 	$names = isset( $m['names'] ) ? $m['names'] : array();
 	$vb    = isset( $m['viewBox'] ) ? $m['viewBox'] : '0 0 975 610';
-	$out   = '<svg class="rt-map__svg" viewBox="' . esc_attr( $vb ) . '" role="img" aria-labelledby="rt-map-title" focusable="false"><title id="rt-map-title">Map of the United States. States where we take 2027 applicants are colored by region.</title>';
+	$out   = '<svg class="rt-map__svg" viewBox="' . esc_attr( $vb ) . '" role="group" aria-labelledby="rt-map-title" focusable="false"><title id="rt-map-title">Map of the United States. States where we take 2027 applicants are colored by region.</title>';
 	$on    = '';
 	foreach ( $m['states'] as $code => $d ) {
 		$nm = isset( $names[ $code ] ) ? $names[ $code ] : $code;
 		if ( isset( $by[ $code ] ) ) {
 			$r   = $by[ $code ];
-			$on .= '<path data-state="' . esc_attr( $code ) . '" data-name="' . esc_attr( $nm ) . '" data-region="' . esc_attr( $r['key'] ) . '" class="rt-st rt-st--on rt-r-' . esc_attr( $r['key'] ) . '" tabindex="0" aria-label="' . esc_attr( $nm . ': ' . $r['name'] . ' region' ) . '" d="' . esc_attr( $d ) . '"/>';
+			$on .= '<path data-state="' . esc_attr( $code ) . '" data-name="' . esc_attr( $nm ) . '" data-region="' . esc_attr( $r['key'] ) . '" class="rt-st rt-st--on rt-r-' . esc_attr( $r['key'] ) . '" tabindex="0" role="button" aria-label="' . esc_attr( $nm . ': ' . $r['name'] . ' region' ) . '" d="' . esc_attr( $d ) . '"><title>' . esc_html( $nm . ': ' . $r['name'] . ' region' ) . '</title></path>';
 		} else {
 			$out .= '<path data-state="' . esc_attr( $code ) . '" data-name="' . esc_attr( $nm ) . '" class="rt-st" d="' . esc_attr( $d ) . '"/>';
 		}
 	}
 	// Eligible states last so their outlines sit on top of the gray ones.
 	return $out . $on . '</svg>';
+}
+
+/**
+ * "Region lines are being finalized." while the region lists are provisional
+ * (anything but source "mantis").
+ *
+ * @param array $d rt-regions.json data.
+ * @return string
+ */
+function arv_rt_apply_regions_note( $d ) {
+	if ( is_array( $d ) && isset( $d['source'] ) && 'mantis' === $d['source'] ) {
+		return '';
+	}
+	return '<p class="rt-map__note">Region lines are being finalized.</p>';
 }
 
 /**
@@ -763,9 +777,11 @@ function arv_rt_apply_map_html() {
 	foreach ( arv_rt_apply_regions() as $r ) {
 		$h .= '<li class="rt-legend__item rt-r-' . esc_attr( $r['key'] ) . '" data-region="' . esc_attr( $r['key'] ) . '"><span class="rt-legend__sw" aria-hidden="true"></span>'
 			. '<span class="rt-legend__txt"><span class="rt-legend__name">' . esc_html( $r['name'] ) . '</span>'
+			. '<span class="rt-legend__states">' . esc_html( implode( ', ', $r['states'] ) ) . '</span>'
 			. '<a class="rt-legend__hub" href="' . esc_url( $r['hub_url'] ) . '">' . esc_html( $r['hub_name'] ) . '</a></span></li>';
 	}
 	$h .= '</ul>';
+	$h .= arv_rt_apply_regions_note( arv_rt_apply_data( 'rt-regions.json' ) );
 	return $h;
 }
 
@@ -832,6 +848,8 @@ function arv_rt_apply_page_css() {
 		. '.rt-v2 .rt-legend__sw{flex:0 0 auto;width:22px;height:22px;margin-top:1px}'
 		. '.rt-v2 .rt-legend__txt{display:flex;flex-direction:column;min-width:0}'
 		. '.rt-v2 .rt-legend__name{font-size:18px;font-weight:700;line-height:1.2;color:#272727}'
+		. '.rt-v2 .rt-legend__states{font-size:14px;line-height:1.4;color:var(--rt-muted);letter-spacing:.02em}'
+		. '.rt-v2 .rt-map__note{margin:20px auto 0;max-width:1060px;font-size:15px;color:var(--rt-muted)}'
 		. '.rt-v2 .rt-legend__hub{font-size:15px;font-weight:600;line-height:1.4;text-decoration:none}.rt-v2 .rt-legend__hub:hover{text-decoration:underline}'
 		. '.rt-v2 .rt-legend__off{display:flex;gap:12px;align-items:center;font-size:15px;color:var(--rt-muted)}'
 		. '.rt-v2 .rt-legend__off .rt-legend__sw{background:#e4e4e4}'

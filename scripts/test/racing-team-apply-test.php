@@ -433,6 +433,13 @@ ok( count( $all ) === preg_match_all( '/<path data-state="[A-Z]{2}"[^>]*rt-st--o
 ok( preg_match( '/<path data-state="NH"[^>]*class="rt-st rt-st--on rt-r-ne"/', $p ) && preg_match( '/<path data-state="TX"[^>]*class="rt-st"/', $p ), 'NH colored, TX gray' );
 ok( count( $regs['regions'] ) === preg_match_all( '/class="rt-legend__item/', $p ), 'legend item per region' );
 ok( false !== strpos( $p, 'href="https://www.aravaiparunning.com/white-mountain-endurance/"' ), 'legend links the hub' );
+ok( 'provisional' !== $regs['source'] || false !== strpos( $p, '<p class="rt-map__note">Region lines are being finalized.</p>' ), 'provisional note shows while regions are provisional' );
+ok( false !== strpos( arv_rt_apply_regions_note( array( 'source' => 'provisional' ) ), 'Region lines are being finalized.' ), 'note for a provisional source' );
+ok( '' === arv_rt_apply_regions_note( array( 'source' => 'mantis' ) ), 'no note once Mantis confirmed the regions' );
+ok( false !== strpos( $p, '<span class="rt-legend__states">CT, DE, MA, MD, ME, NH, NJ, NY, PA, RI, VT</span>' ) || count( $regs['regions'] ) === preg_match_all( '/<span class="rt-legend__states">[A-Z]{2}(, [A-Z]{2})*<\/span>/', $p ), 'legend lists the states of each region' );
+ok( count( $regs['regions'] ) === preg_match_all( '/<span class="rt-legend__states">[A-Z]{2}(, [A-Z]{2})*<\/span>/', $p ), 'states line on every legend item' );
+ok( count( $all ) === preg_match_all( '/<path data-state="[A-Z]{2}"[^>]*rt-st--on[^>]*tabindex="0" role="button"[^>]*><title>[^<]+ region<\/title><\/path>/', $p ), 'eligible states: role=button with a title' );
+ok( preg_match( '/<path data-state="AZ"[^>]*><title>Arizona: Arizona region<\/title>/', $p ), 'AZ title reads Arizona: Arizona region' );
 ok( false !== strpos( $p, 'Your region' ) && false !== strpos( $p, 'Outside our 2027 regions' ), 'region hint on the state picker' );
 ok( false !== strpos( $p, 'data-state="before"' ) && false !== strpos( $p, '<div class="rt-state-open" hidden>' ) && false !== strpos( $p, 'FORM-501' ), 'form block and window swap intact inside the page' );
 ok( false === strpos( $p, "\u{2014}" ), 'no em dash on the page' );
