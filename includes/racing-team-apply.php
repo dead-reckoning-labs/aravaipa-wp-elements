@@ -1709,19 +1709,21 @@ function arv_rt_apply_rr_payload( array $fields, array $race_ids ) {
 
 /**
  * Applicant IP from the request: Cloudflare's header (the origin only takes
- * Cloudflare traffic), else CF7's remote_ip.
+ * Cloudflare traffic), else CF7's remote_ip. Loopback and private addresses
+ * (the CLI test) give '', so RaceReach counts the server's own address.
  *
  * @param object|null $submission CF7 submission.
  * @return string
  */
 function arv_rt_apply_rr_request_ip( $submission = null ) {
 	$cf = isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ? trim( (string) $_SERVER['HTTP_CF_CONNECTING_IP'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	if ( '' !== $cf && filter_var( $cf, FILTER_VALIDATE_IP ) ) {
+	$pub = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+	if ( '' !== $cf && filter_var( $cf, FILTER_VALIDATE_IP, $pub ) ) {
 		return $cf;
 	}
 	if ( $submission && method_exists( $submission, 'get_meta' ) ) {
 		$ip = trim( (string) $submission->get_meta( 'remote_ip' ) );
-		if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+		if ( filter_var( $ip, FILTER_VALIDATE_IP, $pub ) ) {
 			return $ip;
 		}
 	}

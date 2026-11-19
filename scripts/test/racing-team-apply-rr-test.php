@@ -652,6 +652,8 @@ arv_rt_apply_rr_shutdown();
 ok( 1 === count( $GLOBALS['t_posts'] ), 'second shutdown does not push again' );
 unset( $_SERVER['HTTP_CF_CONNECTING_IP'] );
 ok( '198.51.100.7' === arv_rt_apply_rr_request_ip( WPCF7_Submission::$inst ), 'IP falls back to CF7 remote_ip' );
+WPCF7_Submission::$inst->meta = array( 'remote_ip' => '127.0.0.1' );
+ok( '' === arv_rt_apply_rr_request_ip( WPCF7_Submission::$inst ), 'loopback IP (CLI test) is left out' );
 $lines = file( $GLOBALS['t_up'] . '/arv-rt-apply/entries.jsonl', FILE_IGNORE_NEW_LINES );
 $e0    = json_decode( $lines[0], true );
 $e1    = json_decode( $lines[1], true );
