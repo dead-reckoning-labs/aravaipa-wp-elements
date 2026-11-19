@@ -1578,7 +1578,7 @@ function arv_rt_apply_rr_summit( $v ) {
 	$hits = array();
 	$pats = array(
 		'az' => '/\b(arizona|az|phoenix|tucson|flagstaff|sedona)\b/',
-		'co' => '/\b(colorado|denver|boulder)\b/',
+		'co' => '/\b(colorado|co|denver|boulder)\b/',
 		'gl' => '/\b(great lakes|michigan|wisconsin|minnesota|ohio|illinois)\b/',
 		'ne' => '/\b(northeast|north east|new england|new york|vermont|new hampshire|maine)\b/',
 	);
