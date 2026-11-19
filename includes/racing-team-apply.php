@@ -1440,6 +1440,29 @@ function arv_rt_apply_rr_norm( $s ) {
 }
 
 /**
+ * Significant words of a race name: lowercased, plural s dropped, without
+ * distances, parentheses and words every race shares (trail, run, night...).
+ *
+ * @param string $s Name.
+ * @return string[]
+ */
+function arv_rt_apply_rr_words( $s ) {
+	$s    = strtolower( preg_replace( '/\([^)]*\)/', ' ', str_replace( array( '&', '.' ), array( ' and ', '' ), (string) $s ) ) );
+	$stop = array( 'the', 'and', 'of', 'a', 'at', 'trail', 'run', 'running', 'race', 'night', 'ultra', 'festival', 'marathon', 'half', 'mile', 'miler', 'series', 'event' );
+	$out  = array();
+	foreach ( preg_split( '/[^a-z0-9]+/', $s ) as $w ) {
+		if ( strlen( $w ) > 3 && 's' === substr( $w, -1 ) && 'ss' !== substr( $w, -2 ) ) {
+			$w = substr( $w, 0, -1 );
+		}
+		if ( '' === $w || in_array( $w, $stop, true ) || preg_match( '/^\d+(k|m|mi)?$/', $w ) ) {
+			continue;
+		}
+		$out[] = $w;
+	}
+	return array_values( array_unique( $out ) );
+}
+
+/**
  * RaceReach race id for each site label; labels with no match are left out.
  *
  * @param string[] $labels Site labels ("Name, Mon D").
@@ -1454,7 +1477,11 @@ function arv_rt_apply_rr_match_races( $labels, $races ) {
 			continue;
 		}
 		$name = arv_rt_apply_rr_norm( $m[1] );
-		$md   = gmdate( 'm-d', strtotime( ARV_RT_APPLY_SEASON . ' ' . $m[2] . ' ' . $m[3] . ' 12:00 UTC' ) );
+		$dt   = DateTime::createFromFormat( '!Y M j', ARV_RT_APPLY_SEASON . ' ' . $m[2] . ' ' . $m[3], new DateTimeZone( 'UTC' ) );
+		if ( ! $dt ) {
+			continue;
+		}
+		$md   = $dt->format( 'm-d' );
 		$hits = array();
 		foreach ( (array) $races as $r ) {
 			if ( empty( $r['id'] ) || empty( $r['name'] ) ) {
@@ -1476,18 +1503,42 @@ function arv_rt_apply_rr_match_races( $labels, $races ) {
 			$hits = 1 === count( $same ) ? $same : array();
 		}
 		if ( ! $hits ) {
-			// Same date and one name inside the other ("Stillhouse 100K" and "The Stillhouse").
+			// Fuzzy: races within a day of the label's date, scored by shared
+			// name words ("Stump Jump 50k & 10 Miler" and "Stump Jump"). Only a
+			// clear single best is taken; a tie drops the label.
+			$want = arv_rt_apply_rr_words( $m[1] );
+			$day  = strtotime( ARV_RT_APPLY_SEASON . '-' . $md . ' 12:00 UTC' );
+			$best = 0.0;
+			$next = 0.0;
+			$pick = null;
 			foreach ( (array) $races as $r ) {
-				$rn = isset( $r['name'] ) ? arv_rt_apply_rr_norm( $r['name'] ) : '';
-				if ( '' === $rn || '' === $name || ! isset( $r['date'] ) || substr( (string) $r['date'], 5, 5 ) !== $md ) {
+				if ( empty( $r['id'] ) || empty( $r['date'] ) || ! $want ) {
 					continue;
 				}
-				if ( false !== strpos( $rn, $name ) || false !== strpos( $name, $rn ) ) {
-					$hits[] = $r;
+				$rd = strtotime( substr( (string) $r['date'], 0, 10 ) . ' 12:00 UTC' );
+				if ( ! $rd || abs( $rd - $day ) > 86400 ) {
+					continue;
+				}
+				$have = arv_rt_apply_rr_words( isset( $r['name'] ) ? $r['name'] : '' );
+				// A ride is never the run of the same name (Stunner Night Rides vs runs).
+				if ( in_array( 'ride', $want, true ) !== in_array( 'ride', $have, true ) ) {
+					continue;
+				}
+				$both = count( array_intersect( $want, $have ) );
+				if ( ! $both ) {
+					continue;
+				}
+				$score = $both / count( array_unique( array_merge( $want, $have ) ) ) + ( $rd === $day ? 0.001 : 0 );
+				if ( $score > $best ) {
+					$next = $best;
+					$best = $score;
+					$pick = $r;
+				} elseif ( $score > $next ) {
+					$next = $score;
 				}
 			}
-			if ( 1 !== count( $hits ) ) {
-				$hits = array();
+			if ( $pick && $best - $next > 0.01 ) {
+				$hits = array( $pick );
 			}
 		}
 		if ( $hits ) {

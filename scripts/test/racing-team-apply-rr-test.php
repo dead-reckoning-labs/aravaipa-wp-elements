@@ -481,6 +481,23 @@ $map = arv_rt_apply_rr_match_races( arv_rt_apply_race_options(), t_races() );
 ok( 'vegas-golden-night-and-day' === $map['Vegas Golden Night and Day, Feb 6'], '& and "and" match' );
 ok( 'the-stillhouse' === $map['Stillhouse 100K, Apr 17'], 'name match on the same date' );
 ok( ! isset( $map['Old Race, Dec 5'] ), '2026 race not offered' );
+$fuzzy = arv_rt_apply_rr_match_races(
+	array( 'Rabid Raccoon 25k, Jan 9', 'Run Around Tucson (RAT), Jan 23', 'Prickly Pedal Runs, Jan 31', 'Stump Jump 50k & 10 Miler, Mar 6', 'Run With The Roosters, Jun 20', 'ET Full Moon, Aug 14', 'Stunner Night Runs, Jul 10', 'Devil After Dark, Sep 4', 'Jangover Night Runs, Sep 18' ),
+	t_races()
+);
+ok(
+	array(
+		'Rabid Raccoon 25k, Jan 9'         => 'rabid-raccoon',
+		'Run Around Tucson (RAT), Jan 23'  => 'run-around-tucson',
+		'Prickly Pedal Runs, Jan 31'       => 'prickly-pedal-trail-race',
+		'Stump Jump 50k & 10 Miler, Mar 6' => 'stump-jump',
+		'Run With The Roosters, Jun 20'    => 'run-with-the-rooster',
+		'ET Full Moon, Aug 14'             => 'et-full-moon-midnight',
+		'Stunner Night Runs, Jul 10'       => 'insomniac-stunner',
+		'Jangover Night Runs, Sep 18'      => 'javelina-jangover-night-runs',
+	) === $fuzzy,
+	'fuzzy race match: distances, plurals, a day apart, rides kept apart, no match dropped'
+);
 $x = arv_rt_apply_rr_payload( t_fields(), array() );
 ok( ! isset( $x['race_plans'] ), 'no races list: race_plans left out' );
 t_reset();
