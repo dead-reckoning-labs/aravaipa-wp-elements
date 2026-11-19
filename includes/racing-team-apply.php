@@ -582,7 +582,7 @@ function arv_rt_apply_css() {
 		. '.rt-consent .wpcf7-list-item label{align-items:flex-start;font-size:15px;line-height:1.5}'
 		. '.rt-submit{padding:32px 0 8px}'
 		. '.rt-submit .wpcf7-submit{background:#d71f20;color:#fff;border:0;border-radius:0;padding:14px 36px;font-size:16px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;margin-top:12px}'
-		. '.rt-region-hint{display:flex;align-items:center;gap:10px;margin:10px 0 0;font-size:15px;line-height:1.4;color:#272727}.rt-region-hint a{font-weight:600}.rt-region-hint__sw{flex:0 0 auto;width:14px;height:14px}.rt-region-hint--out{color:#5f5f5f}'
+		. '.rt-region-hint{display:block;margin:10px 0 0;font-size:15px;line-height:1.5;color:#272727}.rt-region-hint a{font-weight:600;margin-left:6px;text-decoration:underline;text-underline-offset:3px}.rt-region-hint__sw{display:inline-block;width:13px;height:13px;margin-right:8px;vertical-align:-1px}.rt-region-hint--out{color:#5f5f5f}'
 		. '@media (max-width:767px){.rt-sec{grid-template-columns:1fr;gap:16px;padding:28px 0}.rt-sec-body{grid-template-columns:1fr}.rt-submit .wpcf7-submit{width:100%}}';
 }
 
@@ -779,7 +779,7 @@ function arv_rt_apply_region_css() {
 		$css .= '.rt-map .rt-r-' . $k . '{fill:' . $r['fill'] . '}'
 			. '.rt-map .rt-r-' . $k . ':hover,.rt-map .rt-r-' . $k . ':focus,.rt-map.is-hl-' . $k . ' .rt-r-' . $k . '{fill:' . $r['fill_hover'] . '}'
 			. '.rt-legend .rt-r-' . $k . ' .rt-legend__sw,.rt-region-hint.rt-r-' . $k . ' .rt-region-hint__sw{background:' . $r['fill'] . '}'
-			. '.rt-legend .rt-r-' . $k . ' .rt-legend__hub{color:' . $r['ink'] . '}';
+			. '.rt-legend .rt-r-' . $k . ' .rt-legend__hub,.rt-region-hint.rt-r-' . $k . ' a{color:' . $r['ink'] . '}';
 	}
 	return $css;
 }
@@ -872,7 +872,7 @@ function arv_rt_apply_page_js() {
 		// Map: hover or tap a state for its region and hub link.
 		. 'var m=document.getElementById("rt-map");if(!m)return;var tip=m.querySelector(".rt-map__tip"),H={};try{H=JSON.parse(m.dataset.hubs||"{}");}catch(e){}'
 		. 'function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c];});}'
-		. 'var pinned=null;function show(p,x,y){var k=p.getAttribute("data-region"),r=k&&H[k];tip.innerHTML=r?"<strong>"+esc(r.name)+"</strong><span>"+esc(p.getAttribute("data-name"))+"</span><a href=\\""+esc(r.hub)+"\\">"+esc(r.hubName)+"</a>":"<strong>"+esc(p.getAttribute("data-name"))+"</strong><span>Outside our 2027 regions</span>";'
+		. 'var pinned=null;function show(p,x,y){var k=p.getAttribute("data-region"),r=k&&H[k];var sn=p.getAttribute("data-name");tip.innerHTML=r?"<strong>"+esc(r.name)+"</strong>"+(sn!==r.name?"<span>"+esc(sn)+"</span>":"")+"<a href=\\""+esc(r.hub)+"\\">"+esc(r.hubName)+"</a>":"<strong>"+esc(p.getAttribute("data-name"))+"</strong><span>Outside our 2027 regions</span>";'
 		. 'var b=m.getBoundingClientRect();if(x==null){var q=p.getBoundingClientRect();x=q.left+q.width/2;y=q.top+q.height/2;}var lx=Math.max(100,Math.min(b.width-100,x-b.left)),ly=Math.max(70,y-b.top);tip.style.left=lx+"px";tip.style.top=ly+"px";tip.hidden=false;}'
 		. 'function hide(){if(!pinned)tip.hidden=true;}'
 		. 'm.addEventListener("pointermove",function(e){if(pinned||e.pointerType==="touch")return;var p=e.target.closest&&e.target.closest("path[data-state]");if(p)show(p,e.clientX,e.clientY);else hide();});'
