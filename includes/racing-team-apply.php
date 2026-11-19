@@ -471,6 +471,9 @@ function arv_rt_apply_dir() {
 /** Last saved entry in this request, for the Flamingo link. */
 $GLOBALS['arv_rt_apply_last'] = null;
 
+/** Sample files from the staff test only (name => path). */
+$GLOBALS['arv_rt_apply_test_files'] = array();
+
 /**
  * Before mail: keep the photo and resume file, and write the entry to the
  * private log, so the application survives even if mail and Flamingo fail.
@@ -497,6 +500,16 @@ function arv_rt_apply_before_mail( $form ) {
 			}
 			$ext  = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
 			$dest = $dir . '/' . $stamp . '-' . $slug . '-' . sanitize_key( $name ) . ( $i ? '-' . $i : '' ) . '.' . $ext;
+			if ( @copy( $path, $dest ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				$files[ $name ] = $dest;
+			}
+		}
+	}
+	// The staff test (wp arv-rt-apply test) cannot upload through PHP's
+	// upload checks, so it hands its sample photo over here instead.
+	foreach ( (array) $GLOBALS['arv_rt_apply_test_files'] as $name => $path ) {
+		if ( is_file( $path ) ) {
+			$dest = $dir . '/' . $stamp . '-' . $slug . '-' . sanitize_key( $name ) . '.' . strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
 			if ( @copy( $path, $dest ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				$files[ $name ] = $dest;
 			}
@@ -735,6 +748,14 @@ function arv_rt_apply_delete_email( $email ) {
 			}
 		}
 	}
+	// Flamingo also keeps an address book row per email; drop the test one.
+	if ( class_exists( 'Flamingo_Contact' ) && method_exists( 'Flamingo_Contact', 'search_by_email' ) ) {
+		$contact = Flamingo_Contact::search_by_email( $email );
+		if ( $contact && method_exists( $contact, 'id' ) && $contact->id() ) {
+			wp_delete_post( (int) $contact->id(), true );
+			$out['contact'] = 1;
+		}
+	}
 	$log = arv_rt_apply_dir() . '/entries.jsonl';
 	if ( is_file( $log ) ) {
 		$keep = array();
@@ -837,7 +858,13 @@ function arv_rt_apply_run_test( $email ) {
 	$_SERVER['REMOTE_ADDR']     = '127.0.0.1';
 	// Turnstile needs a browser token; the staff test skips only that check.
 	remove_filter( 'wpcf7_spam', 'wpcf7_turnstile_verify_response', 9 );
+	// A 1x1 PNG stands in for the photo, so the photo copy runs too.
+	$png = wp_tempnam( 'rt-test.png' );
+	file_put_contents( $png, base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+	$GLOBALS['arv_rt_apply_test_files'] = array( 'rt-headshot' => $png );
 	$res = $cf->submit();
+	$GLOBALS['arv_rt_apply_test_files'] = array();
+	@unlink( $png ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.unlink_unlink
 	return is_array( $res ) ? $res : array( 'status' => 'unknown' );
 }
 
@@ -865,6 +892,29 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::log( 'state ' . arv_rt_apply_state() . ' opens ' . gmdate( 'c', $o ) . ' closes ' . gmdate( 'c', $c ) );
 			WP_CLI::log( 'form id ' . arv_rt_apply_form_id() . ' recipients ' . arv_rt_apply_recipients() );
 			WP_CLI::log( 'test override ' . ( arv_rt_apply_test_override() ? 'on' : 'off' ) . ' entries ' . count( arv_rt_apply_entries() ) . ' races ' . count( arv_rt_apply_race_options() ) );
+		}
+
+		/**
+		 * Stored entries for one email: Flamingo id and saved files (JSON).
+		 *
+		 * --email=<e>
+		 *
+		 * @param array $args  Args.
+		 * @param array $assoc Flags.
+		 */
+		public function find( $args, $assoc ) {
+			$e   = strtolower( (string) $assoc['email'] );
+			$out = array();
+			foreach ( arv_rt_apply_entries() as $r ) {
+				if ( isset( $r['fields']['rt-email'] ) && strtolower( (string) $r['fields']['rt-email'] ) === $e ) {
+					$files = array();
+					foreach ( (array) $r['files'] as $k => $p ) {
+						$files[ $k ] = is_file( $p ) ? basename( $p ) : 'missing';
+					}
+					$out[] = array( 'flamingo_id' => $r['id'], 'files' => $files );
+				}
+			}
+			WP_CLI::log( wp_json_encode( $out ) );
 		}
 
 		/** Print the window state. */

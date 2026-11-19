@@ -373,7 +373,7 @@ ok( 1 === $d['log'] && 1 === $d['flamingo'], 'one log line, one entry' );
 $left = file( $dir . '/entries.jsonl' );
 ok( 1 === count( $left ) && false !== strpos( $left[0], 'ann@example.com' ), 'real entry kept in the log' );
 ok( is_file( $saved ), 'real photo kept' );
-ok( 0 === count( arv_rt_apply_delete_email( '' ) ) - 3, 'empty email deletes nothing' );
+ok( array( 'flamingo' => 0, 'files' => 0, 'log' => 0 ) === arv_rt_apply_delete_email( '' ), 'empty email deletes nothing' );
 
 // No RaceReach push configured: nothing leaves the server.
 ok( 0 === $GLOBALS['t_remote'], 'no remote calls' );
