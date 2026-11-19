@@ -582,6 +582,7 @@ function arv_rt_apply_css() {
 		. '.rt-consent .wpcf7-list-item label{align-items:flex-start;font-size:15px;line-height:1.5}'
 		. '.rt-submit{padding:32px 0 8px}'
 		. '.rt-submit .wpcf7-submit{background:#d71f20;color:#fff;border:0;border-radius:0;padding:14px 36px;font-size:16px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;margin-top:12px}'
+		. '.rt-region-hint{display:block;margin:10px 0 0;font-size:15px;line-height:1.5;color:#272727}.rt-region-hint a{font-weight:600;margin-left:6px;text-decoration:underline;text-underline-offset:3px}.rt-region-hint__sw{display:inline-block;width:13px;height:13px;margin-right:8px;vertical-align:-1px}.rt-region-hint--out{color:#5f5f5f}'
 		. '@media (max-width:767px){.rt-sec{grid-template-columns:1fr;gap:16px;padding:28px 0}.rt-sec-body{grid-template-columns:1fr}.rt-submit .wpcf7-submit{width:100%}}';
 }
 
@@ -604,7 +605,7 @@ function arv_rt_apply_shortcode() {
 	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
 		define( 'DONOTCACHEPAGE', true );
 	}
-	$h  = '<style>' . arv_rt_apply_css() . '</style>';
+	$h  = '<style>' . arv_rt_apply_css() . arv_rt_apply_region_css() . '</style>';
 	$h .= '<div class="rt-apply" id="rt-apply" data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '">';
 	$h .= '<p class="rt-state rt-state-before"' . ( 'before' === $state ? '' : ' hidden' ) . '>Applications open November 20.</p>';
 	$h .= '<p class="rt-state rt-state-closed"' . ( 'closed' === $state ? '' : ' hidden' ) . '>Applications for the 2027 team are closed.</p>';
@@ -614,10 +615,411 @@ function arv_rt_apply_shortcode() {
 		$h .= '<p class="rt-state">The application form is not available right now. Email marketing@aravaiparunning.com and we will help.</p>';
 	}
 	$h .= '</div>';
+	if ( $form ) {
+		$h .= arv_rt_apply_region_hint_js();
+	}
 	$h .= '<script>(function(){var r=document.getElementById("rt-apply");if(!r)return;function t(){var n=Date.now()/1000,o=+r.dataset.opens,c=+r.dataset.closes,s=n<o?"before":(n>c?"closed":"open");var was=r.dataset.state;r.dataset.state=s;["before","closed","open"].forEach(function(k){var e=r.querySelector(".rt-state-"+k);if(e)e.hidden=(k!==s);});if(was!==s&&s==="open"&&window.turnstile){r.querySelectorAll(".wpcf7-turnstile,.cf-turnstile").forEach(function(w){try{window.turnstile.reset(w);}catch(x){}});}}t();setInterval(t,15000);})();</script>';
 	return $h;
 }
 add_shortcode( 'arv_rt_apply', 'arv_rt_apply_shortcode' );
+
+/* ------------------------------------------------------------------------
+ * v2 page: [arv_rt_apply_page] (job 70sv0c, 0.101.21)
+ *
+ * The whole apply page in one shortcode: a full-width photo hero in the
+ * team page look, the asks and perks, a real US map of the regions we take
+ * applicants from, then the [arv_rt_apply] form. The map is drawn from
+ * includes/data/us-states-albers.json (us-atlas states, Albers USA, built by
+ * .scratch/70sv0c/map/gen-map.mjs) and colored from
+ * includes/data/rt-regions.json. Nothing here touches the window logic or
+ * the form itself: the form block is still arv_rt_apply_shortcode().
+ * --------------------------------------------------------------------- */
+
+/**
+ * A JSON file from includes/data, decoded once per request.
+ *
+ * @param string $file us-states-albers.json or rt-regions.json.
+ * @return array
+ */
+function arv_rt_apply_data( $file ) {
+	static $cache = array();
+	if ( ! isset( $cache[ $file ] ) ) {
+		$p = __DIR__ . '/data/' . basename( $file );
+		$d = is_readable( $p ) ? json_decode( (string) file_get_contents( $p ), true ) : null; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$cache[ $file ] = is_array( $d ) ? $d : array();
+	}
+	return $cache[ $file ];
+}
+
+/** Regions we take applicants from (rt-regions.json). */
+function arv_rt_apply_regions() {
+	$d = arv_rt_apply_data( 'rt-regions.json' );
+	return isset( $d['regions'] ) && is_array( $d['regions'] ) ? $d['regions'] : array();
+}
+
+/**
+ * State code => region info, with the matching answer on the region question.
+ *
+ * @return array[]
+ */
+function arv_rt_apply_state_regions() {
+	$opts = array();
+	foreach ( arv_rt_apply_fields() as $f ) {
+		if ( 'region' === $f['key'] ) {
+			$opts = $f['options'];
+		}
+	}
+	$out = array();
+	foreach ( arv_rt_apply_regions() as $r ) {
+		$opt = '';
+		foreach ( $opts as $o ) {
+			if ( $o === $r['name'] || false !== strpos( $o, $r['name'] ) ) {
+				$opt = $o;
+				break;
+			}
+		}
+		foreach ( $r['states'] as $s ) {
+			$out[ $s ] = array(
+				'key'    => $r['key'],
+				'name'   => $r['name'],
+				'hub'    => $r['hub_url'],
+				'hubName' => $r['hub_name'],
+				'option' => $opt,
+			);
+		}
+	}
+	return $out;
+}
+
+/**
+ * Script for the form: "Your region: X" under the state picker, and the
+ * region answer filled in when it is still empty. Never blocks submit.
+ *
+ * @return string
+ */
+function arv_rt_apply_region_hint_js() {
+	$map = wp_json_encode( arv_rt_apply_state_regions(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
+	return '<script>(function(){var R=' . $map . ';var root=document.getElementById("rt-apply");if(!root)return;'
+		. 'var sel=root.querySelector(\'select[name="rt-state"]\');if(!sel)return;'
+		. 'var box=document.createElement("p");box.className="rt-region-hint";box.setAttribute("aria-live","polite");box.hidden=true;'
+		. 'var wrap=sel.closest(".wpcf7-form-control-wrap")||sel;wrap.parentNode.insertBefore(box,wrap.nextSibling);'
+		. 'function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c];});}'
+		. 'function upd(){var v=sel.value,r=R[v];box.className="rt-region-hint";if(!v||v==="Choose"){box.hidden=true;box.innerHTML="";return;}box.hidden=false;'
+		. 'if(r){box.classList.add("rt-region-hint--in","rt-r-"+r.key);box.innerHTML=\'<span class="rt-region-hint__sw"></span>Your region: <strong>\'+esc(r.name)+\'</strong> <a href="\'+esc(r.hub)+\'" target="_blank" rel="noopener">\'+esc(r.hubName)+\'</a>\';'
+		. 'var picked=root.querySelector(\'input[name="rt-region"]:checked\');if(!picked&&r.option){var o=root.querySelector(\'input[name="rt-region"][value="\'+r.option.replace(/"/g,"")+\'"]\');if(o){o.checked=true;}}}'
+		. 'else{box.classList.add("rt-region-hint--out");box.innerHTML="Outside our 2027 regions. You can still apply: pick the region you would race for below.";}}'
+		. 'sel.addEventListener("change",upd);upd();})();</script>';
+}
+
+/**
+ * The inline SVG map: every state from us-atlas, eligible ones colored by region.
+ *
+ * @return string
+ */
+function arv_rt_apply_map_svg() {
+	$m = arv_rt_apply_data( 'us-states-albers.json' );
+	if ( empty( $m['states'] ) ) {
+		return '';
+	}
+	$by    = arv_rt_apply_state_regions();
+	$names = isset( $m['names'] ) ? $m['names'] : array();
+	$vb    = isset( $m['viewBox'] ) ? $m['viewBox'] : '0 0 975 610';
+	$out   = '<svg class="rt-map__svg" viewBox="' . esc_attr( $vb ) . '" role="group" aria-labelledby="rt-map-title" focusable="false"><title id="rt-map-title">Map of the United States. States where we take 2027 applicants are colored by region.</title>';
+	$on    = '';
+	foreach ( $m['states'] as $code => $d ) {
+		$nm = isset( $names[ $code ] ) ? $names[ $code ] : $code;
+		if ( isset( $by[ $code ] ) ) {
+			$r   = $by[ $code ];
+			$on .= '<path data-state="' . esc_attr( $code ) . '" data-name="' . esc_attr( $nm ) . '" data-region="' . esc_attr( $r['key'] ) . '" class="rt-st rt-st--on rt-r-' . esc_attr( $r['key'] ) . '" tabindex="0" role="button" aria-label="' . esc_attr( $nm . ': ' . $r['name'] . ' region' ) . '" d="' . esc_attr( $d ) . '"><title>' . esc_html( $nm . ': ' . $r['name'] . ' region' ) . '</title></path>';
+		} else {
+			$out .= '<path data-state="' . esc_attr( $code ) . '" data-name="' . esc_attr( $nm ) . '" class="rt-st" d="' . esc_attr( $d ) . '"/>';
+		}
+	}
+	// Eligible states last so their outlines sit on top of the gray ones.
+	return $out . $on . '</svg>';
+}
+
+/**
+ * "Region lines are being finalized." while the region lists are provisional
+ * (anything but source "mantis").
+ *
+ * @param array $d rt-regions.json data.
+ * @return string
+ */
+function arv_rt_apply_regions_note( $d ) {
+	if ( is_array( $d ) && isset( $d['source'] ) && 'mantis' === $d['source'] ) {
+		return '';
+	}
+	return '<p class="rt-map__note">Region lines are being finalized.</p>';
+}
+
+/**
+ * Map, tooltip and legend.
+ *
+ * @return string
+ */
+function arv_rt_apply_map_html() {
+	$svg = arv_rt_apply_map_svg();
+	if ( ! $svg ) {
+		return '';
+	}
+	$hubs = array();
+	foreach ( arv_rt_apply_regions() as $r ) {
+		$hubs[ $r['key'] ] = array(
+			'name'    => $r['name'],
+			'hub'     => $r['hub_url'],
+			'hubName' => $r['hub_name'],
+		);
+	}
+	$h  = '<div class="rt-map" id="rt-map" data-hubs="' . esc_attr( wp_json_encode( $hubs ) ) . '">' . $svg;
+	$h .= '<div class="rt-map__tip" role="status" aria-live="polite" hidden></div></div>';
+	$h .= '<ul class="rt-legend">';
+	foreach ( arv_rt_apply_regions() as $r ) {
+		$h .= '<li class="rt-legend__item rt-r-' . esc_attr( $r['key'] ) . '" data-region="' . esc_attr( $r['key'] ) . '"><span class="rt-legend__sw" aria-hidden="true"></span>'
+			. '<span class="rt-legend__txt"><span class="rt-legend__name">' . esc_html( $r['name'] ) . '</span>'
+			. '<span class="rt-legend__states">' . esc_html( implode( ', ', $r['states'] ) ) . '</span>'
+			. '<a class="rt-legend__hub" href="' . esc_url( $r['hub_url'] ) . '">' . esc_html( $r['hub_name'] ) . '</a></span></li>';
+	}
+	$h .= '</ul>';
+	$h .= arv_rt_apply_regions_note( arv_rt_apply_data( 'rt-regions.json' ) );
+	return $h;
+}
+
+/** Region colors as CSS, from rt-regions.json. */
+function arv_rt_apply_region_css() {
+	$d   = arv_rt_apply_data( 'rt-regions.json' );
+	$off = isset( $d['ineligible_fill'] ) ? $d['ineligible_fill'] : '#e4e4e4';
+	$css = '.rt-map .rt-st{fill:' . $off . ';stroke:#fff;stroke-width:.8;stroke-linejoin:round}';
+	foreach ( arv_rt_apply_regions() as $r ) {
+		$k    = sanitize_key( $r['key'] );
+		$css .= '.rt-map .rt-r-' . $k . '{fill:' . $r['fill'] . '}'
+			. '.rt-map .rt-r-' . $k . ':hover,.rt-map .rt-r-' . $k . ':focus,.rt-map.is-hl-' . $k . ' .rt-r-' . $k . '{fill:' . $r['fill_hover'] . '}'
+			. '.rt-legend .rt-r-' . $k . ' .rt-legend__sw,.rt-region-hint.rt-r-' . $k . ' .rt-region-hint__sw{background:' . $r['fill'] . '}'
+			. '.rt-legend .rt-r-' . $k . ' .rt-legend__hub,.rt-region-hint.rt-r-' . $k . ' a{color:' . $r['ink'] . '}';
+	}
+	return $css;
+}
+
+/** Page styles: full-width hero, plain type, no cards, no shadows. */
+function arv_rt_apply_page_css() {
+	return '.entry-wrap:has(.rt-v2){padding:0;background:transparent;border:0;box-shadow:none}'
+		. '.x-container.offset:has(.rt-v2){margin-top:0;margin-bottom:0}'
+		. 'body:has(.rt-v2){overflow-x:clip}'
+		. '.rt-v2{text-align:left;color:#272727;--rt-red:#ff2a13;--rt-btn:#d41a06;--rt-ink:#272727;--rt-muted:#5f5f5f}'
+		. '.rt-v2 .rt-hero{position:relative;width:100vw;margin-left:calc(50% - 50vw);min-height:min(86vh,800px);display:flex;align-items:flex-end;background:#1d2322;color:#fff;overflow:hidden}'
+		. '.rt-v2 .rt-hero__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;margin:0;max-width:none;border:0}'
+		. '.rt-v2 .rt-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.62) 0%,rgba(0,0,0,.38) 34%,rgba(0,0,0,0) 58%),linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.45) 100%)}'
+		. '.rt-v2 .rt-hero__img{object-position:var(--rt-focal,50% 40%)}'
+		. '.rt-v2 .rt-hero__credit{position:absolute;z-index:1;right:18px;bottom:12px;margin:0;font-size:11px;letter-spacing:.04em;color:rgba(255,255,255,.75)}'
+		. '.rt-v2 .rt-hero__in{position:relative;z-index:1;width:100%;max-width:1440px;margin:0 auto;padding:0 64px 64px;box-sizing:border-box}'
+		. '.rt-v2 .rt-hero__txt{max-width:560px}'
+		. '.rt-v2 .rt-hero__kicker{margin:0 0 14px;font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#fff}'
+		. '.rt-v2 .rt-hero h1{margin:0 0 18px;font-size:clamp(40px,4.7vw,70px);line-height:.98;font-weight:800;letter-spacing:-.02em;color:#fff;text-transform:none}'
+		. '.rt-v2 .rt-hero__dates{margin:0 0 30px;font-size:clamp(17px,1.6vw,21px);line-height:1.45;max-width:640px;color:#fff}'
+		. '.rt-v2 .rt-hero__row{display:flex;flex-wrap:wrap;align-items:center;gap:28px 40px}'
+		. '.rt-v2 .rt-cta{display:inline-block;background:var(--rt-btn);color:#fff;text-decoration:none;font-size:19px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:18px 38px;border-radius:2px;line-height:1}'
+		. '.rt-v2 .rt-cta:hover,.rt-v2 .rt-cta:focus{background:#a91403;color:#fff}'
+		. '.rt-v2 .rt-cta--wait{background:#fff;color:#272727}.rt-v2 .rt-cta--wait:hover,.rt-v2 .rt-cta--wait:focus{background:#f0f0f0;color:#272727}'
+		. '.rt-v2 .rt-cta--closed{background:rgba(255,255,255,.18);color:#fff;pointer-events:none}'
+		. '.rt-v2 .rt-lockup{display:flex;align-items:center;gap:28px}'
+		. '.rt-v2 .rt-lockup img{display:block;width:auto;border:0;max-width:none;filter:brightness(0) invert(1)}'
+		. '.rt-v2 .rt-lockup .rt-lockup__hoka{height:34px}.rt-v2 .rt-lockup .rt-lockup__ath{height:36px}'
+		. '.rt-v2 .rt-lockup__x{width:1px;height:34px;background:rgba(255,255,255,.55)}'
+		. '.rt-v2 .rt-body{width:100vw;margin-left:calc(50% - 50vw);background:#fff}'
+		. '.rt-v2 .rt-wrap{max-width:1200px;margin:0 auto;padding:0 40px;box-sizing:border-box}'
+		. '.rt-v2 .rt-block{padding:88px 0 0}'
+		. '.rt-v2 .rt-eyebrow{display:block;margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--rt-muted)}'
+		. '.rt-v2 h2.rt-h2{margin:0 0 14px;font-size:clamp(30px,3.4vw,46px);line-height:1.05;font-weight:800;letter-spacing:-.01em;color:#272727;text-transform:none}'
+		. '.rt-v2 .rt-lead{margin:0 0 36px;font-size:19px;line-height:1.5;color:var(--rt-muted);max-width:720px}'
+		. '.rt-v2 .rt-cols{display:grid;grid-template-columns:1fr 1fr;gap:72px}'
+		. '.rt-v2 .rt-col h2.rt-h2{padding-bottom:18px;border-bottom:1px solid rgba(0,0,0,.14);margin-bottom:6px}'
+		. '.rt-v2 .rt-list{list-style:none;margin:0;padding:0}'
+		. '.rt-v2 .rt-list li{display:flex;gap:18px;align-items:baseline;margin:0;padding:18px 0;border-bottom:1px solid rgba(0,0,0,.08);font-size:19px;line-height:1.45}'
+		. '.rt-v2 .rt-list .rt-list__n{flex:0 0 auto;font-size:15px;font-weight:700;color:var(--rt-btn);font-variant-numeric:tabular-nums;min-width:24px}'
+		. '.rt-v2 .rt-map{position:relative;max-width:1060px;margin:0 auto}'
+		. '.rt-v2 .rt-map__svg{display:block;width:100%;height:auto;overflow:visible}'
+		. '.rt-v2 .rt-st--on{cursor:pointer;transition:fill .15s}.rt-v2 .rt-st--on:focus{outline:none;stroke:#272727;stroke-width:1.6}'
+		. '.rt-v2 .rt-map.is-hl .rt-st--on{opacity:.35}.rt-v2 .rt-map.is-hl .rt-st--on.is-hl{opacity:1}'
+		. '.rt-v2 .rt-map__tip{position:absolute;z-index:3;min-width:180px;max-width:260px;background:#272727;color:#fff;padding:12px 14px;font-size:15px;line-height:1.35;transform:translate(-50%,calc(-100% - 14px));pointer-events:auto}'
+		. '.rt-v2 .rt-map__tip strong{display:block;font-size:17px}.rt-v2 .rt-map__tip span{display:block;color:rgba(255,255,255,.75);font-size:14px}'
+		. '.rt-v2 .rt-map__tip a{display:inline-block;margin-top:6px;color:#fff;font-weight:700;text-decoration:underline;text-underline-offset:3px}'
+		. '.rt-v2 .rt-legend{list-style:none;margin:36px auto 0;padding:0;max-width:1060px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px 28px}'
+		. '.rt-v2 .rt-legend__item{display:flex;gap:12px;align-items:flex-start;margin:0;cursor:default}'
+		. '.rt-v2 .rt-legend__sw{flex:0 0 auto;width:22px;height:22px;margin-top:1px}'
+		. '.rt-v2 .rt-legend__txt{display:flex;flex-direction:column;min-width:0}'
+		. '.rt-v2 .rt-legend__name{font-size:18px;font-weight:700;line-height:1.2;color:#272727}'
+		. '.rt-v2 .rt-legend__states{font-size:14px;line-height:1.4;color:var(--rt-muted);letter-spacing:.02em}'
+		. '.rt-v2 .rt-map__note{margin:20px auto 0;max-width:1060px;font-size:15px;color:var(--rt-muted)}'
+		. '.rt-v2 .rt-legend__hub{font-size:15px;font-weight:600;line-height:1.4;text-decoration:none}.rt-v2 .rt-legend__hub:hover{text-decoration:underline}'
+		. '.rt-v2 .rt-legend__off{display:flex;gap:12px;align-items:center;font-size:15px;color:var(--rt-muted)}'
+		. '.rt-v2 .rt-legend__off .rt-legend__sw{background:#e4e4e4}'
+		. '.rt-v2 .rt-formblock{padding-bottom:96px}'
+		. '.rt-v2 .rt-back{margin:48px 0 0;font-size:17px;font-weight:700}.rt-v2 .rt-back a{color:var(--rt-btn)}'
+		// The form, bigger and plainer inside the v2 page.
+		. '.rt-v2 .rt-apply{max-width:none}'
+		. '.rt-v2 .rt-state{font-size:22px;margin:8px 0 0}'
+		. '.rt-v2 .rt-sec{border-top:1px solid rgba(0,0,0,.14);padding:48px 0;gap:56px}'
+		. '.rt-v2 .rt-n{display:block;font-size:44px;line-height:1;font-weight:800;color:var(--rt-btn);letter-spacing:-.02em;margin-bottom:10px}'
+		. '.rt-v2 .rt-sec-head h3{font-size:28px;font-weight:800}'
+		. '.rt-v2 .rt-sec-head p{font-size:16px;color:var(--rt-muted)}'
+		. '.rt-v2 .rt-sec-body{gap:26px 28px}'
+		. '.rt-v2 .rt-l{font-size:16px;margin-bottom:6px;color:#272727}'
+		. '.rt-v2 .rt-h{font-size:14px;color:var(--rt-muted);margin-bottom:8px}'
+		. '.rt-v2 .rt-form input[type=text],.rt-v2 .rt-form input[type=email],.rt-v2 .rt-form input[type=tel],.rt-v2 .rt-form input[type=date],.rt-v2 .rt-form input[type=url],.rt-v2 .rt-form select,.rt-v2 .rt-form textarea{min-height:54px;padding:14px 16px;font-size:17px;border:1px solid #b9b9b9;border-radius:2px;color:#272727;box-shadow:none}'
+		. '.rt-v2 .rt-form textarea{min-height:0}'
+		. '.rt-v2 .rt-form input:focus,.rt-v2 .rt-form select:focus,.rt-v2 .rt-form textarea:focus{outline:2px solid #2a5e6b;outline-offset:1px;border-color:#2a5e6b}'
+		. '.rt-v2 .rt-form .wpcf7-list-item label{font-size:16px;min-height:36px}'
+		. '.rt-v2 .rt-form input[type=checkbox],.rt-v2 .rt-form input[type=radio]{width:20px;height:20px;accent-color:#2a5e6b}'
+		. '.rt-v2 .rt-submit{padding:40px 0 0;border-top:1px solid rgba(0,0,0,.14)}'
+		. '.rt-v2 .rt-submit .wpcf7-submit{background:var(--rt-btn);padding:20px 48px;font-size:18px;border-radius:2px}'
+		. '.rt-v2 .rt-submit .wpcf7-submit:hover{background:#a91403}'
+		. '@media (max-width:1023px){.rt-v2 .rt-legend{grid-template-columns:repeat(2,minmax(0,1fr))}}'
+		. '@media (max-width:767px){.rt-v2 .rt-hero{display:block;min-height:0;background:#1d2322}.rt-v2 .rt-hero__img{position:relative;display:block;height:min(92vw,400px);object-position:var(--rt-focal-m,var(--rt-focal,50% 40%))}.rt-v2 .rt-hero::after{display:none}.rt-v2 .rt-hero__in{padding:28px 22px 36px}.rt-v2 .rt-hero__credit{top:10px;bottom:auto;right:12px}.rt-v2 .rt-hero__row{gap:22px}.rt-v2 .rt-cta{display:block;text-align:center;width:100%;box-sizing:border-box}'
+		. '.rt-v2 .rt-lockup .rt-lockup__hoka{height:26px}.rt-v2 .rt-lockup .rt-lockup__ath{height:28px}.rt-v2 .rt-lockup__x{height:26px}'
+		. '.rt-v2 .rt-wrap{padding:0 22px}.rt-v2 .rt-block{padding-top:56px}.rt-v2 .rt-cols{grid-template-columns:1fr;gap:48px}.rt-v2 .rt-list li{font-size:17px;padding:14px 0}.rt-v2 .rt-lead{font-size:17px;margin-bottom:24px}'
+		. '.rt-v2 .rt-legend{grid-template-columns:1fr;gap:16px;margin-top:24px}.rt-v2 .rt-sec{padding:36px 0;gap:18px}.rt-v2 .rt-n{font-size:36px}.rt-v2 .rt-formblock{padding-bottom:64px}}';
+}
+
+/**
+ * Map tooltip and legend highlight, plus the hero button that follows the window.
+ *
+ * @return string
+ */
+function arv_rt_apply_page_js() {
+	return '<script>(function(){'
+		// Hero button: same window as the form, swapped in the browser so a cached page still flips at midnight.
+		. 'var b=document.getElementById("rt-cta");if(b){var tk=function(){var n=Date.now()/1000,o=+b.dataset.opens,c=+b.dataset.closes,s=n<o?"before":(n>c?"closed":"open");if(b.dataset.state===s)return;b.dataset.state=s;'
+		. 'b.textContent=s==="open"?"Apply now":(s==="before"?"Opens Nov 20":"Applications closed");b.className="rt-cta"+(s==="open"?"":(s==="before"?" rt-cta--wait":" rt-cta--closed"));};b.dataset.state="";tk();setInterval(tk,15000);}'
+		// Map: hover or tap a state for its region and hub link.
+		. 'var m=document.getElementById("rt-map");if(!m)return;var tip=m.querySelector(".rt-map__tip"),H={};try{H=JSON.parse(m.dataset.hubs||"{}");}catch(e){}'
+		. 'function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c];});}'
+		. 'var pinned=null;function show(p,x,y){var k=p.getAttribute("data-region"),r=k&&H[k];var sn=p.getAttribute("data-name");tip.innerHTML=r?"<strong>"+esc(r.name)+"</strong>"+(sn!==r.name?"<span>"+esc(sn)+"</span>":"")+"<a href=\\""+esc(r.hub)+"\\">"+esc(r.hubName)+"</a>":"<strong>"+esc(p.getAttribute("data-name"))+"</strong><span>Outside our 2027 regions</span>";'
+		. 'var b=m.getBoundingClientRect();if(x==null){var q=p.getBoundingClientRect();x=q.left+q.width/2;y=q.top+q.height/2;}var lx=Math.max(100,Math.min(b.width-100,x-b.left)),ly=Math.max(70,y-b.top);tip.style.left=lx+"px";tip.style.top=ly+"px";tip.hidden=false;}'
+		. 'function hide(){if(!pinned)tip.hidden=true;}'
+		. 'm.addEventListener("pointermove",function(e){if(pinned||e.pointerType==="touch")return;var p=e.target.closest&&e.target.closest("path[data-state]");if(p)show(p,e.clientX,e.clientY);else hide();});'
+		. 'm.addEventListener("pointerleave",hide);'
+		. 'm.addEventListener("click",function(e){if(e.target.closest("a"))return;var p=e.target.closest&&e.target.closest("path[data-state]");if(!p){pinned=null;tip.hidden=true;return;}pinned=p;show(p,e.clientX,e.clientY);});'
+		. 'm.addEventListener("focusin",function(e){var p=e.target.closest&&e.target.closest("path[data-state]");if(p){pinned=p;show(p);}});'
+		. 'm.addEventListener("keydown",function(e){if(e.key==="Escape"){pinned=null;tip.hidden=true;}if(e.key==="Enter"&&pinned){var a=tip.querySelector("a");if(a)a.click();}});'
+		. 'document.addEventListener("click",function(e){if(!m.contains(e.target)){pinned=null;tip.hidden=true;}});'
+		// Legend: hovering a region lights its states.
+		. 'document.querySelectorAll(".rt-legend__item").forEach(function(li){var k=li.getAttribute("data-region");li.addEventListener("mouseenter",function(){m.classList.add("is-hl");m.querySelectorAll(".rt-r-"+k).forEach(function(p){p.classList.add("is-hl");});});li.addEventListener("mouseleave",function(){m.classList.remove("is-hl");m.querySelectorAll(".is-hl").forEach(function(p){p.classList.remove("is-hl");});});});'
+		. '})();</script>';
+}
+
+/**
+ * Hero image tag: a media library attachment (hero="ID") or a plain URL (hero_url).
+ *
+ * @param array $a Shortcode attributes.
+ * @return string
+ */
+function arv_rt_apply_hero_img( $a ) {
+	$alt   = (string) $a['alt'];
+	$focal = preg_replace( '/[^0-9.% a-z]/', '', strtolower( (string) $a['focal'] ) );
+	$fm    = preg_replace( '/[^0-9.% a-z]/', '', strtolower( (string) $a['focal_mobile'] ) );
+	$style = ( $focal ? '--rt-focal:' . $focal . ';' : '' ) . ( $fm ? '--rt-focal-m:' . $fm . ';' : '' );
+	$id    = (int) $a['hero'];
+	if ( $id && function_exists( 'wp_get_attachment_image' ) ) {
+		$img = wp_get_attachment_image(
+			$id,
+			'full',
+			false,
+			array(
+				'class'         => 'rt-hero__img',
+				'alt'           => $alt,
+				'sizes'         => '100vw',
+				'style'         => $style,
+				'loading'       => 'eager',
+				'fetchpriority' => 'high',
+				'decoding'      => 'async',
+			)
+		);
+		if ( $img ) {
+			return $img;
+		}
+	}
+	$url = (string) $a['hero_url'];
+	if ( $url && false === strpos( $url, 'ytimg.com' ) ) {
+		return '<img class="rt-hero__img" src="' . esc_url( $url ) . '" alt="' . esc_attr( $alt ) . '" style="' . esc_attr( $style ) . '" fetchpriority="high" decoding="async">';
+	}
+	return '';
+}
+
+/**
+ * [arv_rt_apply_page hero="ID" focal="50% 40%" alt="..."]: the whole v2 page.
+ *
+ * @param array|string $atts Attributes.
+ * @return string
+ */
+function arv_rt_apply_page_shortcode( $atts = array() ) {
+	$a = shortcode_atts(
+		array(
+			'hero'     => (string) get_option( 'arv_rt_apply_hero', '' ),
+			'hero_url' => '',
+			'focal'        => '50% 40%',
+			'focal_mobile' => '',
+			'credit'       => '',
+			'alt'          => 'An Aravaipa Racing Team runner racing an Aravaipa trail race',
+		),
+		is_array( $atts ) ? $atts : array(),
+		'arv_rt_apply_page'
+	);
+	list( $opens, $closes ) = arv_rt_apply_window();
+	$state = arv_rt_apply_state();
+	$cta   = 'open' === $state ? 'Apply now' : ( 'before' === $state ? 'Opens Nov 20' : 'Applications closed' );
+	$ccls  = 'rt-cta' . ( 'open' === $state ? '' : ( 'before' === $state ? ' rt-cta--wait' : ' rt-cta--closed' ) );
+	$up    = 'https://www.aravaiparunning.com/wp-content/uploads/';
+
+	$asks  = array(
+		'Race at least one Aravaipa event in 2027.',
+		'Wear the team kit at every event you race.',
+		'Volunteer one shift at an Aravaipa event: a race, a group run or course marking.',
+	);
+	$gets  = array(
+		'Unlimited entries to Aravaipa races (Cocodona excluded).',
+		'The 2027 team kit and a shoe allotment from HOKA.',
+		'Performance bonuses for big results.',
+		'Team summits to train, eat and take photos together.',
+	);
+	$list = function ( $items ) {
+		$o = '<ol class="rt-list">';
+		foreach ( $items as $i => $t ) {
+			$o .= '<li><span class="rt-list__n">' . sprintf( '%02d', $i + 1 ) . '</span><span>' . esc_html( $t ) . '</span></li>';
+		}
+		return $o . '</ol>';
+	};
+
+	$h  = '<style>' . arv_rt_apply_page_css() . '</style>';
+	$h .= '<div class="rt-v2">';
+	$h .= '<section class="rt-hero" aria-labelledby="rt-hero-title">' . arv_rt_apply_hero_img( $a ) . '<div class="rt-hero__in"><div class="rt-hero__txt">';
+	$h .= '<p class="rt-hero__kicker">Aravaipa Racing Team</p>';
+	$h .= '<h1 id="rt-hero-title">Apply for the 2027 Aravaipa Racing Team</h1>';
+	$h .= '<p class="rt-hero__dates">Applications open November 20 and close November 30 at 11:59 PM Arizona time.</p>';
+	$h .= '<div class="rt-hero__row"><a id="rt-cta" class="' . esc_attr( $ccls ) . '" href="#rt-apply-form" data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '">' . esc_html( $cta ) . '</a>';
+	$h .= '<div class="rt-lockup"><a href="https://www.hoka.com/en/us/" target="_blank" rel="noopener"><img class="rt-lockup__hoka" src="' . $up . '2022/10/HOKA_Logo_Process-Blue-300x82.png" srcset="' . $up . '2022/10/HOKA_Logo_Process-Blue-768x210.png 768w, ' . $up . '2022/10/HOKA_Logo_Process-Blue-300x82.png 300w" sizes="160px" width="300" height="82" alt="HOKA"></a>'
+		. '<span class="rt-lockup__x" aria-hidden="true"></span>'
+		. '<a href="https://www.athletico.com/" target="_blank" rel="noopener"><img class="rt-lockup__ath" src="' . $up . 'athletico-physical-therapy-logo-300x72.png" srcset="' . $up . 'athletico-physical-therapy-logo-768x184.png 768w, ' . $up . 'athletico-physical-therapy-logo-300x72.png 300w" sizes="160px" width="300" height="72" alt="Athletico Physical Therapy"></a></div>';
+	$h .= '</div></div></div>' . ( '' !== trim( (string) $a['credit'] ) ? '<p class="rt-hero__credit">' . esc_html( $a['credit'] ) . '</p>' : '' ) . '</section>';
+
+	$h .= '<div class="rt-body"><div class="rt-wrap">';
+	$h .= '<section class="rt-block rt-cols"><div class="rt-col"><h2 class="rt-h2">What the team asks</h2>' . $list( $asks ) . '</div>';
+	$h .= '<div class="rt-col"><h2 class="rt-h2">What members get</h2>' . $list( $gets ) . '</div></section>';
+
+	$map = arv_rt_apply_map_html();
+	if ( $map ) {
+		$h .= '<section class="rt-block rt-regions" aria-labelledby="rt-regions-title"><span class="rt-eyebrow">Regions</span><h2 class="rt-h2" id="rt-regions-title">Where we take applicants</h2>';
+		$h .= '<p class="rt-lead">Each member races for one region. Tap a state to see its region and races.</p>' . $map . '</section>';
+	}
+
+	$h .= '<section class="rt-block rt-formblock" id="rt-apply-form" aria-labelledby="rt-form-title"><span class="rt-eyebrow">Application</span><h2 class="rt-h2" id="rt-form-title">Apply</h2>';
+	$h .= '<p class="rt-lead">Six short sections. About 15 minutes.</p>';
+	$h .= arv_rt_apply_shortcode();
+	$h .= '<p class="rt-back"><a href="/racing-team/">Meet the current team</a></p></section>';
+	$h .= '</div></div></div>';
+	$h .= arv_rt_apply_page_js();
+	return $h;
+}
+add_shortcode( 'arv_rt_apply_page', 'arv_rt_apply_page_shortcode' );
 
 /**
  * Entries for export: Flamingo first, the private log as the fallback.
