@@ -539,7 +539,18 @@ add_action( 'wpcf7_after_flamingo', 'arv_rt_apply_after_flamingo', 10, 1 );
 
 /** Styles: the site's type, plain fields, no cards, no shadows. */
 function arv_rt_apply_css() {
-	return '.rt-apply{max-width:1080px;margin:0 auto;text-align:left}'
+	// The page around the form mirrors the team page's own styles (scoped there to .page-id-79463).
+	return '.arv-rt-page{text-align:left}.arv-rt-page .arv-team-h1{text-align:center;margin:0 0 1.5rem}'
+		. '.arv-rt-page .arv-team-intro{max-width:760px;margin-left:auto;margin-right:auto;text-align:center}'
+		. '.arv-rt-page .arv-team-sponsors{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2.5rem;margin:1.75rem auto 2.25rem}'
+		. '.arv-rt-page .arv-team-sponsors img{display:block;width:auto;max-width:100%;border:0;opacity:.9}'
+		. '.arv-rt-page .arv-team-sponsor--hoka img{height:42px}.arv-rt-page .arv-team-sponsor--athletico img{height:44px}'
+		. '.arv-rt-cols{display:grid;grid-template-columns:1fr 1fr;gap:48px;max-width:1080px;margin:0 auto 24px}'
+		. '.arv-rt-col h2{font-size:24px;margin:0 0 12px}.arv-rt-col ul{margin:0;padding-left:1.25rem}.arv-rt-col li{margin-bottom:.5rem}'
+		. '.arv-rt-back{text-align:center;margin:40px 0 0;font-weight:600}'
+		. '@media (max-width:767px){.arv-rt-cols{grid-template-columns:1fr;gap:24px}}'
+		. '@media (max-width:480px){.arv-rt-page .arv-team-sponsors{gap:1.5rem;flex-wrap:nowrap}.arv-rt-page .arv-team-sponsor--hoka img{height:34px}.arv-rt-page .arv-team-sponsor--athletico img{height:36px}}'
+		. '.rt-apply{max-width:1080px;margin:0 auto;text-align:left}'
 		. '.rt-apply [hidden]{display:none!important}'
 		. '.rt-state{font-size:20px;line-height:1.5;margin:24px 0}'
 		. '.rt-sec{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:48px;padding:40px 0}'
