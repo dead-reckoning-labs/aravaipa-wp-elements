@@ -531,6 +531,16 @@ function arv_rt_apply_before_mail( $form ) {
 		$entry['fields'][ 'rt-consent-' . $c['key'] ] = arv_rt_apply_posted( 'rt-consent-' . $c['key'] ) ? 'yes' : 'no';
 	}
 	file_put_contents( $dir . '/entries.jsonl', wp_json_encode( $entry ) . "\n", FILE_APPEND | LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+	// For the RaceReach push only (kept in memory, not in the log line above):
+	// the applicant IP and the checkbox answers as real lists.
+	$entry['ip']    = function_exists( 'arv_rt_apply_rr_request_ip' ) ? arv_rt_apply_rr_request_ip( $s ) : '';
+	$entry['lists'] = array();
+	foreach ( array( 'rt-disciplines', 'rt-race-plans' ) as $k ) {
+		$raw = $s->get_posted_data( $k );
+		if ( is_array( $raw ) ) {
+			$entry['lists'][ $k ] = $raw;
+		}
+	}
 	$GLOBALS['arv_rt_apply_last'] = $entry;
 }
 add_action( 'wpcf7_before_send_mail', 'arv_rt_apply_before_mail', 5, 1 );
@@ -547,6 +557,10 @@ function arv_rt_apply_after_flamingo( $result ) {
 	}
 	update_post_meta( (int) $result['flamingo_inbound_id'], '_arv_rt_files', $e['files'] );
 	update_post_meta( (int) $result['flamingo_inbound_id'], '_arv_rt_email', $e['email'] );
+	if ( ! empty( $e['ip'] ) ) {
+		update_post_meta( (int) $result['flamingo_inbound_id'], '_arv_rt_ip', $e['ip'] );
+	}
+	$GLOBALS['arv_rt_apply_last']['flamingo_id'] = (int) $result['flamingo_inbound_id'];
 }
 add_action( 'wpcf7_after_flamingo', 'arv_rt_apply_after_flamingo', 10, 1 );
 
@@ -1054,7 +1068,7 @@ function arv_rt_apply_entries() {
 		if ( is_file( $log ) ) {
 			foreach ( file( $log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
 				$e = json_decode( $line, true );
-				if ( is_array( $e ) ) {
+				if ( is_array( $e ) && isset( $e['fields'] ) && empty( $e['kind'] ) ) {
 					$rows[] = array(
 						'id'     => 0,
 						'at'     => $e['at'],
@@ -1082,6 +1096,7 @@ function arv_rt_apply_export_header() {
 		$h[] = 'consent-' . $c['key'];
 	}
 	$h[] = 'flamingo_id';
+	$h[] = 'rr_status';
 	return $h;
 }
 
@@ -1111,6 +1126,7 @@ function arv_rt_apply_export_csv( $fh ) {
 			$row[] = ( '' !== $v && 'no' !== $v && '0' !== $v ) ? 'yes' : 'no';
 		}
 		$row[] = $r['id'];
+		$row[] = arv_rt_apply_rr_status( $r['id'] );
 		fputcsv( $fh, $row, ',', '"', '\\' );
 		++$n;
 	}
@@ -1163,8 +1179,8 @@ function arv_rt_apply_delete_email( $email ) {
 		$keep = array();
 		foreach ( file( $log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) as $line ) {
 			$e = json_decode( $line, true );
-			if ( is_array( $e ) && strtolower( (string) $e['email'] ) === $email ) {
-				foreach ( (array) $e['files'] as $p ) {
+			if ( is_array( $e ) && isset( $e['email'] ) && strtolower( (string) $e['email'] ) === $email ) {
+				foreach ( isset( $e['files'] ) ? (array) $e['files'] : array() as $p ) {
 					if ( is_file( $p ) ) {
 						unlink( $p ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
 						++$out['files'];
@@ -1272,6 +1288,947 @@ function arv_rt_apply_run_test( $email ) {
 	return is_array( $res ) ? $res : array( 'status' => 'unknown' );
 }
 
+/* ------------------------------------------------------------------------
+ * RaceReach push (job wrheyv, 0.101.22)
+ *
+ * After CF7 has saved the entry (Flamingo and the private log) and mailed
+ * the team managers, each application is also posted to RaceReach, signed
+ * with the shared apply-service secret (racereach docs/apply-service.md).
+ * It runs after the response has gone back to the applicant, so they never
+ * wait on RaceReach or see its errors. Off unless the option
+ * arv_rt_apply_rr_push is on and a secret exists (wp-config constant
+ * RR_APPLY_SERVICE_SECRET, else the option arv_rt_apply_rr_secret).
+ *
+ * Every result is kept on the Flamingo entry (_arv_rt_rr), in the private
+ * entries.jsonl and in a short ring log (arv_rt_apply_log, masked email,
+ * never the token or secret). Network errors, 5xx, 429 and 401 are retried
+ * at +5 min, +30 min and +3 h, then marked failed; anything not sent shows
+ * in the CSV export's rr_status column, so nothing is lost.
+ * --------------------------------------------------------------------- */
+
+define( 'ARV_RT_APPLY_RR_URL', 'https://racereach.io/api/apply-public/racing-team' );
+define( 'ARV_RT_APPLY_RR_CONSENT_VERSION', '2027-1' );
+define( 'ARV_RT_APPLY_RR_FILE_MAX', 4 * 1024 * 1024 );
+define( 'ARV_RT_APPLY_RR_BODY_MAX', 4000000 );
+define( 'ARV_RT_APPLY_RR_TIMEOUT', 8 );
+
+/** The apply endpoint (option arv_rt_apply_rr_url may override). */
+function arv_rt_apply_rr_url() {
+	$u = (string) get_option( 'arv_rt_apply_rr_url', '' );
+	return ( '' !== $u && 0 === strpos( $u, 'https://' ) ) ? rtrim( $u, '/' ) : ARV_RT_APPLY_RR_URL;
+}
+
+/** Is the push switched on (default off). */
+function arv_rt_apply_rr_enabled() {
+	$v = get_option( 'arv_rt_apply_rr_push', '0' );
+	return true === $v || in_array( strtolower( (string) $v ), array( '1', 'yes', 'on', 'true' ), true );
+}
+
+/** The shared secret, or ''. Never logged or printed. */
+function arv_rt_apply_rr_secret() {
+	if ( defined( 'RR_APPLY_SERVICE_SECRET' ) && '' !== (string) constant( 'RR_APPLY_SERVICE_SECRET' ) ) {
+		return (string) constant( 'RR_APPLY_SERVICE_SECRET' );
+	}
+	return trim( (string) get_option( 'arv_rt_apply_rr_secret', '' ) );
+}
+
+/**
+ * Base64url without padding.
+ *
+ * @param string $s Bytes.
+ * @return string
+ */
+function arv_rt_apply_rr_b64u( $s ) {
+	return rtrim( strtr( base64_encode( $s ), '+/', '-_' ), '=' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+}
+
+/**
+ * A fresh v1 service token: v1.<b64u(json)>.<b64u(HMAC-SHA256(secret, "v1.<b64u(json)>"))>.
+ *
+ * @param string   $secret Shared secret.
+ * @param int|null $iat    Issued at (unix s), default now.
+ * @return string
+ */
+function arv_rt_apply_rr_token( $secret, $iat = null ) {
+	$iat  = null === $iat ? time() : (int) $iat;
+	$body = arv_rt_apply_rr_b64u(
+		json_encode(
+			array(
+				'iss' => 'aravaipa-site',
+				'aud' => 'racereach',
+				'iat' => $iat,
+				'exp' => $iat + 120,
+			)
+		)
+	);
+	$sig  = arv_rt_apply_rr_b64u( hash_hmac( 'sha256', 'v1.' . $body, (string) $secret, true ) );
+	return 'v1.' . $body . '.' . $sig;
+}
+
+/** Optional payload keys: a 400 naming only these is resent once without them. */
+function arv_rt_apply_rr_optional_keys() {
+	return array( 'ultrasignup', 'profiles', 'goals', 'race_plans', 'summit', 'bring', 'instagram', 'strava', 'socials', 'content_links', 'sponsors', 'support', 'headshot', 'resume_file' );
+}
+
+/** Site region answer => RaceReach code. */
+function arv_rt_apply_rr_region_map() {
+	return array(
+		'Arizona'         => 'az',
+		'Colorado'        => 'co',
+		'Northeast'       => 'ne',
+		'California'      => 'ca',
+		'Utah and Nevada' => 'utnv',
+		'Great Lakes'     => 'gl',
+		'Southeast'       => 'se',
+		'Other'           => 'other',
+	);
+}
+
+/** Site discipline answer => RaceReach code. */
+function arv_rt_apply_rr_discipline_map() {
+	return array(
+		'Trail'         => 'trail',
+		'Ultra'         => 'ultra',
+		'Road'          => 'road',
+		'Mountain bike' => 'mtb',
+	);
+}
+
+/**
+ * A field value as a list (CF7 and Flamingo keep arrays; the log keeps "a, b").
+ *
+ * @param mixed $v Value.
+ * @return string[]
+ */
+function arv_rt_apply_rr_list( $v ) {
+	if ( is_array( $v ) ) {
+		return array_values( array_filter( array_map( 'trim', array_map( 'strval', $v ) ), 'strlen' ) );
+	}
+	$v = trim( (string) $v );
+	return '' === $v ? array() : array_values( array_filter( array_map( 'trim', explode( ',', $v ) ), 'strlen' ) );
+}
+
+/**
+ * Race plan labels ("Name, Mon D"). A joined string is split on the date part,
+ * since race names can hold commas of their own.
+ *
+ * @param mixed $v Value.
+ * @return string[]
+ */
+function arv_rt_apply_rr_race_labels( $v ) {
+	if ( is_array( $v ) ) {
+		return array_values( array_filter( array_map( 'trim', array_map( 'strval', $v ) ), 'strlen' ) );
+	}
+	$v = trim( (string) $v );
+	if ( '' === $v ) {
+		return array();
+	}
+	preg_match_all( '/\s*(.+?, [A-Z][a-z]{2} \d{1,2})(?=, |$)/', $v, $m );
+	return $m[1] ? array_map( 'trim', $m[1] ) : array( $v );
+}
+
+/**
+ * Normalised race name for matching.
+ *
+ * @param string $s Name.
+ * @return string
+ */
+function arv_rt_apply_rr_norm( $s ) {
+	$s = strtolower( str_replace( '&', ' and ', (string) $s ) );
+	$s = preg_replace( '/\b(the|trail runs?|ultras?|races?)\b/', ' ', $s );
+	return preg_replace( '/[^a-z0-9]+/', '', $s );
+}
+
+/**
+ * RaceReach race id for each site label; labels with no match are left out.
+ *
+ * @param string[] $labels Site labels ("Name, Mon D").
+ * @param array[]  $races  RaceReach races (id, name, date).
+ * @return array label => id
+ */
+function arv_rt_apply_rr_match_races( $labels, $races ) {
+	$out = array();
+	foreach ( (array) $labels as $label ) {
+		$label = trim( (string) $label );
+		if ( ! preg_match( '/^(.*), ([A-Z][a-z]{2}) (\d{1,2})$/', $label, $m ) ) {
+			continue;
+		}
+		$name = arv_rt_apply_rr_norm( $m[1] );
+		$md   = gmdate( 'm-d', strtotime( ARV_RT_APPLY_SEASON . ' ' . $m[2] . ' ' . $m[3] . ' 12:00 UTC' ) );
+		$hits = array();
+		foreach ( (array) $races as $r ) {
+			if ( empty( $r['id'] ) || empty( $r['name'] ) ) {
+				continue;
+			}
+			if ( '' !== $name && arv_rt_apply_rr_norm( $r['name'] ) === $name ) {
+				$hits[] = $r;
+			}
+		}
+		if ( count( $hits ) > 1 ) {
+			$same = array_values(
+				array_filter(
+					$hits,
+					function ( $r ) use ( $md ) {
+						return isset( $r['date'] ) && substr( (string) $r['date'], 5, 5 ) === $md;
+					}
+				)
+			);
+			$hits = 1 === count( $same ) ? $same : array();
+		}
+		if ( ! $hits ) {
+			// Same date and one name inside the other ("Stillhouse 100K" and "The Stillhouse").
+			foreach ( (array) $races as $r ) {
+				$rn = isset( $r['name'] ) ? arv_rt_apply_rr_norm( $r['name'] ) : '';
+				if ( '' === $rn || '' === $name || ! isset( $r['date'] ) || substr( (string) $r['date'], 5, 5 ) !== $md ) {
+					continue;
+				}
+				if ( false !== strpos( $rn, $name ) || false !== strpos( $name, $rn ) ) {
+					$hits[] = $r;
+				}
+			}
+			if ( 1 !== count( $hits ) ) {
+				$hits = array();
+			}
+		}
+		if ( $hits ) {
+			$out[ $label ] = (string) $hits[0]['id'];
+		}
+	}
+	return $out;
+}
+
+/**
+ * RaceReach races for the season, cached 5 minutes; null when the GET fails.
+ *
+ * @param bool $fresh Skip the cache.
+ * @return array[]|null
+ */
+function arv_rt_apply_rr_races( $fresh = false ) {
+	$cached = $fresh ? false : get_transient( 'arv_rt_apply_rr_races' );
+	if ( is_array( $cached ) ) {
+		return $cached;
+	}
+	$res = wp_remote_get(
+		arv_rt_apply_rr_url() . '/races',
+		array(
+			'timeout' => 5,
+			'headers' => array( 'Accept' => 'application/json' ),
+		)
+	);
+	if ( is_wp_error( $res ) || 200 !== (int) wp_remote_retrieve_response_code( $res ) ) {
+		return null;
+	}
+	$d = json_decode( (string) wp_remote_retrieve_body( $res ), true );
+	if ( ! is_array( $d ) ) {
+		return null;
+	}
+	$rows = array();
+	foreach ( $d as $r ) {
+		if ( is_array( $r ) && ! empty( $r['id'] ) ) {
+			$rows[] = array(
+				'id'   => (string) $r['id'],
+				'name' => isset( $r['name'] ) ? (string) $r['name'] : '',
+				'date' => isset( $r['date'] ) ? (string) $r['date'] : '',
+			);
+		}
+	}
+	set_transient( 'arv_rt_apply_rr_races', $rows, 300 );
+	return $rows;
+}
+
+/**
+ * An https link, or ''. Bare hosts get https://, http:// is upgraded.
+ *
+ * @param string $v Link.
+ * @return string
+ */
+function arv_rt_apply_rr_https( $v ) {
+	$v = trim( (string) $v );
+	if ( '' === $v || preg_match( '/\s/', $v ) ) {
+		return '';
+	}
+	if ( 0 === stripos( $v, 'http://' ) ) {
+		$v = 'https://' . substr( $v, 7 );
+	} elseif ( ! preg_match( '#^[a-z][a-z0-9+.-]*://#i', $v ) ) {
+		if ( ! preg_match( '/^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i', $v ) ) {
+			return '';
+		}
+		$v = 'https://' . $v;
+	}
+	if ( 0 !== stripos( $v, 'https://' ) || ! filter_var( $v, FILTER_VALIDATE_URL ) ) {
+		return '';
+	}
+	return $v;
+}
+
+/**
+ * Free text summit answer => az|co|gl|ne|not_sure, or '' when unclear.
+ *
+ * @param string $v Answer.
+ * @return string
+ */
+function arv_rt_apply_rr_summit( $v ) {
+	$t = strtolower( trim( (string) $v ) );
+	if ( '' === $t ) {
+		return '';
+	}
+	if ( preg_match( "/\b(not sure|unsure|don'?t know|dont know|tbd|undecided|maybe)\b/", $t ) ) {
+		return 'not_sure';
+	}
+	$hits = array();
+	$pats = array(
+		'az' => '/\b(arizona|az|phoenix|tucson|flagstaff|sedona)\b/',
+		'co' => '/\b(colorado|denver|boulder)\b/',
+		'gl' => '/\b(great lakes|michigan|wisconsin|minnesota|ohio|illinois)\b/',
+		'ne' => '/\b(northeast|north east|new england|new york|vermont|new hampshire|maine)\b/',
+	);
+	foreach ( $pats as $code => $re ) {
+		if ( preg_match( $re, $t ) ) {
+			$hits[] = $code;
+		}
+	}
+	return 1 === count( $hits ) ? $hits[0] : '';
+}
+
+/**
+ * Birth date as YYYY-MM-DD, or the input trimmed when it cannot be read.
+ *
+ * @param string $v Date.
+ * @return string
+ */
+function arv_rt_apply_rr_date( $v ) {
+	$v = trim( (string) $v );
+	if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $v ) ) {
+		return $v;
+	}
+	if ( preg_match( '#^(\d{1,2})/(\d{1,2})/(\d{4})$#', $v, $m ) ) {
+		return sprintf( '%04d-%02d-%02d', $m[3], $m[1], $m[2] );
+	}
+	$ts = strtotime( $v . ' 12:00 UTC' );
+	return $ts ? gmdate( 'Y-m-d', $ts ) : $v;
+}
+
+/**
+ * Is a consent box ticked.
+ *
+ * @param mixed $v Value.
+ * @return bool
+ */
+function arv_rt_apply_rr_ticked( $v ) {
+	$v = is_array( $v ) ? implode( '', array_map( 'strval', $v ) ) : trim( (string) $v );
+	return '' !== $v && 'no' !== strtolower( $v ) && '0' !== $v;
+}
+
+/**
+ * The ApplyFormV2 payload for one entry.
+ *
+ * @param array $fields   Entry fields keyed rt-*.
+ * @param array $race_ids RaceReach races (id, name, date) from the races GET; empty sends no race_plans.
+ * @return array
+ */
+function arv_rt_apply_rr_payload( array $fields, array $race_ids ) {
+	$g = function ( $k ) use ( $fields ) {
+		$v = isset( $fields[ 'rt-' . $k ] ) ? $fields[ 'rt-' . $k ] : '';
+		return is_array( $v ) ? trim( implode( ', ', array_map( 'strval', $v ) ) ) : trim( (string) $v );
+	};
+	$region = arv_rt_apply_rr_region_map();
+	$disc   = arv_rt_apply_rr_discipline_map();
+	$p      = array(
+		'first_name' => $g( 'first-name' ),
+		'last_name'  => $g( 'last-name' ),
+		'email'      => strtolower( $g( 'email' ) ),
+		'phone'      => $g( 'phone' ),
+		'birth_date' => arv_rt_apply_rr_date( $g( 'birth-date' ) ),
+		'city'       => $g( 'city' ),
+		'state'      => strtoupper( $g( 'state' ) ),
+		'region'     => isset( $region[ $g( 'region' ) ] ) ? $region[ $g( 'region' ) ] : 'other',
+	);
+	$d = array();
+	foreach ( arv_rt_apply_rr_list( isset( $fields['rt-disciplines'] ) ? $fields['rt-disciplines'] : '' ) as $x ) {
+		if ( isset( $disc[ $x ] ) && ! in_array( $disc[ $x ], $d, true ) ) {
+			$d[] = $disc[ $x ];
+		}
+	}
+	$p['disciplines'] = $d;
+	$p['returning']   = 'yes' === strtolower( $g( 'returning' ) ) ? 'yes' : 'no';
+	if ( 'yes' === $p['returning'] && '' !== $g( 'returning-years' ) ) {
+		$p['returning_years'] = $g( 'returning-years' );
+	}
+	$p['resume'] = function_exists( 'mb_substr' ) ? mb_substr( $g( 'resume' ), 0, 6000 ) : substr( $g( 'resume' ), 0, 6000 );
+	$us          = arv_rt_apply_rr_https( $g( 'ultrasignup' ) );
+	if ( '' !== $us ) {
+		$p['ultrasignup'] = $us;
+	}
+	$prof = array();
+	$raw  = isset( $fields['rt-profiles'] ) ? $fields['rt-profiles'] : '';
+	foreach ( preg_split( '/[\s,]+/', is_array( $raw ) ? implode( "\n", $raw ) : (string) $raw ) as $x ) {
+		$x = arv_rt_apply_rr_https( $x );
+		if ( '' !== $x && ! in_array( $x, $prof, true ) && count( $prof ) < 5 ) {
+			$prof[] = $x;
+		}
+	}
+	if ( $prof ) {
+		$p['profiles'] = implode( "\n", $prof );
+	}
+	foreach ( array( 'goals' ) as $k ) {
+		if ( '' !== $g( $k ) ) {
+			$p[ $k ] = $g( $k );
+		}
+	}
+	if ( $race_ids ) {
+		$ids = array_values( array_unique( array_values( arv_rt_apply_rr_match_races( arv_rt_apply_rr_race_labels( isset( $fields['rt-race-plans'] ) ? $fields['rt-race-plans'] : '' ), $race_ids ) ) ) );
+		if ( $ids ) {
+			$p['race_plans'] = $ids;
+		}
+	}
+	$p['outside_races'] = $g( 'outside-races' );
+	$summit             = arv_rt_apply_rr_summit( $g( 'summit' ) );
+	if ( '' !== $summit ) {
+		$p['summit'] = $summit;
+	}
+	$p['why'] = $g( 'why' );
+	foreach ( array( 'bring', 'instagram', 'strava', 'socials', 'content-links', 'sponsors', 'support' ) as $k ) {
+		if ( '' !== $g( $k ) ) {
+			$p[ str_replace( '-', '_', $k ) ] = $g( $k );
+		}
+	}
+	$p['size_fit']    = $g( 'size-fit' );
+	$p['size_tee']    = $g( 'size-tee' );
+	$p['size_top']    = $g( 'size-top' );
+	$p['size_shorts'] = $g( 'size-shorts' );
+	$p['shoe_size']   = (string) $g( 'shoe-size' );
+	$c                = array();
+	foreach ( arv_rt_apply_consents() as $x ) {
+		$c[ $x['key'] ] = arv_rt_apply_rr_ticked( isset( $fields[ 'rt-consent-' . $x['key'] ] ) ? $fields[ 'rt-consent-' . $x['key'] ] : '' );
+	}
+	$p['consents']        = $c;
+	$p['consent_version'] = ARV_RT_APPLY_RR_CONSENT_VERSION;
+	$p['website']         = '';
+	return $p;
+}
+
+/**
+ * Applicant IP from the request: Cloudflare's header (the origin only takes
+ * Cloudflare traffic), else CF7's remote_ip.
+ *
+ * @param object|null $submission CF7 submission.
+ * @return string
+ */
+function arv_rt_apply_rr_request_ip( $submission = null ) {
+	$cf = isset( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ? trim( (string) $_SERVER['HTTP_CF_CONNECTING_IP'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if ( '' !== $cf && filter_var( $cf, FILTER_VALIDATE_IP ) ) {
+		return $cf;
+	}
+	if ( $submission && method_exists( $submission, 'get_meta' ) ) {
+		$ip = trim( (string) $submission->get_meta( 'remote_ip' ) );
+		if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			return $ip;
+		}
+	}
+	return '';
+}
+
+/**
+ * Mime type for a saved file.
+ *
+ * @param string $path Path.
+ * @return string
+ */
+function arv_rt_apply_rr_mime( $path ) {
+	$map = array(
+		'jpg'  => 'image/jpeg',
+		'jpeg' => 'image/jpeg',
+		'png'  => 'image/png',
+		'webp' => 'image/webp',
+		'heic' => 'image/heic',
+		'pdf'  => 'application/pdf',
+	);
+	$ext = strtolower( pathinfo( (string) $path, PATHINFO_EXTENSION ) );
+	return isset( $map[ $ext ] ) ? $map[ $ext ] : 'application/octet-stream';
+}
+
+/**
+ * Which saved files go along: each under 4 MB, together under about 4 MB.
+ *
+ * @param array $files Saved files keyed rt-headshot, rt-resume-file.
+ * @return array array( parts => array( field => path ), skipped => string[] )
+ */
+function arv_rt_apply_rr_pick_files( $files ) {
+	$parts   = array();
+	$skipped = array();
+	$total   = 0;
+	foreach ( array( 'rt-headshot' => 'headshot', 'rt-resume-file' => 'resume_file' ) as $site => $rr ) {
+		if ( empty( $files[ $site ] ) ) {
+			continue;
+		}
+		$p = (string) $files[ $site ];
+		if ( ! is_file( $p ) || ! is_readable( $p ) ) {
+			$skipped[] = $rr . ' missing';
+			continue;
+		}
+		$sz = (int) filesize( $p );
+		if ( $sz <= 0 || $sz >= ARV_RT_APPLY_RR_FILE_MAX ) {
+			$skipped[] = $rr . ' over 4 MB';
+			continue;
+		}
+		if ( $total + $sz > ARV_RT_APPLY_RR_BODY_MAX ) {
+			$skipped[] = $rr . ' over the 4 MB total';
+			continue;
+		}
+		$total        += $sz;
+		$parts[ $rr ] = $p;
+	}
+	return array(
+		'parts'   => $parts,
+		'skipped' => $skipped,
+	);
+}
+
+/**
+ * Request body and content type: multipart when files go along, else JSON.
+ *
+ * @param array $payload Payload.
+ * @param array $parts   field => path.
+ * @return array array( body, content_type )
+ */
+function arv_rt_apply_rr_body( $payload, $parts ) {
+	$json = wp_json_encode( $payload );
+	if ( ! $parts ) {
+		return array( $json, 'application/json' );
+	}
+	$b    = 'arvrt' . md5( uniqid( '', true ) );
+	$body = '--' . $b . "\r\nContent-Disposition: form-data; name=\"payload\"\r\nContent-Type: application/json\r\n\r\n" . $json . "\r\n";
+	foreach ( $parts as $field => $path ) {
+		$body .= '--' . $b . "\r\nContent-Disposition: form-data; name=\"" . $field . '"; filename="' . preg_replace( '/[^A-Za-z0-9._-]/', '_', basename( $path ) ) . "\"\r\nContent-Type: " . arv_rt_apply_rr_mime( $path ) . "\r\n\r\n" . file_get_contents( $path ) . "\r\n"; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+	}
+	$body .= '--' . $b . "--\r\n";
+	return array( $body, 'multipart/form-data; boundary=' . $b );
+}
+
+/**
+ * Masked email for logs: a***@example.com.
+ *
+ * @param string $e Email.
+ * @return string
+ */
+function arv_rt_apply_rr_mask( $e ) {
+	$e = (string) $e;
+	$at = strpos( $e, '@' );
+	return false === $at ? '***' : substr( $e, 0, 1 ) . '***' . substr( $e, $at );
+}
+
+/**
+ * Short error text, with anything token-like taken out.
+ *
+ * @param string $s Text.
+ * @return string
+ */
+function arv_rt_apply_rr_clean( $s ) {
+	$s = preg_replace( '/v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/', '[token]', (string) $s );
+	$sec = arv_rt_apply_rr_secret();
+	if ( '' !== $sec ) {
+		$s = str_replace( $sec, '[secret]', $s );
+	}
+	return substr( trim( preg_replace( '/\s+/', ' ', $s ) ), 0, 200 );
+}
+
+/**
+ * One line in the ring log option (last 100).
+ *
+ * @param string $line Line.
+ */
+function arv_rt_apply_rr_ring( $line ) {
+	$log = get_option( 'arv_rt_apply_log', array() );
+	$log = is_array( $log ) ? $log : array();
+	$log[] = gmdate( 'Y-m-d\TH:i:s\Z' ) . ' ' . arv_rt_apply_rr_clean( $line );
+	if ( count( $log ) > 100 ) {
+		$log = array_slice( $log, -100 );
+	}
+	update_option( 'arv_rt_apply_log', $log, false );
+}
+
+/** Retry delays after attempt 1, 2 and 3 (seconds). */
+function arv_rt_apply_rr_delays() {
+	return array( 300, 1800, 10800 );
+}
+
+/**
+ * Does a status code get retried.
+ *
+ * @param int $code HTTP code, 0 for a network error.
+ * @return bool
+ */
+function arv_rt_apply_rr_retriable( $code ) {
+	$code = (int) $code;
+	return 0 === $code || 401 === $code || 429 === $code || $code >= 500;
+}
+
+/**
+ * Send one request. Returns code (0 on network error), error and fields.
+ *
+ * @param array  $payload Payload.
+ * @param array  $parts   Files.
+ * @param string $ip      Applicant IP.
+ * @return array
+ */
+function arv_rt_apply_rr_send( $payload, $parts, $ip ) {
+	list( $body, $type ) = arv_rt_apply_rr_body( $payload, $parts );
+	$headers             = array(
+		'Authorization' => 'Bearer ' . arv_rt_apply_rr_token( arv_rt_apply_rr_secret() ),
+		'Content-Type'  => $type,
+		'Accept'        => 'application/json',
+	);
+	if ( '' !== (string) $ip && filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+		$headers['X-Applicant-IP'] = (string) $ip;
+	}
+	$res = wp_remote_post(
+		arv_rt_apply_rr_url(),
+		array(
+			'timeout'     => ARV_RT_APPLY_RR_TIMEOUT,
+			'redirection' => 0,
+			'headers'     => $headers,
+			'body'        => $body,
+			'data_format' => 'body',
+		)
+	);
+	if ( is_wp_error( $res ) ) {
+		return array(
+			'code'   => 0,
+			'error'  => 'network: ' . $res->get_error_message(),
+			'fields' => array(),
+			'multipart' => (bool) $parts,
+		);
+	}
+	$code = (int) wp_remote_retrieve_response_code( $res );
+	$d    = json_decode( (string) wp_remote_retrieve_body( $res ), true );
+	return array(
+		'code'      => $code,
+		'error'     => 200 === $code ? '' : ( is_array( $d ) && isset( $d['error'] ) ? (string) $d['error'] : 'HTTP ' . $code ),
+		'fields'    => is_array( $d ) && isset( $d['fields'] ) && is_array( $d['fields'] ) ? array_values( array_map( 'strval', $d['fields'] ) ) : array(),
+		'multipart' => (bool) $parts,
+	);
+}
+
+/**
+ * Record a result: entry meta, entries.jsonl, ring log.
+ *
+ * @param array $entry Entry (id, email).
+ * @param array $rec   Record.
+ */
+function arv_rt_apply_rr_record( $entry, $rec ) {
+	$id = isset( $entry['id'] ) ? (int) $entry['id'] : 0;
+	if ( $id ) {
+		update_post_meta( $id, '_arv_rt_rr', $rec );
+	}
+	$email = isset( $entry['email'] ) ? strtolower( (string) $entry['email'] ) : '';
+	$line  = array(
+		'kind'        => 'rr',
+		'at'          => $rec['at'],
+		'flamingo_id' => $id,
+		'email'       => $email,
+		'rr'          => $rec,
+	);
+	file_put_contents( arv_rt_apply_dir() . '/entries.jsonl', wp_json_encode( $line ) . "\n", FILE_APPEND | LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+	arv_rt_apply_rr_ring( '#' . $id . ' ' . arv_rt_apply_rr_mask( $email ) . ' ' . $rec['status'] . ' ' . $rec['code'] . ' try ' . $rec['attempts'] . ( $rec['error'] ? ' ' . $rec['error'] : '' ) . ( ! empty( $rec['skipped_files'] ) ? ' files: ' . implode( ', ', $rec['skipped_files'] ) : '' ) );
+}
+
+/**
+ * Push one entry to RaceReach. Never throws.
+ *
+ * @param array $entry id (Flamingo id or 0), email, fields (rt-*), files, ip.
+ * @param array $opts  dry_run (bool), force (ignore the flag, for the CLI).
+ * @return array Record (status sent|retry|failed|skipped, code, error, attempts, at, rr_fields) plus payload on dry runs.
+ */
+function arv_rt_apply_rr_push( $entry, $opts = array() ) {
+	$dry = ! empty( $opts['dry_run'] );
+	try {
+		$id   = isset( $entry['id'] ) ? (int) $entry['id'] : 0;
+		$prev = $id ? get_post_meta( $id, '_arv_rt_rr', true ) : array();
+		$prev = is_array( $prev ) ? $prev : array();
+		$rec  = array(
+			'status'   => 'skipped',
+			'code'     => 0,
+			'error'    => '',
+			'attempts' => isset( $prev['attempts'] ) ? (int) $prev['attempts'] : 0,
+			'at'       => gmdate( 'c', arv_rt_apply_now() ),
+			'rr_fields' => array(),
+		);
+		if ( ! arv_rt_apply_rr_enabled() && empty( $opts['force'] ) ) {
+			$rec['error'] = 'push is off';
+			return $rec;
+		}
+		if ( '' === arv_rt_apply_rr_secret() ) {
+			$rec['error'] = 'no secret';
+			if ( ! $dry ) {
+				arv_rt_apply_rr_record( $entry, $rec );
+			}
+			return $rec;
+		}
+		$races = arv_rt_apply_rr_races();
+		$fields = isset( $entry['fields'] ) ? (array) $entry['fields'] : array();
+		$payload = arv_rt_apply_rr_payload( $fields, is_array( $races ) ? $races : array() );
+		$pick    = arv_rt_apply_rr_pick_files( isset( $entry['files'] ) ? (array) $entry['files'] : array() );
+		$rec['skipped_files'] = $pick['skipped'];
+		if ( null === $races ) {
+			$rec['note'] = 'races GET failed, race_plans not sent';
+		}
+		$dropped = ! empty( $prev['dropped'] ) ? (array) $prev['dropped'] : array();
+		foreach ( $dropped as $k ) {
+			unset( $payload[ $k ] );
+			if ( isset( $pick['parts'][ $k ] ) ) {
+				unset( $pick['parts'][ $k ] );
+			}
+		}
+		if ( $dry ) {
+			$rec['status']  = 'dry_run';
+			$rec['payload'] = $payload;
+			$rec['files']   = array_keys( $pick['parts'] );
+			return $rec;
+		}
+		$ip = isset( $entry['ip'] ) ? (string) $entry['ip'] : '';
+		++$rec['attempts'];
+		$r = arv_rt_apply_rr_send( $payload, $pick['parts'], $ip );
+		// A 400 naming only optional fields: resend once without them.
+		$opt = arv_rt_apply_rr_optional_keys();
+		if ( 400 === $r['code'] && $r['fields'] && ! array_diff( $r['fields'], $opt ) && ! $dropped ) {
+			$dropped = $r['fields'];
+			foreach ( $dropped as $k ) {
+				unset( $payload[ $k ] );
+				unset( $pick['parts'][ $k ] );
+			}
+			$rec['dropped'] = $dropped;
+			++$rec['attempts'];
+			$r = arv_rt_apply_rr_send( $payload, $pick['parts'], $ip );
+		} elseif ( $dropped ) {
+			$rec['dropped'] = $dropped;
+		}
+		$rec['code']      = (int) $r['code'];
+		$rec['rr_fields'] = $r['fields'];
+		$rec['error']     = arv_rt_apply_rr_clean( $r['error'] );
+		$rec['multipart'] = $r['multipart'];
+		if ( 200 === $r['code'] ) {
+			$rec['status'] = 'sent';
+			$rec['error']  = '';
+		} elseif ( arv_rt_apply_rr_retriable( $r['code'] ) ) {
+			$tries  = isset( $prev['retries'] ) ? (int) $prev['retries'] : 0;
+			$delays = arv_rt_apply_rr_delays();
+			if ( $id && $tries < count( $delays ) ) {
+				$rec['status']   = 'retry';
+				$rec['retries']  = $tries + 1;
+				$rec['next_at']  = gmdate( 'c', time() + $delays[ $tries ] );
+				wp_schedule_single_event( time() + $delays[ $tries ], 'arv_rt_apply_rr_retry', array( $id ) );
+			} else {
+				$rec['status']  = 'failed';
+				$rec['retries'] = $tries;
+			}
+		} else {
+			$rec['status'] = 'failed';
+		}
+		arv_rt_apply_rr_record( $entry, $rec );
+		return $rec;
+	} catch ( \Throwable $e ) {
+		$rec = array(
+			'status'   => 'failed',
+			'code'     => 0,
+			'error'    => arv_rt_apply_rr_clean( 'exception: ' . $e->getMessage() ),
+			'attempts' => isset( $rec['attempts'] ) ? (int) $rec['attempts'] : 0,
+			'at'       => gmdate( 'c' ),
+			'rr_fields' => array(),
+		);
+		if ( ! $dry ) {
+			try {
+				arv_rt_apply_rr_record( $entry, $rec );
+			} catch ( \Throwable $e2 ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				// Nothing more to do: the entry is still in Flamingo and the log.
+			}
+		}
+		return $rec;
+	}
+}
+
+/**
+ * One stored entry by Flamingo id, ready to push; null when not found.
+ *
+ * @param int $id Flamingo id.
+ * @return array|null
+ */
+function arv_rt_apply_rr_entry( $id ) {
+	foreach ( arv_rt_apply_entries() as $r ) {
+		if ( (int) $r['id'] === (int) $id ) {
+			return arv_rt_apply_rr_from_row( $r );
+		}
+	}
+	return null;
+}
+
+/**
+ * Turn an export row into a push entry.
+ *
+ * @param array $r Row from arv_rt_apply_entries().
+ * @return array
+ */
+function arv_rt_apply_rr_from_row( $r ) {
+	$id = (int) $r['id'];
+	$ip = $id ? (string) get_post_meta( $id, '_arv_rt_ip', true ) : '';
+	return array(
+		'id'     => $id,
+		'email'  => isset( $r['fields']['rt-email'] ) ? strtolower( (string) $r['fields']['rt-email'] ) : '',
+		'fields' => (array) $r['fields'],
+		'files'  => (array) $r['files'],
+		'ip'     => $ip,
+		'at'     => isset( $r['at'] ) ? $r['at'] : '',
+	);
+}
+
+/**
+ * Push status for an entry ('' when never pushed).
+ *
+ * @param int $id Flamingo id.
+ * @return string
+ */
+function arv_rt_apply_rr_status( $id ) {
+	if ( ! $id ) {
+		return '';
+	}
+	$m = get_post_meta( (int) $id, '_arv_rt_rr', true );
+	return is_array( $m ) && isset( $m['status'] ) ? (string) $m['status'] : '';
+}
+
+/**
+ * Scheduled retry for one entry.
+ *
+ * @param int $id Flamingo id.
+ */
+function arv_rt_apply_rr_retry( $id ) {
+	try {
+		if ( 'retry' !== arv_rt_apply_rr_status( $id ) ) {
+			return;
+		}
+		$e = arv_rt_apply_rr_entry( $id );
+		if ( $e ) {
+			arv_rt_apply_rr_push( $e );
+		}
+	} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		// Never surface: the entry keeps its retry state for push --pending.
+	}
+}
+add_action( 'arv_rt_apply_rr_retry', 'arv_rt_apply_rr_retry', 10, 1 );
+
+/** The entry waiting to be pushed once this request has answered. */
+$GLOBALS['arv_rt_apply_rr_queue'] = null;
+
+/**
+ * After CF7 has mailed and Flamingo has stored the entry (wpcf7_submit runs
+ * Flamingo at priority 10), queue the push. It runs on shutdown, after the
+ * response is out; the CLI test pushes inline so it can report the result.
+ *
+ * @param object $form   CF7 form.
+ * @param array  $result CF7 result.
+ */
+function arv_rt_apply_rr_on_submit( $form, $result = array() ) {
+	try {
+		if ( ! arv_rt_apply_is_ours( $form ) || ! arv_rt_apply_rr_enabled() ) {
+			return;
+		}
+		$st = is_array( $result ) && isset( $result['status'] ) ? $result['status'] : '';
+		if ( ! in_array( $st, array( 'mail_sent', 'mail_failed' ), true ) ) {
+			return;
+		}
+		$last = $GLOBALS['arv_rt_apply_last'];
+		if ( ! $last ) {
+			return;
+		}
+		$id    = ! empty( $last['flamingo_id'] ) ? (int) $last['flamingo_id'] : ( ! empty( $result['flamingo_inbound_id'] ) ? (int) $result['flamingo_inbound_id'] : 0 );
+		$fields = $last['fields'];
+		foreach ( isset( $last['lists'] ) ? (array) $last['lists'] : array() as $k => $v ) {
+			$fields[ $k ] = $v;
+		}
+		$GLOBALS['arv_rt_apply_rr_queue'] = array(
+			'id'     => $id,
+			'email'  => $last['email'],
+			'fields' => $fields,
+			'files'  => $last['files'],
+			'ip'     => isset( $last['ip'] ) ? $last['ip'] : '',
+		);
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			arv_rt_apply_rr_flush();
+		} else {
+			add_action( 'shutdown', 'arv_rt_apply_rr_shutdown', 1 );
+		}
+	} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		// The applicant's submission has already succeeded; never break it.
+	}
+}
+add_action( 'wpcf7_submit', 'arv_rt_apply_rr_on_submit', 20, 2 );
+
+/** Push the queued entry now. */
+function arv_rt_apply_rr_flush() {
+	$q = $GLOBALS['arv_rt_apply_rr_queue'];
+	$GLOBALS['arv_rt_apply_rr_queue'] = null;
+	if ( $q ) {
+		$GLOBALS['arv_rt_apply_rr_last'] = arv_rt_apply_rr_push( $q );
+	}
+}
+
+/** On shutdown: hand the response to the applicant first, then push. */
+function arv_rt_apply_rr_shutdown() {
+	try {
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
+		}
+		arv_rt_apply_rr_flush();
+	} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		// Response already sent; the entry is in Flamingo and the log.
+	}
+}
+
+/**
+ * Counts by push status over every stored entry ('none' = never pushed).
+ *
+ * @return int[]
+ */
+function arv_rt_apply_rr_counts() {
+	$n = array();
+	foreach ( arv_rt_apply_entries() as $r ) {
+		$s       = arv_rt_apply_rr_status( $r['id'] );
+		$s       = '' === $s ? 'none' : $s;
+		$n[ $s ] = isset( $n[ $s ] ) ? $n[ $s ] + 1 : 1;
+	}
+	return $n;
+}
+
+/**
+ * Entries a CLI push run should take.
+ *
+ * @param string $mode  pending, entry or backfill.
+ * @param array  $assoc Flags (entry, since).
+ * @return array[] Push entries.
+ */
+function arv_rt_apply_rr_select( $mode, $assoc ) {
+	$out   = array();
+	$since = isset( $assoc['since'] ) ? strtotime( (string) $assoc['since'] ) : 0;
+	foreach ( arv_rt_apply_entries() as $r ) {
+		if ( ! $r['id'] ) {
+			continue;
+		}
+		$m = get_post_meta( (int) $r['id'], '_arv_rt_rr', true );
+		$m = is_array( $m ) ? $m : array();
+		$s = isset( $m['status'] ) ? $m['status'] : '';
+		if ( 'entry' === $mode ) {
+			$take = (int) $assoc['entry'] === (int) $r['id'];
+		} elseif ( 'pending' === $mode ) {
+			$take = 'retry' === $s || 'skipped' === $s || ( 'failed' === $s && arv_rt_apply_rr_retriable( isset( $m['code'] ) ? $m['code'] : 0 ) );
+		} else {
+			$at   = strtotime( (string) $r['at'] . ( preg_match( '/Z|[+-]\d\d:?\d\d$/', (string) $r['at'] ) ? '' : ' UTC' ) );
+			$take = '' === $s && ( ! $since || ( $at && $at >= $since ) );
+		}
+		if ( $take ) {
+			$out[] = arv_rt_apply_rr_from_row( $r );
+		}
+	}
+	return $out;
+}
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	/**
 	 * 2027 Racing Team application form.
@@ -1344,20 +2301,116 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		}
 
 		/**
-		 * Run one TEST application through the real pipeline.
+		 * Run one TEST application through the real pipeline. With the
+		 * RaceReach push on, it is pushed too and the result printed.
 		 *
 		 * --email=<e>
+		 *
+		 * [--no-mail]
+		 * : Skip the staff notice email.
 		 *
 		 * @param array $args  Args.
 		 * @param array $assoc Flags.
 		 */
 		public function test( $args, $assoc ) {
+			if ( ( isset( $assoc['mail'] ) && false === $assoc['mail'] ) || ! empty( $assoc['no-mail'] ) ) {
+				add_filter( 'wpcf7_skip_mail', '__return_true' );
+			}
+			$GLOBALS['arv_rt_apply_rr_last'] = null;
 			$r = arv_rt_apply_run_test( (string) $assoc['email'] );
 			WP_CLI::log( 'status ' . $r['status'] . ( isset( $r['message'] ) ? ' ' . $r['message'] : '' ) );
 			if ( ! in_array( $r['status'], array( 'mail_sent', 'mail_failed' ), true ) ) {
 				WP_CLI::error( 'test submission failed: ' . wp_json_encode( isset( $r['invalid_fields'] ) ? $r['invalid_fields'] : $r ) );
 			}
+			$last = isset( $GLOBALS['arv_rt_apply_last'] ) ? $GLOBALS['arv_rt_apply_last'] : null;
+			if ( $last && ! empty( $last['flamingo_id'] ) ) {
+				WP_CLI::log( 'flamingo id ' . (int) $last['flamingo_id'] );
+			}
+			$rr = $GLOBALS['arv_rt_apply_rr_last'];
+			if ( $rr ) {
+				WP_CLI::log( 'rr ' . $rr['status'] . ' ' . $rr['code'] . ( $rr['error'] ? ' ' . $rr['error'] : '' ) . ( ! empty( $rr['rr_fields'] ) ? ' fields ' . implode( ',', $rr['rr_fields'] ) : '' ) );
+			} else {
+				WP_CLI::log( 'rr not pushed (push ' . ( arv_rt_apply_rr_enabled() ? 'on' : 'off' ) . ')' );
+			}
 			WP_CLI::success( 'test submitted' );
+		}
+
+		/**
+		 * RaceReach push: flag, secret present, url, counts, last 10 log lines.
+		 *
+		 * @subcommand rr-status
+		 */
+		public function rr_status() {
+			WP_CLI::log( 'push ' . ( arv_rt_apply_rr_enabled() ? 'on' : 'off' ) );
+			WP_CLI::log( 'secret ' . ( '' !== arv_rt_apply_rr_secret() ? 'yes' : 'no' ) . ( defined( 'RR_APPLY_SERVICE_SECRET' ) ? ' (wp-config)' : ' (option)' ) );
+			WP_CLI::log( 'url ' . arv_rt_apply_rr_url() );
+			WP_CLI::log( 'counts ' . wp_json_encode( arv_rt_apply_rr_counts() ) );
+			$log = get_option( 'arv_rt_apply_log', array() );
+			foreach ( array_slice( is_array( $log ) ? $log : array(), -10 ) as $l ) {
+				WP_CLI::log( '  ' . $l );
+			}
+		}
+
+		/**
+		 * RaceReach race ids against the site's race picker labels.
+		 *
+		 * @subcommand rr-races
+		 */
+		public function rr_races() {
+			$races = arv_rt_apply_rr_races( true );
+			if ( null === $races ) {
+				WP_CLI::error( 'races GET failed' );
+			}
+			$labels = arv_rt_apply_race_options();
+			$map    = arv_rt_apply_rr_match_races( $labels, $races );
+			foreach ( $labels as $l ) {
+				WP_CLI::log( ( isset( $map[ $l ] ) ? $map[ $l ] : '(dropped)' ) . "\t" . $l );
+			}
+			WP_CLI::log( 'matched ' . count( $map ) . ' of ' . count( $labels ) . ' site labels; RaceReach has ' . count( $races ) . ' races' );
+		}
+
+		/**
+		 * Push stored entries to RaceReach (needs the secret; ignores the flag).
+		 *
+		 * [--pending]
+		 * : Entries waiting on a retry, skipped, or failed with a retriable code.
+		 *
+		 * [--entry=<id>]
+		 * : One Flamingo entry.
+		 *
+		 * [--backfill]
+		 * : Entries never pushed.
+		 *
+		 * [--since=<iso>]
+		 * : With --backfill, only entries at or after this time.
+		 *
+		 * [--dry-run]
+		 * : Print what would be sent, send nothing.
+		 *
+		 * @param array $args  Args.
+		 * @param array $assoc Flags.
+		 */
+		public function push( $args, $assoc ) {
+			$mode = ! empty( $assoc['entry'] ) ? 'entry' : ( ! empty( $assoc['pending'] ) ? 'pending' : ( ! empty( $assoc['backfill'] ) ? 'backfill' : '' ) );
+			if ( ! $mode ) {
+				WP_CLI::error( 'pass --pending, --entry=<id> or --backfill [--since=<iso>]' );
+			}
+			if ( 'backfill' === $mode && ! empty( $assoc['since'] ) && ! strtotime( (string) $assoc['since'] ) ) {
+				WP_CLI::error( 'bad --since' );
+			}
+			$dry  = ! empty( $assoc['dry-run'] );
+			$list = arv_rt_apply_rr_select( $mode, $assoc );
+			$n    = array();
+			foreach ( $list as $e ) {
+				$r                 = arv_rt_apply_rr_push( $e, array( 'dry_run' => $dry, 'force' => true ) );
+				$n[ $r['status'] ] = isset( $n[ $r['status'] ] ) ? $n[ $r['status'] ] + 1 : 1;
+				$extra             = '';
+				if ( $dry && isset( $r['payload'] ) ) {
+					$extra = ' keys ' . implode( ',', array_keys( $r['payload'] ) ) . ( isset( $r['payload']['race_plans'] ) ? ' races ' . implode( ',', $r['payload']['race_plans'] ) : '' ) . ' files ' . implode( ',', $r['files'] );
+				}
+				WP_CLI::log( '#' . $e['id'] . ' ' . arv_rt_apply_rr_mask( $e['email'] ) . ' ' . $r['status'] . ' ' . $r['code'] . ( $r['error'] ? ' ' . $r['error'] : '' ) . $extra );
+			}
+			WP_CLI::log( count( $list ) . ' entries ' . wp_json_encode( $n ) . ( $dry ? ' (dry run)' : '' ) );
 		}
 
 		/**
@@ -1371,8 +2424,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		 */
 		public function delete_test( $args, $assoc ) {
 			$e = (string) $assoc['email'];
-			if ( false === strpos( $e, '+rtapply@' ) && empty( $assoc['force'] ) ) {
-				WP_CLI::error( 'delete-test only removes test addresses (+rtapply@); pass --force for another' );
+			if ( ! preg_match( '/\+rtapply(-[a-z0-9]+)?@/i', $e ) && empty( $assoc['force'] ) ) {
+				WP_CLI::error( 'delete-test only removes test addresses (+rtapply@ or +rtapply-x@); pass --force for another' );
 			}
 			WP_CLI::log( wp_json_encode( arv_rt_apply_delete_email( $e ) ) );
 		}

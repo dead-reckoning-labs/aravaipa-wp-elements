@@ -1,0 +1,494 @@
+[
+ {
+  "id": "across-the-years",
+  "name": "Across the Years",
+  "date": "2027-01-03",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "desert-runner-trail-series-spring-pass",
+  "name": "Desert Runner Trail Series Spring Pass",
+  "date": "2027-01-09",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "rabid-raccoon",
+  "name": "Rabid Raccoon",
+  "date": "2027-01-09",
+  "division": "Bad Beard Events"
+ },
+ {
+  "id": "san-tan-scramble",
+  "name": "San Tan Scramble",
+  "date": "2027-01-09",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "coldwater-hundred",
+  "name": "Coldwater Hundred",
+  "date": "2027-01-16",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "run-around-tucson",
+  "name": "Run Around Tucson",
+  "date": "2027-01-23",
+  "division": "Aravaipa Tucson"
+ },
+ {
+  "id": "prickly-pedal-rides",
+  "name": "Prickly Pedal Rides",
+  "date": "2027-01-31",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "prickly-pedal-trail-race",
+  "name": "Prickly Pedal Trail Race",
+  "date": "2027-01-31",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "elephant-mountain",
+  "name": "Elephant Mountain",
+  "date": "2027-02-06",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "vegas-golden-night-and-day",
+  "name": "Vegas Golden Night & Day",
+  "date": "2027-02-06",
+  "division": "Aravaipa Nevada"
+ },
+ {
+  "id": "arizona-trail-race",
+  "name": "Arizona Trail Race",
+  "date": "2027-02-07",
+  "division": "Aravaipa Tucson"
+ },
+ {
+  "id": "black-canyon-ultras",
+  "name": "Black Canyon Ultras",
+  "date": "2027-02-13",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "jackpot-ultras",
+  "name": "Jackpot Ultras",
+  "date": "2027-02-19",
+  "division": "Aravaipa Nevada"
+ },
+ {
+  "id": "black-canyon-crusher",
+  "name": "Black Canyon Crusher",
+  "date": "2027-02-27",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "copper-corridor",
+  "name": "Copper Corridor",
+  "date": "2027-02-27",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "antelope-canyon-ultras",
+  "name": "Antelope Canyon Ultras",
+  "date": "2027-03-06",
+  "division": "Ultra Adventures"
+ },
+ {
+  "id": "labor-of-love",
+  "name": "Labor of Love",
+  "date": "2027-03-06",
+  "division": "Aravaipa Nevada"
+ },
+ {
+  "id": "stump-jump",
+  "name": "Stump Jump",
+  "date": "2027-03-06",
+  "division": "Bad Beard Events"
+ },
+ {
+  "id": "mesquite-canyon",
+  "name": "Mesquite Canyon",
+  "date": "2027-03-13",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "crown-king-scramble",
+  "name": "Crown King Scramble",
+  "date": "2027-03-20",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "purple-run",
+  "name": "Purple Run",
+  "date": "2027-03-20",
+  "division": "Aravaipa Nevada"
+ },
+ {
+  "id": "mountain-to-fountain",
+  "name": "Mountain to Fountain",
+  "date": "2027-03-27",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "catalina-half-marathon",
+  "name": "Catalina Half Marathon",
+  "date": "2027-04-01",
+  "division": "Aravaipa Tucson"
+ },
+ {
+  "id": "dam-good-run",
+  "name": "Dam Good Run",
+  "date": "2027-04-04",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "mountain-ridge",
+  "name": "Mountain Ridge",
+  "date": "2027-04-10",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "zion-ultras",
+  "name": "Zion Ultras",
+  "date": "2027-04-10",
+  "division": "Ultra Adventures"
+ },
+ {
+  "id": "the-stillhouse",
+  "name": "Stillhouse 100K",
+  "date": "2027-04-17",
+  "division": "Bad Beard Events"
+ },
+ {
+  "id": "whiskey-basin-trail-runs",
+  "name": "Whiskey Basin Trail Runs",
+  "date": "2027-04-17",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "insomniac-night-rides-series",
+  "name": "Insomniac Night Rides Series",
+  "date": "2027-04-23",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "sinister-night-rides",
+  "name": "Sinister Night Rides",
+  "date": "2027-04-23",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "insomniac-night-trail-run-series",
+  "name": "Insomniac Night Trail Run Series",
+  "date": "2027-04-24",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "royal-gorge-groove",
+  "name": "Royal Gorge Groove",
+  "date": "2027-04-24",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "sinister-night-runs",
+  "name": "Sinister Night Runs",
+  "date": "2027-04-24",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "royal-gorge-groove-rides",
+  "name": "Royal Gorge Groove Rides",
+  "date": "2027-04-25",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "white-lake-ultras",
+  "name": "White Lake Ultras",
+  "date": "2027-05-01",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "cocodona",
+  "name": "Cocodona",
+  "date": "2027-05-02",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "ram-party",
+  "name": "RAM Party",
+  "date": "2027-05-15",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "adrenaline-night-rides",
+  "name": "Adrenaline Night Rides",
+  "date": "2027-05-21",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "adrenaline",
+  "name": "Adrenaline",
+  "date": "2027-05-22",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "madeline-island-marathon",
+  "name": "Madeline Island Marathon",
+  "date": "2027-05-22",
+  "division": "Great Lakes Endurance"
+ },
+ {
+  "id": "north-fork-ultras",
+  "name": "North Fork 50 Mile",
+  "date": "2027-05-22",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "hotfoot-hamster",
+  "name": "Hotfoot Hamster",
+  "date": "2027-05-29",
+  "division": "Nardini Series"
+ },
+ {
+  "id": "barr-lake",
+  "name": "Barr Lake",
+  "date": "2027-06-05",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "chocorua-mountain-race",
+  "name": "Chocorua Mountain Race",
+  "date": "2027-06-05",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "white-mountain-endurance-cup-pass",
+  "name": "White Mountain Endurance Cup Pass",
+  "date": "2027-06-05",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "hypnosis",
+  "name": "Hypnosis",
+  "date": "2027-06-12",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "two-hearted",
+  "name": "Two Hearted",
+  "date": "2027-06-12",
+  "division": "Great Lakes Endurance"
+ },
+ {
+  "id": "blackout",
+  "name": "Blackout",
+  "date": "2027-06-18",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "baldface-scramble",
+  "name": "Baldface Scramble",
+  "date": "2027-06-19",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "big-pine",
+  "name": "Big Pine",
+  "date": "2027-06-19",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "ring-the-springs",
+  "name": "Ring the Springs",
+  "date": "2027-06-19",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "run-with-the-rooster",
+  "name": "Run with the Rooster",
+  "date": "2027-06-19",
+  "division": "Aravaipa Tucson"
+ },
+ {
+  "id": "big-woody-rides",
+  "name": "Big Woody Rides",
+  "date": "2027-06-20",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "rock-river-canyon",
+  "name": "Rock River Canyon",
+  "date": "2027-06-26",
+  "division": "Great Lakes Endurance"
+ },
+ {
+  "id": "running-with-the-devil",
+  "name": "Running with the Devil",
+  "date": "2027-06-26",
+  "division": "Aravaipa Nevada"
+ },
+ {
+  "id": "stunner-night-rides",
+  "name": "Stunner Night Rides",
+  "date": "2027-07-09",
+  "division": "Aravaipa Rides"
+ },
+ {
+  "id": "insomniac-stunner",
+  "name": "Insomniac Stunner",
+  "date": "2027-07-10",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "waugoshance",
+  "name": "Waugoshance",
+  "date": "2027-07-10",
+  "division": "Great Lakes Endurance"
+ },
+ {
+  "id": "silverton-alpine-runs",
+  "name": "Silverton Alpine Marathons",
+  "date": "2027-07-17",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "kendall-mountain-run",
+  "name": "Kendall",
+  "date": "2027-07-18",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "black-bear-trail-races",
+  "name": "Black Bear Trail Races",
+  "date": "2027-07-24",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "harding-hustle",
+  "name": "Harding Hustle",
+  "date": "2027-07-24",
+  "division": "Aravaipa California"
+ },
+ {
+  "id": "aspen-backcountry",
+  "name": "Aspen Backcountry",
+  "date": "2027-07-31",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "grand-island",
+  "name": "Grand Island",
+  "date": "2027-07-31",
+  "division": "Great Lakes Endurance"
+ },
+ {
+  "id": "tushars-ultras",
+  "name": "Tushars",
+  "date": "2027-07-31",
+  "division": "Ultra Adventures"
+ },
+ {
+  "id": "vertigo-night-runs",
+  "name": "Vertigo Night Runs",
+  "date": "2027-08-07",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "westminster-trail-races",
+  "name": "Westminster Trail Races",
+  "date": "2027-08-07",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "jigger-johnson-ultras",
+  "name": "Jigger Johnson Ultras",
+  "date": "2027-08-13",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "chase-the-moon",
+  "name": "Chase the Moon",
+  "date": "2027-08-14",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "et-full-moon-midnight",
+  "name": "E.T. Full Moon Midnight",
+  "date": "2027-08-14",
+  "division": "Aravaipa Nevada"
+ },
+ {
+  "id": "tahqua-trail-run",
+  "name": "Tahqua Trail Run",
+  "date": "2027-08-14",
+  "division": "Great Lakes Endurance"
+ },
+ {
+  "id": "jackrabbit-jubilee",
+  "name": "Jackrabbit Jubilee",
+  "date": "2027-08-28",
+  "division": "Nardini Series"
+ },
+ {
+  "id": "race-the-cog",
+  "name": "Race the Cog",
+  "date": "2027-08-28",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "rock-hawk",
+  "name": "Rock Hawk",
+  "date": "2027-08-28",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "the-cannonball-run",
+  "name": "The Cannonball Run",
+  "date": "2027-09-01",
+  "division": "Bad Beard Events"
+ },
+ {
+  "id": "oli-kai",
+  "name": "Oli Kai",
+  "date": "2027-09-04",
+  "division": "Bad Beard Events"
+ },
+ {
+  "id": "mogollon-monster",
+  "name": "Mogollon Monster",
+  "date": "2027-09-11",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "bryce-canyon-ultras",
+  "name": "Bryce Canyon Ultras",
+  "date": "2027-09-18",
+  "division": "Ultra Adventures"
+ },
+ {
+  "id": "javelina-jangover-night-runs",
+  "name": "Javelina Jangover Night Runs",
+  "date": "2027-09-18",
+  "division": "Aravaipa Arizona"
+ },
+ {
+  "id": "kilkenny-ridge-race",
+  "name": "Kilkenny Ridge Race",
+  "date": "2027-09-18",
+  "division": "White Mountain Endurance"
+ },
+ {
+  "id": "snow-mountain-ranch",
+  "name": "Snow Mountain Ranch",
+  "date": "2027-09-18",
+  "division": "Aravaipa Colorado"
+ },
+ {
+  "id": "bear-chase-race",
+  "name": "The Bear Chase",
+  "date": "2027-10-02",
+  "division": "Aravaipa Colorado"
+ }
+]
