@@ -207,6 +207,10 @@ require_once ARV_ELEMENTS_PATH . 'includes/adventures-render.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-form.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-activecampaign.php';
 
+// 2027 Racing Team application: [arv_rt_apply] on /racing-team/apply/, a
+// time-gated CF7 form with Flamingo storage and wp arv-rt-apply.
+require_once ARV_ELEMENTS_PATH . 'includes/racing-team-apply.php';
+
 // Volunteer List: every upcoming race with one Volunteer button, RaceGoat
 // inline when the race's shifts are live there, else its iVolunteer event.
 // [aravaipa_volunteer_list] and the volunteer-list element.
