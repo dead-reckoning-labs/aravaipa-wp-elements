@@ -11,7 +11,9 @@
  * photo attached; the shortcode state and the hidden form; before-mail
  * copies the photo into the private folder (deny-all) and logs the entry;
  * the Flamingo link; export header and rows; delete-test removes only the
- * given email. No RaceReach push is configured (sink mode cf7), so no
+ * given email. The v2 page ([arv_rt_apply_page]): hero button state, the
+ * us-atlas map and region colors, legend hub links and the region hint.
+ * No RaceReach push is configured (sink mode cf7), so no
  * wp_remote_* call may happen at all.
  *
  * Run: php scripts/test/racing-team-apply-test.php
@@ -374,6 +376,76 @@ $left = file( $dir . '/entries.jsonl' );
 ok( 1 === count( $left ) && false !== strpos( $left[0], 'ann@example.com' ), 'real entry kept in the log' );
 ok( is_file( $saved ), 'real photo kept' );
 ok( array( 'flamingo' => 0, 'files' => 0, 'log' => 0 ) === arv_rt_apply_delete_email( '' ), 'empty email deletes nothing' );
+
+// v2 page [arv_rt_apply_page] (job 70sv0c): hero, button state, us-atlas map, regions, legend, region hint.
+if ( ! function_exists( 'shortcode_atts' ) ) {
+	function shortcode_atts( $pairs, $atts, $sc = '' ) {
+		$out = array();
+		foreach ( $pairs as $k => $v ) {
+			$out[ $k ] = array_key_exists( $k, (array) $atts ) ? $atts[ $k ] : $v;
+		}
+		return $out;
+	}
+}
+if ( ! function_exists( 'esc_html' ) ) {
+	function esc_html( $s ) {
+		return htmlspecialchars( (string) $s, ENT_QUOTES );
+	}
+}
+if ( ! function_exists( 'esc_url' ) ) {
+	function esc_url( $s ) {
+		return htmlspecialchars( (string) $s, ENT_QUOTES );
+	}
+}
+$inc_dir = dirname( __DIR__, 2 ) . '/includes/data/';
+$atlas   = json_decode( file_get_contents( $inc_dir . 'us-states-albers.json' ), true );
+$regs    = json_decode( file_get_contents( $inc_dir . 'rt-regions.json' ), true );
+ok( 51 === count( $atlas['states'] ), 'atlas has 50 states + DC' );
+ok( false !== stripos( $atlas['projection'], 'albers' ) && false !== strpos( $atlas['source'], 'us-atlas' ), 'atlas is us-atlas, Albers USA' );
+ok( strlen( $atlas['states']['TX'] ) > 400 && strlen( $atlas['states']['CA'] ) > 400, 'real state outlines, not blocks' );
+$names = array_column( $regs['regions'], 'name' );
+foreach ( array( 'Arizona', 'Colorado', 'California', 'Utah', 'Nevada', 'Northeast', 'Great Lakes' ) as $rn ) {
+	ok( in_array( $rn, $names, true ), "region $rn listed" );
+}
+$sr = arv_rt_apply_state_regions();
+ok( 'Northeast' === $sr['NH']['name'] && 'Great Lakes' === $sr['MI']['name'] && 'Great Lakes' === $sr['WI']['name'] && 'Arizona' === $sr['AZ']['name'], 'NH Northeast, MI WI Great Lakes, AZ Arizona' );
+ok( ! isset( $sr['TX'] ) && ! isset( $sr['AK'] ), 'TX and AK outside the regions' );
+ok( 'Utah and Nevada' === $sr['UT']['option'] && 'Utah and Nevada' === $sr['NV']['option'] && 'Northeast' === $sr['NH']['option'], 'state maps to the region answer on the form' );
+$all = array();
+foreach ( $regs['regions'] as $rg ) {
+	$all = array_merge( $all, $rg['states'] );
+	ok( 0 === strpos( $rg['hub_url'], 'https://www.aravaiparunning.com/' ), 'hub on aravaiparunning.com: ' . $rg['name'] );
+}
+ok( count( $all ) === count( array_unique( $all ) ), 'no state in two regions' );
+
+$GLOBALS['t_now'] = ts( '2026-11-19T22:00:00-07:00' );
+$p                = arv_rt_apply_page_shortcode( array( 'hero_url' => 'https://www.aravaiparunning.com/wp-content/uploads/rt-hero.jpg', 'focal' => '60% 35%' ) );
+ok( false !== strpos( $p, '<h1 id="rt-hero-title">Apply for the 2027 Aravaipa Racing Team</h1>' ), 'page title' );
+ok( false !== strpos( $p, 'rt-hero__img' ) && false !== strpos( $p, 'object-position:60% 35%' ), 'hero image with focal point' );
+ok( preg_match( '/id="rt-cta"[^>]*>Opens Nov 20</', $p ), 'before open: button reads Opens Nov 20' );
+list( $o_, $c_ ) = arv_rt_apply_window();
+ok( false !== strpos( $p, 'data-opens="' . $o_ . '" data-closes="' . $c_ . '">Opens Nov 20' ), 'button follows the same window' );
+ok( false !== strpos( $p, 'href="#rt-apply-form"' ) && false !== strpos( $p, 'id="rt-apply-form"' ), 'button jumps to the form' );
+ok( false !== strpos( $p, 'What the team asks' ) && false !== strpos( $p, 'What members get' ), 'asks and perks' );
+ok( false !== strpos( $p, 'alt="HOKA"' ) && false !== strpos( $p, 'alt="Athletico Physical Therapy"' ), 'HOKA and Athletico lockup' );
+ok( 51 === preg_match_all( '/<path data-state="[A-Z]{2}"/', $p ), 'map draws 51 state paths' );
+ok( count( $all ) === preg_match_all( '/<path data-state="[A-Z]{2}"[^>]*rt-st--on/', $p ), 'every region state colored' );
+ok( preg_match( '/<path data-state="NH"[^>]*class="rt-st rt-st--on rt-r-ne"/', $p ) && preg_match( '/<path data-state="TX"[^>]*class="rt-st"/', $p ), 'NH colored, TX gray' );
+ok( count( $regs['regions'] ) === preg_match_all( '/class="rt-legend__item/', $p ), 'legend item per region' );
+ok( false !== strpos( $p, 'href="https://www.aravaiparunning.com/white-mountain-endurance/"' ), 'legend links the hub' );
+ok( false !== strpos( $p, 'Your region' ) && false !== strpos( $p, 'Outside our 2027 regions' ), 'region hint on the state picker' );
+ok( false !== strpos( $p, 'data-state="before"' ) && false !== strpos( $p, '<div class="rt-state-open" hidden>' ) && false !== strpos( $p, 'FORM-501' ), 'form block and window swap intact inside the page' );
+ok( false === strpos( $p, "\u{2014}" ), 'no em dash on the page' );
+$pcss = arv_rt_apply_page_css() . arv_rt_apply_region_css();
+ok( ! preg_match( '/box-shadow\s*:\s*(?!none)/', $pcss ) && ! preg_match( '/border-(left|top|right)\s*:\s*[2-9]\d*px/', $pcss ), 'page css: no shadows, no accent bars' );
+$GLOBALS['t_now'] = ts( '2026-11-20T00:00:01-07:00' );
+$p                = arv_rt_apply_page_shortcode( array() );
+ok( preg_match( '/id="rt-cta" class="rt-cta"[^>]*>Apply now</', $p ) && false !== strpos( $p, '<div class="rt-state-open">' ), 'open: Apply now and the form shows' );
+$GLOBALS['t_now'] = ts( '2026-12-01T00:00:01-07:00' );
+$p                = arv_rt_apply_page_shortcode( array() );
+ok( preg_match( '/>Applications closed</', $p ) && false === strpos( $p, 'FORM-501' ), 'closed: button and no form' );
+ok( false === strpos( arv_rt_apply_page_shortcode( array( 'hero_url' => 'https://i.ytimg.com/vi/x/maxresdefault.jpg' ) ), 'ytimg' ), 'ytimg hero refused' );
+ok( isset( $GLOBALS['t_shortcode']['arv_rt_apply_page'] ) && isset( $GLOBALS['t_shortcode']['arv_rt_apply'] ), 'both shortcodes registered' );
 
 // No RaceReach push configured: nothing leaves the server.
 ok( 0 === $GLOBALS['t_remote'], 'no remote calls' );
