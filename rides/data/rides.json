@@ -1,5 +1,5 @@
 {
- "source": "https://aravaiparides.com/events/ and each event page, read 2026-11-19",
+ "source": "https://aravaiparides.com/events/ and each event page, read 2026-11-19, recaptured 2026-11-20 after the rides cleanup",
  "events": [
   {
    "slug": "frenzy-hills",
@@ -88,11 +88,9 @@
     "Distances Vary from 7 Miles to 6 Hours"
    ],
    "url": "https://aravaiparides.com/insomniac-night-rides/",
-   "register": [
-    "https://www.bikereg.com/insomniac-night-rides"
-   ],
+   "register": [],
    "register_label": "Register Soon",
-   "events_register": "https://www.bikereg.com/68156",
+   "events_register": "https://aravaiparides.com/insomniac-night-rides/",
    "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png",
    "hero": "assets/heroes/insomniac.jpg"
   },
@@ -228,11 +226,9 @@
     "10 Mile Adaptive MTB"
    ],
    "url": "https://aravaiparides.com/tonto-2/",
-   "register": [
-    "http://www.bikereg.com/tonto-mountain-rides"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://www.bikereg.com/tonto-mountain-rides",
+   "register": [],
+   "register_label": "Register Soon",
+   "events_register": "https://aravaiparides.com/tonto-2/",
    "logo": "https://aravaiparides.com/wp-content/uploads/2024/10/2024-TontoMountain-LogoRedesign_v5-1.png",
    "hero": "assets/heroes/tonto.jpg"
   }
