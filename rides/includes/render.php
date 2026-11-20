@@ -492,7 +492,9 @@ function rides_render_list( $kind, $rows, $ctx = array( 'base' => '' ) ) {
 		$id    = 'rides-' . $kind . '-' . $slug;
 		$jump .= '<li><a href="#' . rides_e( $id ) . '">' . rides_e( $name ) . '</a></li>';
 		$list .= '<li class="rides-list-ride" id="' . rides_e( $id ) . '">';
-		$list .= '<div class="rides-list-logo">' . ( $logo ? '<img src="' . rides_e( rides_logo_src( $ctx, $logo ) ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
+		$ev    = rides_event( $slug );
+		$plate = $ev && isset( $ev['logo_plate'] ) && 'light' === $ev['logo_plate'];
+		$list .= '<div class="rides-list-logo' . ( $plate ? ' is-plate' : '' ) . '">' . ( $logo ? '<img src="' . rides_e( rides_logo_src( $ctx, $logo ) ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
 		$list .= '<div><h3>' . rides_e( $name ) . '</h3><ul class="rides-years">';
 		$years = array_count_values( array_map( 'strval', rides_pluck( $by[ $slug ], 'year' ) ) );
 		foreach ( $by[ $slug ] as $r ) {
