@@ -55,13 +55,14 @@ function rides_logo_src( $ctx, $logo ) {
  * @param array  $e     Event row.
  * @param string $class Class for the img.
  * @param array  $attrs Extra attributes (name => value).
+ * @param bool   $plate Allow the sand plate (event heroes pass false: logo as artwork).
  * @return string
  */
-function rides_logo_img( $ctx, $e, $class, $attrs = array() ) {
+function rides_logo_img( $ctx, $e, $class, $attrs = array(), $plate = true ) {
 	if ( empty( $e['logo'] ) ) {
 		return '';
 	}
-	$cls  = $class . ( isset( $e['logo_plate'] ) && 'light' === $e['logo_plate'] ? ' is-plate' : '' );
+	$cls  = $class . ( $plate && isset( $e['logo_plate'] ) && 'light' === $e['logo_plate'] ? ' is-plate' : '' );
 	$size = '';
 	$file = RIDES_DIR . '/' . $e['logo'];
 	if ( ! preg_match( '#^https?://#i', $e['logo'] ) && is_readable( $file ) ) {
@@ -566,7 +567,9 @@ function rides_register_buttons( $links, $extra = '' ) {
 }
 
 /**
- * Event page in the race layout.
+ * Event page, race page order: full-bleed hero with the ride logo as artwork, yellow date band
+ * (date, place, register and volunteer), two-column intro with a ride photo, one distance table,
+ * then course, schedule, aid, FAQ, results and photos, sponsors. Sections without data are left out.
  *
  * @param array  $ctx  Render context.
  * @param string $slug Ride slug.
@@ -578,164 +581,382 @@ function rides_render_event( $ctx, $slug ) {
 	if ( ! $e || ! $d ) {
 		return '';
 	}
+	$night = ( $d['theme'] ?? '' ) === 'night';
+	$tone  = isset( $e['logo_plate'] ) && 'light' === $e['logo_plate'] ? 'light' : 'dark';
+	$out   = rides_event_hero( $ctx, $e, $d, $tone );
+	$out  .= rides_event_band( $d );
+	$out  .= rides_event_intro( $ctx, $e, $d );
+	$out  .= rides_event_table( $d );
+	$out  .= rides_event_course( $d );
+	$out  .= rides_event_schedule( $d );
+	$out  .= rides_event_aid( $d );
+	$out  .= rides_event_faq( $d );
+	$out  .= rides_event_history( $slug, $d );
+	$out  .= rides_event_sponsors( $d );
+	if ( ! empty( $d['register'] ) ) {
+		$out .= '<section class="rides-section rides-section--navy" id="register"><div class="rides-wrap rides-register-band">';
+		$out .= '<div><p class="rides-eyebrow">Registration</p><h2>' . rides_e( $d['register_headline'] ?? 'Register' ) . '</h2>';
+		if ( ! empty( $d['register_note'] ) ) {
+			$out .= '<p class="rides-note">' . rides_e( $d['register_note'] ) . '</p>';
+		}
+		$out .= '</div><div class="rides-actions">' . rides_register_buttons( $d['register'] ) . '</div></div></section>';
+	}
+	return rides_root( 'event' . ( $night ? ' rides-theme-night' : '' ), $out );
+}
+
+/**
+ * Full-bleed hero: photo edge to edge, soft gradient for contrast, logo as transparent artwork.
+ *
+ * @param array  $ctx  Render context.
+ * @param array  $e    Event row.
+ * @param array  $d    Event data.
+ * @param string $tone light (ink logo, light glow) or dark (light logo, dark scrim).
+ * @return string
+ */
+function rides_event_hero( $ctx, $e, $d, $tone ) {
 	$hero = rides_hero_url( $ctx, $e );
-	$out  = '<header class="rides-event-hero">';
-	$out .= $hero ? '<img src="' . rides_e( $hero ) . '" alt="" width="1920" height="900" fetchpriority="high">' : '';
-	$out .= '<div class="rides-slide-scrim" aria-hidden="true"></div>';
-	$out .= '<div class="rides-event-hero-body rides-event-lockup">';
-	$out .= '<div class="rides-event-mark">' . rides_logo_img( $ctx, $e, 'rides-event-logo', array( 'fetchpriority' => 'high' ) ) . '</div>';
-	$out .= '<div class="rides-event-text">';
-	$out .= '<p class="rides-slide-kicker rides-eyebrow">' . rides_e( $d['date_label'] ) . '</p>';
-	$out .= '<h1>' . rides_e( $e['name'] ) . '</h1>';
-	$out .= '<p class="rides-slide-meta">' . rides_e( implode( ' | ', (array) $e['distances'] ) ) . '<span>' . rides_e( $d['place'] ) . '</span></p>';
-	$out .= '<div class="rides-actions">' . rides_register_buttons( $d['register'] );
+	$out  = '<header class="rides-event-hero rides-event-hero--' . rides_e( $tone ) . '" id="hero">';
+	$out .= $hero ? '<img class="rides-event-photo" src="' . rides_e( $hero ) . '" alt="" width="1920" height="900" fetchpriority="high">' : '';
+	$out .= '<div class="rides-event-glow" aria-hidden="true"></div>';
+	$out .= '<div class="rides-event-hero-body">' . rides_logo_img( $ctx, $e, 'rides-event-logo', array( 'fetchpriority' => 'high' ), false );
+	$out .= '<h1 class="rides-sr">' . rides_e( $e['name'] ) . '</h1></div>';
+	return $out . '</header>';
+}
+
+/**
+ * Yellow date band: date, place and the register and volunteer buttons (series rides for a series).
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_band( $d ) {
+	$out  = '<section class="rides-band" id="band"><div class="rides-wrap rides-band-inner">';
+	$out .= '<div class="rides-band-when"><p class="rides-band-date">' . rides_e( $d['date_label'] ) . '</p><p class="rides-band-place">' . rides_e( $d['place'] ) . '</p></div>';
+	$out .= '<div class="rides-actions rides-band-actions">';
+	$out .= rides_register_buttons( $d['register'] ?? array(), 'rides-btn--navy' );
+	foreach ( (array) ( $d['series'] ?? array() ) as $s ) {
+		$out .= '<a class="rides-btn rides-btn--navy" href="' . rides_e( $s['url'] ) . '">' . rides_e( $s['name'] ) . '</a>';
+	}
 	if ( ! empty( $d['volunteer']['href'] ) ) {
-		$out .= '<a class="rides-btn rides-btn--ghost" href="' . rides_e( $d['volunteer']['href'] ) . '">Volunteer</a>';
+		$out .= '<a class="rides-btn rides-btn--outline" href="' . rides_e( $d['volunteer']['href'] ) . '">Volunteer</a>';
 	}
 	$out .= '</div></div>';
-	$out .= '</div></header>';
-
-	if ( ! empty( $d['stats'] ) ) {
-		$out .= '<div class="rides-stats">';
-		foreach ( $d['stats'] as $s ) {
-			$out .= '<div class="rides-stat"><b>' . rides_e( $s['value'] ) . '</b><span>' . rides_e( $s['label'] ) . '</span></div>';
-		}
-		$out .= '</div>';
+	if ( ! empty( $d['register_note'] ) ) {
+		$out .= '<div class="rides-wrap"><p class="rides-band-note">' . rides_e( $d['register_note'] ) . '</p></div>';
 	}
+	return $out . '</section>';
+}
 
-	$out .= '<section class="rides-section"><div class="rides-wrap">';
-	$out .= '<p class="rides-eyebrow">The Ride</p><h2 class="rides-h2">' . rides_e( $d['headline'] ?? $e['name'] ) . '</h2>';
-	$out .= '<div class="rides-lead">' . rides_paras( $d['intro'] ?? array() ) . '</div>';
-	$out .= '</div></section>';
+/**
+ * Two-column intro: copy plus a ride photo from the event's own page.
+ *
+ * @param array $ctx Render context.
+ * @param array $e   Event row.
+ * @param array $d   Event data.
+ * @return string
+ */
+function rides_event_intro( $ctx, $e, $d ) {
+	$ph   = $d['intro_photo'] ?? array();
+	$has  = ! empty( $ph['src'] ) && is_readable( RIDES_DIR . '/' . $ph['src'] );
+	$out  = '<section class="rides-section" id="intro"><div class="rides-wrap rides-event-intro' . ( $has ? '' : ' is-single' ) . '">';
+	$out .= '<div class="rides-intro-copy">';
+	if ( ! empty( $d['kicker'] ) ) {
+		$out .= '<p class="rides-eyebrow">' . rides_e( $d['kicker'] ) . '</p>';
+	} else {
+		$out .= '<p class="rides-eyebrow">The Ride</p>';
+	}
+	$out .= '<h2 class="rides-h2">' . rides_e( $d['headline'] ?? $e['name'] ) . '</h2>';
+	$out .= '<div class="rides-intro-text">' . rides_paras( $d['intro'] ?? array() ) . '</div></div>';
+	if ( $has ) {
+		$size = '';
+		$dim  = getimagesize( RIDES_DIR . '/' . $ph['src'] );
+		if ( $dim ) {
+			$size = ' width="' . (int) $dim[0] . '" height="' . (int) $dim[1] . '"';
+		}
+		$out .= '<figure class="rides-intro-photo"><img src="' . rides_e( rides_asset( $ctx, $ph['src'] ) ) . '" alt="' . rides_e( $ph['alt'] ?? '' ) . '"' . $size . ' loading="lazy"></figure>';
+	}
+	return $out . '</div></section>';
+}
 
-	if ( ! empty( $d['distances'] ) ) {
-		$out .= '<section class="rides-section rides-section--mist" id="distances"><div class="rides-wrap">';
-		$out .= '<p class="rides-eyebrow">Distances</p><h2 class="rides-h2">Pick Your Distance</h2><div class="rides-distances">';
-		foreach ( $d['distances'] as $dist ) {
-			$out .= '<article class="rides-distance"><div class="rides-distance-head"><h3>' . rides_e( $dist['name'] ) . '</h3><p>' . rides_e( $dist['sport'] ?? '' ) . '</p></div><dl>';
+/**
+ * Column labels for the distance table: the union of fact labels in first-seen order.
+ *
+ * @param array $dists Distances.
+ * @return array
+ */
+function rides_event_columns( $dists ) {
+	$cols = array();
+	foreach ( $dists as $dist ) {
+		foreach ( (array) ( $dist['facts'] ?? array() ) as $f ) {
+			if ( ! in_array( $f[0], $cols, true ) ) {
+				$cols[] = $f[0];
+			}
+		}
+	}
+	return $cols;
+}
+
+/**
+ * One distance table (or the series rides for a series page). No prices.
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_table( $d ) {
+	$dists  = (array) ( $d['distances'] ?? array() );
+	$series = (array) ( $d['series'] ?? array() );
+	if ( ! $dists && ! $series ) {
+		return '';
+	}
+	$out = '<section class="rides-section rides-section--mist" id="distances"><div class="rides-wrap">';
+	if ( $dists ) {
+		$cols  = rides_event_columns( $dists );
+		$names = array(
+			'Distance'   => 'Length',
+			'Time Limit' => 'Time Limit / Cutoff',
+		);
+		$maps  = count( array_filter( array_column( $dists, 'map' ) ) ) > 0;
+		$out  .= '<p class="rides-eyebrow">Distances</p><h2 class="rides-h2">Pick Your Distance</h2>';
+		$out  .= '<table class="rides-dist-table"><thead><tr><th scope="col">Distance</th>';
+		foreach ( $cols as $c ) {
+			$out .= '<th scope="col">' . rides_e( $names[ $c ] ?? $c ) . '</th>';
+		}
+		$out .= $maps ? '<th scope="col">Course Map</th>' : '';
+		$out .= '</tr></thead><tbody>';
+		foreach ( $dists as $dist ) {
+			$facts = array();
 			foreach ( (array) ( $dist['facts'] ?? array() ) as $f ) {
-				$out .= '<div><dt>' . rides_e( $f[0] ) . '</dt><dd>' . rides_e( $f[1] ) . '</dd></div>';
+				$facts[ $f[0] ] = $f[1];
 			}
-			$out .= '</dl>';
-			if ( ! empty( $dist['map'] ) ) {
-				$out .= '<a class="rides-btn rides-btn--line" href="' . rides_e( $dist['map'] ) . '" rel="noopener">Course Map</a>';
+			$out .= '<tr><th scope="row" data-label="Distance"><b>' . rides_e( $dist['name'] ) . '</b>' . ( ! empty( $dist['sport'] ) ? '<span>' . rides_e( $dist['sport'] ) . '</span>' : '' ) . '</th>';
+			foreach ( $cols as $c ) {
+				$v    = $facts[ $c ] ?? '';
+				$out .= '<td data-label="' . rides_e( $names[ $c ] ?? $c ) . '"' . ( '' === $v ? ' class="is-empty"' : '' ) . '>' . rides_e( $v ) . '</td>';
 			}
-			$out .= '</article>';
+			if ( $maps ) {
+				$out .= ! empty( $dist['map'] ) ? '<td data-label="Course Map" class="rides-dist-map"><a href="' . rides_e( $dist['map'] ) . '" rel="noopener">Course Map</a></td>' : '<td class="is-empty"></td>';
+			}
+			$out .= '</tr>';
+		}
+	} else {
+		$out .= '<p class="rides-eyebrow">The Series</p><h2 class="rides-h2">Three Rides, One Pass</h2>';
+		$out .= '<table class="rides-dist-table"><thead><tr><th scope="col">Ride</th><th scope="col">Date</th><th scope="col">Place</th><th scope="col">Distances</th><th scope="col">Ride Page</th></tr></thead><tbody>';
+		foreach ( $series as $s ) {
+			$out .= '<tr><th scope="row" data-label="Ride"><b>' . rides_e( $s['title'] ?? $s['name'] ) . '</b></th>';
+			$out .= '<td data-label="Date">' . rides_e( $s['date_label'] ) . '</td>';
+			$out .= '<td data-label="Place">' . rides_e( $s['place'] ?? '' ) . '</td>';
+			$out .= '<td data-label="Distances">' . rides_e( $s['distances'] ?? '' ) . '</td>';
+			$out .= '<td data-label="Ride Page" class="rides-dist-map"><a href="' . rides_e( $s['url'] ) . '">' . rides_e( $s['name'] ) . ' Details</a></td></tr>';
+		}
+	}
+	$out .= '</tbody></table>';
+	if ( ! empty( $d['distance_note'] ) ) {
+		$out .= '<p class="rides-note rides-dist-note">' . rides_e( $d['distance_note'] ) . '</p>';
+	}
+	return $out . '</div></section>';
+}
+
+/**
+ * Course: map link, course descriptions and start lines.
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_course( $d ) {
+	$courses = (array) ( $d['courses'] ?? array() );
+	$map     = $d['course_map'] ?? array();
+	$starts  = (array) ( $d['location']['start_lines'] ?? array() );
+	if ( ! $courses && empty( $map['href'] ) ) {
+		return '';
+	}
+	$out  = '<section class="rides-section" id="course"><div class="rides-wrap">';
+	$out .= '<div class="rides-head-row"><div><p class="rides-eyebrow">Course</p><h2 class="rides-h2">Course Information</h2></div>';
+	if ( ! empty( $map['href'] ) ) {
+		$out .= '<a class="rides-btn rides-btn--teal" href="' . rides_e( $map['href'] ) . '" rel="noopener">' . rides_e( $map['label'] ?? 'Course Map' ) . '</a>';
+	}
+	$out .= '</div><div class="rides-two">';
+	foreach ( $courses as $c ) {
+		$out .= '<div class="rides-block"><h3>' . rides_e( $c['name'] ) . '</h3>' . rides_paras( $c['paras'] ) . '</div>';
+	}
+	if ( $starts ) {
+		$out .= '<div class="rides-block"><h3>Start Lines</h3>';
+		foreach ( $starts as $sl ) {
+			$out .= '<p><b>' . rides_e( $sl['name'] ) . ': ' . rides_e( $sl['place'] ) . '</b><br>' . rides_e( $sl['text'] );
+			if ( ! empty( $sl['map'] ) ) {
+				$out .= ' <a href="' . rides_e( $sl['map'] ) . '" rel="noopener">Map</a>';
+			}
+			$out .= '</p>';
+		}
+		if ( ! empty( $d['location']['finish'] ) ) {
+			$out .= '<p><b>Finish</b><br>' . rides_e( $d['location']['finish'] ) . '</p>';
 		}
 		$out .= '</div>';
-		if ( ! empty( $d['distance_note'] ) ) {
-			$out .= '<p class="rides-note" style="margin-top:18px">' . rides_e( $d['distance_note'] ) . '</p>';
-		}
-		$out .= '</div></section>';
 	}
+	return $out . '</div></div></section>';
+}
 
-	if ( ! empty( $d['courses'] ) ) {
-		$out .= '<section class="rides-section" id="course"><div class="rides-wrap"><p class="rides-eyebrow">Course</p><h2 class="rides-h2">Course Information</h2><div class="rides-two">';
-		foreach ( $d['courses'] as $c ) {
-			$out .= '<div class="rides-block"><h3>' . rides_e( $c['name'] ) . '</h3>' . rides_paras( $c['paras'] ) . '</div>';
-		}
-		$out .= '</div></div></section>';
+/**
+ * Two-column rows table.
+ *
+ * @param array $t {caption, rows}.
+ * @return string
+ */
+function rides_event_rows_table( $t ) {
+	$out = '<table class="rides-schedule"><caption>' . rides_e( $t['caption'] ) . '</caption><tbody>';
+	foreach ( $t['rows'] as $r ) {
+		$out .= '<tr><th scope="row">' . rides_e( $r[0] ) . '</th><td>' . rides_e( $r[1] ) . '</td></tr>';
 	}
+	return $out . '</tbody></table>';
+}
 
-	$out .= '<section class="rides-section rides-section--mist" id="location"><div class="rides-wrap"><div class="rides-two">';
-	$out .= '<div class="rides-block"><p class="rides-eyebrow">Location</p><h2 class="rides-h2">Start Lines</h2>';
-	foreach ( (array) ( $d['location']['start_lines'] ?? array() ) as $sl ) {
-		$out .= '<h3>' . rides_e( $sl['name'] ) . '</h3><p><b>' . rides_e( $sl['place'] ) . '</b><br>' . rides_e( $sl['text'] );
-		if ( ! empty( $sl['map'] ) ) {
-			$out .= '<br><a href="' . rides_e( $sl['map'] ) . '" rel="noopener">Map</a>';
-		}
-		$out .= '</p>';
+/**
+ * Schedule: race day tables and bib pickup, plus good to know notes.
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_schedule( $d ) {
+	if ( empty( $d['schedule'] ) ) {
+		return '';
 	}
-	if ( ! empty( $d['location']['finish'] ) ) {
-		$out .= '<h3>Finish</h3><p>' . rides_e( $d['location']['finish'] ) . '</p>';
+	$info = (array) ( $d['info'] ?? array() );
+	$bib  = (array) ( $d['bib_pickup'] ?? array() );
+	$out  = '<section class="rides-section rides-section--mist" id="schedule"><div class="rides-wrap">';
+	$out .= '<p class="rides-eyebrow">Race Day</p><h2 class="rides-h2">Schedule</h2><div class="rides-two' . ( $info || $bib ? '' : ' is-single' ) . '"><div class="rides-block">';
+	foreach ( $d['schedule'] as $sc ) {
+		$out .= rides_event_rows_table( $sc );
 	}
-	$out .= '</div><div class="rides-block"><p class="rides-eyebrow">Packet Pickup</p><h2 class="rides-h2">Bib Pickup</h2>';
-	foreach ( (array) ( $d['bib_pickup'] ?? array() ) as $bp ) {
-		$out .= '<table class="rides-schedule"><caption>' . rides_e( $bp['caption'] ) . '</caption><tbody>';
-		foreach ( $bp['rows'] as $r ) {
-			$out .= '<tr><th scope="row">' . rides_e( $r[0] ) . '</th><td>' . rides_e( $r[1] ) . '</td></tr>';
+	$out .= '</div>';
+	if ( $info || $bib ) {
+		$out .= '<div class="rides-block">';
+		foreach ( $bib as $bp ) {
+			$out .= rides_event_rows_table( $bp );
 		}
-		$out .= '</tbody></table>';
-	}
-	$out .= '</div></div></div></section>';
-
-	if ( ! empty( $d['schedule'] ) ) {
-		$out .= '<section class="rides-section" id="schedule"><div class="rides-wrap"><div class="rides-two"><div class="rides-block"><p class="rides-eyebrow">Race Day</p><h2 class="rides-h2">Schedule</h2>';
-		foreach ( $d['schedule'] as $sc ) {
-			$out .= '<table class="rides-schedule"><caption>' . rides_e( $sc['caption'] ) . '</caption><tbody>';
-			foreach ( $sc['rows'] as $r ) {
-				$out .= '<tr><th scope="row">' . rides_e( $r[0] ) . '</th><td>' . rides_e( $r[1] ) . '</td></tr>';
-			}
-			$out .= '</tbody></table>';
-		}
-		$out .= '</div><div class="rides-block"><p class="rides-eyebrow">On Site</p><h2 class="rides-h2">Good To Know</h2>';
-		foreach ( (array) ( $d['info'] ?? array() ) as $inf ) {
+		foreach ( $info as $inf ) {
 			$out .= '<h3>' . rides_e( $inf['name'] ) . '</h3>' . rides_paras( $inf['paras'] );
 		}
-		$out .= '</div></div></div></section>';
+		$out .= '</div>';
 	}
+	return $out . '</div></div></section>';
+}
 
-	$out .= '<section class="rides-section rides-section--navy" id="register"><div class="rides-wrap rides-register-band">';
-	$out .= '<div><p class="rides-eyebrow">Registration</p><h2>' . rides_e( $d['register_headline'] ?? 'Register' ) . '</h2>';
-	if ( ! empty( $d['register_note'] ) ) {
-		$out .= '<p class="rides-note">' . rides_e( $d['register_note'] ) . '</p>';
+/**
+ * Aid stations and what to bring.
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_aid( $d ) {
+	$aid = (array) ( $d['aid'] ?? $d['what_to_bring'] ?? array() );
+	if ( ! $aid ) {
+		return '';
 	}
-	$out .= '</div><div class="rides-actions">' . rides_register_buttons( $d['register'] ) . '</div></div></section>';
+	$out = '<section class="rides-section" id="aid"><div class="rides-wrap"><p class="rides-eyebrow">On Course</p><h2 class="rides-h2">Aid And What To Bring</h2><div class="rides-two">';
+	foreach ( $aid as $a ) {
+		$out .= '<div class="rides-block"><h3>' . rides_e( $a['name'] ) . '</h3>' . rides_paras( $a['paras'] ) . '</div>';
+	}
+	return $out . '</div></div></section>';
+}
 
-	$res = array_values(
-		array_filter(
-			rides_data( 'results' ),
-			function ( $r ) use ( $slug ) {
-				return $r['slug'] === $slug && ! empty( $r['url'] );
-			}
-		)
-	);
-	$pho = array_values(
-		array_filter(
-			rides_data( 'photos' ),
-			function ( $r ) use ( $slug ) {
-				return $r['slug'] === $slug && ! empty( $r['url'] );
-			}
-		)
-	);
-	$out .= '<section class="rides-section" id="results"><div class="rides-wrap"><div class="rides-two">';
-	$out .= '<div class="rides-block"><p class="rides-eyebrow">History</p><h2 class="rides-h2">Results</h2><ul class="rides-rows">';
-	foreach ( $res as $r ) {
-		$out .= '<li><b>' . rides_e( $r['year'] ) . ( ! empty( $r['label'] ) ? ' ' . rides_e( $r['label'] ) : '' ) . '</b><a class="rides-btn rides-btn--line" href="' . rides_e( $r['url'] ) . '" rel="noopener">Results</a></li>';
+/**
+ * FAQ as open/close rows.
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_faq( $d ) {
+	if ( empty( $d['faq'] ) ) {
+		return '';
 	}
-	$out .= '</ul>';
-	if ( ! empty( $d['records'] ) ) {
-		$out .= '<h3 style="margin-top:32px">Course Records</h3><table class="rides-schedule"><tbody>';
-		foreach ( $d['records'] as $r ) {
-			$out .= '<tr><th scope="row">' . rides_e( $r[0] ) . '</th><td>' . rides_e( $r[1] ) . '</td></tr>';
+	$out = '<section class="rides-section rides-section--mist" id="faq"><div class="rides-wrap"><p class="rides-eyebrow">Questions</p><h2 class="rides-h2">FAQ</h2><div class="rides-faq">';
+	foreach ( $d['faq'] as $i => $q ) {
+		$out .= '<details' . ( 0 === $i ? ' open' : '' ) . '><summary>' . rides_e( $q['q'] ) . '</summary><div class="rides-faq-a">' . rides_paras( $q['a'] ) . '</div></details>';
+	}
+	$out .= '</div>';
+	$links = array_filter( array( $d['faq_link'] ?? null, $d['mail_in'] ?? null ) );
+	if ( $links ) {
+		$out .= '<div class="rides-actions rides-faq-links">';
+		foreach ( $links as $l ) {
+			$out .= '<a class="rides-btn rides-btn--line" href="' . rides_e( $l['href'] ) . '" rel="noopener">' . rides_e( $l['label'] ) . '</a>';
 		}
-		$out .= '</tbody></table>';
+		$out .= '</div>';
 	}
-	$out .= '</div><div class="rides-block"><p class="rides-eyebrow">Galleries</p><h2 class="rides-h2">Photos</h2><ul class="rides-rows">';
-	foreach ( $pho as $r ) {
-		$out .= '<li><b>' . rides_e( $r['year'] ) . ( ! empty( $r['label'] ) ? ' ' . rides_e( $r['label'] ) : '' ) . '</b><a class="rides-btn rides-btn--line" href="' . rides_e( $r['url'] ) . '" rel="noopener">Photos</a></li>';
-	}
-	$out .= '</ul></div></div></div></section>';
+	return $out . '</div></section>';
+}
 
-	if ( ! empty( $d['volunteer'] ) ) {
-		$out .= '<section class="rides-section rides-section--mist" id="volunteer"><div class="rides-wrap rides-register-band" style="color:inherit">';
-		$out .= '<div><p class="rides-eyebrow">Volunteer</p><h2 class="rides-h2" style="margin:0 0 10px">Volunteer At ' . rides_e( $e['name'] ) . '</h2><p style="margin:0;max-width:640px">' . rides_e( $d['volunteer']['text'] ) . '</p></div>';
-		$out .= '<a class="rides-btn rides-btn--teal" href="' . rides_e( $d['volunteer']['href'] ) . '">Volunteer Now</a></div></section>';
+/**
+ * Results (with course records and live tracking) and photo galleries, by year.
+ *
+ * @param string $slug Ride slug.
+ * @param array  $d    Event data.
+ * @return string
+ */
+function rides_event_history( $slug, $d ) {
+	$pick = function ( $name ) use ( $slug ) {
+		return array_values(
+			array_filter(
+				rides_data( $name ),
+				function ( $r ) use ( $slug ) {
+					return $r['slug'] === $slug && ! empty( $r['url'] );
+				}
+			)
+		);
+	};
+	$res  = $pick( 'results' );
+	$pho  = $pick( 'photos' );
+	if ( ! $res && ! $pho ) {
+		return '';
 	}
-
-	if ( ! empty( $d['sponsors'] ) ) {
-		$out .= '<section class="rides-section" id="sponsors"><div class="rides-wrap"><p class="rides-eyebrow">Thank You</p><h2 class="rides-h2">Partners</h2><ul class="rides-sponsors">';
-		foreach ( $d['sponsors'] as $s ) {
-			$img  = '<img src="' . rides_e( $s['logo'] ) . '" alt="' . rides_e( $s['name'] ) . '" loading="lazy">';
-			$out .= '<li>' . ( ! empty( $s['href'] ) ? '<a href="' . rides_e( $s['href'] ) . '" rel="noopener">' . $img . '</a>' : '<span>' . $img . '</span>' ) . '</li>';
+	$out = '<section class="rides-section" id="history"><div class="rides-wrap"><div class="rides-two' . ( $res && $pho ? '' : ' is-single' ) . '">';
+	if ( $res ) {
+		$out .= '<div class="rides-block" id="results"><p class="rides-eyebrow">History</p><h2 class="rides-h2">Results</h2><ul class="rides-rows">';
+		foreach ( $res as $r ) {
+			$out .= '<li><b>' . rides_e( $r['year'] ) . ( ! empty( $r['label'] ) ? ' ' . rides_e( $r['label'] ) : '' ) . '</b><a class="rides-btn rides-btn--line" href="' . rides_e( $r['url'] ) . '" rel="noopener">Results</a></li>';
 		}
 		$out .= '</ul>';
-		if ( ! empty( $d['sponsor_note'] ) ) {
-			$out .= '<p class="rides-note" style="margin-top:16px">' . rides_e( $d['sponsor_note'] ) . '</p>';
+		if ( ! empty( $d['live']['href'] ) ) {
+			$out .= '<p class="rides-live">' . rides_e( $d['live']['text'] ) . ' <a href="' . rides_e( $d['live']['href'] ) . '" rel="noopener">' . rides_e( $d['live']['label'] ) . '</a></p>';
 		}
-		$out .= '</div></section>';
+		if ( ! empty( $d['records'] ) ) {
+			$out .= rides_event_rows_table(
+				array(
+					'caption' => 'Course Records',
+					'rows'    => $d['records'],
+				)
+			);
+		}
+		$out .= '</div>';
 	}
-	return rides_root( 'event', $out );
+	if ( $pho ) {
+		$out .= '<div class="rides-block" id="photos"><p class="rides-eyebrow">Galleries</p><h2 class="rides-h2">Photos</h2><ul class="rides-rows">';
+		foreach ( $pho as $r ) {
+			$out .= '<li><b>' . rides_e( $r['year'] ) . ( ! empty( $r['label'] ) ? ' ' . rides_e( $r['label'] ) : '' ) . '</b><a class="rides-btn rides-btn--line" href="' . rides_e( $r['url'] ) . '" rel="noopener">Photos</a></li>';
+		}
+		$out .= '</ul></div>';
+	}
+	return $out . '</div></div></section>';
+}
+
+/**
+ * Sponsors, each with its logo.
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_sponsors( $d ) {
+	if ( empty( $d['sponsors'] ) ) {
+		return '';
+	}
+	$out = '<section class="rides-section" id="sponsors"><div class="rides-wrap"><p class="rides-eyebrow">Thank You</p><h2 class="rides-h2">Partners</h2><ul class="rides-sponsors">';
+	foreach ( $d['sponsors'] as $s ) {
+		$img  = '<img src="' . rides_e( $s['logo'] ) . '" alt="' . rides_e( $s['name'] ) . '" loading="lazy">';
+		$out .= '<li>' . ( ! empty( $s['href'] ) ? '<a href="' . rides_e( $s['href'] ) . '" rel="noopener">' . $img . '</a>' : '<span>' . $img . '</span>' ) . '</li>';
+	}
+	$out .= '</ul>';
+	if ( ! empty( $d['sponsor_note'] ) ) {
+		$out .= '<p class="rides-note rides-sponsor-note">' . rides_e( $d['sponsor_note'] ) . '</p>';
+	}
+	return $out . '</div></section>';
 }
 
 /**

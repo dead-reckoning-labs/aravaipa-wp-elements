@@ -105,5 +105,10 @@
   "href": "https://aravaiparides.com/wp-content/uploads/2025/11/2026-Insomniac-Series-Race-Day-Form.pdf"
  },
  "register": [],
- "sponsors": []
+ "sponsors": [],
+ "theme": "night",
+ "intro_photo": {
+  "src": "assets/photos/insomniac.jpg",
+  "alt": "Night start: riders with headlamps rolling out at dusk"
+ }
 }

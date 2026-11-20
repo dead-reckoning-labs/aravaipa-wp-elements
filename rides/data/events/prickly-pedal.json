@@ -382,5 +382,9 @@
     "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race trails. All riders are responsible for understanding the layout of the course."
    ]
   }
- ]
+ ],
+ "intro_photo": {
+  "src": "assets/photos/prickly-pedal.jpg",
+  "alt": "Riders rolling out from the Cave Creek start line at sunrise"
+ }
 }

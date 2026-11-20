@@ -5,6 +5,10 @@
  "place": "Fort Tuthill County Park, Flagstaff, AZ",
  "description": "Big Woody Rides, Sunday, June 20, 2027: 6 hour solo and duo, 27 mile and 13.5 mile mountain bike races plus a 12 mile aMTB race in Fort Tuthill County Park, Flagstaff, AZ.",
  "headline": "A Fun And Challenging Ride In The Pines",
+ "intro_photo": {
+  "src": "assets/photos/big-woody.jpg",
+  "alt": "Rider on singletrack in the Fort Tuthill pines"
+ },
  "intro": [
   "The Big Woody Rides is a fun and challenging race held in Flagstaff's scenic Fort Tuthill County Park. Participants can choose from a 13.5 mile single loop, a 27-mile double loop, or a 6-hour endurance race (solo or duo). The Big Woody Rides also proudly includes an Adaptive Mountain Bike (aMTB) race. This category provides an inclusive opportunity for riders using adaptive cycles to participate in the event.",
   "The course winds through beautiful pine forests, utilizing a mix of smooth and flowing singletrack like the Highland Trail, connecting forest service roads for climbs, and the more technical Rogers and Soldier Trails for descents back to the park.",
