@@ -43,7 +43,10 @@
 				}
 				var img = slides[i].querySelector('img[data-src]');
 				if (img && (on || i === (index + 1) % slides.length)) {
-					img.src = img.getAttribute('data-src');
+					var u = new URL(img.getAttribute('data-src'), window.location.href);
+					if (u.protocol === 'https:' || u.protocol === 'http:') {
+						img.src = u.href;
+					}
 					img.removeAttribute('data-src');
 				}
 			}
