@@ -1,0 +1,40 @@
+{
+	"captured": "2026-11-20",
+	"channel_id": "UCjGtoAWVpwUYPEHV5IrN8Yg",
+	"channel_url": "https://www.youtube.com/channel/UCjGtoAWVpwUYPEHV5IrN8Yg?sub_confirmation=1",
+	"videos": [
+		{
+			"id": "SHC8A-EubPc",
+			"title": "2026 Prickly Pedal Race Brief",
+			"published": "2026-01-28"
+		},
+		{
+			"id": "KjO5Nu7iTck",
+			"title": "Johnny Diaz: Cruising the Desert on 2 and 4 Wheels | Aravaipa Rides Podcast",
+			"published": "2025-10-17"
+		},
+		{
+			"id": "2OgeQBqCE-Y",
+			"title": "The Next Generation of MTB: Anthony Vance and Zane Coogler | Aravaipa Rides Podcast",
+			"published": "2025-10-03"
+		},
+		{
+			"id": "i8chHXHLgxk",
+			"title": "John Wyatt: Ride Across Arizona ITT Finisher | Aravaipa Rides Podcast",
+			"published": "2025-09-12"
+		}
+	],
+	"podcast": {
+		"name": "Aravaipa Rides Podcast",
+		"host": "Aaron Schmidt",
+		"blurb": "Conversations with riders, racers and builders from the desert MTB scene, hosted by Aaron Schmidt.",
+		"spotify_show": "78yAY8h5cNhSP91lTvyVrL",
+		"spotify_url": "https://open.spotify.com/show/78yAY8h5cNhSP91lTvyVrL",
+		"apple_url": "https://podcasts.apple.com/us/podcast/aravaipa-rides-podcast/id1691934660"
+	},
+	"strava": {
+		"url": "https://www.strava.com/clubs/aravaiparides",
+		"name": "Aravaipa Rides on Strava",
+		"blurb": "Join the club to log your rides with the crew, see who is out on the trails and keep up with group rides and events."
+	}
+}

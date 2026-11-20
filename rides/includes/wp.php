@@ -194,7 +194,8 @@ add_action(
 			return;
 		}
 		$base = plugins_url( 'assets/', RIDES_DIR . '/aravaipa-rides.php' );
-		wp_enqueue_style( 'aravaipa-rides', $base . 'rides.css', array(), RIDES_VERSION );
+		wp_enqueue_style( 'aravaipa-rides-fonts', 'https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap', array(), null );
+		wp_enqueue_style( 'aravaipa-rides', $base . 'rides.css', array( 'aravaipa-rides-fonts' ), RIDES_VERSION );
 		wp_enqueue_script( 'aravaipa-rides', $base . 'rides.js', array(), RIDES_VERSION, true );
 	},
 	20
