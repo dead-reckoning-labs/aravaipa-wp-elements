@@ -29,6 +29,7 @@
     "MI",
     "MN",
     "OH",
+    "PA",
     "WI"
    ],
    "hub_name": "Great Lakes Endurance",
@@ -42,14 +43,10 @@
    "name": "Northeast",
    "states": [
     "CT",
-    "DE",
     "MA",
-    "MD",
     "ME",
     "NH",
-    "NJ",
     "NY",
-    "PA",
     "RI",
     "VT"
    ],
@@ -75,5 +72,6 @@
    "fill_hover": "#4f1c45",
    "ink": "#6b2a5e"
   }
- ]
+ ],
+ "states_from": "2026 Racing Team regions (Mantis, RaceReach 2026 form + roster) with the 4 names Jamil gave on 2026-11-20; Southeast is new for 2027 (Bad Beard: TN AL GA NC SC)"
 }

@@ -414,6 +414,7 @@ foreach ( array( 'TN', 'AL', 'GA', 'NC', 'SC' ) as $st ) {
 	ok( 'Southeast' === $sr[ $st ]['name'] && 'Bad Beard Events' === $sr[ $st ]['hubName'] && 'Southeast' === $sr[ $st ]['option'], "$st maps to Southeast, Bad Beard hub" );
 }
 ok( 'Northeast' === $sr['NH']['name'] && 'Great Lakes' === $sr['MI']['name'] && 'Great Lakes' === $sr['WI']['name'], 'NH Northeast, MI WI Great Lakes' );
+ok( 'Great Lakes' === $sr['PA']['name'] && ! isset( $sr['NJ'] ) && ! isset( $sr['DE'] ) && ! isset( $sr['MD'] ), '2026 split: PA in Great Lakes, NJ DE MD outside' );
 ok( ! isset( $sr['TX'] ) && ! isset( $sr['AK'] ) && ! isset( $sr['KY'] ) && ! isset( $sr['MS'] ), 'TX, AK, KY and MS outside the regions' );
 ok( 'Great Lakes' === $sr['OH']['option'] && 'Northeast' === $sr['NH']['option'], 'state maps to the region answer on the form' );
 $ropts = array();
