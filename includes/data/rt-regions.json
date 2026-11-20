@@ -16,9 +16,9 @@
    ],
    "hub_name": "Aravaipa races",
    "hub_url": "https://www.aravaiparunning.com/races/",
-   "fill": "#ff2a13",
-   "fill_hover": "#d41a06",
-   "ink": "#c41a07"
+   "fill": "#3fa89a",
+   "fill_hover": "#2e8a7e",
+   "ink": "#23756a"
   },
   {
    "key": "gl",
@@ -34,9 +34,9 @@
    ],
    "hub_name": "Great Lakes Endurance",
    "hub_url": "https://www.aravaiparunning.com/great-lakes-endurance/",
-   "fill": "#1497b8",
-   "fill_hover": "#0e7a96",
-   "ink": "#0b6880"
+   "fill": "#4aa83e",
+   "fill_hover": "#38892e",
+   "ink": "#2f7a26"
   },
   {
    "key": "ne",
@@ -52,9 +52,9 @@
    ],
    "hub_name": "White Mountain Endurance",
    "hub_url": "https://www.aravaiparunning.com/white-mountain-endurance/",
-   "fill": "#3737be",
-   "fill_hover": "#262695",
-   "ink": "#3333b0"
+   "fill": "#f06c18",
+   "fill_hover": "#cf5608",
+   "ink": "#b44a06"
   },
   {
    "key": "se",
@@ -68,9 +68,9 @@
    ],
    "hub_name": "Bad Beard Events",
    "hub_url": "https://www.aravaiparunning.com/bad-beard/",
-   "fill": "#6b2a5e",
-   "fill_hover": "#4f1c45",
-   "ink": "#6b2a5e"
+   "fill": "#1a1a1a",
+   "fill_hover": "#000000",
+   "ink": "#1a1a1a"
   }
  ],
  "states_from": "2026 Racing Team regions (Mantis, RaceReach 2026 form + roster) with the 4 names Jamil gave on 2026-11-20; Southeast is new for 2027 (Bad Beard: TN AL GA NC SC)"
