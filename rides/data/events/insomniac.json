@@ -1,0 +1,109 @@
+{
+ "slug": "insomniac",
+ "source": "https://aravaiparides.com/insomniac-night-rides/ read 2026-11-20 (plain GET, snapshot long-jobs/bmw6ty/out/live/insomniac.html); series dates, places and ride pages from rides.json",
+ "date_label": "April 23 to July 9, 2027",
+ "place": "Maricopa County, AZ",
+ "description": "Insomniac Night Trail Series 2027: three night mountain bike races in Maricopa County, Sinister, Adrenaline and Stunner. Distances range from 7 miles to 6 hours.",
+ "headline": "Join us and Seize the Night",
+ "kicker": "Three Night Races in Maricopa County",
+ "intro": [
+  "Join us this summer as we ride into the night and glimpse our world nocturnal. Aravaipa Rides kicks off our night series with three rides to get you howling at the moon! This ride series will challenge us all to push beyond the shadows of doubt and wonder in order to illuminate a world of possibility.",
+  "It's our way of escaping the summer heat while continuing to race and experience both familiar and unfamiliar trails in a different light. Distances range from 7 miles to 6-hours.",
+  "What will you discover in the night? How far will the stars guide your path? Imagine how far your summer will take you!"
+ ],
+ "stats": [
+  {
+   "value": "Three Night Races",
+   "label": "Maricopa County"
+  },
+  {
+   "value": "7 miles to 6-hours",
+   "label": "Distances"
+  }
+ ],
+ "series": [
+  {
+   "slug": "sinister",
+   "name": "Sinister",
+   "title": "Sinister Night Rides",
+   "url": "https://aravaiparides.com/sinister-night-rides-2/",
+   "date_label": "April 23, 2027",
+   "place": "San Tan Mountain Regional Park, Queen Creek, AZ",
+   "distances": "7.3 Mile, 3 Hour, 6 Hour",
+   "register": [
+    "https://racegoat.com/events/sinister-night-rides-2027"
+   ]
+  },
+  {
+   "slug": "adrenaline",
+   "name": "Adrenaline",
+   "title": "Adrenaline Night Rides",
+   "url": "https://aravaiparides.com/adrenaline-night-rides/",
+   "date_label": "May 21, 2027",
+   "place": "McDowell Mountain Regional Park, Fountain Hills, AZ",
+   "distances": "9.5 Mile, 3 Hour, 6 Hour",
+   "register": [
+    "https://racegoat.com/events/adrenaline-night-rides-2027"
+   ]
+  },
+  {
+   "slug": "stunner",
+   "name": "Stunner",
+   "title": "Stunner Night Rides",
+   "url": "https://aravaiparides.com/stunner-night-rides/",
+   "date_label": "July 9, 2027",
+   "place": "Usery Mountain Regional Park, Mesa, AZ",
+   "distances": "10.5 Mile, 3 Hour, 6 Hour",
+   "register": [
+    "https://racegoat.com/events/stunner-night-rides-2027"
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Event Schedule",
+   "rows": [
+    [
+     "April 23, 2027",
+     "Sinister Night Rides"
+    ],
+    [
+     "May 21, 2027",
+     "Adrenaline Night Rides"
+    ],
+    [
+     "July 9, 2027",
+     "Stunner Night Rides"
+    ]
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Series Passes",
+   "a": [
+    "Back by popular demand, our fantastic Insomniac Series Passes are here to save you some money (20-25%!) and explore more of the great trails around the valley, all at night!",
+    "In addition to the current race perks, there will be a unique Insomniac finisher award for anyone completing all THREE of the summer Insomniac Night Trail Ride Series!",
+    "When registering for the Insomniac Night Trail Ride Pass options, there is no refund for missing one or more races in the series, whether notified before or after the event."
+   ]
+  },
+  {
+   "q": "Series Points",
+   "a": [
+    "We will take the top 10 male and female finishers of the 6-hour, 3-hour and single lap short course in each race and award points. The racer with the most points at the end of the series is the winner. You must race all three separate events to qualify for the series podium.",
+    "Point breakdown: 1st=100pts., 2nd=90pts., 3rd=80pts., 4th=70pts., 5th=60pts., 6th=50pts., 7th=40pts., 8th=30pts., 9th=20pts., 10th=10pts.",
+    "Points are not shared between categories, so points scored in the 6-hour do not apply to the 3-hour, and vice versa. In the case of a tie, the tie breaker will be determined by the racers total number of 1st place finishes, then 2nd place, then 3rd and onward if necessary."
+   ]
+  }
+ ],
+ "faq_link": {
+  "label": "FAQ",
+  "href": "https://www.aravaiparunning.com/faq/"
+ },
+ "mail_in": {
+  "label": "Mail-In Entry Form",
+  "href": "https://aravaiparides.com/wp-content/uploads/2025/11/2026-Insomniac-Series-Race-Day-Form.pdf"
+ },
+ "register": [],
+ "sponsors": []
+}

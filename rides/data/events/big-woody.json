@@ -1,0 +1,427 @@
+{
+ "slug": "big-woody",
+ "source": "https://aravaiparides.com/big-woody-rides/ read 2026-11-20 (plain GET, snapshot long-jobs/bmw6ty/out/live/big-woody.html)",
+ "date_label": "Sunday, June 20, 2027",
+ "place": "Fort Tuthill County Park, Flagstaff, AZ",
+ "description": "Big Woody Rides, Sunday, June 20, 2027: 6 hour solo and duo, 27 mile and 13.5 mile mountain bike races plus a 12 mile aMTB race in Fort Tuthill County Park, Flagstaff, AZ.",
+ "headline": "A Fun And Challenging Ride In The Pines",
+ "intro": [
+  "The Big Woody Rides is a fun and challenging race held in Flagstaff's scenic Fort Tuthill County Park. Participants can choose from a 13.5 mile single loop, a 27-mile double loop, or a 6-hour endurance race (solo or duo). The Big Woody Rides also proudly includes an Adaptive Mountain Bike (aMTB) race. This category provides an inclusive opportunity for riders using adaptive cycles to participate in the event.",
+  "The course winds through beautiful pine forests, utilizing a mix of smooth and flowing singletrack like the Highland Trail, connecting forest service roads for climbs, and the more technical Rogers and Soldier Trails for descents back to the park.",
+  "Expect an intermediate-level course with a good balance of climbing and descending, perfect for both seasoned racers and enthusiastic riders looking for a great day on the trails."
+ ],
+ "stats": [
+  {
+   "value": "June 20, 2027",
+   "label": "Race Day"
+  },
+  {
+   "value": "6 Hour Duo & Solo",
+   "label": "Endurance"
+  },
+  {
+   "value": "27 Mile Solo | 13.5 Mile Solo & Junior",
+   "label": "Distance"
+  },
+  {
+   "value": "12 Mile aMTB",
+   "label": "Adaptive"
+  },
+  {
+   "value": "Fort Tuthill County Park",
+   "label": "Flagstaff, AZ"
+  }
+ ],
+ "distances": [
+  {
+   "name": "6 Hour Duo",
+   "sport": "Duo",
+   "map": "https://caltopo.com/m/R4NB188",
+   "facts": [
+    [
+     "Start Time",
+     "8:00 AM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (2:00 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "13.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "306 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "7208 feet"
+    ]
+   ]
+  },
+  {
+   "name": "6 Hour Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/R4NB188",
+   "facts": [
+    [
+     "Start Time",
+     "8:00 AM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (2:00 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "13.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "306 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "7208 feet"
+    ]
+   ]
+  },
+  {
+   "name": "27 Mile Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/R4NB188",
+   "facts": [
+    [
+     "Start Time",
+     "8:30 AM"
+    ],
+    [
+     "Time Limit",
+     "5.5 Hours (2 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "13.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "306 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "7208 feet"
+    ]
+   ]
+  },
+  {
+   "name": "13.5 Mile Solo",
+   "sport": "Solo & Junior",
+   "map": "https://caltopo.com/m/R4NB188",
+   "facts": [
+    [
+     "Start Time",
+     "9:00 AM"
+    ],
+    [
+     "Time Limit",
+     "5 Hours (2 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "13.5 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "306 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "7208 feet"
+    ]
+   ]
+  },
+  {
+   "name": "12 Mile aMTB",
+   "sport": "aMTB",
+   "map": "https://caltopo.com/m/R4NB188",
+   "facts": [
+    [
+     "Start Time",
+     "10:00 AM"
+    ],
+    [
+     "Time Limit",
+     "4 Hours (2 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "12 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "282 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "7208 feet"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/R4NB188"
+ },
+ "courses": [
+  {
+   "name": "The Loop",
+   "paras": [
+    "The Big Woody course will start in Fort Tuthill and rip around Highland Trail before climbing onto Forest Service roads and connecting to Rogers Trail before heading back down into the park to finish on Soldiers trail. This is an intermediate course with a few technical spots to navigate. All categories will loop the same course for their given amount of time or distance.",
+    "The loop is comprised of the Highland Trail, Soldier Trail, Flagstaff Loop Trail, Rogers Lake Connector as well as multiple forest roads.",
+    "Riders will experience a variety of conditions and challenges while looping through Coconino National Forest. We hope you'll join us for a fun and challenging ride in the pines!"
+   ]
+  },
+  {
+   "name": "aMTB",
+   "paras": [
+    "The Big Woody Rides also proudly includes an Adaptive Mountain Bike (aMTB) race. This category provides an inclusive opportunity for riders using adaptive cycles to participate in the event. The aMTB race typically follows a modified version of the main course, carefully selected to be challenging yet accessible for adaptive equipment."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately."
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "Fort Tuthill County Park",
+    "text": "2446 Ft Tuthill Lp, Flagstaff, AZ 86005. Our start/finish line is located by the bike park parking lot.",
+    "map": "https://www.google.com/maps/place/Fort+Tuthill+Bike+Park/@35.1438122,-111.6929222,956m/data=!3m1!1e3!4m6!3m5!1s0x872d8514aac2a881:0x6eddd7c81d919b35!8m2!3d35.144588!4d-111.6932133!16s%2Fg%2F11h7n_pndg?entry=ttu&g_ep=EgoyMDI1MDMzMS4wIKXMDSoASAFQAw%3D%3D"
+   }
+  ]
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Friday, June 18, 6:00-8:30 PM",
+     "Fort Tuthill County Park, 2446 Ft Tuthill Lp, Flagstaff, AZ 86005"
+    ],
+    [
+     "Sunday, June 20, 6:00-8:30 AM",
+     "Fort Tuthill County Park, 2446 Ft Tuthill Lp, Flagstaff, AZ 86005"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Race Day Schedule",
+   "rows": [
+    [
+     "5:18 AM",
+     "Sunrise"
+    ],
+    [
+     "6:00 AM",
+     "Bib pickup / race day registration begin"
+    ],
+    [
+     "8:00 AM",
+     "6 Hour Start"
+    ],
+    [
+     "8:30 AM",
+     "27 Mile Start"
+    ],
+    [
+     "9:00 AM",
+     "13.5 Mile Start"
+    ],
+    [
+     "10:00 AM",
+     "aMTB Start"
+    ],
+    [
+     "1:00 PM",
+     "Cutoff to leave on last 6 hour loop"
+    ],
+    [
+     "2:00 PM",
+     "6 hour cutoff"
+    ],
+    [
+     "7:38 PM",
+     "Sunset"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Copy of Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Stations",
+   "paras": [
+    "In addition to a fully stocked drink and feed station at the start/finish line, there will be one fully stocked aid station at the turn onto FS 533. Our main aid station will be stocked with water, ice, electrolyte drinks, salty and sweet snacks, fruit, pb&j, bean rollups, hot food (quesadillas, grilled cheese), and more."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Parking",
+   "paras": [
+    "Parking will be available in the bike park and adjacent lots. Carpool to save!"
+   ]
+  },
+  {
+   "name": "Timing",
+   "paras": [
+    "All races will be professionally chip timed with a disposable timing chip attached to your bike bib. Please attach to your handlebars on the front of your bike. Live results will be available during the event at Aravaipa Live."
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "Dispersed tent camping is allowed by Fort Tuthill County Park for this event just north of the Start/Finish area, a 2-minute walk. Fort Tuthill Campground is open for camping for a fee. Contact them, 928-286-7060."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Duo Teams",
+   "a": [
+    "We will offer a duo team option for the 6 Hour race. 6 Hour Team participants are comprised of two riders on a single team who complete laps one at a time for their team. You decide who rides which laps and how many. Riders may elect to ride more than one loop in a row, but switching between riders may be done only in the transition zone at the start/finish area."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race trails."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect a cool, brisk morning followed by warmer daytime temperatures. Storms may be present so you will need to be aware."
+   ]
+  },
+  {
+   "q": "Trail Etiquette",
+   "a": [
+    "Remember to always remain on designed trails, no short cutting. Headphones are not permitted. No E- Bikes.",
+    "As a general rule, when passing a rider, announce, \"on your left.\" Remain in control and respect the other participants."
+   ]
+  }
+ ],
+ "register": [
+  {
+   "label": "Register Now",
+   "href": "https://racegoat.com/events/big-woody-rides-2027"
+  }
+ ],
+ "register_headline": "Ride The Big Woody",
+ "register_note": "Online registration closes Monday, Jun 14, 2027 at 11:59 PM MT",
+ "volunteer": {
+  "text": "We need help to make Big Woody Rides possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com/#2"
+ },
+ "live": {
+  "text": "Follow the 2027 Big Woody Rides with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "records": [
+  [
+   "6 Hour Duo",
+   "Arya Lerette & Jon Lerette, 81.8 miles (2024)"
+  ],
+  [
+   "6 Hour Solo, Male",
+   "Tim Kuipers, 79.1 miles (2022)"
+  ],
+  [
+   "6 Hour Solo, Female",
+   "Audra Adair, 65.81 (2023)"
+  ],
+  [
+   "27 Mile Solo, Male",
+   "Caleb Hardaway, 1:39:20 (2023)"
+  ],
+  [
+   "27 Mile Solo, Female",
+   "Marion Cholieu, 2:00:53 (2023)"
+  ],
+  [
+   "13.5 Mile, Male",
+   "Robert Cogburn, 51:47 (2023)"
+  ],
+  [
+   "13.5 Mile, Female",
+   "McKenna Marino, 59:17 (2024)"
+  ],
+  [
+   "Junior, Male",
+   "Grady West, 1:11:17 (2024)"
+  ],
+  [
+   "aMTB, Male",
+   "Jordan Koeninger, 45:14 (2024)"
+  ],
+  [
+   "aMTB, Female",
+   "Kaitlyn Verfuerth, 47:27 (2024)"
+  ]
+ ],
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "Gnarly",
+   "href": "https://gognarly.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2021/05/Gnarly_Horizontal_BlueType.png"
+  }
+ ]
+}

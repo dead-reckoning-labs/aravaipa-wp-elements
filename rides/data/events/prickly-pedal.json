@@ -1,6 +1,6 @@
 {
  "slug": "prickly-pedal",
- "source": "https://aravaiparides.com/prickly-pedal-rides/ read 2026-11-19, with the rides cleanup fixes (7:00 AM, Ashlee, Troy, 15 Miles); rechecked against the live page 2026-11-20 after the cleanup",
+ "source": "https://aravaiparides.com/prickly-pedal-rides/ read 2026-11-19, with the rides cleanup fixes (7:00 AM, Ashlee, Troy, 15 Miles); rechecked against the live page 2026-11-20 after the cleanup; aid and FAQ added from the 2026-11-20 snapshot (long-jobs/bmw6ty/out/live/prickly-pedal.html)",
  "date_label": "Sunday, January 31, 2027",
  "place": "Maricopa Trail, Cave Creek to Lake Pleasant Regional Park, AZ",
  "description": "Prickly Pedal, Sunday, January 31, 2027: 36 and 15 mile mountain bike races on the Maricopa Trail from Cave Creek to Lake Pleasant, plus a 10 mile trail run.",
@@ -12,7 +12,7 @@
  ],
  "stats": [
   {
-   "value": "Jan 31, 2027",
+   "value": "January 31, 2027",
    "label": "Race Day"
   },
   {
@@ -347,5 +347,40 @@
    "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
   }
  ],
- "sponsor_note": "Prickly Pedal is supported in part by an Arts and Culture grant from the City of Peoria."
+ "sponsor_note": "Prickly Pedal is supported in part by an Arts and Culture grant from the City of Peoria.",
+ "aid": [
+  {
+   "name": "Aid Stations",
+   "paras": [
+    "There are two Aid Stations on course. The first is near mile 15. The second is near the 30 mile mark. Both will be stocked with water and electrolyte drinks, sweet and salty snacks and fresh fruit. Our main aid station at the finish line will have the same offerings."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect a cold, brisk morning followed by near perfect daytime temperatures. We've occasionally seen rain in the past on this weekend, but it is somewhat rare."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race trails. All riders are responsible for understanding the layout of the course."
+   ]
+  }
+ ]
 }

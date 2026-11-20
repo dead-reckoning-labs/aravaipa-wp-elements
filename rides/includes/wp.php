@@ -23,6 +23,8 @@ function rides_preview_pages() {
 		265   => 'results',
 		22674 => 'photos',
 		24080 => 'event:prickly-pedal',
+		21756 => 'event:insomniac',
+		24565 => 'event:big-woody',
 	);
 }
 
