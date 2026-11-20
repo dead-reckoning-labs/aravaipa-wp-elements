@@ -1,236 +1,240 @@
 {
- "source": "https://aravaiparides.com/events/ and each event page, read 2026-11-19, recaptured 2026-11-20 after the rides cleanup",
- "events": [
-  {
-   "slug": "frenzy-hills",
-   "name": "Frenzy Hills Rides",
-   "date_label": "December 6, 2026",
-   "date": "2026-12-06",
-   "year": 2026,
-   "status": "upcoming",
-   "location": {
-    "venue": "McDowell Mountain Regional Park",
-    "city": "Fountain Hills, AZ"
-   },
-   "distances": [
-    "8, 15, 25, 50, 100 Mile XC or Gravel Races",
-    "aMTB and Juniors Races"
-   ],
-   "url": "https://aravaiparides.com/frenzy/",
-   "register": [
-    "https://www.bikereg.com/frenzy-hills-rides"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://www.bikereg.com/frenzy-hills-rides",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2024/10/2024-FrenzyHills-LogoRedesign_v1-1.png",
-   "hero": "assets/heroes/frenzy-hills.jpg"
-  },
-  {
-   "slug": "prickly-pedal",
-   "name": "Prickly Pedal",
-   "date_label": "January 31, 2027",
-   "date": "2027-01-31",
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "Downtown Cave Creek to Lake Pleasant Regional Park",
-    "city": "Cave Creek, AZ"
-   },
-   "distances": [
-    "15 Mile, 36 Mile",
-    "10 Mile Trail Run"
-   ],
-   "url": "https://aravaiparides.com/prickly-pedal-rides/",
-   "register": [
-    "https://www.bikereg.com/prickly-pedal",
-    "https://ultrasignup.com/register.aspx?eid=19341"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://www.bikereg.com/prickly-pedal",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2024/12/PPedal-1.png",
-   "hero": "assets/heroes/prickly-pedal.jpg"
-  },
-  {
-   "slug": "black-canyon-crusher",
-   "name": "Black Canyon Crusher",
-   "date_label": "February 27, 2027",
-   "date": "2027-02-27",
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "Black Canyon Trail",
-    "city": "Mayer to Phoenix, AZ"
-   },
-   "distances": [
-    "70 Mile | 35 Mile"
-   ],
-   "url": "https://aravaiparides.com/black-canyon-mtb/",
-   "register": [
-    "https://www.bikereg.com/black-canyon-crusher"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://www.bikereg.com/black-canyon-crusher",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2026/08/2026-BlackCanyonCrusher-Logo-v1-scaled.png",
-   "hero": "assets/heroes/black-canyon-crusher.jpg"
-  },
-  {
-   "slug": "insomniac",
-   "name": "Insomniac Night Series",
-   "date_label": "April thru Sept. 2027",
-   "date": null,
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "Maricopa County Regional Parks",
-    "city": "Maricopa County, AZ"
-   },
-   "distances": [
-    "Distances Vary from 7 Miles to 6 Hours"
-   ],
-   "url": "https://aravaiparides.com/insomniac-night-rides/",
-   "register": [],
-   "register_label": "Register Soon",
-   "events_register": "https://aravaiparides.com/insomniac-night-rides/",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png",
-   "hero": "assets/heroes/insomniac.jpg"
-  },
-  {
-   "slug": "sinister",
-   "name": "Sinister Night Rides",
-   "date_label": "April 23, 2027",
-   "date": "2027-04-23",
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "San Tan Mountain Regional Park",
-    "city": "Queen Creek, AZ"
-   },
-   "distances": [
-    "7.3 Mile, 3 Hour, 6 Hour"
-   ],
-   "url": "https://aravaiparides.com/sinister-night-rides-2/",
-   "register": [
-    "https://racegoat.com/events/sinister-night-rides-2027"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://racegoat.com/events/sinister-night-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2025/01/Insomniac-Rides-1.png",
-   "hero": "assets/heroes/sinister.jpg"
-  },
-  {
-   "slug": "royal-gorge-groove",
-   "name": "Royal Gorge Groove",
-   "date_label": "April  2027",
-   "date": null,
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "Royal Gorge Ranch & Resort",
-    "city": "Cañon City, CO"
-   },
-   "distances": [
-    "12 Mile, 18 Mile, 36 Mile Solo & Duo"
-   ],
-   "url": "https://aravaiparides.com/royal-gorge/",
-   "register": [
-    "https://racegoat.com/events/royal-gorge-groove-rides-2027"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://racegoat.com/events/royal-gorge-groove-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2022/02/2021-RoyalGorgeGroove-Logo-v1.png",
-   "hero": "assets/heroes/royal-gorge-groove.jpg"
-  },
-  {
-   "slug": "adrenaline",
-   "name": "Adrenaline Night Rides",
-   "date_label": "May 21, 2027",
-   "date": "2027-05-21",
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "McDowell Mountain Regional Park",
-    "city": "Fountain Hills, AZ"
-   },
-   "distances": [
-    "9.5 Mile, 3 Hour, 6 Hour"
-   ],
-   "url": "https://aravaiparides.com/adrenaline-night-rides/",
-   "register": [
-    "https://racegoat.com/events/adrenaline-night-rides-2027"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://racegoat.com/events/adrenaline-night-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2020/09/2020_Adrenaline_Logo_Rides_v1.png",
-   "hero": "assets/heroes/adrenaline.jpg"
-  },
-  {
-   "slug": "big-woody",
-   "name": "Big Woody Rides",
-   "date_label": "June 20, 2027",
-   "date": "2027-06-20",
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "Fort Tuthill County Park",
-    "city": "Flagstaff, AZ"
-   },
-   "distances": [
-    "14 Mile, 28 Mile, 6 Hour"
-   ],
-   "url": "https://aravaiparides.com/big-woody-rides/",
-   "register": [
-    "https://racegoat.com/events/big-woody-rides-2027"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://racegoat.com/events/big-woody-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2023/12/2021-bigWoody-Logo-1.png",
-   "hero": "assets/heroes/big-woody.jpg"
-  },
-  {
-   "slug": "stunner",
-   "name": "Stunner Night Rides",
-   "date_label": "July 9, 2027",
-   "date": "2027-07-09",
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "Usery Mountain Regional Park",
-    "city": "Mesa, AZ"
-   },
-   "distances": [
-    "10.5 Mile, 3 Hour, 6 Hour"
-   ],
-   "url": "https://aravaiparides.com/stunner-night-rides/",
-   "register": [
-    "https://racegoat.com/events/stunner-night-rides-2027"
-   ],
-   "register_label": "Register Now",
-   "events_register": "https://racegoat.com/events/stunner-night-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020_Stunner_Logo_Rides_v1-Glow-1.png",
-   "hero": "assets/heroes/stunner.jpg"
-  },
-  {
-   "slug": "tonto",
-   "name": "Tonto Mountain Rides",
-   "date_label": "November TBD, 2027",
-   "date": null,
-   "year": 2027,
-   "status": "upcoming",
-   "location": {
-    "venue": "Usery Mountain Regional Park",
-    "city": "Mesa, AZ"
-   },
-   "distances": [
-    "10, 20, 30, 60 Mile XC or Gravel Races",
-    "9 Hour Relay",
-    "10 Mile Adaptive MTB"
-   ],
-   "url": "https://aravaiparides.com/tonto-2/",
-   "register": [],
-   "register_label": "Register Soon",
-   "events_register": "https://aravaiparides.com/tonto-2/",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2024/10/2024-TontoMountain-LogoRedesign_v5-1.png",
-   "hero": "assets/heroes/tonto.jpg"
-  }
- ]
+	"source": "https://aravaiparides.com/events/ and each event page, read 2026-11-19, recaptured 2026-11-20 after the rides cleanup",
+	"events": [
+		{
+			"slug": "frenzy-hills",
+			"name": "Frenzy Hills Rides",
+			"date_label": "December 6, 2026",
+			"date": "2026-12-06",
+			"year": 2026,
+			"status": "upcoming",
+			"location": {
+				"venue": "McDowell Mountain Regional Park",
+				"city": "Fountain Hills, AZ"
+			},
+			"distances": [
+				"8, 15, 25, 50, 100 Mile XC or Gravel Races",
+				"aMTB and Juniors Races"
+			],
+			"url": "https://aravaiparides.com/frenzy/",
+			"register": [
+				"https://www.bikereg.com/frenzy-hills-rides"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://www.bikereg.com/frenzy-hills-rides",
+			"logo": "assets/logos/frenzy-hills.png",
+			"hero": "assets/heroes/frenzy-hills.jpg",
+			"logo_plate": "light"
+		},
+		{
+			"slug": "prickly-pedal",
+			"name": "Prickly Pedal",
+			"date_label": "January 31, 2027",
+			"date": "2027-01-31",
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "Downtown Cave Creek to Lake Pleasant Regional Park",
+				"city": "Cave Creek, AZ"
+			},
+			"distances": [
+				"15 Mile, 36 Mile",
+				"10 Mile Trail Run"
+			],
+			"url": "https://aravaiparides.com/prickly-pedal-rides/",
+			"register": [
+				"https://www.bikereg.com/prickly-pedal",
+				"https://ultrasignup.com/register.aspx?eid=19341"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://www.bikereg.com/prickly-pedal",
+			"logo": "assets/logos/prickly-pedal.png",
+			"hero": "assets/heroes/prickly-pedal.jpg",
+			"logo_plate": "light"
+		},
+		{
+			"slug": "black-canyon-crusher",
+			"name": "Black Canyon Crusher",
+			"date_label": "February 27, 2027",
+			"date": "2027-02-27",
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "Black Canyon Trail",
+				"city": "Mayer to Phoenix, AZ"
+			},
+			"distances": [
+				"70 Mile | 35 Mile"
+			],
+			"url": "https://aravaiparides.com/black-canyon-mtb/",
+			"register": [
+				"https://www.bikereg.com/black-canyon-crusher"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://www.bikereg.com/black-canyon-crusher",
+			"logo": "assets/logos/black-canyon-crusher.png",
+			"hero": "assets/heroes/black-canyon-crusher.jpg"
+		},
+		{
+			"slug": "insomniac",
+			"name": "Insomniac Night Series",
+			"date_label": "April thru Sept. 2027",
+			"date": null,
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "Maricopa County Regional Parks",
+				"city": "Maricopa County, AZ"
+			},
+			"distances": [
+				"Distances Vary from 7 Miles to 6 Hours"
+			],
+			"url": "https://aravaiparides.com/insomniac-night-rides/",
+			"register": [],
+			"register_label": "Register Soon",
+			"events_register": "https://aravaiparides.com/insomniac-night-rides/",
+			"logo": "assets/logos/insomniac.png",
+			"hero": "assets/heroes/insomniac.jpg"
+		},
+		{
+			"slug": "sinister",
+			"name": "Sinister Night Rides",
+			"date_label": "April 23, 2027",
+			"date": "2027-04-23",
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "San Tan Mountain Regional Park",
+				"city": "Queen Creek, AZ"
+			},
+			"distances": [
+				"7.3 Mile, 3 Hour, 6 Hour"
+			],
+			"url": "https://aravaiparides.com/sinister-night-rides-2/",
+			"register": [
+				"https://racegoat.com/events/sinister-night-rides-2027"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://racegoat.com/events/sinister-night-rides-2027",
+			"logo": "assets/logos/sinister.png",
+			"hero": "assets/heroes/sinister.jpg"
+		},
+		{
+			"slug": "royal-gorge-groove",
+			"name": "Royal Gorge Groove",
+			"date_label": "April  2027",
+			"date": null,
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "Royal Gorge Ranch & Resort",
+				"city": "Cañon City, CO"
+			},
+			"distances": [
+				"12 Mile, 18 Mile, 36 Mile Solo & Duo"
+			],
+			"url": "https://aravaiparides.com/royal-gorge/",
+			"register": [
+				"https://racegoat.com/events/royal-gorge-groove-rides-2027"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://racegoat.com/events/royal-gorge-groove-rides-2027",
+			"logo": "assets/logos/royal-gorge-groove.png",
+			"hero": "assets/heroes/royal-gorge-groove.jpg",
+			"logo_plate": "light"
+		},
+		{
+			"slug": "adrenaline",
+			"name": "Adrenaline Night Rides",
+			"date_label": "May 21, 2027",
+			"date": "2027-05-21",
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "McDowell Mountain Regional Park",
+				"city": "Fountain Hills, AZ"
+			},
+			"distances": [
+				"9.5 Mile, 3 Hour, 6 Hour"
+			],
+			"url": "https://aravaiparides.com/adrenaline-night-rides/",
+			"register": [
+				"https://racegoat.com/events/adrenaline-night-rides-2027"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://racegoat.com/events/adrenaline-night-rides-2027",
+			"logo": "assets/logos/adrenaline.png",
+			"hero": "assets/heroes/adrenaline.jpg"
+		},
+		{
+			"slug": "big-woody",
+			"name": "Big Woody Rides",
+			"date_label": "June 20, 2027",
+			"date": "2027-06-20",
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "Fort Tuthill County Park",
+				"city": "Flagstaff, AZ"
+			},
+			"distances": [
+				"14 Mile, 28 Mile, 6 Hour"
+			],
+			"url": "https://aravaiparides.com/big-woody-rides/",
+			"register": [
+				"https://racegoat.com/events/big-woody-rides-2027"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://racegoat.com/events/big-woody-rides-2027",
+			"logo": "assets/logos/big-woody.png",
+			"hero": "assets/heroes/big-woody.jpg"
+		},
+		{
+			"slug": "stunner",
+			"name": "Stunner Night Rides",
+			"date_label": "July 9, 2027",
+			"date": "2027-07-09",
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "Usery Mountain Regional Park",
+				"city": "Mesa, AZ"
+			},
+			"distances": [
+				"10.5 Mile, 3 Hour, 6 Hour"
+			],
+			"url": "https://aravaiparides.com/stunner-night-rides/",
+			"register": [
+				"https://racegoat.com/events/stunner-night-rides-2027"
+			],
+			"register_label": "Register Now",
+			"events_register": "https://racegoat.com/events/stunner-night-rides-2027",
+			"logo": "assets/logos/stunner.png",
+			"hero": "assets/heroes/stunner.jpg"
+		},
+		{
+			"slug": "tonto",
+			"name": "Tonto Mountain Rides",
+			"date_label": "November TBD, 2027",
+			"date": null,
+			"year": 2027,
+			"status": "upcoming",
+			"location": {
+				"venue": "Usery Mountain Regional Park",
+				"city": "Mesa, AZ"
+			},
+			"distances": [
+				"10, 20, 30, 60 Mile XC or Gravel Races",
+				"9 Hour Relay",
+				"10 Mile Adaptive MTB"
+			],
+			"url": "https://aravaiparides.com/tonto-2/",
+			"register": [],
+			"register_label": "Register Soon",
+			"events_register": "https://aravaiparides.com/tonto-2/",
+			"logo": "assets/logos/tonto.png",
+			"hero": "assets/heroes/tonto.jpg",
+			"logo_plate": "light"
+		}
+	]
 }

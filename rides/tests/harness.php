@@ -45,6 +45,7 @@ foreach ( $pages as $file => $layout ) {
 		. '<title>' . rides_e( ucfirst( $file ) ) . ' | Aravaipa Rides</title>'
 		. '<meta name="description" content="' . rides_e( $desc ) . '">'
 		. '<meta property="og:image" content="' . rides_e( $img ) . '">'
+		. '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&amp;display=swap">'
 		. '<link rel="stylesheet" href="' . rides_e( $css ) . '">'
 		. '<style>body{margin:0}.h-bar{height:80px;display:flex;align-items:center;padding:0 24px;background:#fff;border-bottom:1px solid #eee}.h-bar img{height:46px;width:auto}.h-foot{padding:40px 24px;background:#000;color:#fff;font:14px Lato,Arial,sans-serif}</style>'
 		. '</head><body>'

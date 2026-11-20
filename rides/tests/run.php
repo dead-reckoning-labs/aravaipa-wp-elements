@@ -74,6 +74,31 @@ function get_permalink( $id ) {
 function esc_attr( $s ) {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
 }
+define( 'HOUR_IN_SECONDS', 3600 );
+$GLOBALS['rides_transients'] = array();
+$GLOBALS['rides_http']       = null; // null = network error, else array( code, body ).
+$GLOBALS['rides_http_calls'] = 0;
+function get_transient( $k ) {
+	return $GLOBALS['rides_transients'][ $k ]['v'] ?? false;
+}
+function set_transient( $k, $v, $ttl ) {
+	$GLOBALS['rides_transients'][ $k ] = array( 'v' => $v, 'ttl' => $ttl );
+	return true;
+}
+function wp_remote_get( $url, $args = array() ) {
+	$GLOBALS['rides_http_calls']++;
+	$GLOBALS['rides_http_url'] = $url;
+	return null === $GLOBALS['rides_http'] ? array( 'error' => true ) : $GLOBALS['rides_http'];
+}
+function is_wp_error( $r ) {
+	return is_array( $r ) && ! empty( $r['error'] );
+}
+function wp_remote_retrieve_response_code( $r ) {
+	return $r[0] ?? 0;
+}
+function wp_remote_retrieve_body( $r ) {
+	return $r[1] ?? '';
+}
 function esc_url( $s ) {
 	return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
 }
@@ -157,7 +182,7 @@ foreach ( $map as $id => $layout ) {
 	ok( (bool) preg_match( '/<meta name="description" content="[^"]{20,}">/', $head ), "preview $id meta description" );
 	ok( (bool) preg_match( '#<meta property="og:image" content="https://aravaiparides.com/wp-content/plugins/aravaipa-rides/assets/heroes/[a-z-]+\.jpg">#', $head ), "preview $id og:image is a clean hero" );
 	run_action( 'wp_enqueue_scripts' );
-	ok( 2 === count( $GLOBALS['rides_enqueued'] ), "preview $id enqueues css and js" );
+	ok( 3 === count( $GLOBALS['rides_enqueued'] ), "preview $id enqueues fonts, css and js" );
 	$html = rides_render_layout( $layout, rides_wp_ctx() );
 	ok( false !== strpos( $html, 'class="rides-v2' ), "preview $id renders .rides-v2" );
 	ok( false === strpos( $html, "\u{2014}" ) && false === stripos( $html, '&' . 'mdash;' ) && false === strpos( $html, '&#' . '8212;' ), "preview $id has no em dash" );
@@ -211,6 +236,54 @@ foreach ( $pp_ev['register'] as $u ) {
 }
 ok( '' === rides_render_event( $ctx, 'nope' ), 'unknown event renders nothing' );
 ok( 'J' === rides_initials( 'Jangover Night Rides' ) && 'LQC' === rides_initials( 'Last Quarter Crusher' ), 'initials helper' );
+
+
+// 9. Community: YouTube feed parse, 12 h cache and fallback.
+$feed = '<?xml version="1.0"?><feed xmlns:yt="http://www.youtube.com/xml/schemas/2015">'
+	. '<entry><yt:videoId>AAAAAAAAAA1</yt:videoId><title>Older &amp; slower</title><published>2025-01-01T00:00:00+00:00</published></entry>'
+	. '<entry><yt:videoId>BBBBBBBBBB2</yt:videoId><title>Newest ride</title><published>2026-02-01T00:00:00+00:00</published></entry>'
+	. '<entry><yt:videoId>CCCCCCCCCC3</yt:videoId><title>Middle</title><published>2025-06-01T00:00:00+00:00</published></entry>'
+	. '<entry><title>No id, skipped</title></entry></feed>';
+$parsed = rides_parse_yt_feed( $feed );
+ok( 3 === count( $parsed ), 'feed parse finds 3 videos and skips entries without an id' );
+ok( 'BBBBBBBBBB2' === $parsed[0]['id'] && 'AAAAAAAAAA1' === $parsed[2]['id'], 'feed parse sorts newest first' );
+ok( 'Older & slower' === $parsed[2]['title'], 'feed parse decodes titles' );
+ok( array() === rides_parse_yt_feed( '' ) && array() === rides_parse_yt_feed( '<html>error</html>' ), 'feed parse of junk is empty' );
+$fb = rides_fallback_videos();
+ok( count( $fb ) >= 3, 'community.json fallback has at least 3 videos' );
+$GLOBALS['rides_transients'] = array();
+$GLOBALS['rides_http']       = null;
+$v = rides_latest_videos( 3 );
+ok( array_column( $v, 'id' ) === array_slice( array_column( $fb, 'id' ), 0, 3 ), 'network error falls back to community.json' );
+ok( HOUR_IN_SECONDS === $GLOBALS['rides_transients'][ RIDES_YT_TRANSIENT ]['ttl'], 'fallback is cached only 1 h' );
+ok( false !== strpos( $GLOBALS['rides_http_url'], 'feeds/videos.xml?channel_id=UCjGtoAWVpwUYPEHV5IrN8Yg' ), 'reads the channel RSS feed' );
+$GLOBALS['rides_transients'] = array();
+$GLOBALS['rides_http']       = array( 200, $feed );
+$v = rides_latest_videos( 3 );
+ok( array( 'BBBBBBBBBB2', 'CCCCCCCCCC3', 'AAAAAAAAAA1' ) === array_column( $v, 'id' ), 'live feed videos used when the feed works' );
+ok( 12 * HOUR_IN_SECONDS === $GLOBALS['rides_transients'][ RIDES_YT_TRANSIENT ]['ttl'], 'feed cached 12 h' );
+$calls = $GLOBALS['rides_http_calls'];
+rides_latest_videos( 3 );
+ok( $calls === $GLOBALS['rides_http_calls'], 'cached feed does not refetch' );
+$GLOBALS['rides_transients'] = array();
+$GLOBALS['rides_http']       = array( 500, 'oops' );
+ok( array_column( rides_latest_videos( 3 ), 'id' ) === array_slice( array_column( $fb, 'id' ), 0, 3 ), 'HTTP 500 falls back to community.json' );
+$GLOBALS['rides_transients'] = array();
+$GLOBALS['rides_http']       = null;
+$cm = rides_render_community();
+ok( 3 === substr_count( $cm, 'youtube-nocookie.com/embed/' ) && 3 === substr_count( $cm, 'loading="lazy" allow="accelerometer' ), 'community renders 3 lazy YouTube embeds' );
+ok( false === strpos( $cm, 'ytimg' ), 'community has no ytimg thumbnails' );
+ok( false !== strpos( $cm, 'open.spotify.com/embed/show/78yAY8h5cNhSP91lTvyVrL' ) && false !== strpos( $cm, 'id1691934660' ) && false !== strpos( $cm, 'strava.com/clubs/aravaiparides' ), 'community has Spotify, Apple and Strava' );
+$GLOBALS['rides_transients'] = array();
+
+// 10. Logos and lockup.
+foreach ( rides_events() as $e ) {
+	ok( (bool) preg_match( '#^assets/logos/' . preg_quote( $e['slug'], '#' ) . '\.png$#', $e['logo'] ) && is_readable( RIDES_DIR . '/' . $e['logo'] ), "{$e['slug']} logo is a local asset" );
+}
+ok( false !== strpos( $home, 'class="rides-slide-logo' ), 'slides carry the ride logo as an HTML image' );
+ok( false === strpos( $home, 'rides-tile-logo' ) && false !== strpos( $home, 'rides-tile-mark' ), 'tiles carry the big logo, no corner badge' );
+ok( false !== strpos( $pp, 'rides-event-lockup' ) && false !== strpos( $pp, 'assets/logos/prickly-pedal.png' ), 'Prickly hero has the logo lockup' );
+ok( false !== strpos( $home, 'Welcome to Aravaipa Rides' ) && false !== strpos( $home, 'never been more stoked' ), 'home has the welcome intro' );
 
 echo "$count checks, $fails failed\n";
 exit( $fails ? 1 : 0 );
