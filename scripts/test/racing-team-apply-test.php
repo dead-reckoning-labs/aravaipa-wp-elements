@@ -404,13 +404,26 @@ ok( 51 === count( $atlas['states'] ), 'atlas has 50 states + DC' );
 ok( false !== stripos( $atlas['projection'], 'albers' ) && false !== strpos( $atlas['source'], 'us-atlas' ), 'atlas is us-atlas, Albers USA' );
 ok( strlen( $atlas['states']['TX'] ) > 400 && strlen( $atlas['states']['CA'] ) > 400, 'real state outlines, not blocks' );
 $names = array_column( $regs['regions'], 'name' );
-foreach ( array( 'Arizona', 'Colorado', 'California', 'Utah', 'Nevada', 'Northeast', 'Great Lakes' ) as $rn ) {
-	ok( in_array( $rn, $names, true ), "region $rn listed" );
-}
+ok( array( 'West', 'Great Lakes', 'Northeast', 'Southeast' ) === $names, '4 regions in order: West, Great Lakes, Northeast, Southeast' );
+ok( 'jamil 2026-11-20' === $regs['source'], 'regions source jamil 2026-11-20' );
 $sr = arv_rt_apply_state_regions();
-ok( 'Northeast' === $sr['NH']['name'] && 'Great Lakes' === $sr['MI']['name'] && 'Great Lakes' === $sr['WI']['name'] && 'Arizona' === $sr['AZ']['name'], 'NH Northeast, MI WI Great Lakes, AZ Arizona' );
-ok( ! isset( $sr['TX'] ) && ! isset( $sr['AK'] ), 'TX and AK outside the regions' );
-ok( 'Utah and Nevada' === $sr['UT']['option'] && 'Utah and Nevada' === $sr['NV']['option'] && 'Northeast' === $sr['NH']['option'], 'state maps to the region answer on the form' );
+foreach ( array( 'AZ', 'CA', 'CO', 'NV', 'UT' ) as $st ) {
+	ok( 'West' === $sr[ $st ]['name'] && 'West' === $sr[ $st ]['option'] && 'https://www.aravaiparunning.com/races/' === $sr[ $st ]['hub'], "$st maps to West (one Aravaipa color)" );
+}
+foreach ( array( 'TN', 'AL', 'GA', 'NC', 'SC' ) as $st ) {
+	ok( 'Southeast' === $sr[ $st ]['name'] && 'Bad Beard Events' === $sr[ $st ]['hubName'] && 'Southeast' === $sr[ $st ]['option'], "$st maps to Southeast, Bad Beard hub" );
+}
+ok( 'Northeast' === $sr['NH']['name'] && 'Great Lakes' === $sr['MI']['name'] && 'Great Lakes' === $sr['WI']['name'], 'NH Northeast, MI WI Great Lakes' );
+ok( 'Great Lakes' === $sr['PA']['name'] && ! isset( $sr['NJ'] ) && ! isset( $sr['DE'] ) && ! isset( $sr['MD'] ), '2026 split: PA in Great Lakes, NJ DE MD outside' );
+ok( ! isset( $sr['TX'] ) && ! isset( $sr['AK'] ) && ! isset( $sr['KY'] ) && ! isset( $sr['MS'] ), 'TX, AK, KY and MS outside the regions' );
+ok( 'Great Lakes' === $sr['OH']['option'] && 'Northeast' === $sr['NH']['option'], 'state maps to the region answer on the form' );
+$ropts = array();
+foreach ( arv_rt_apply_fields() as $f ) {
+	if ( 'region' === $f['key'] ) {
+		$ropts = $f['options'];
+	}
+}
+ok( array( 'West', 'Great Lakes', 'Northeast', 'Southeast', 'Other' ) === $ropts, 'form region options: the 4 names + Other (no Utah and Nevada)' );
 $all = array();
 foreach ( $regs['regions'] as $rg ) {
 	$all = array_merge( $all, $rg['states'] );
@@ -439,7 +452,10 @@ ok( '' === arv_rt_apply_regions_note( array( 'source' => 'mantis' ) ), 'no note 
 ok( false !== strpos( $p, '<span class="rt-legend__states">CT, DE, MA, MD, ME, NH, NJ, NY, PA, RI, VT</span>' ) || count( $regs['regions'] ) === preg_match_all( '/<span class="rt-legend__states">[A-Z]{2}(, [A-Z]{2})*<\/span>/', $p ), 'legend lists the states of each region' );
 ok( count( $regs['regions'] ) === preg_match_all( '/<span class="rt-legend__states">[A-Z]{2}(, [A-Z]{2})*<\/span>/', $p ), 'states line on every legend item' );
 ok( count( $all ) === preg_match_all( '/<path data-state="[A-Z]{2}"[^>]*rt-st--on[^>]*tabindex="0" role="button"[^>]*><title>[^<]+ region<\/title><\/path>/', $p ), 'eligible states: role=button with a title' );
-ok( preg_match( '/<path data-state="AZ"[^>]*><title>Arizona: Arizona region<\/title>/', $p ), 'AZ title reads Arizona: Arizona region' );
+ok( preg_match( '/<path data-state="AZ"[^>]*><title>Arizona: West region<\/title>/', $p ), 'AZ title reads Arizona: West region' );
+ok( preg_match( '/<path data-state="KY"[^>]*class="rt-st"/', $p ), 'KY gray' );
+ok( false === strpos( $p, 'Region lines are being finalized' ), 'no provisional note rendered' );
+ok( false === strpos( $p, 'Utah and Nevada' ), 'old region name not rendered' );
 ok( false !== strpos( $p, 'Your region' ) && false !== strpos( $p, 'Outside our 2027 regions' ), 'region hint on the state picker' );
 ok( false !== strpos( $p, 'data-state="before"' ) && false !== strpos( $p, '<div class="rt-state-open" hidden>' ) && false !== strpos( $p, 'FORM-501' ), 'form block and window swap intact inside the page' );
 ok( false === strpos( $p, "\u{2014}" ), 'no em dash on the page' );

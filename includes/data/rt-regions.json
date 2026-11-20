@@ -1,91 +1,24 @@
 {
- "source": "provisional",
- "checked_at": "2026-11-19T18:55:00Z",
- "note": "Provisional: live RaceReach program config (4cges9 out/recon/rr.html) region states, 2026 team hometowns and hub pages. Southeast kept because the live form offers it. Asked Mantis on the bus 2026-11-19 18:47Z (out/mantis-q.log); swap in its list when it lands.",
+ "source": "jamil 2026-11-20",
+ "checked_at": "2026-11-20T17:07:26Z",
  "ineligible_fill": "#e4e4e4",
  "ineligible_line": "#ffffff",
  "regions": [
   {
-   "key": "az",
-   "name": "Arizona",
+   "key": "west",
+   "name": "West",
    "states": [
-    "AZ"
+    "AZ",
+    "CA",
+    "CO",
+    "NV",
+    "UT"
    ],
-   "hub_name": "Arizona races",
-   "hub_url": "https://www.aravaiparunning.com/arizona/",
+   "hub_name": "Aravaipa races",
+   "hub_url": "https://www.aravaiparunning.com/races/",
    "fill": "#ff2a13",
    "fill_hover": "#d41a06",
    "ink": "#c41a07"
-  },
-  {
-   "key": "co",
-   "name": "Colorado",
-   "states": [
-    "CO"
-   ],
-   "hub_name": "Colorado races",
-   "hub_url": "https://www.aravaiparunning.com/colorado/",
-   "fill": "#2a5e6b",
-   "fill_hover": "#1d4550",
-   "ink": "#2a5e6b"
-  },
-  {
-   "key": "ca",
-   "name": "California",
-   "states": [
-    "CA"
-   ],
-   "hub_name": "California races",
-   "hub_url": "https://www.aravaiparunning.com/california-races/",
-   "fill": "#5bb5a2",
-   "fill_hover": "#3f9483",
-   "ink": "#2b7566"
-  },
-  {
-   "key": "ut",
-   "name": "Utah",
-   "states": [
-    "UT"
-   ],
-   "hub_name": "Ultra Adventures",
-   "hub_url": "https://www.aravaiparunning.com/ultra-adventures/",
-   "fill": "#ef7d22",
-   "fill_hover": "#cc6410",
-   "ink": "#a54f0b"
-  },
-  {
-   "key": "nv",
-   "name": "Nevada",
-   "states": [
-    "NV"
-   ],
-   "hub_name": "Nevada races",
-   "hub_url": "https://www.aravaiparunning.com/nevada/",
-   "fill": "#dda624",
-   "fill_hover": "#bb8a12",
-   "ink": "#7f5e05"
-  },
-  {
-   "key": "ne",
-   "name": "Northeast",
-   "states": [
-    "CT",
-    "DE",
-    "MA",
-    "MD",
-    "ME",
-    "NH",
-    "NJ",
-    "NY",
-    "PA",
-    "RI",
-    "VT"
-   ],
-   "hub_name": "White Mountain Endurance",
-   "hub_url": "https://www.aravaiparunning.com/white-mountain-endurance/",
-   "fill": "#3f7f45",
-   "fill_hover": "#2f6535",
-   "ink": "#336a38"
   },
   {
    "key": "gl",
@@ -96,13 +29,32 @@
     "MI",
     "MN",
     "OH",
+    "PA",
     "WI"
    ],
    "hub_name": "Great Lakes Endurance",
    "hub_url": "https://www.aravaiparunning.com/great-lakes-endurance/",
-   "fill": "#2f78b8",
-   "fill_hover": "#215e95",
-   "ink": "#25679f"
+   "fill": "#1497b8",
+   "fill_hover": "#0e7a96",
+   "ink": "#0b6880"
+  },
+  {
+   "key": "ne",
+   "name": "Northeast",
+   "states": [
+    "CT",
+    "MA",
+    "ME",
+    "NH",
+    "NY",
+    "RI",
+    "VT"
+   ],
+   "hub_name": "White Mountain Endurance",
+   "hub_url": "https://www.aravaiparunning.com/white-mountain-endurance/",
+   "fill": "#3737be",
+   "fill_hover": "#262695",
+   "ink": "#3333b0"
   },
   {
    "key": "se",
@@ -110,17 +62,16 @@
    "states": [
     "AL",
     "GA",
-    "KY",
-    "MS",
     "NC",
     "SC",
     "TN"
    ],
    "hub_name": "Bad Beard Events",
    "hub_url": "https://www.aravaiparunning.com/bad-beard/",
-   "fill": "#8c5384",
-   "fill_hover": "#6f3d68",
-   "ink": "#7b4573"
+   "fill": "#6b2a5e",
+   "fill_hover": "#4f1c45",
+   "ink": "#6b2a5e"
   }
- ]
+ ],
+ "states_from": "2026 Racing Team regions (Mantis, RaceReach 2026 form + roster) with the 4 names Jamil gave on 2026-11-20; Southeast is new for 2027 (Bad Beard: TN AL GA NC SC)"
 }

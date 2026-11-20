@@ -49,7 +49,7 @@ function arv_rt_apply_fields() {
 		array( 'key' => 'birth-date', 'name' => 'rt-birth-date', 'label' => 'Date of birth', 'type' => 'date', 'required' => true, 'section' => 'about', 'hint' => 'You must be 18 or older on January 1, 2027.' ),
 		array( 'key' => 'city', 'name' => 'rt-city', 'label' => 'City', 'type' => 'text', 'required' => true, 'section' => 'about' ),
 		array( 'key' => 'state', 'name' => 'rt-state', 'label' => 'State', 'type' => 'select', 'required' => true, 'section' => 'about', 'options' => array( 'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY' ) ),
-		array( 'key' => 'region', 'name' => 'rt-region', 'label' => 'Which region would you race for?', 'type' => 'radio', 'required' => true, 'section' => 'about', 'options' => array( 'Arizona', 'Colorado', 'Northeast', 'California', 'Utah and Nevada', 'Great Lakes', 'Southeast', 'Other' ) ),
+		array( 'key' => 'region', 'name' => 'rt-region', 'label' => 'Which region would you race for?', 'type' => 'radio', 'required' => true, 'section' => 'about', 'options' => array( 'West', 'Great Lakes', 'Northeast', 'Southeast', 'Other' ) ),
 		array( 'key' => 'disciplines', 'name' => 'rt-disciplines', 'label' => 'Which do you race competitively?', 'type' => 'checkbox', 'required' => true, 'section' => 'about', 'options' => array( 'Trail', 'Ultra', 'Road', 'Mountain bike' ), 'hint' => 'Pick all that apply.' ),
 		array( 'key' => 'returning', 'name' => 'rt-returning', 'label' => 'Have you been on the team before?', 'type' => 'radio', 'required' => true, 'section' => 'about', 'options' => array( 'Yes', 'No' ) ),
 		array( 'key' => 'returning-years', 'name' => 'rt-returning-years', 'label' => 'Which years?', 'type' => 'text', 'required' => false, 'section' => 'about', 'hint' => 'If yes, for example 2025, 2026.' ),
@@ -754,14 +754,14 @@ function arv_rt_apply_map_svg() {
 }
 
 /**
- * "Region lines are being finalized." while the region lists are provisional
- * (anything but source "mantis").
+ * "Region lines are being finalized." only while the region lists are marked
+ * provisional (source "provisional"). Final lists render no note.
  *
  * @param array $d rt-regions.json data.
  * @return string
  */
 function arv_rt_apply_regions_note( $d ) {
-	if ( is_array( $d ) && isset( $d['source'] ) && 'mantis' === $d['source'] ) {
+	if ( ! is_array( $d ) || ! isset( $d['source'] ) || 'provisional' !== $d['source'] ) {
 		return '';
 	}
 	return '<p class="rt-map__note">Region lines are being finalized.</p>';
@@ -1255,7 +1255,7 @@ function arv_rt_apply_run_test( $email ) {
 		'rt-birth-date'      => '1990-01-01',
 		'rt-city'            => 'Phoenix',
 		'rt-state'           => 'AZ',
-		'rt-region'          => 'Arizona',
+		'rt-region'          => 'West',
 		'rt-disciplines'     => array( 'Trail', 'Ultra' ),
 		'rt-returning'       => 'No',
 		'rt-resume'          => 'TEST entry from Vaip. Delete me.',
@@ -1370,18 +1370,53 @@ function arv_rt_apply_rr_optional_keys() {
 	return array( 'ultrasignup', 'profiles', 'goals', 'race_plans', 'summit', 'bring', 'instagram', 'strava', 'socials', 'content_links', 'sponsors', 'support', 'headshot', 'resume_file' );
 }
 
-/** Site region answer => RaceReach code. */
+/**
+ * Site region answer => RaceReach code.
+ *
+ * West goes out as az (interim) until RaceReach's 2027 program takes the new
+ * codes; the switch is a config change: update the option
+ * arv_rt_apply_rr_region_codes (array answer => code), no release needed.
+ * The old answers stay mapped so entries made before the change still push.
+ *
+ * @return array
+ */
 function arv_rt_apply_rr_region_map() {
-	return array(
-		'Arizona'         => 'az',
-		'Colorado'        => 'co',
-		'Northeast'       => 'ne',
-		'California'      => 'ca',
-		'Utah and Nevada' => 'utnv',
+	$map = array(
+		'West'            => 'az',
 		'Great Lakes'     => 'gl',
+		'Northeast'       => 'ne',
 		'Southeast'       => 'se',
 		'Other'           => 'other',
+		// Legacy answers (form before 2026-11-20).
+		'Arizona'         => 'az',
+		'Colorado'        => 'co',
+		'California'      => 'ca',
+		'Utah and Nevada' => 'utnv',
 	);
+	$o = get_option( 'arv_rt_apply_rr_region_codes', array() );
+	if ( is_array( $o ) ) {
+		foreach ( $o as $answer => $code ) {
+			$code = strtolower( trim( (string) $code ) );
+			if ( is_string( $answer ) && '' !== $answer && preg_match( '/^[a-z]{2,8}$/', $code ) ) {
+				$map[ $answer ] = $code;
+			}
+		}
+	}
+	return $map;
+}
+
+/**
+ * Log line when West goes out under the interim code, else ''.
+ *
+ * @param string $answer Region answer on the entry.
+ * @param string $code   Code sent.
+ * @return string
+ */
+function arv_rt_apply_rr_region_note( $answer, $code ) {
+	if ( 'West' === $answer && 'west' !== $code ) {
+		return 'region West sent as ' . $code . ' (interim)';
+	}
+	return '';
 }
 
 /** Site discipline answer => RaceReach code. */
@@ -2025,6 +2060,12 @@ function arv_rt_apply_rr_push( $entry, $opts = array() ) {
 		if ( null === $races ) {
 			$rec['note'] = 'races GET failed, race_plans not sent';
 		}
+		$ra    = isset( $fields['rt-region'] ) ? trim( is_array( $fields['rt-region'] ) ? implode( ', ', $fields['rt-region'] ) : (string) $fields['rt-region'] ) : '';
+		$rnote = arv_rt_apply_rr_region_note( $ra, isset( $payload['region'] ) ? (string) $payload['region'] : '' );
+		if ( '' !== $rnote ) {
+			$rec['region_note'] = $rnote;
+			$rec['note']        = isset( $rec['note'] ) ? $rec['note'] . '; ' . $rnote : $rnote;
+		}
 		$dropped = ! empty( $prev['dropped'] ) ? (array) $prev['dropped'] : array();
 		foreach ( $dropped as $k ) {
 			unset( $payload[ $k ] );
@@ -2357,10 +2398,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		 * Run one TEST application through the real pipeline. With the
 		 * RaceReach push on, it is pushed too and the result printed.
 		 *
-		 * --email=<e>
+		 * ## OPTIONS
 		 *
-		 * [--no-mail]
-		 * : Skip the staff notice email.
+		 * --email=<e>
+		 * : Applicant email for the TEST entry.
+		 *
+		 * [--[no-]mail]
+		 * : Send the staff notice email (default yes). --no-mail skips it.
 		 *
 		 * @param array $args  Args.
 		 * @param array $assoc Flags.
