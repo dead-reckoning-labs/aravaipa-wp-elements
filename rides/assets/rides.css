@@ -207,8 +207,8 @@
 	color: #fff !important;
 }
 .rides-btn--line {
-	background: transparent;
-	border-color: var(--rides-navy);
+	background: var(--rides-mist);
+	border-color: var(--rides-line);
 	color: var(--rides-navy) !important;
 }
 .rides-btn--line:hover,
@@ -225,8 +225,11 @@
 /* Hero slider */
 .rides-slider {
 	position: relative;
-	width: 100%;
-	height: clamp(520px, 78vh, 820px);
+	width: calc(100% - 24px);
+	margin: 12px auto 0;
+	height: min(60vh, 560px);
+	min-height: 500px;
+	border-radius: var(--rides-radius);
 	background: var(--rides-navy);
 	color: #fff;
 	overflow: hidden;
@@ -339,11 +342,12 @@
 }
 .rides-slider-arrows {
 	display: flex;
-	gap: 0;
+	gap: 8px;
 }
 .rides-arrow {
-	width: 52px;
-	height: 52px;
+	width: 44px;
+	height: 44px;
+	border-radius: var(--rides-radius);
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -354,9 +358,6 @@
 	line-height: 1;
 	cursor: pointer;
 	padding: 0;
-}
-.rides-arrow + .rides-arrow {
-	border-left: 1px solid var(--rides-night);
 }
 .rides-arrow:hover,
 .rides-arrow:focus-visible {
@@ -415,6 +416,8 @@
 	display: flex;
 	flex-direction: column;
 	width: 100%;
+	border-radius: var(--rides-radius);
+	overflow: hidden;
 	background: var(--rides-night-2);
 	border: 1px solid rgba(255, 255, 255, 0.14);
 	color: #fff;
@@ -422,6 +425,7 @@
 }
 .rides-tile-media {
 	position: relative;
+	border-radius: 7px;
 	aspect-ratio: 5 / 4;
 	display: flex;
 	align-items: center;
@@ -578,6 +582,7 @@
 	align-items: center;
 	justify-content: center;
 	padding: 10px;
+	border-radius: var(--rides-radius);
 }
 .rides-list-logo.is-plate {
 	background: var(--rides-sand);
@@ -609,7 +614,8 @@
 	align-items: center;
 	min-height: 40px;
 	padding: 8px 14px;
-	border: 1px solid var(--rides-navy);
+	border: 1px solid var(--rides-line);
+	border-radius: 6px;
 	font-size: 14px;
 	font-weight: 900;
 	letter-spacing: 0.06em;
@@ -728,6 +734,8 @@
 	display: flex;
 	flex-direction: column;
 	border: 1px solid var(--rides-line);
+	border-radius: var(--rides-radius);
+	overflow: hidden;
 	background: #fff;
 }
 .rides-distance-head {
@@ -861,6 +869,7 @@
 	padding: 18px;
 	background: #fff;
 	border: 1px solid var(--rides-line);
+	border-radius: var(--rides-radius);
 }
 .rides-sponsors img {
 	max-height: 84px;
@@ -907,7 +916,7 @@
 	font-size: 19px;
 }
 .rides-v2 .rides-intro-big {
-	font-family: var(--rides-display);
+	font-family: var(--rides-heading-font);
 	font-size: clamp(26px, 2.6vw, 34px);
 	font-weight: 600;
 	line-height: 1.15;
@@ -955,6 +964,8 @@
 	position: relative;
 	aspect-ratio: 16 / 9;
 	background: #000;
+	border-radius: var(--rides-radius);
+	overflow: hidden;
 }
 .rides-video-frame iframe {
 	position: absolute;
@@ -972,13 +983,14 @@
 	padding: 28px;
 	background: var(--rides-night-2);
 	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: var(--rides-radius);
 }
 .rides-comm-block p {
 	margin: 0 0 16px;
 	color: rgba(255, 255, 255, 0.86);
 }
 .rides-v2 .rides-comm-sub {
-	font-family: var(--rides-display);
+	font-family: var(--rides-heading-font);
 	font-size: 18px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
