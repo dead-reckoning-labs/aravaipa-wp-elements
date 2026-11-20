@@ -2357,10 +2357,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		 * Run one TEST application through the real pipeline. With the
 		 * RaceReach push on, it is pushed too and the result printed.
 		 *
-		 * --email=<e>
+		 * ## OPTIONS
 		 *
-		 * [--no-mail]
-		 * : Skip the staff notice email.
+		 * --email=<e>
+		 * : Applicant email for the TEST entry.
+		 *
+		 * [--[no-]mail]
+		 * : Send the staff notice email (default yes). --no-mail skips it.
 		 *
 		 * @param array $args  Args.
 		 * @param array $assoc Flags.
