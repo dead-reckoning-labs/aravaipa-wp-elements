@@ -24,14 +24,6 @@
   "url": "https://lwp.smugmug.com/2026/Adrenaline-Night-Rides"
  },
  {
-  "slug": "royal-gorge-groove",
-  "ride": "Royal Gorge Groove",
-  "year": 2026,
-  "date_label": "April 26, 2026",
-  "label": "Aravaipa Photo Gallery",
-  "url": "https://aravaipa.smugmug.com/2025-Events/Royal-Gorge-Groove-Rides-2025"
- },
- {
   "slug": "sinister",
   "ride": "Sinister Night Rides",
   "year": 2026,
@@ -276,14 +268,6 @@
   "url": "https://photos.aravaiparunning.com/p623696642"
  },
  {
-  "slug": "gravity-grinder",
-  "ride": "Gravity Grinder",
-  "year": 2022,
-  "date_label": "July 29, 2022",
-  "label": "Aravaipa Photo Gallery",
-  "url": "https://photos.aravaiparunning.com/gravitygrinder22"
- },
- {
   "slug": "stunner",
   "ride": "Stunner Night Rides",
   "year": 2022,
@@ -418,7 +402,8 @@
   "ride": "Venom XC MTB Race",
   "year": 2020,
   "label": "Let's Wander Photography",
-  "url": "https://lws.smugmug.com/2020-Race-Photography/Venom-Mountain-Bike-Races-2020/"
+  "url": "https://lwp.smugmug.com/2020-Race-Photography/Venom-Mountain-Bike-Races-2020",
+  "note": "live page links lws.smugmug.com (typo, 404); lwp is the gallery"
  },
  {
   "slug": "venom",
