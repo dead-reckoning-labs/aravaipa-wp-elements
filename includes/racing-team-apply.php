@@ -754,14 +754,14 @@ function arv_rt_apply_map_svg() {
 }
 
 /**
- * "Region lines are being finalized." while the region lists are provisional
- * (anything but source "mantis").
+ * "Region lines are being finalized." only while the region lists are marked
+ * provisional (source "provisional"). Final lists render no note.
  *
  * @param array $d rt-regions.json data.
  * @return string
  */
 function arv_rt_apply_regions_note( $d ) {
-	if ( is_array( $d ) && isset( $d['source'] ) && 'mantis' === $d['source'] ) {
+	if ( ! is_array( $d ) || ! isset( $d['source'] ) || 'provisional' !== $d['source'] ) {
 		return '';
 	}
 	return '<p class="rt-map__note">Region lines are being finalized.</p>';
