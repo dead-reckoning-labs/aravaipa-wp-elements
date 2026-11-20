@@ -258,7 +258,7 @@ function rides_render_home( $ctx ) {
  */
 function rides_render_events( $ctx ) {
 	$events = rides_events( $ctx['today'] );
-	$out    = rides_render_pagehead( $ctx, 'Events', 'Every Aravaipa Rides event, soonest first.', 'black-canyon-crusher' );
+	$out    = rides_render_pagehead( $ctx, 'Events', 'Every Aravaipa Rides event, soonest first.', 'stunner' );
 	$out   .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_tiles( $ctx, $events ) . '</div></section>';
 	return rides_root( 'events', $out );
 }
@@ -352,7 +352,7 @@ function rides_render_list( $kind, $rows ) {
 		$list .= '<div class="rides-list-logo">' . ( $logo ? '<img src="' . rides_e( $logo ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
 		$list .= '<div><h3>' . rides_e( $name ) . '</h3><ul class="rides-years">';
 		foreach ( $by[ $slug ] as $r ) {
-			$label = ! empty( $r['label'] ) ? $r['label'] : '';
+			$label = ! empty( $r['label'] ) && 'Aravaipa Timing' !== $r['label'] ? $r['label'] : '';
 			$list .= '<li><a href="' . rides_e( $r['url'] ) . '" rel="noopener">' . rides_e( $r['year'] )
 				. ( $label ? '<small>' . rides_e( $label ) . '</small>' : '' ) . '</a></li>';
 		}
@@ -368,7 +368,7 @@ function rides_render_list( $kind, $rows ) {
  * @return string
  */
 function rides_render_results( $ctx ) {
-	$out  = rides_render_pagehead( $ctx, 'Results', 'Official results for every Aravaipa Rides event, by ride and year.', 'sinister' );
+	$out  = rides_render_pagehead( $ctx, 'Results', 'Official results for every Aravaipa Rides event, by ride and year.', 'tonto' );
 	$out .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_list( 'results', rides_data( 'results' ) ) . '</div></section>';
 	return rides_root( 'results', $out );
 }
@@ -634,10 +634,10 @@ function rides_layout_meta( $layout, $ctx ) {
 			$desc = $e['name'] . ', ' . $e['date_label'] . ', ' . rides_place( $e ) . '.';
 		}
 	} elseif ( 'events' === $layout ) {
-		$slug = 'black-canyon-crusher';
+		$slug = 'stunner';
 		$desc = 'Every Aravaipa Rides event: dates, places, distances and registration.';
 	} elseif ( 'results' === $layout ) {
-		$slug = 'sinister';
+		$slug = 'tonto';
 		$desc = 'Official results for Aravaipa Rides events, by ride and year.';
 	} elseif ( 'photos' === $layout ) {
 		$slug = 'big-woody';

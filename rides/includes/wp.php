@@ -49,9 +49,8 @@ function rides_valid_layout( $layout ) {
  * @return bool
  */
 function rides_is_preview() {
-	static $ok = null;
-	if ( null !== $ok ) {
-		return $ok;
+	if ( isset( $GLOBALS['rides_state']['preview'] ) ) {
+		return $GLOBALS['rides_state']['preview'];
 	}
 	$ok = false;
 	if ( isset( $_GET['rides_preview'] ) && is_string( $_GET['rides_preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
@@ -59,6 +58,7 @@ function rides_is_preview() {
 		$token = (string) get_option( 'rides_preview_token', '' );
 		$ok    = strlen( $token ) >= 16 && hash_equals( $token, $given );
 	}
+	$GLOBALS['rides_state']['preview'] = $ok;
 	return $ok;
 }
 
@@ -68,10 +68,19 @@ function rides_is_preview() {
  * @return string
  */
 function rides_current_layout() {
-	static $layout = null;
-	if ( null !== $layout ) {
-		return $layout;
+	if ( isset( $GLOBALS['rides_state']['layout'] ) ) {
+		return $GLOBALS['rides_state']['layout'];
 	}
+	$GLOBALS['rides_state']['layout'] = rides_resolve_layout();
+	return $GLOBALS['rides_state']['layout'];
+}
+
+/**
+ * Work out the layout key (uncached).
+ *
+ * @return string
+ */
+function rides_resolve_layout() {
 	$layout = '';
 	if ( ! is_singular( 'page' ) && ! is_front_page() ) {
 		return $layout;
@@ -90,6 +99,21 @@ function rides_current_layout() {
 		}
 	}
 	return $layout;
+}
+
+/**
+ * Send a header (tests capture them instead).
+ *
+ * @param string $line Header line.
+ */
+function rides_header( $line ) {
+	if ( isset( $GLOBALS['rides_test_headers'] ) && is_array( $GLOBALS['rides_test_headers'] ) ) {
+		$GLOBALS['rides_test_headers'][] = $line;
+		return;
+	}
+	if ( ! headers_sent() ) {
+		header( $line, true );
+	}
 }
 
 /**
@@ -123,8 +147,8 @@ add_action(
 			define( 'DONOTCACHEPAGE', true );
 		}
 		nocache_headers();
-		header( 'X-Robots-Tag: noindex, nofollow', true );
-		header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0', true );
+		rides_header( 'X-Robots-Tag: noindex, nofollow' );
+		rides_header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
 	},
 	1
 );
