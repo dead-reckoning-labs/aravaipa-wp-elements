@@ -323,6 +323,21 @@ function rides_initials( $name ) {
 }
 
 /**
+ * Column of a list of rows (no WordPress dependency, harness-safe).
+ *
+ * @param array  $rows Rows.
+ * @param string $key  Key.
+ * @return array
+ */
+function rides_pluck( $rows, $key ) {
+	$out = array();
+	foreach ( $rows as $r ) {
+		$out[] = isset( $r[ $key ] ) ? $r[ $key ] : '';
+	}
+	return $out;
+}
+
+/**
  * Results or photos list, grouped by ride then year.
  *
  * @param string $kind results|photos.
@@ -351,8 +366,12 @@ function rides_render_list( $kind, $rows ) {
 		$list .= '<li class="rides-list-ride" id="' . rides_e( $id ) . '">';
 		$list .= '<div class="rides-list-logo">' . ( $logo ? '<img src="' . rides_e( $logo ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
 		$list .= '<div><h3>' . rides_e( $name ) . '</h3><ul class="rides-years">';
+		$years = array_count_values( array_map( 'strval', rides_pluck( $by[ $slug ], 'year' ) ) );
 		foreach ( $by[ $slug ] as $r ) {
 			$label = ! empty( $r['label'] ) && 'Aravaipa Timing' !== $r['label'] ? $r['label'] : '';
+			if ( '' === $label && $years[ (string) $r['year'] ] > 1 && ! empty( $r['date_label'] ) && preg_match( '/^([A-Z][a-z]+)/', $r['date_label'], $mm ) ) {
+				$label = $mm[1]; // Two editions in one year (Tonto Feb and Nov 2022).
+			}
 			$list .= '<li><a href="' . rides_e( $r['url'] ) . '" rel="noopener">' . rides_e( $r['year'] )
 				. ( $label ? '<small>' . rides_e( $label ) . '</small>' : '' ) . '</a></li>';
 		}
