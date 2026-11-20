@@ -285,5 +285,21 @@ ok( false === strpos( $home, 'rides-tile-logo' ) && false !== strpos( $home, 'ri
 ok( false !== strpos( $pp, 'rides-event-lockup' ) && false !== strpos( $pp, 'assets/logos/prickly-pedal.png' ), 'Prickly hero has the logo lockup' );
 ok( false !== strpos( $home, 'Welcome to Aravaipa Rides' ) && false !== strpos( $home, 'never been more stoked' ), 'home has the welcome intro' );
 
+// 11. v3 meet in the middle: eyebrows, normal-case headings, balanced grid, soft CSS.
+$evh = rides_render_events( array( 'base' => '', 'today' => '2026-11-20' ) );
+ok( substr_count( $home, 'class="rides-eyebrow"' ) >= 2 && false === strpos( $home, 'class="rides-kicker"' ), 'home section labels are .rides-eyebrow' );
+ok( false !== strpos( $home, 'rides-slide-kicker rides-eyebrow' ), 'slide date line is an eyebrow' );
+ok( false !== strpos( $pp, 'rides-slide-kicker rides-eyebrow' ) && false === strpos( $pp, 'class="rides-kicker"' ), 'Prickly section labels are eyebrows' );
+ok( 1 === preg_match( '#<ul class="rides-tiles"[^>]*>(\s*<li>.*?</li>)+\s*</ul>#s', $evh ), 'events tiles are list items inside ul.rides-tiles (balanced grid hooks)' );
+ok( 10 === substr_count( $evh, '<li><a class="rides-tile' ) || 10 <= substr_count( $evh, 'class="rides-tile ' ) + substr_count( $evh, 'class="rides-tile"' ), 'events render all 10 tiles' );
+$css = file_get_contents( RIDES_DIR . '/assets/rides.css' );
+ok( false !== strpos( $css, 'grid-template-columns: repeat(8, minmax(0, 1fr))' ) && false !== strpos( $css, ':nth-child(4n+1):nth-last-child(2)' ), 'tile grid centers a short last row' );
+ok( false !== strpos( $css, 'height: min(60vh, 560px)' ) && false !== strpos( $css, 'height: 420px' ), 'hero slider is 60vh capped at 560px, 420px on phone' );
+ok( 0 === preg_match( '#Oswald|Bebas#', $css ), 'no condensed display face left' );
+ok( 0 === preg_match( '#box-shadow\s*:\s*+(?!none)#', $css ), 'no box shadows' );
+preg_match_all( '#border-radius\s*:\s*([^;]+);#', $css, $rm );
+$bad = array_filter( $rm[1], function ( $v ) { return ! in_array( trim( $v ), array( '0', 'var(--rides-radius)', '6px', '7px', '8px', '50%' ), true ); } );
+ok( ! $bad, 'border-radius only 0, 6 to 8px or 50% (dots): ' . implode( ', ', $bad ) );
+
 echo "$count checks, $fails failed\n";
 exit( $fails ? 1 : 0 );
