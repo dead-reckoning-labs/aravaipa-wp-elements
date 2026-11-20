@@ -307,6 +307,22 @@ function rides_row_ride( $rows, $slug ) {
 }
 
 /**
+ * Up to three initials of a ride name, for rides without a logo.
+ *
+ * @param string $name Ride name.
+ * @return string
+ */
+function rides_initials( $name ) {
+	$out = '';
+	foreach ( preg_split( '/\s+/', trim( $name ) ) as $w ) {
+		if ( preg_match( '/^[A-Za-z]/', $w ) && ! in_array( strtolower( $w ), array( 'rides', 'ride', 'night', 'race', 'mtb', 'the' ), true ) ) {
+			$out .= strtoupper( $w[0] );
+		}
+	}
+	return substr( $out ? $out : 'AR', 0, 3 );
+}
+
+/**
  * Results or photos list, grouped by ride then year.
  *
  * @param string $kind results|photos.
@@ -333,7 +349,7 @@ function rides_render_list( $kind, $rows ) {
 		$id    = 'rides-' . $kind . '-' . $slug;
 		$jump .= '<li><a href="#' . rides_e( $id ) . '">' . rides_e( $name ) . '</a></li>';
 		$list .= '<li class="rides-list-ride" id="' . rides_e( $id ) . '">';
-		$list .= '<div class="rides-list-logo">' . ( $logo ? '<img src="' . rides_e( $logo ) . '" alt="" loading="lazy">' : '' ) . '</div>';
+		$list .= '<div class="rides-list-logo">' . ( $logo ? '<img src="' . rides_e( $logo ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
 		$list .= '<div><h3>' . rides_e( $name ) . '</h3><ul class="rides-years">';
 		foreach ( $by[ $slug ] as $r ) {
 			$label = ! empty( $r['label'] ) ? $r['label'] : '';

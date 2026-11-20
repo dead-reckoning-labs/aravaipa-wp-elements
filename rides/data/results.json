@@ -1,0 +1,593 @@
+[
+ {
+  "slug": "stunner",
+  "ride": "Stunner Night Rides",
+  "year": 2026,
+  "date_label": "July 10, 2026",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/stunner_night_rides-2026?raceId=302137"
+ },
+ {
+  "slug": "big-woody",
+  "ride": "Big Woody Rides",
+  "year": 2026,
+  "date_label": "June 21, 2026",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/big_woody_rides-2026"
+ },
+ {
+  "slug": "adrenaline",
+  "ride": "Adrenaline Night Rides",
+  "year": 2026,
+  "date_label": "May 22, 2026",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/adrenaline_night_rides-2026"
+ },
+ {
+  "slug": "royal-gorge-groove",
+  "ride": "Royal Gorge Groove Rides",
+  "year": 2026,
+  "date_label": "April 25, 2026",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/royal_gorge_groove-2026"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2026,
+  "date_label": "April 24, 2026",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/sinister_rides-2026"
+ },
+ {
+  "slug": "prickly-pedal",
+  "ride": "Prickly Pedal",
+  "year": 2026,
+  "date_label": "February 1, 2026",
+  "label": "MTB Results",
+  "url": "https://live.aravaiparunning.com/#/prickly_pedal-2026"
+ },
+ {
+  "slug": "prickly-pedal",
+  "ride": "Prickly Pedal",
+  "year": 2026,
+  "date_label": "February 1, 2026",
+  "label": "Trail Run Results",
+  "url": "https://live.aravaiparunning.com/#/prickly_pedal_run-2026"
+ },
+ {
+  "slug": "frenzy-hills",
+  "ride": "Frenzy Hills Rides",
+  "year": 2025,
+  "date_label": "December 7, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/frenzy_hill_rides-2025"
+ },
+ {
+  "slug": "tonto",
+  "ride": "Tonto Mountain Rides",
+  "year": 2025,
+  "date_label": "November 10, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/tonto_rides-2025"
+ },
+ {
+  "slug": "jangover",
+  "ride": "Jangover Night Rides",
+  "year": 2025,
+  "date_label": "September 19, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/jangover_night_rides-2025",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "vertigo",
+  "ride": "Vertigo Rides",
+  "year": 2025,
+  "date_label": "August 8, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/vertigo_rides-2025",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "stunner",
+  "ride": "Stunner Night Rides",
+  "year": 2025,
+  "date_label": "July 11, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/stunner_night_rides-2025"
+ },
+ {
+  "slug": "big-woody",
+  "ride": "Big Woody Rides",
+  "year": 2025,
+  "date_label": "June 22, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/big_woody-2025"
+ },
+ {
+  "slug": "adrenaline",
+  "ride": "Adrenaline Night Rides",
+  "year": 2025,
+  "date_label": "May 16, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/adrenaline_night_rides-2025"
+ },
+ {
+  "slug": "royal-gorge-groove",
+  "ride": "Royal Gorge Groove Rides",
+  "year": 2025,
+  "date_label": "April 27, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/royal_gorge_rides-2025"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2025,
+  "date_label": "April 25, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/sinister_night_rides-2025"
+ },
+ {
+  "slug": "prickly-pedal",
+  "ride": "Prickly Pedal",
+  "year": 2025,
+  "date_label": "January 19, 2025",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/prickly_pedal-2025"
+ },
+ {
+  "slug": "frenzy-hills",
+  "ride": "Frenzy Hills Rides",
+  "year": 2024,
+  "date_label": "December 8, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/frenzy_hills_rides-2024"
+ },
+ {
+  "slug": "tonto",
+  "ride": "Tonto Mountain Rides",
+  "year": 2024,
+  "date_label": "November 10, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/tonto_mountain_rides-2024"
+ },
+ {
+  "slug": "saguaro-soiree",
+  "ride": "Saguaro Soiree",
+  "year": 2024,
+  "date_label": "November 10, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/saguaro_soiree-2024"
+ },
+ {
+  "slug": "vertigo",
+  "ride": "Vertigo Night Rides",
+  "year": 2024,
+  "date_label": "August 9, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/vertigo_night_rides-2024",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "stunner",
+  "ride": "Stunner Night Rides",
+  "year": 2024,
+  "date_label": "July 19, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/stunner_night_rides-2024"
+ },
+ {
+  "slug": "big-woody",
+  "ride": "Big Woody Rides",
+  "year": 2024,
+  "date_label": "June 23, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/big_woody-2024"
+ },
+ {
+  "slug": "adrenaline",
+  "ride": "Adrenaline Night Rides",
+  "year": 2024,
+  "date_label": "May 17, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/adrenaline_night_rides-2024"
+ },
+ {
+  "slug": "royal-gorge-groove",
+  "ride": "Royal Gorge Groove",
+  "year": 2024,
+  "date_label": "April 21, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/royal_gorge_rides-2024"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2024,
+  "date_label": "April 19, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/sinister_night_rides-2024"
+ },
+ {
+  "slug": "prickly-pedal",
+  "ride": "Prickly Pedal",
+  "year": 2024,
+  "date_label": "January 20, 2024",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/prickly_pedal-2024"
+ },
+ {
+  "slug": "frenzy-hills",
+  "ride": "Frenzy Hills Rides",
+  "year": 2023,
+  "date_label": "December 3, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/frenzy_hills_rides-2023"
+ },
+ {
+  "slug": "tonto",
+  "ride": "Tonto Mountain Rides",
+  "year": 2023,
+  "date_label": "November 12, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/tonto_mountain_rides-2023"
+ },
+ {
+  "slug": "saguaro-soiree",
+  "ride": "Saguaro Soiree",
+  "year": 2023,
+  "date_label": "November 12, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/saguaro_soiree-2023"
+ },
+ {
+  "slug": "vertigo",
+  "ride": "Vertigo Night Rides",
+  "year": 2023,
+  "date_label": "August 18, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/vertigo_night_rides-2023",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "big-woody",
+  "ride": "Big Woody Rides",
+  "year": 2023,
+  "date_label": "June 11, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/big_woody-2023"
+ },
+ {
+  "slug": "adrenaline",
+  "ride": "Adrenaline Night Rides",
+  "year": 2023,
+  "date_label": "May 19, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/adrenaline_rides-2023"
+ },
+ {
+  "slug": "royal-gorge-groove",
+  "ride": "Royal Gorge Groove",
+  "year": 2023,
+  "date_label": "April 23, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/royal_gorge_rides-2023"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2023,
+  "date_label": "April 21, 2023",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/sinister_night_rides-2023"
+ },
+ {
+  "slug": "frenzy-hills",
+  "ride": "Frenzy Hills Rides",
+  "year": 2022,
+  "date_label": "December 4, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/frenzy_hills-2022"
+ },
+ {
+  "slug": "tonto",
+  "ride": "Tonto Mountain Rides",
+  "year": 2022,
+  "date_label": "November 13, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/tonto_mountain_rides-2022"
+ },
+ {
+  "slug": "saguaro-soiree",
+  "ride": "Saguaro Soiree",
+  "year": 2022,
+  "date_label": "November 13, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/saguaro_soiree-2022"
+ },
+ {
+  "slug": "rough-canyon",
+  "ride": "Rough Canyon",
+  "year": 2022,
+  "date_label": "October 9, 2022",
+  "label": "32 Mile",
+  "url": "https://aravaiparides.com/_results/rough-canyon-2022/32-Mile-Solo_results.html"
+ },
+ {
+  "slug": "rough-canyon",
+  "ride": "Rough Canyon",
+  "year": 2022,
+  "date_label": "October 9, 2022",
+  "label": "18 Mile",
+  "url": "https://aravaiparides.com/_results/rough-canyon-2022/18-Mile-Solo_results.html"
+ },
+ {
+  "slug": "jangover",
+  "ride": "Jangover Night Rides",
+  "year": 2022,
+  "date_label": "September 16, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/jangover_night_rides-2022",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "last-quarter-crusher",
+  "ride": "Last Quarter Crusher",
+  "year": 2022,
+  "date_label": "September 2, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/last_quarter_crusher-2022"
+ },
+ {
+  "slug": "vertigo",
+  "ride": "Vertigo Night Rides",
+  "year": 2022,
+  "date_label": "August 19, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/vertigo_night_rides-2022",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "big-woody",
+  "ride": "Big Woody Rides",
+  "year": 2022,
+  "date_label": "August 13, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/big_woody-2022"
+ },
+ {
+  "slug": "gravity-grinder",
+  "ride": "Gravity Grinder",
+  "year": 2022,
+  "date_label": "July 29, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/gravity_grinder-2022"
+ },
+ {
+  "slug": "stunner",
+  "ride": "Stunner Night Rides",
+  "year": 2022,
+  "date_label": "July 22, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/stunner_night_rides-2022"
+ },
+ {
+  "slug": "lunar-liftoff",
+  "ride": "Lunar Liftoff",
+  "year": 2022,
+  "date_label": "June 24, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/lunar_liftoff-2022"
+ },
+ {
+  "slug": "hypnosis",
+  "ride": "Hypnosis Night Rides",
+  "year": 2022,
+  "date_label": "June 17, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/hypnosis_night_rides-2022",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "adrenaline",
+  "ride": "Adrenaline Night Rides",
+  "year": 2022,
+  "date_label": "May 20, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/adrenaline_rides-2022"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2022,
+  "date_label": "April 15, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/sinister_night_rides_-2022"
+ },
+ {
+  "slug": "royal-gorge-groove",
+  "ride": "Royal Gorge Groove",
+  "year": 2022,
+  "date_label": "April 10, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/royal_gorge_groove_rides-2022"
+ },
+ {
+  "slug": "tonto",
+  "ride": "Tonto Mountain Rides",
+  "year": 2022,
+  "date_label": "February 19, 2022",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/tonto_mountain_rides-2021"
+ },
+ {
+  "slug": "frenzy-hills",
+  "ride": "Frenzy Hills Rides",
+  "year": 2021,
+  "date_label": "December 5, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/frenzy_hills-2021"
+ },
+ {
+  "slug": "saguaro-soiree",
+  "ride": "Saguaro Soiree",
+  "year": 2021,
+  "date_label": "November 21, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/saguaro_soiree_-2021"
+ },
+ {
+  "slug": "jangover",
+  "ride": "Jangover Night Rides",
+  "year": 2021,
+  "date_label": "September 24, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/jangover_rides-2021",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "big-woody",
+  "ride": "Big Woody Rides",
+  "year": 2021,
+  "date_label": "August 21, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/big_woody-2021"
+ },
+ {
+  "slug": "vertigo",
+  "ride": "Vertigo Night Rides",
+  "year": 2021,
+  "date_label": "August 13, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/vertigo_night_rides-2021",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "stunner",
+  "ride": "Stunner Night Rides",
+  "year": 2021,
+  "date_label": "July 17, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/stunner_rides-2021"
+ },
+ {
+  "slug": "hypnosis",
+  "ride": "Hypnosis Night Rides",
+  "year": 2021,
+  "date_label": "June 26, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/hypnosis_rides-2021",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "adrenaline",
+  "ride": "Adrenaline Night Rides",
+  "year": 2021,
+  "date_label": "May 21, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/adrenaline_rides-2021"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2021,
+  "date_label": "April 23, 2021",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/sinister-night-rides-2021"
+ },
+ {
+  "slug": "frenzy-hills",
+  "ride": "Frenzy Hills Rides",
+  "year": 2020,
+  "date_label": "December 6, 2020",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/frenzy-hills-2020"
+ },
+ {
+  "slug": "tonto",
+  "ride": "Tonto Mountain",
+  "year": 2020,
+  "date_label": "November 15, 2020",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/tonto-mountain-2020"
+ },
+ {
+  "slug": "venom",
+  "ride": "Venom",
+  "year": 2020,
+  "date_label": "October 3, 2020",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/venom-mtb-2020"
+ },
+ {
+  "slug": "vertigo",
+  "ride": "Vertigo Night Rides",
+  "year": 2020,
+  "date_label": "October 2, 2020",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/vertigo-night-rides-2020",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "jangover",
+  "ride": "Jangover Night Rides",
+  "year": 2020,
+  "date_label": "September 25, 2020",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/jangover-night-rides-2020",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2020,
+  "date_label": "August 28, 2020",
+  "label": "Aravaipa Timing",
+  "url": "https://live.aravaiparunning.com/#/sinister-night-rides-2020"
+ },
+ {
+  "slug": "jangover",
+  "ride": "Jangover Night Rides",
+  "year": 2019,
+  "date_label": "September 27, 2019",
+  "label": "Aravaipa Timing",
+  "url": "https://aravaiparunning.com/ultracast/?f=./results/AravaipaRides/jnr/2019/Jangover%2520Night%2520Rides%25202019.clax",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "vertigo",
+  "ride": "Vertigo Night Rides",
+  "year": 2019,
+  "date_label": "August 16, 2019",
+  "label": "Ultracast",
+  "url": "https://aravaiparunning.com/ultracast/?f=./results/AravaipaRides/vnr/2019/Vertigo%2520Night%2520Rides%25202019.clax",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "hypnosis",
+  "ride": "Hypnosis Night Rides",
+  "year": 2019,
+  "date_label": "June 14, 2019",
+  "label": "Ultracast",
+  "url": "https://aravaiparunning.com/ultracast/?f=./results/AravaipaRides/hnr/2019/Hypnosis%2520Night%2520Rides%25202019.clax",
+  "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png"
+ },
+ {
+  "slug": "adrenaline",
+  "ride": "Adrenaline Night Rides",
+  "year": 2019,
+  "date_label": "May 17, 2019",
+  "label": "Ultracast",
+  "url": "https://aravaiparunning.com/ultracast/?f=./results/AravaipaRides/anr/2019/Adrenaline%2520Night%2520Rides%25202019.clax"
+ },
+ {
+  "slug": "sinister",
+  "ride": "Sinister Night Rides",
+  "year": 2019,
+  "date_label": "April 19, 2019",
+  "label": "Ultracast",
+  "url": "https://aravaiparunning.com/ultracast/?f=./results/AravaipaRides/snr/2019/Sinister%2520Night%2520Rides%25202019.clax"
+ }
+]
