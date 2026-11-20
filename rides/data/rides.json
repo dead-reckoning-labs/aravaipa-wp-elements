@@ -22,7 +22,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://www.bikereg.com/frenzy-hills-rides",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2024/10/2024-FrenzyHills-LogoRedesign_v1-1.png",
+   "logo": "assets/logos/frenzy-hills.png",
    "hero": "assets/heroes/frenzy-hills.jpg"
   },
   {
@@ -47,7 +47,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://www.bikereg.com/prickly-pedal",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2024/12/PPedal-1.png",
+   "logo": "assets/logos/prickly-pedal.png",
    "hero": "assets/heroes/prickly-pedal.jpg"
   },
   {
@@ -70,7 +70,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://www.bikereg.com/black-canyon-crusher",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2026/08/2026-BlackCanyonCrusher-Logo-v1-scaled.png",
+   "logo": "assets/logos/black-canyon-crusher.png",
    "hero": "assets/heroes/black-canyon-crusher.jpg"
   },
   {
@@ -91,7 +91,7 @@
    "register": [],
    "register_label": "Register Soon",
    "events_register": "https://aravaiparides.com/insomniac-night-rides/",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png",
+   "logo": "assets/logos/insomniac.png",
    "hero": "assets/heroes/insomniac.jpg"
   },
   {
@@ -114,7 +114,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://racegoat.com/events/sinister-night-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2025/01/Insomniac-Rides-1.png",
+   "logo": "assets/logos/sinister.png",
    "hero": "assets/heroes/sinister.jpg"
   },
   {
@@ -137,7 +137,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://racegoat.com/events/royal-gorge-groove-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2022/02/2021-RoyalGorgeGroove-Logo-v1.png",
+   "logo": "assets/logos/royal-gorge-groove.png",
    "hero": "assets/heroes/royal-gorge-groove.jpg"
   },
   {
@@ -160,7 +160,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://racegoat.com/events/adrenaline-night-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2020/09/2020_Adrenaline_Logo_Rides_v1.png",
+   "logo": "assets/logos/adrenaline.png",
    "hero": "assets/heroes/adrenaline.jpg"
   },
   {
@@ -183,7 +183,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://racegoat.com/events/big-woody-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2023/12/2021-bigWoody-Logo-1.png",
+   "logo": "assets/logos/big-woody.png",
    "hero": "assets/heroes/big-woody.jpg"
   },
   {
@@ -206,7 +206,7 @@
    ],
    "register_label": "Register Now",
    "events_register": "https://racegoat.com/events/stunner-night-rides-2027",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/2020_Stunner_Logo_Rides_v1-Glow-1.png",
+   "logo": "assets/logos/stunner.png",
    "hero": "assets/heroes/stunner.jpg"
   },
   {
@@ -229,7 +229,7 @@
    "register": [],
    "register_label": "Register Soon",
    "events_register": "https://aravaiparides.com/tonto-2/",
-   "logo": "https://aravaiparides.com/wp-content/uploads/2024/10/2024-TontoMountain-LogoRedesign_v5-1.png",
+   "logo": "assets/logos/tonto.png",
    "hero": "assets/heroes/tonto.jpg"
   }
  ]

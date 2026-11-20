@@ -34,6 +34,20 @@ function rides_asset( $ctx, $path ) {
 }
 
 /**
+ * URL of a ride logo: local plugin assets resolve against the render base, full URLs pass through.
+ *
+ * @param array  $ctx  Render context.
+ * @param string $logo Logo field (assets/logos/<slug>.png or a URL).
+ * @return string
+ */
+function rides_logo_src( $ctx, $logo ) {
+	if ( '' === (string) $logo || preg_match( '#^https?://#i', $logo ) ) {
+		return (string) $logo;
+	}
+	return rides_asset( $ctx, $logo );
+}
+
+/**
  * True when the clean hero photo for a ride ships with the plugin.
  *
  * @param array $e Event row.
@@ -173,9 +187,9 @@ function rides_render_tile( $ctx, $e ) {
 	$past  = ! empty( $e['is_past'] );
 	$media = $hero
 		? '<div class="rides-tile-media"><img src="' . rides_e( $hero ) . '" alt="" loading="lazy" width="640" height="400">'
-			. ( ! empty( $e['logo'] ) ? '<span class="rides-tile-logo"><img src="' . rides_e( $e['logo'] ) . '" alt="" loading="lazy"></span>' : '' )
+			. ( ! empty( $e['logo'] ) ? '<span class="rides-tile-logo"><img src="' . rides_e( rides_logo_src( $ctx, $e['logo'] ) ) . '" alt="" loading="lazy"></span>' : '' )
 			. '</div>'
-		: '<div class="rides-tile-media is-logo"><img src="' . rides_e( $e['logo'] ) . '" alt="" loading="lazy" width="640" height="400"></div>';
+		: '<div class="rides-tile-media is-logo"><img src="' . rides_e( rides_logo_src( $ctx, $e['logo'] ) ) . '" alt="" loading="lazy" width="640" height="400"></div>';
 	$date  = $past ? 'Past event | ' . $e['date_label'] : $e['date_label'];
 	return '<li><a class="rides-tile' . ( $past ? ' is-past' : '' ) . '" href="' . rides_e( $e['url'] ) . '">'
 		. $media
@@ -344,7 +358,7 @@ function rides_pluck( $rows, $key ) {
  * @param array  $rows Data rows.
  * @return string
  */
-function rides_render_list( $kind, $rows ) {
+function rides_render_list( $kind, $rows, $ctx = array( 'base' => '' ) ) {
 	$by    = rides_group_rows( $rows );
 	$order = array();
 	foreach ( rides_events() as $e ) {
@@ -364,7 +378,7 @@ function rides_render_list( $kind, $rows ) {
 		$id    = 'rides-' . $kind . '-' . $slug;
 		$jump .= '<li><a href="#' . rides_e( $id ) . '">' . rides_e( $name ) . '</a></li>';
 		$list .= '<li class="rides-list-ride" id="' . rides_e( $id ) . '">';
-		$list .= '<div class="rides-list-logo">' . ( $logo ? '<img src="' . rides_e( $logo ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
+		$list .= '<div class="rides-list-logo">' . ( $logo ? '<img src="' . rides_e( rides_logo_src( $ctx, $logo ) ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
 		$list .= '<div><h3>' . rides_e( $name ) . '</h3><ul class="rides-years">';
 		$years = array_count_values( array_map( 'strval', rides_pluck( $by[ $slug ], 'year' ) ) );
 		foreach ( $by[ $slug ] as $r ) {
@@ -388,7 +402,7 @@ function rides_render_list( $kind, $rows ) {
  */
 function rides_render_results( $ctx ) {
 	$out  = rides_render_pagehead( $ctx, 'Results', 'Official results for every Aravaipa Rides event, by ride and year.', 'tonto' );
-	$out .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_list( 'results', rides_data( 'results' ) ) . '</div></section>';
+	$out .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_list( 'results', rides_data( 'results' ), $ctx ) . '</div></section>';
 	return rides_root( 'results', $out );
 }
 
@@ -400,7 +414,7 @@ function rides_render_results( $ctx ) {
  */
 function rides_render_photos( $ctx ) {
 	$out  = rides_render_pagehead( $ctx, 'Photos', 'Race photo galleries by ride and year.', 'big-woody' );
-	$out .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_list( 'photos', rides_data( 'photos' ) ) . '</div></section>';
+	$out .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_list( 'photos', rides_data( 'photos' ), $ctx ) . '</div></section>';
 	return rides_root( 'photos', $out );
 }
 
@@ -462,7 +476,7 @@ function rides_render_event( $ctx, $slug ) {
 	}
 	$out .= '</div></div>';
 	if ( ! empty( $e['logo'] ) ) {
-		$out .= '<div class="rides-event-logo"><img src="' . rides_e( $e['logo'] ) . '" alt="' . rides_e( $e['name'] ) . ' logo"></div>';
+		$out .= '<div class="rides-event-logo"><img src="' . rides_e( rides_logo_src( $ctx, $e['logo'] ) ) . '" alt="' . rides_e( $e['name'] ) . ' logo"></div>';
 	}
 	$out .= '</div></header>';
 
