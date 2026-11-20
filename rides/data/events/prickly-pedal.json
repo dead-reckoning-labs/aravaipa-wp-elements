@@ -1,0 +1,351 @@
+{
+ "slug": "prickly-pedal",
+ "source": "https://aravaiparides.com/prickly-pedal-rides/ read 2026-11-19, with the rides cleanup fixes (7:00 AM, Ashlee, Troy, 15 Miles); rechecked against the live page 2026-11-20 after the cleanup",
+ "date_label": "Sunday, January 31, 2027",
+ "place": "Maricopa Trail, Cave Creek to Lake Pleasant Regional Park, AZ",
+ "description": "Prickly Pedal, Sunday, January 31, 2027: 36 and 15 mile mountain bike races on the Maricopa Trail from Cave Creek to Lake Pleasant, plus a 10 mile trail run.",
+ "headline": "Cave Creek To Lake Pleasant",
+ "intro": [
+  "Get in a heart-pumping, rip-roaring ride through the desert terrain of the Maricopa Trail beginning in Cave Creek, AZ and finishing at Lake Pleasant in Peoria, AZ. Not ready for the Full 'Pedal'? Try out the 15 mile, Half Pedal, 'sprint' distance.",
+  "MTB not your ride? We have a 10 mile trail run for all of you runners out there. The out and back course starts and finishes at the lake and takes you on a fun, rolling journey to Pipeline Cove and back.",
+  "Proceeds from the race help support the Maricopa Trail & Park Foundation, a nonprofit organization dedicated to protecting, promoting, developing, and maintaining one of the nation's largest county park systems. Their mission is to ensure that Maricopa County's trails and parks remain accessible, enjoyable, and sustainable for all visitors."
+ ],
+ "stats": [
+  {
+   "value": "Jan 31, 2027",
+   "label": "Race Day"
+  },
+  {
+   "value": "36 | 15 Mile",
+   "label": "Mountain Bike"
+  },
+  {
+   "value": "10 Mile",
+   "label": "Trail Run"
+  },
+  {
+   "value": "Maricopa Trail",
+   "label": "Cave Creek to Lake Pleasant"
+  }
+ ],
+ "distances": [
+  {
+   "name": "36 Mile",
+   "sport": "Mountain Bike",
+   "map": "https://caltopo.com/m/F18V4",
+   "facts": [
+    [
+     "Start Time",
+     "8:30 AM"
+    ],
+    [
+     "Time Limit",
+     "7 Hours (3:30 PM overall cutoff)"
+    ],
+    [
+     "Distance",
+     "36 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "1,385 feet"
+    ],
+    [
+     "Max Elevation",
+     "2,779 feet"
+    ],
+    [
+     "Start",
+     "Downtown Cave Creek"
+    ]
+   ]
+  },
+  {
+   "name": "15 Mile",
+   "sport": "Mountain Bike",
+   "map": "https://caltopo.com/m/1PSLE",
+   "facts": [
+    [
+     "Start Time",
+     "10:30 AM"
+    ],
+    [
+     "Time Limit",
+     "5 Hours (3:30 PM overall cutoff)"
+    ],
+    [
+     "Distance",
+     "15 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "356 feet"
+    ],
+    [
+     "Max Elevation",
+     "1,752 feet"
+    ],
+    [
+     "Start",
+     "Pioneer Living History Museum"
+    ]
+   ]
+  },
+  {
+   "name": "10 Mile",
+   "sport": "Trail Run",
+   "map": "https://caltopo.com/m/V0T3EQM",
+   "facts": [
+    [
+     "Start Time",
+     "9:00 AM"
+    ],
+    [
+     "Time Limit",
+     "6.5 Hours (3:30 PM overall cutoff)"
+    ],
+    [
+     "Distance",
+     "10 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "883 feet"
+    ],
+    [
+     "Max Elevation",
+     "1,880 feet"
+    ],
+    [
+     "Start",
+     "Lake Pleasant Regional Park"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "courses": [
+  {
+   "name": "36 Mile",
+   "paras": [
+    "Featuring a 36 Mile point to point course, the Prickly Pedal starts in Cave Creek in front of the Flat Tire Bike Shop, 6032 E Cave Creek Rd, Cave Creek, AZ 85331, and rides up through town to Spur Cross where you'll join the Maricopa Trail all the way over to the finish line at Lake Pleasant Regional Park's 10 Lane Boat Ramp. Aggressive ascents and descents, grinding it out on the flats, rocks, water, sand, mud, and roller coaster runs are all part of the fun of this challenging course.",
+    "The ride features numerous short, steep, rocky climbs and descents, some of which may require you to dismount and hike. Finish times for most racers are estimated at 3 to 4 hours. Two aid stations on course, near mile 15 and mile 30."
+   ]
+  },
+  {
+   "name": "15 Mile",
+   "paras": [
+    "The 15 mile 'Sprint' course begins inside the Pioneer Living History Museum. After completing a loop inside the museum, racers exit onto Pioneer Rd. then onto the Maricopa Trail. The first 6.5 miles are relatively flat and fast before encountering some terrain. After the aid station at mile 9 racers enter a beautiful canyon that takes them to the boundary of Lake Pleasant Regional Park. The last three miles are where you will encounter the most climbing."
+   ]
+  },
+  {
+   "name": "10 Mile Trail Run",
+   "paras": [
+    "The 10 mile trail run begins and finishes at the 10 Lane Boat Ramp at Lake Pleasant. Runners head up the ramp and cross the street onto Frogs Tank trail, then a steep descent onto Beardsley trail, which loosely parallels the park road. Beardsley connects to Wild Burro trail then onto Pipeline Canyon trail. Runners turn around at Pipeline Cove and retrace their steps back to the boat ramp. One aid station on course."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "Our MedStar Solutions medical staff is based at the start and finish headquarters to assist with first aid onsite. Please do NOT call 911 in a medical emergency: call the race day number and they will dispatch immediately.",
+    "MedStar Solutions Race Day Number: 480-269-4126"
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "36 Mile",
+    "place": "Downtown Cave Creek, AZ",
+    "text": "Our start line is located on Cave Creek Rd. just before the intersection of Spur Cross Rd.",
+    "map": "https://www.google.com/maps/place/Flat+Tire+Bike+Shop/@33.8337758,-111.9506075,2906m/data=!3m1!1e3!4m14!1m7!3m6!1s0x872b7e9e5f5d0abd:0x90c4dd5d16217221!2sFlat+Tire+Bike+Shop!8m2!3d33.8337758!4d-111.9506075!16s%2Fg%2F1tjt2dj2!3m5!1s0x872b7e9e5f5d0abd:0x90c4dd5d16217221!8m2!3d33.8337758!4d-111.9506075!16s%2Fg%2F1tjt2dj2?entry=ttu&g_ep=EgoyMDI0MDkwNC4wIKXMDSoASAFQAw%3D%3D"
+   },
+   {
+    "name": "15 Mile",
+    "place": "Pioneer Living History Museum",
+    "text": "Our start line is located inside the museum grounds.",
+    "map": "https://www.google.com/maps/place/Pioneer+Arizona+Living+History+Museum/@33.8197755,-112.1489096,2906m/data=!3m1!1e3!4m6!3m5!1s0x872b6229fdec9d07:0xeb2d37651f03ddf9!8m2!3d33.8197755!4d-112.1489096!16s%2Fg%2F11b_2y2c4h?entry=ttu&g_ep=EgoyMDI0MDkwNC4wIKXMDSoASAFQAw%3D%3D"
+   },
+   {
+    "name": "10 Mile Trail Run",
+    "place": "Lake Pleasant Regional Park",
+    "text": "Starts and finishes at the 10 Lane Boat Ramp."
+   }
+  ],
+  "finish": "All races finish at the 10 Lane Boat Ramp at Lake Pleasant Regional Park."
+ },
+ "bib_pickup": [
+  {
+   "caption": "Friday Bib Pickup, Friday, January 29",
+   "rows": [
+    [
+     "12:00 PM - 5:00 PM",
+     "Aravaipa HQ, 2401 S 24th St, Phoenix, AZ 85034"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Day Bib Pickup, Sunday, January 31",
+   "rows": [
+    [
+     "36 Mile, 6:00 AM - 7:00 AM",
+     "Lane 10 Boat Ramp, Lake Pleasant (shuttle pick up spot)"
+    ],
+    [
+     "36 Mile, about 7:45 AM - 8:30 AM",
+     "Starting line in Cave Creek"
+    ],
+    [
+     "15 Mile, 8:00 AM - 9:15 AM",
+     "Lane 10 Boat Ramp, Lake Pleasant (shuttle pick up spot)"
+    ],
+    [
+     "15 Mile, about 9:45 AM - 10:30 AM",
+     "Starting line at Pioneer Living History Museum"
+    ],
+    [
+     "Trail Run, 7:00 AM - 9:00 AM",
+     "Lane 10 Boat Ramp, Lake Pleasant"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Start Times, Sunday, January 31",
+   "rows": [
+    [
+     "8:30 AM",
+     "36 Mile MTB"
+    ],
+    [
+     "9:00 AM",
+     "10 Mile Trail Run"
+    ],
+    [
+     "10:30 AM",
+     "15 Mile MTB"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish line photo"
+    ],
+    [
+     "Timing",
+     "Chip timed race results and live tracking on Aravaipa Live"
+    ],
+    [
+     "Aid",
+     "Well stocked aid stations"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Shuttles",
+   "paras": [
+    "Shuttles take MTB racers and their bikes to both start lines from the finish at Lake Pleasant Regional Park. Buy a shuttle ticket on the registration page; it also covers the bike shuttle. Departure times are sent race week."
+   ]
+  },
+  {
+   "name": "Parking",
+   "paras": [
+    "Lake Pleasant Regional Park charges a $10 park entry fee per vehicle for spectators. Racers being dropped off or picked up have the fee waived. Bring cash and carpool."
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "Two group camping sites near the 10 Lane Boat Ramp are reserved for racers: $25 per night per unit through 12/31/26, $30 from 1/1/27. Buy a camping space on the merchandise page."
+   ]
+  },
+  {
+   "name": "Crews, Pacers and Pets",
+   "paras": [
+    "Crews at the start and finish only. No pacers. No pets on course; leashed pets only at the venue."
+   ]
+  }
+ ],
+ "register": [
+  {
+   "label": "MTB Register",
+   "href": "https://www.bikereg.com/prickly-pedal"
+  },
+  {
+   "label": "Trail Run Register",
+   "href": "https://ultrasignup.com/register.aspx?eid=19341"
+  }
+ ],
+ "register_headline": "Ride The Prickly Pedal",
+ "register_note": "Registration closes Mon, Jan 25 @ 11:59PM MT. Prices do not include 6.30% Maricopa County Tax.",
+ "volunteer": {
+  "text": "We need help to make Prickly Pedal possible. Volunteer perks include Aravaipa race credits and race swag.",
+  "href": "https://aravaiparunning.ivolunteer.com/pp27"
+ },
+ "records": [
+  [
+   "36 Mile MTB, Men",
+   "Zane Koogler, 2:29:00 (2025)"
+  ],
+  [
+   "36 Mile MTB, Women",
+   "Marion Cholieu, 3:07:38 (2024)"
+  ],
+  [
+   "15 Mile MTB, Men",
+   "Kevin Bradford-Parish, 1:04:39 (2026)"
+  ],
+  [
+   "15 Mile MTB, Women",
+   "Ashlee Weimar, 1:22:54 (2026)"
+  ],
+  [
+   "Juniors 15 Mile, Boys",
+   "Tristan Wheeler, 1:25:36 (2026)"
+  ],
+  [
+   "Juniors 15 Mile, Girls",
+   "Miranda Rodriguez, 1:28:07 (2026)"
+  ],
+  [
+   "10 Mile Trail Run, Men",
+   "Troy Gresham, 1:33:51 (2026)"
+  ],
+  [
+   "10 Mile Trail Run, Women",
+   "Danielle Horstman, 1:34:27 (2026)"
+  ]
+ ],
+ "sponsors": [
+  {
+   "name": "Maricopa Trail and Park Foundation",
+   "href": "https://mctpf.org/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MaricopaTrail_Logo_CMYK_300dpi.jpg"
+  },
+  {
+   "name": "City of Peoria",
+   "href": "https://www.peoriaaz.gov/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2025/09/City-of-Peoria-logo.jpg"
+  },
+  {
+   "name": "Gore",
+   "href": "https://www.gore.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2025/01/gore_logo_color_positive_rgb-3.png"
+  },
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  }
+ ],
+ "sponsor_note": "Prickly Pedal is supported in part by an Arts and Culture grant from the City of Peoria."
+}
