@@ -884,6 +884,9 @@
 	font-size: 28px;
 	color: #fff;
 }
+.rides-strava h3 {
+	margin: 0 0 14px;
+}
 .rides-videos {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
