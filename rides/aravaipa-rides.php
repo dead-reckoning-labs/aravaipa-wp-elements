@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Aravaipa Rides
  * Description: Modern layout for aravaiparides.com: homepage hero slider, uniform event tiles, Events, Results, Photos and event pages. Pages opt in with the _rides_v2_layout post meta; nothing changes on a page without it.
- * Version: 0.1.3
+ * Version: 0.1.4
  * Author: Aravaipa Running
  * Requires PHP: 8.0
  * Text Domain: aravaipa-rides
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) && ! defined( 'RIDES_HARNESS' ) ) {
 	exit;
 }
 
-define( 'RIDES_VERSION', '0.1.3' );
+define( 'RIDES_VERSION', '0.1.4' );
 define( 'RIDES_DIR', __DIR__ );
 
 require_once RIDES_DIR . '/includes/data.php';
