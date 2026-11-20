@@ -432,6 +432,33 @@ foreach ( array( 'Arizona' => 'az', 'Colorado' => 'co', 'Northeast' => 'ne', 'Ca
 	$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => $lab ) ), array() );
 	ok( $code === $x['region'], "region $lab => $code" );
 }
+// 2026-11-20 regions: West (Aravaipa AZ CA CO NV UT), Great Lakes, Northeast, Southeast (Bad Beard). KY and MS are outside.
+foreach ( array( 'West' => 'az', 'Great Lakes' => 'gl', 'Northeast' => 'ne', 'Southeast' => 'se', 'Other' => 'other', 'Utah and Nevada' => 'utnv', 'Kentucky' => 'other', '' => 'other' ) as $lab => $code ) {
+	$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => $lab ) ), array() );
+	ok( $code === $x['region'], "default map: region '$lab' => $code (West interim az, legacy Utah and Nevada kept, unknown other)" );
+}
+ok( 'region West sent as az (interim)' === arv_rt_apply_rr_region_note( 'West', 'az' ), 'interim West logged' );
+ok( '' === arv_rt_apply_rr_region_note( 'West', 'west' ) && '' === arv_rt_apply_rr_region_note( 'Southeast', 'se' ), 'no interim note once West goes as west' );
+$GLOBALS['t_opts']['arv_rt_apply_rr_region_codes'] = array( 'West' => 'west', 'Southeast' => 'SE', 'Northeast' => 'bad code!', 'Arizona' => 'west' );
+$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => 'West' ) ), array() );
+ok( 'west' === $x['region'], 'arv_rt_apply_rr_region_codes switches West to west, no release' );
+$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => 'Southeast' ) ), array() );
+ok( 'se' === $x['region'], 'override codes are lowercased' );
+$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => 'Northeast' ) ), array() );
+ok( 'ne' === $x['region'], 'invalid override code ignored, default kept' );
+$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => 'Arizona' ) ), array() );
+ok( 'west' === $x['region'], 'legacy answers can be remapped by the option too' );
+$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => 'Utah and Nevada' ) ), array() );
+ok( 'utnv' === $x['region'], 'legacy Utah and Nevada still utnv with an override set' );
+$GLOBALS['t_opts']['arv_rt_apply_rr_region_codes'] = 'not an array';
+$x = arv_rt_apply_rr_payload( t_fields( array( 'rt-region' => 'West' ) ), array() );
+ok( 'az' === $x['region'], 'non-array option ignored' );
+unset( $GLOBALS['t_opts']['arv_rt_apply_rr_region_codes'] );
+$GLOBALS['t_opts']['arv_rt_apply_rr_secret'] = T_SECRET;
+$x = arv_rt_apply_rr_push( t_entry( 601, array( 'rt-region' => 'West' ) ), array( 'dry_run' => true, 'force' => true ) );
+ok( 'dry_run' === $x['status'] && 'az' === $x['payload']['region'] && 'region West sent as az (interim)' === $x['region_note'], 'push record logs West sent as az (interim)' );
+$x = arv_rt_apply_rr_push( t_entry( 602, array( 'rt-region' => 'Great Lakes' ) ), array( 'dry_run' => true, 'force' => true ) );
+ok( 'gl' === $x['payload']['region'] && ! isset( $x['region_note'] ), 'no interim note for Great Lakes' );
 ok( array( 'trail', 'mtb' ) === $pl['disciplines'], 'disciplines mapped, deduped' );
 $x = arv_rt_apply_rr_payload( t_fields( array( 'rt-disciplines' => 'Trail, Ultra, Road, Mountain bike' ) ), array() );
 ok( array( 'trail', 'ultra', 'road', 'mtb' ) === $x['disciplines'], 'disciplines from a joined string' );
