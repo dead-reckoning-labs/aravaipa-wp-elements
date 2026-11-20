@@ -16,9 +16,9 @@
    ],
    "hub_name": "Aravaipa races",
    "hub_url": "https://www.aravaiparunning.com/races/",
-   "fill": "#3fa89a",
-   "fill_hover": "#2e8a7e",
-   "ink": "#23756a"
+   "fill": "#1d6f6a",
+   "fill_hover": "#155652",
+   "ink": "#1d6f6a"
   },
   {
    "key": "gl",
@@ -52,9 +52,9 @@
    ],
    "hub_name": "White Mountain Endurance",
    "hub_url": "https://www.aravaiparunning.com/white-mountain-endurance/",
-   "fill": "#f06c18",
-   "fill_hover": "#cf5608",
-   "ink": "#b44a06"
+   "fill": "#1c3f7c",
+   "fill_hover": "#132d5c",
+   "ink": "#1c3f7c"
   },
   {
    "key": "se",
