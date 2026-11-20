@@ -1,6 +1,9 @@
 /*
- * Aravaipa Rides layout. Square edges, bold type, photo led.
- * No rounded corners, no shadows, no pill badges, no edge accent stripes.
+ * Aravaipa Rides layout, v3 "meet in the middle".
+ * Rhythm, type scale and heading style come from the running site (aravaipa-elements,
+ * see the job's typescale.json for the source selector of every value below); the Rides
+ * DNA stays: big illustrated logos, yellow action color, teal accents, night sections.
+ * Modest rounding (6 to 10px), light 1px borders. No shadows, no pill badges, no edge accent stripes.
  */
 .rides-v2 {
 	--rides-yellow: #fdcf00;
@@ -13,15 +16,39 @@
 	--rides-ink: #14212b;
 	--rides-paper: #ffffff;
 	--rides-mist: #f2f4f3;
-	--rides-line: #d9dedd;
+	--rides-line: #e3e7e6;
 	--rides-muted: #5b6770;
-	--rides-max: 1280px;
 	--rides-font: "Lato", "Helvetica Neue", Arial, sans-serif;
-	--rides-display: "Oswald", "Bebas Neue", "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+	--rides-heading-font: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	/* Running site rhythm (aravaipa-elements). */
+	--rides-container: 1200px;
+	--rides-container-pad: 0 1.25rem;
+	--rides-max: var(--rides-container);
+	--rides-section-pad: 3.5rem 0;
+	--rides-section-pad-phone: 2.5rem 0;
+	--rides-fs-h1: clamp(32px, 6vw, 64px);
+	--rides-fw-h1: 800;
+	--rides-lh-h1: 1.05;
+	--rides-fs-h2: clamp(30px, 4vw, 44px);
+	--rides-fw-heading: 700;
+	--rides-lh-heading: 1.15;
+	--rides-fs-h3: 24px;
+	--rides-fs-name: 19px;
+	--rides-fs-body: 15px;
+	--rides-fs-lead: 17px;
+	--rides-lh-body: 1.7;
+	--rides-fs-eyebrow: 14px;
+	--rides-ls-eyebrow: 2px;
+	--rides-fw-eyebrow: 700;
+	--rides-gap: 1.5rem;
+	--rides-btn-pad: 0.85rem 2rem;
+	--rides-fw-btn: 800;
+	--rides-ls-btn: 0.06em;
+	--rides-radius: 8px;
 	color: var(--rides-ink);
 	font-family: var(--rides-font);
-	font-size: 17px;
-	line-height: 1.55;
+	font-size: var(--rides-fs-body);
+	line-height: var(--rides-lh-body);
 	background: var(--rides-paper);
 	overflow-x: hidden;
 }
@@ -29,7 +56,6 @@
 .rides-v2 *::before,
 .rides-v2 *::after {
 	box-sizing: border-box;
-	border-radius: 0;
 	box-shadow: none;
 }
 .rides-v2 img {
@@ -44,21 +70,37 @@
 .rides-v2 h2,
 .rides-v2 h3,
 .rides-v2 h4 {
-	font-family: "Oswald", "Bebas Neue", "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
-	font-weight: 700;
-	line-height: 1.02;
-	letter-spacing: 0.01em;
-	text-transform: uppercase;
+	font-family: var(--rides-heading-font);
+	font-weight: var(--rides-fw-heading);
+	line-height: var(--rides-lh-heading);
+	letter-spacing: 0;
+	text-transform: none;
 	margin: 0;
 	color: inherit;
 }
+.rides-v2 h1 {
+	font-size: var(--rides-fs-h1);
+	font-weight: var(--rides-fw-h1);
+	line-height: var(--rides-lh-h1);
+}
+.rides-v2 h2 {
+	font-size: var(--rides-fs-h2);
+}
+.rides-v2 h3 {
+	font-size: var(--rides-fs-h3);
+}
 .rides-wrap {
-	max-width: var(--rides-max);
+	max-width: var(--rides-container);
 	margin: 0 auto;
-	padding: 0 24px;
+	padding: var(--rides-container-pad);
 }
 .rides-section {
-	padding: 64px 0;
+	padding: var(--rides-section-pad);
+}
+@media (max-width: 619px) {
+	.rides-section {
+		padding: var(--rides-section-pad-phone);
+	}
 }
 .rides-section--mist {
 	background: var(--rides-mist);
@@ -88,28 +130,32 @@
 	background: var(--rides-navy);
 	color: #fff;
 }
-.rides-kicker {
-	margin: 0 0 10px;
-	font-size: 13px;
-	font-weight: 900;
-	letter-spacing: 0.14em;
+.rides-kicker,
+.rides-eyebrow {
+	margin: 0 0 0.4rem;
+	font-size: var(--rides-fs-eyebrow);
+	font-weight: var(--rides-fw-eyebrow);
+	letter-spacing: var(--rides-ls-eyebrow);
 	text-transform: uppercase;
 	color: var(--rides-teal-dark);
 }
-.rides-section--navy .rides-kicker {
+.rides-section--navy .rides-kicker,
+.rides-section--navy .rides-eyebrow,
+.rides-section--night .rides-eyebrow {
 	color: var(--rides-yellow);
 }
 .rides-h2,
 .rides-v2 h2.rides-h2 {
 	color: var(--rides-teal);
-	font-size: clamp(36px, 5vw, 64px);
-	margin: 0 0 28px;
+	font-size: var(--rides-fs-h2);
+	margin: 0 0 1.25rem;
 }
 .rides-lead {
-	max-width: 760px;
-	font-size: 19px;
+	max-width: 46rem;
+	font-size: var(--rides-fs-lead);
+	line-height: var(--rides-lh-body);
 	color: var(--rides-muted);
-	margin: 0 0 28px;
+	margin: 0 0 2rem;
 }
 
 /* Buttons */
@@ -117,16 +163,17 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-height: 48px;
-	padding: 12px 24px;
-	font-family: var(--rides-display);
-	font-size: 17px;
-	font-weight: 600;
-	letter-spacing: 0.08em;
+	min-height: 46px;
+	padding: var(--rides-btn-pad);
+	font-family: var(--rides-font);
+	font-size: var(--rides-fs-body);
+	font-weight: var(--rides-fw-btn);
+	letter-spacing: var(--rides-ls-btn);
 	line-height: 1.1;
 	text-transform: uppercase;
 	text-decoration: none;
-	border: 2px solid var(--rides-yellow);
+	border: 1px solid var(--rides-yellow);
+	border-radius: var(--rides-radius);
 	background: var(--rides-yellow);
 	color: var(--rides-navy) !important;
 	cursor: pointer;
@@ -355,7 +402,7 @@
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 	grid-auto-rows: 1fr;
-	gap: 24px;
+	gap: var(--rides-gap);
 	margin: 0;
 	padding: 0;
 	list-style: none;
@@ -436,7 +483,7 @@
 	color: rgba(255, 255, 255, 0.6);
 }
 .rides-tile h3 {
-	font-size: 28px;
+	font-size: var(--rides-fs-name);
 	margin: 0 0 8px;
 	color: #fff;
 }
@@ -452,10 +499,10 @@
 }
 .rides-tile-more {
 	margin-top: auto;
-	font-family: var(--rides-display);
-	font-size: 16px;
-	font-weight: 600;
-	letter-spacing: 0.1em;
+	font-family: var(--rides-font);
+	font-size: var(--rides-fs-body);
+	font-weight: var(--rides-fw-btn);
+	letter-spacing: var(--rides-ls-btn);
 	text-transform: uppercase;
 	color: var(--rides-yellow);
 }
