@@ -757,8 +757,7 @@ function arv_rt_apply_shortcode() {
 	}
 	$h  = '<style>' . arv_rt_apply_css() . arv_rt_apply_region_css() . '</style>';
 	$fail = function_exists( 'rest_url' ) ? rest_url( 'aravaipa/v1/rt-apply-fail' ) : '';
-	$heic = arv_rt_apply_heic_url();
-	$h   .= '<div class="rt-apply" id="rt-apply" data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '"' . ( $fail ? ' data-fail-url="' . esc_attr( $fail ) . '"' : '' ) . ( $heic ? ' data-heic-url="' . esc_attr( $heic ) . '"' : '' ) . '>';
+	$h   .= '<div class="rt-apply" id="rt-apply" data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '"' . ( $fail ? ' data-fail-url="' . esc_attr( $fail ) . '"' : '' ) . '>';
 	$h .= '<p class="rt-state rt-state-before"' . ( 'before' === $state ? '' : ' hidden' ) . '>Applications open November 20.</p>';
 	$h .= '<p class="rt-state rt-state-closed"' . ( 'closed' === $state ? '' : ' hidden' ) . '>Applications for the 2027 team are closed.</p>';
 	if ( $form ) {
@@ -778,8 +777,9 @@ add_shortcode( 'arv_rt_apply', 'arv_rt_apply_shortcode' );
 
 /**
  * The HEIC converter (heic2any 0.0.4, MIT) ships inside the plugin at
- * assets/vendor/heic2any.min.js; the client loads it on demand from here,
- * never from a third-party CDN. Versioned so a release busts the cache.
+ * assets/vendor/heic2any.min.js; the client loads it on demand from this
+ * URL (handed over as a JS value next to the script, never read from page
+ * markup and never a third-party CDN). Versioned so a release busts the cache.
  *
  * @return string '' when the plugin URL is unknown.
  */
@@ -818,6 +818,10 @@ function arv_rt_apply_enqueue() {
 		defined( 'ARV_ELEMENTS_VERSION' ) ? ARV_ELEMENTS_VERSION : false,
 		true
 	);
+	$heic = arv_rt_apply_heic_url();
+	if ( $heic && function_exists( 'wp_add_inline_script' ) ) {
+		wp_add_inline_script( 'aravaipa-rt-apply', 'window.arvRtApplyHeicUrl=' . wp_json_encode( $heic ) . ';', 'before' );
+	}
 }
 
 /* ------------------------------------------------------------------------

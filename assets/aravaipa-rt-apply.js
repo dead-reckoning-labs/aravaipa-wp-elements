@@ -43,8 +43,8 @@
 	var RR_MAX = 4 * 1024 * 1024;
 	var TOKEN_WAIT_MS = 20000;
 	var BEACON_URL = root.getAttribute('data-fail-url') || '';
-	// heic2any 0.0.4, vendored in the plugin (assets/vendor); the shortcode passes its URL.
-	var HEIC_LIB = root.getAttribute('data-heic-url') || '';
+	// heic2any 0.0.4, vendored in the plugin (assets/vendor); the plugin sets its URL in an inline script before this file.
+	var HEIC_LIB = typeof window.arvRtApplyHeicUrl === 'string' ? window.arvRtApplyHeicUrl : '';
 	var submitBox = form.querySelector('.rt-submit') || form;
 	var pending = [];
 	var bypass = false;
