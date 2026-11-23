@@ -2003,7 +2003,69 @@ function arv_rt_apply_rr_mime( $path ) {
 }
 
 /**
- * Which saved files go along: each under 4 MB, together under about 4 MB.
+ * Mime type from the file's bytes: finfo when the server has it, else a
+ * magic-byte sniff for the types we care about. Empty when unknown.
+ *
+ * @param string $path File path.
+ * @return string
+ */
+function arv_rt_apply_rr_sniff_mime( $path ) {
+	if ( function_exists( 'finfo_open' ) ) {
+		$fi = finfo_open( FILEINFO_MIME_TYPE );
+		if ( $fi ) {
+			$m = finfo_file( $fi, $path );
+			finfo_close( $fi );
+			if ( is_string( $m ) && '' !== $m ) {
+				return strtolower( $m );
+			}
+		}
+	}
+	$h = (string) file_get_contents( $path, false, null, 0, 16 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+	if ( 0 === strpos( $h, "\xFF\xD8\xFF" ) ) {
+		return 'image/jpeg';
+	}
+	if ( 0 === strpos( $h, "\x89PNG\r\n\x1A\n" ) ) {
+		return 'image/png';
+	}
+	if ( 0 === strpos( $h, 'RIFF' ) && 'WEBP' === substr( $h, 8, 4 ) ) {
+		return 'image/webp';
+	}
+	if ( 'ftyp' === substr( $h, 4, 4 ) && preg_match( '/^(heic|heix|hevc|heim|heis|mif1|msf1)/', substr( $h, 8, 4 ) ) ) {
+		return 'image/heic';
+	}
+	return '';
+}
+
+/**
+ * Headshot check: extension AND detected mime must both be jpg/jpeg/png/webp
+ * and agree. RaceReach only takes those, so anything else (a HEIC the
+ * browser could not convert, a mislabeled file) stays behind.
+ *
+ * @param string $path File path.
+ * @return string Empty when fine, else the skip reason.
+ */
+function arv_rt_apply_rr_headshot_problem( $path ) {
+	$ok  = array(
+		'jpg'  => 'image/jpeg',
+		'jpeg' => 'image/jpeg',
+		'png'  => 'image/png',
+		'webp' => 'image/webp',
+	);
+	$ext = strtolower( pathinfo( (string) $path, PATHINFO_EXTENSION ) );
+	$ext = preg_replace( '/[^a-z0-9]/', '', $ext );
+	if ( ! isset( $ok[ $ext ] ) ) {
+		return 'headshot not jpg/png/webp (' . ( '' !== $ext ? substr( $ext, 0, 10 ) : 'no extension' ) . ')';
+	}
+	$mime = arv_rt_apply_rr_sniff_mime( $path );
+	if ( $mime !== $ok[ $ext ] ) {
+		return 'headshot not jpg/png/webp (' . $ext . ' file, ' . ( '' !== $mime ? substr( preg_replace( '/[^a-z0-9.\/+-]/', '', $mime ), 0, 40 ) : 'unknown' ) . ' inside)';
+	}
+	return '';
+}
+
+/**
+ * Which saved files go along: each under 4 MB, together under about 4 MB,
+ * and the headshot only when it really is a jpg, png or webp.
  *
  * @param array $files Saved files keyed rt-headshot, rt-resume-file.
  * @return array array( parts => array( field => path ), skipped => string[] )
@@ -2025,6 +2087,14 @@ function arv_rt_apply_rr_pick_files( $files ) {
 		if ( $sz <= 0 || $sz >= ARV_RT_APPLY_RR_FILE_MAX ) {
 			$skipped[] = $rr . ' over 4 MB';
 			continue;
+		}
+		if ( 'headshot' === $rr ) {
+			// Extension AND sniffed mime (finfo, else magic bytes) must be jpg/jpeg/png/webp; HEIC and the rest stay behind.
+			$bad = arv_rt_apply_rr_headshot_problem( $p );
+			if ( '' !== $bad ) {
+				$skipped[] = $bad;
+				continue;
+			}
 		}
 		if ( $total + $sz > ARV_RT_APPLY_RR_BODY_MAX ) {
 			$skipped[] = $rr . ' over the 4 MB total';
