@@ -1264,6 +1264,7 @@ function arv_rt_apply_export_header() {
 	}
 	$h[] = 'flamingo_id';
 	$h[] = 'rr_status';
+	$h[] = 'rr_skipped_files';
 	return $h;
 }
 
@@ -1294,6 +1295,7 @@ function arv_rt_apply_export_csv( $fh ) {
 		}
 		$row[] = $r['id'];
 		$row[] = arv_rt_apply_rr_status( $r['id'] );
+		$row[] = arv_rt_apply_rr_skipped( $r['id'] );
 		fputcsv( $fh, $row, ',', '"', '\\' );
 		++$n;
 	}
@@ -2423,6 +2425,21 @@ function arv_rt_apply_rr_status( $id ) {
 	}
 	$m = get_post_meta( (int) $id, '_arv_rt_rr', true );
 	return is_array( $m ) && isset( $m['status'] ) ? (string) $m['status'] : '';
+}
+
+/**
+ * Files that did not go to RaceReach for an entry, with the reason each
+ * (for example 'resume_file over 4 MB'); '' when none.
+ *
+ * @param int $id Flamingo id.
+ * @return string
+ */
+function arv_rt_apply_rr_skipped( $id ) {
+	if ( ! $id ) {
+		return '';
+	}
+	$m = get_post_meta( (int) $id, '_arv_rt_rr', true );
+	return is_array( $m ) && ! empty( $m['skipped_files'] ) ? implode( '; ', (array) $m['skipped_files'] ) : '';
 }
 
 /**

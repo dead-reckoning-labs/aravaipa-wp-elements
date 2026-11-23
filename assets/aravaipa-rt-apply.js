@@ -39,6 +39,8 @@
 	var STORE_KEY = 'arv-rt-apply-2027-v1';
 	var MAX_EDGE = 2000;
 	var MAX_BYTES = 2 * 1024 * 1024;
+	// Files over this still reach the team by email, but are not copied to RaceReach (ARV_RT_APPLY_RR_FILE_MAX, 4 MB).
+	var RR_MAX = 4 * 1024 * 1024;
 	var HEIC_LIB = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
 	var TOKEN_WAIT_MS = 20000;
 	var BEACON_URL = root.getAttribute('data-fail-url') || '';
@@ -606,7 +608,14 @@
 		var note = photoNote(input);
 		note.textContent = '';
 		note.className = 'rt-photo-note';
-		if (!file || !isImage(file) || /pdf/i.test(file.type)) {
+		if (!file) {
+			return;
+		}
+		if (!isImage(file) || /pdf/i.test(file.type)) {
+			if (input.name === 'rt-resume-file' && file.size > RR_MAX) {
+				note.className = 'rt-photo-note rt-photo-note--warn';
+				note.textContent = 'This file is on the large side (' + mb(file.size) + '). It will still reach our team with your application. If you have a version under 4 MB, that is even better, or you can email it to ' + MAIL + '.';
+			}
 			return;
 		}
 		if (!isHeic(file) && file.size <= MAX_BYTES) {
@@ -638,7 +647,7 @@
 		}).catch(function () {
 			input.__rtSwapping = false;
 			note.className = 'rt-photo-note rt-photo-note--warn';
-			note.textContent = file.size > 10 * 1024 * 1024 ? 'This photo is over 10 MB and could not be shrunk here. Try a smaller one, or email it to ' + MAIL + '.' : 'We will send your photo as it is.';
+			note.textContent = file.size > 10 * 1024 * 1024 ? 'This photo is over 10 MB and could not be shrunk here. Try a smaller one, or email it to ' + MAIL + '.' : (file.size > RR_MAX ? 'We will send your photo as it is. It is over 4 MB, so a smaller one helps if you have it.' : 'We will send your photo as it is.');
 		});
 		pending.push(job);
 		job.then(function () {

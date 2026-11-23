@@ -353,6 +353,7 @@ $GLOBALS['t_flam'] = array(
 	new Flamingo_Inbound_Message( 9001, array( 'rt-first-name' => 'Ann', 'rt-email' => 'ann@example.com', 'rt-disciplines' => array( 'Trail', 'Ultra' ), 'rt-consent-age' => '1' ) ),
 	new Flamingo_Inbound_Message( 9002, array( 'rt-first-name' => 'TEST', 'rt-email' => 'jamil+rtapply@aravaiparunning.com' ) ),
 );
+$GLOBALS['t_meta'][9001]['_arv_rt_rr'] = array( 'status' => 'sent', 'skipped_files' => array( 'resume_file over 4 MB' ) );
 $fh = fopen( 'php://memory', 'w+' );
 $c  = arv_rt_apply_export_csv( $fh );
 rewind( $fh );
@@ -363,6 +364,7 @@ foreach ( $keys as $k ) {
 	ok( in_array( $k, $head, true ), "export header has $k" );
 }
 $ix = array_flip( $head );
+ok( 'sent' === $row[ $ix['rr_status'] ] && 'resume_file over 4 MB' === $row[ $ix['rr_skipped_files'] ], 'export shows skipped files with the reason' );
 ok( 'Ann' === $row[ $ix['first-name'] ] && 'Trail; Ultra' === $row[ $ix['disciplines'] ] && basename( $saved ) === $row[ $ix['headshot'] ] && 'yes' === $row[ $ix['consent-age'] ] && 'no' === $row[ $ix['consent-publicity'] ], 'export row values' );
 
 // Delete test: only the given email.

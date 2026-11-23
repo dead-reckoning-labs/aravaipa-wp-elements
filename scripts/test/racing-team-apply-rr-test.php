@@ -621,6 +621,25 @@ ok( array( 'headshot not jpg/png/webp (heic)' ) === $r['skipped_files'], 'heic s
 $log = get_option( 'arv_rt_apply_log' );
 ok( false !== strpos( end( $log ), 'files: headshot not jpg/png/webp (heic)' ), 'heic skip reason in the ring log' );
 
+// ---- 7c. A 5 MB resume: not copied to RaceReach, but never silent ---------------------------------
+t_reset();
+t_on();
+wp_mkdir_p( $GLOBALS['t_up'] );
+$cv5 = $GLOBALS['t_up'] . '/cv5.pdf';
+file_put_contents( $cv5, '%PDF-1.4 big' );
+$fh = fopen( $cv5, 'c' );
+ftruncate( $fh, 5 * 1024 * 1024 );
+fclose( $fh );
+file_put_contents( $GLOBALS['t_up'] . '/hs5.jpg', T_JPG );
+$r = arv_rt_apply_rr_push( t_entry( 504, array(), array( 'rt-headshot' => $GLOBALS['t_up'] . '/hs5.jpg', 'rt-resume-file' => $cv5 ) ) );
+$p = end( $GLOBALS['t_posts'] );
+ok( 'sent' === $r['status'] && false !== strpos( $p['args']['body'], 'name="headshot"' ) && false === strpos( $p['args']['body'], 'name="resume_file"' ), '5 MB resume: application and headshot sent, resume left out' );
+$rec = get_post_meta( 504, '_arv_rt_rr', true );
+ok( is_array( $rec ) && array( 'resume_file over 4 MB' ) === $rec['skipped_files'], '5 MB resume: skip reason stored on the entry record' );
+ok( 'resume_file over 4 MB' === arv_rt_apply_rr_skipped( 504 ), '5 MB resume: reason for the CSV column' );
+$log = get_option( 'arv_rt_apply_log' );
+ok( false !== strpos( end( $log ), 'files: resume_file over 4 MB' ), '5 MB resume: rr-status ring line says files: resume_file over 4 MB' );
+
 // ---- 8. Retry schedule ------------------------------------------------------------------------
 t_reset();
 t_on();
