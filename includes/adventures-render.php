@@ -74,6 +74,24 @@ function arv_adv_faq_rows( $faqs ) {
 }
 
 /**
+ * The one Adventures contact address, shown as a plain small line on the
+ * landing and on every trip page, and used by the fallback Email us button.
+ */
+if ( ! defined( 'ARV_ADV_CONTACT_EMAIL' ) ) {
+	define( 'ARV_ADV_CONTACT_EMAIL', 'adventures@aravaiparunning.com' );
+}
+
+/**
+ * Small contact line: "Questions? Email adventures@aravaiparunning.com".
+ *
+ * @return string
+ */
+function arv_adv_contact_line() {
+	$email = ARV_ADV_CONTACT_EMAIL;
+	return '<p class="aa-small-note aa-contact-line">Questions? Email <a href="' . esc_url( 'mailto:' . $email, array( 'mailto' ) ) . '">' . esc_html( $email ) . '</a></p>';
+}
+
+/**
  * Interest form section. The form itself is Contact Form 7 (the site's form
  * plugin), so entries land in Flamingo and mail goes out the same way every
  * other form on the site does. See includes/adventures-form.php.
@@ -86,7 +104,7 @@ function arv_adv_faq_rows( $faqs ) {
 function arv_adv_render_form( $photo, $heading, $preselect = '' ) {
 	$form = function_exists( 'arv_adv_form_html' ) ? arv_adv_form_html( $preselect ) : '';
 	if ( '' === $form ) {
-		$form = '<p><a class="aa-btn aa-btn-yellow" href="mailto:info@aravaiparunning.com?subject=' . rawurlencode( 'Aravaipa Adventures interest' ) . '">Email us</a></p>';
+		$form = '<p><a class="aa-btn aa-btn-yellow" href="' . esc_url( 'mailto:' . ARV_ADV_CONTACT_EMAIL . '?subject=' . rawurlencode( 'Aravaipa Adventures interest' ), array( 'mailto' ) ) . '">Email us</a></p>';
 	}
 
 	return '<section class="aa-interest" id="interest">'
@@ -317,7 +335,7 @@ function arv_adv_render_trip( $trip ) {
 
 	// Need to know.
 	$faqs = isset( $config['faqs'] ) && is_array( $config['faqs'] ) ? $config['faqs'] : array();
-	$o   .= '<section class="aa-section" id="faq"><div class="aa-container aa-faq-grid"><div><span class="aa-kicker">FAQ</span><h2 class="aa-display">Need to Know</h2></div><div class="aa-faq-list">'
+	$o   .= '<section class="aa-section" id="faq"><div class="aa-container aa-faq-grid"><div><span class="aa-kicker">FAQ</span><h2 class="aa-display">Need to Know</h2>' . arv_adv_contact_line() . '</div><div class="aa-faq-list">'
 		. '<details class="aa-faq"><summary>Who Runs This Trip</summary><div class="aa-faq-body"><p>' . $host[2] . '</p></div></details>'
 		. arv_adv_faq_rows( $faqs )
 		. '</div></div></section>';
@@ -504,7 +522,7 @@ function arv_adv_render_landing() {
 		. '</div></section>';
 
 	$faqs = isset( $config['faqs'] ) && is_array( $config['faqs'] ) ? $config['faqs'] : array();
-	$o   .= '<section class="aa-section" id="faq"><div class="aa-container aa-faq-grid"><div><span class="aa-kicker">FAQ</span><h2 class="aa-display">Need to Know</h2></div><div class="aa-faq-list">'
+	$o   .= '<section class="aa-section" id="faq"><div class="aa-container aa-faq-grid"><div><span class="aa-kicker">FAQ</span><h2 class="aa-display">Need to Know</h2>' . arv_adv_contact_line() . '</div><div class="aa-faq-list">'
 		. arv_adv_faq_rows( $faqs ) . '</div></div></section>';
 
 	$o .= arv_adv_render_form( $photo( 'form' ), 'Aravaipa Adventures Interest List' );
