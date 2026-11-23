@@ -1,6 +1,6 @@
 <?php
 /**
- * Racing Team apply hardening (job ldqh0d, 0.101.27), without WordPress:
+ * Racing Team apply hardening (job ldqh0d, 0.101.28), without WordPress:
  * WordPress, CF7 and the REST API are stubbed the same way as
  * racing-team-apply-test.php.
  *

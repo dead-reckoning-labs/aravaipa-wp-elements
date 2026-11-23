@@ -2805,7 +2805,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 /* ------------------------------------------------------------------------
- * Failed submit log (job ldqh0d, 0.101.27)
+ * Failed submit log (job ldqh0d, 0.101.28)
  *
  * Every result other than mail_sent for our form adds one line to a ring
  * option: time, CF7 status, the names of invalid fields, which file fields
