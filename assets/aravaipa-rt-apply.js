@@ -8,7 +8,7 @@
  * 1. Photos: images over 2 MB (and every HEIC/HEIF) are drawn to a canvas
  *    with a long edge of at most 2000 px and saved as JPEG under 2 MB, then
  *    swapped into the file input. HEIC decodes natively where the browser
- *    can, else through a pinned heic2any build loaded on demand, else the
+ *    can, else through the heic2any build vendored in the plugin (assets/vendor), else the
  *    original goes up as is (the server accepts heic and heif). PDFs are
  *    never touched.
  * 2. Errors: a list of fields to fix next to Submit, the first one scrolled
@@ -41,9 +41,10 @@
 	var MAX_BYTES = 2 * 1024 * 1024;
 	// Files over this still reach the team by email, but are not copied to RaceReach (ARV_RT_APPLY_RR_FILE_MAX, 4 MB).
 	var RR_MAX = 4 * 1024 * 1024;
-	var HEIC_LIB = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
 	var TOKEN_WAIT_MS = 20000;
 	var BEACON_URL = root.getAttribute('data-fail-url') || '';
+	// heic2any 0.0.4, vendored in the plugin (assets/vendor); the shortcode passes its URL.
+	var HEIC_LIB = root.getAttribute('data-heic-url') || '';
 	var submitBox = form.querySelector('.rt-submit') || form;
 	var pending = [];
 	var bypass = false;
@@ -540,12 +541,14 @@
 		if (window.heic2any) {
 			return Promise.resolve(window.heic2any);
 		}
+		if (!HEIC_LIB) {
+			return Promise.reject(new Error('heic2any url'));
+		}
 		if (!heicLib) {
 			heicLib = new Promise(function (resolve, reject) {
 				var s = document.createElement('script');
 				s.src = HEIC_LIB;
 				s.async = true;
-				s.crossOrigin = 'anonymous';
 				s.onload = function () {
 					window.heic2any ? resolve(window.heic2any) : reject(new Error('heic2any'));
 				};

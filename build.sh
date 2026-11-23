@@ -49,7 +49,7 @@ for f in "$NAME.php" includes/*.php includes/elements/*.php includes/templates/*
 done
 
 rm -rf "$STAGE" "$OUT/$NAME.zip"
-mkdir -p "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/includes/data" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations"
+mkdir -p "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/includes/data" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations" "$STAGE/assets/vendor"
 
 cp "$NAME.php" "$STAGE/"
 # Read from the require_once calls rather than a list kept beside them. The
@@ -98,10 +98,14 @@ cp assets/plugin/*.png "$STAGE/assets/plugin/"
 # Official watch and app marks for the Featured Race card, byte for byte as
 # Obsession ships them (assets/integrations/README.md).
 cp assets/integrations/*.png assets/integrations/*.svg "$STAGE/assets/integrations/"
+# HEIC converter for the Racing Team form (heic2any 0.0.4, MIT), served from
+# the plugin instead of a CDN; loaded on demand by aravaipa-rt-apply.js.
+cp assets/vendor/heic2any.min.js assets/vendor/heic2any-LICENSE.txt "$STAGE/assets/vendor/"
+[ -s "$STAGE/assets/vendor/heic2any.min.js" ] || { echo "assets/vendor/heic2any.min.js missing from the payload" >&2; exit 1; }
 
 # WordPress convention: an empty index.php in every directory so a server
 # with directory listing enabled serves nothing instead of the file tree.
-for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/includes/data" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations"; do
+for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/includes/data" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations" "$STAGE/assets/vendor"; do
 	printf '<?php // Silence is golden.' > "$d/index.php"
 done
 

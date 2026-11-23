@@ -332,6 +332,12 @@ ok( isset( $GLOBALS['t_enq']['aravaipa-rt-apply'] ) && ARV_ELEMENTS_URL . 'asset
 ok( false !== strpos( $sc, 'data-fail-url="https://example.test/wp-json/aravaipa/v1/rt-apply-fail"' ), 'beacon URL on the wrapper, no arv in the path' );
 ok( false !== strpos( $sc, '.rt-summary' ) && ! preg_match( '/rt-(summary|alert|notice)[^}]*border-(left|top|right|bottom)/', $sc ), 'summary styles, no edge stripes' );
 ok( is_file( dirname( __DIR__, 2 ) . '/assets/aravaipa-rt-apply.js' ), 'asset file exists' );
+// heic2any is vendored: the wrapper hands the client the plugin's own copy, no CDN anywhere.
+ok( false !== strpos( $sc, 'data-heic-url="' . ARV_ELEMENTS_URL . 'assets/vendor/heic2any.min.js?ver=9.9.9"' ), 'heic2any URL on the wrapper is the plugin copy, versioned' );
+$heic_file = dirname( __DIR__, 2 ) . '/assets/vendor/heic2any.min.js';
+ok( is_file( $heic_file ) && filesize( $heic_file ) > 100000 && false !== strpos( (string) file_get_contents( $heic_file, false, null, 0, 400 ), 'MIT License' ), 'vendored heic2any present with its MIT notice' );
+$rt_js = (string) file_get_contents( dirname( __DIR__, 2 ) . '/assets/aravaipa-rt-apply.js' );
+ok( ! preg_match( '#jsdelivr|unpkg|cdnjs|https://[^\'"\s]*\.js#', $rt_js ) && false !== strpos( $rt_js, "getAttribute('data-heic-url')" ), 'client loads heic2any only from the URL the plugin passes' );
 ok( isset( $GLOBALS['t_enq']['contact-form-7'] ) && isset( $GLOBALS['t_enq']['contact-form-7-css'] ), 'CF7 script and styles loaded with the form (site runs CF7 without them)' );
 $GLOBALS['t_enq'] = array();
 $GLOBALS['t_now'] = ts( '2026-12-02T12:00:00-07:00' );
