@@ -44,6 +44,14 @@ function arv_adv_form_html( $preselect = '' ) {
 	$html                              = $form->form_html( array( 'html_class' => 'aa-cf7' ) );
 	$GLOBALS['arv_adv_form_preselect'] = '';
 
+	// WP Rocket only loads CF7's script and styles on its shortcode; this form renders via form_html, so load them here.
+	if ( function_exists( 'wpcf7_enqueue_scripts' ) ) {
+		wpcf7_enqueue_scripts();
+	}
+	if ( function_exists( 'wpcf7_enqueue_styles' ) ) {
+		wpcf7_enqueue_styles();
+	}
+
 	return $html;
 }
 
