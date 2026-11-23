@@ -248,7 +248,7 @@ foreach ( $keys as $k ) {
 ok( false !== strpos( $tmpl, '[turnstile]' ), 'turnstile tag' );
 ok( false !== strpos( $tmpl, '[email* rt-email' ), 'email required' );
 ok( false !== strpos( $tmpl, '[textarea* rt-resume' ), 'resume required' );
-ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:4mb filetypes:jpg|jpeg|png|webp]' ), 'headshot file tag' );
+ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:10mb filetypes:jpg|jpeg|png|webp|heic|heif]' ), 'headshot file tag' );
 ok( false !== strpos( $tmpl, '[acceptance rt-consent-publicity optional]' ), 'publicity optional' );
 ok( false === strpos( $tmpl, "\u{2014}" ), 'no em dash in template' );
 
