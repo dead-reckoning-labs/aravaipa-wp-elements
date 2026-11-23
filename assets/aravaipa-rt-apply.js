@@ -176,6 +176,12 @@
 				list.push(n);
 			}
 		});
+		// Top to bottom, so the list reads like the form and focus goes to the first.
+		list.sort(function (a, b) {
+			var pa = fieldWrap(a);
+			var pb = fieldWrap(b);
+			return pa === pb ? 0 : (pa.compareDocumentPosition(pb) & 4 ? -1 : 1);
+		});
 		var box = el('div', 'rt-summary');
 		box.setAttribute('role', 'alert');
 		box.setAttribute('aria-live', 'assertive');
@@ -758,7 +764,69 @@
 		return touched.length > 0;
 	}
 
-	restore();
+	// On a cached page CF7 resets the form when the window loads and then
+	// fires wpcf7reset; restoring before that would be wiped. So restore
+	// after that reset, or right away when CF7 will not reset the form.
+	var restored = false;
+	function restoreOnce() {
+		if (!restored) {
+			restored = true;
+			restore();
+		}
+	}
+	function restoreWhenReady() {
+		var cf7Resets = !!(window.wpcf7 && window.wpcf7.cached);
+		if (!cf7Resets) {
+			restoreOnce();
+			return;
+		}
+		form.addEventListener('wpcf7reset', function () {
+			// Restore again even if the fallback already ran: the reset wiped it.
+			setTimeout(function () {
+				restored = false;
+				restoreOnce();
+			}, 0);
+		}, { once: true });
+		var fallback = function () {
+			setTimeout(restoreOnce, 4000);
+		};
+		if (document.readyState === 'complete') {
+			fallback();
+		} else {
+			window.addEventListener('load', fallback, { once: true });
+		}
+	}
+
+	/* ------------------------------------------- after a full page reload */
+
+	// When CF7's script is missing the form posts the old way and the page
+	// comes back with the result in data-status and the bad fields marked.
+	var initial = form.getAttribute('data-status') || '';
+	if (initial === 'sent') {
+		storeClear();
+	} else {
+		restoreWhenReady();
+		if (initial === 'invalid' || initial === 'unaccepted') {
+			var bad = [];
+			form.querySelectorAll('.wpcf7-not-valid,[aria-invalid="true"]').forEach(function (c) {
+				if (c.name) {
+					bad.push(c.name);
+				}
+			});
+			form.querySelectorAll('.rt-consent .wpcf7-acceptance:not(.optional) input[type=checkbox]').forEach(function (c) {
+				if (!c.checked && initial === 'unaccepted') {
+					bad.push(c.name);
+				}
+			});
+			showSummary(bad);
+		} else if (initial === 'spam') {
+			showAlert('spam');
+		} else if (initial === 'failed') {
+			showAlert('mail_failed');
+		} else if (initial === 'aborted') {
+			showAlert('server');
+		}
+	}
 	form.addEventListener('input', save);
 	form.addEventListener('change', save);
 

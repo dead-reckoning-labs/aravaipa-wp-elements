@@ -353,8 +353,25 @@ add_filter( 'wpcf7_display_message', 'arv_rt_apply_display_message', 10, 2 );
 
 /** CF7 additional settings: what Flamingo shows in its list. */
 function arv_rt_apply_additional_settings() {
-	return "flamingo_email: [rt-email]\nflamingo_name: [rt-first-name] [rt-last-name]\nflamingo_subject: 2027 Racing Team application";
+	return "flamingo_email: [rt-email]\nflamingo_name: [rt-first-name] [rt-last-name]\nflamingo_subject: 2027 Racing Team application\nacceptance_as_validation: on";
 }
+
+/**
+ * Required agreements are checked like any other answer. Without this, CF7's
+ * script keeps Submit disabled until every box is ticked, with no word why.
+ * Applied at runtime so the stored form needs no reinstall.
+ *
+ * @param string $value Additional settings.
+ * @param mixed  $form  WPCF7_ContactForm.
+ * @return string
+ */
+function arv_rt_apply_additional_prop( $value, $form = null ) {
+	if ( ! arv_rt_apply_is_ours( $form ) || false !== strpos( (string) $value, 'acceptance_as_validation' ) ) {
+		return $value;
+	}
+	return rtrim( (string) $value ) . "\nacceptance_as_validation: on";
+}
+add_filter( 'wpcf7_contact_form_property_additional_settings', 'arv_rt_apply_additional_prop', 10, 2 );
 
 /**
  * 2027 races for the race plans list: "Name, Mon D".
@@ -763,13 +780,25 @@ add_shortcode( 'arv_rt_apply', 'arv_rt_apply_shortcode' );
  * check, autosave, failure beacon). Only when the form renders; footer.
  */
 function arv_rt_apply_enqueue() {
+	// The live site does not load CF7's own script and styles (CF7 runs in
+	// its no-JS mode, so every submit reloads the page and a failed one
+	// drops the answers). Load them for this form, the way CF7 documents for
+	// sites that turn its assets off globally.
+	if ( function_exists( 'wpcf7_enqueue_scripts' ) ) {
+		wpcf7_enqueue_scripts();
+	}
+	if ( function_exists( 'wpcf7_enqueue_styles' ) ) {
+		wpcf7_enqueue_styles();
+	}
 	if ( ! function_exists( 'wp_enqueue_script' ) || ! defined( 'ARV_ELEMENTS_URL' ) ) {
 		return;
 	}
+	// After CF7's script, so the helper sees CF7's settings (cached page reset).
+	$deps = function_exists( 'wp_script_is' ) && wp_script_is( 'contact-form-7', 'registered' ) ? array( 'contact-form-7' ) : array();
 	wp_enqueue_script(
 		'aravaipa-rt-apply',
 		ARV_ELEMENTS_URL . 'assets/aravaipa-rt-apply.js',
-		array(),
+		$deps,
 		defined( 'ARV_ELEMENTS_VERSION' ) ? ARV_ELEMENTS_VERSION : false,
 		true
 	);

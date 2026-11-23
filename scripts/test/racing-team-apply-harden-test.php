@@ -194,6 +194,12 @@ define( 'ARV_ELEMENTS_VERSION', '9.9.9' );
 function wp_enqueue_script( $h, $src = '', $deps = array(), $ver = false, $footer = false ) {
 	$GLOBALS['t_enq'][ $h ] = array( $src, $ver, $footer );
 }
+function wpcf7_enqueue_scripts() {
+	$GLOBALS['t_enq']['contact-form-7'] = array( 'cf7', false, true );
+}
+function wpcf7_enqueue_styles() {
+	$GLOBALS['t_enq']['contact-form-7-css'] = array( 'cf7', false, false );
+}
 function rest_url( $p = '' ) {
 	return 'https://example.test/wp-json/' . ltrim( $p, '/' );
 }
@@ -304,6 +310,11 @@ foreach ( arv_rt_apply_messages() as $k => $m ) {
 	ok( false === strpos( $m, "\u{2014}" ), "no em dash in message $k" );
 }
 
+// Agreements validate like answers, so Submit is never silently disabled.
+ok( false !== strpos( arv_rt_apply_additional_prop( "flamingo_email: [rt-email]", new WPCF7_ContactForm( $ours ) ), "\nacceptance_as_validation: on" ), 'our form: acceptance_as_validation added at runtime' );
+ok( 1 === substr_count( arv_rt_apply_additional_prop( arv_rt_apply_additional_settings(), new WPCF7_ContactForm( $ours ) ), 'acceptance_as_validation' ), 'template has it once' );
+ok( 'x' === arv_rt_apply_additional_prop( 'x', new WPCF7_ContactForm( $other ) ), 'other form: additional settings untouched' );
+
 // Turnstile attributes on our form only.
 $ts = '<div class="rt-submit"><div class="wpcf7-turnstile cf-turnstile" data-sitekey="abc" data-response-field-name="_wpcf7_turnstile_response"></div></div>';
 WPCF7_ContactForm::$current = new WPCF7_ContactForm( $ours );
@@ -321,6 +332,7 @@ ok( isset( $GLOBALS['t_enq']['aravaipa-rt-apply'] ) && ARV_ELEMENTS_URL . 'asset
 ok( false !== strpos( $sc, 'data-fail-url="https://example.test/wp-json/aravaipa/v1/rt-apply-fail"' ), 'beacon URL on the wrapper, no arv in the path' );
 ok( false !== strpos( $sc, '.rt-summary' ) && ! preg_match( '/rt-(summary|alert|notice)[^}]*border-(left|top|right|bottom)/', $sc ), 'summary styles, no edge stripes' );
 ok( is_file( dirname( __DIR__, 2 ) . '/assets/aravaipa-rt-apply.js' ), 'asset file exists' );
+ok( isset( $GLOBALS['t_enq']['contact-form-7'] ) && isset( $GLOBALS['t_enq']['contact-form-7-css'] ), 'CF7 script and styles loaded with the form (site runs CF7 without them)' );
 $GLOBALS['t_enq'] = array();
 $GLOBALS['t_now'] = ts( '2026-12-02T12:00:00-07:00' );
 arv_rt_apply_shortcode();
