@@ -405,6 +405,32 @@ for ( $i = 0; $i < 20; $i++ ) {
 }
 ok( $last instanceof WP_Error && 429 === $last->data['status'], 'beacon: rate limited per IP' );
 ok( ARV_RT_APPLY_BEACON_PER_HOUR === count( get_option( 'arv_rt_apply_fail_log' ) ), 'beacon: log stops at the hourly cap' );
+// Oversized body: refused with 413 before it is parsed, nothing logged.
+$GLOBALS['t_trans']                         = array();
+$GLOBALS['t_opts']['arv_rt_apply_fail_log'] = array();
+$big = arv_rt_apply_fail_beacon( new T_Request( json_encode( array( 'status' => 'network', 'pad' => str_repeat( 'x', ARV_RT_APPLY_BEACON_BODY_MAX ) ) ) ) );
+ok( $big instanceof WP_Error && 413 === $big->data['status'], 'beacon: oversized body refused (413)' );
+ok( array() === get_option( 'arv_rt_apply_fail_log' ) && array() === $GLOBALS['t_trans'], 'beacon: oversized body not logged or counted' );
+// Global cap: many IPs, each under its own limit, stop at the global hourly cap.
+$last = null;
+for ( $i = 0; $i < ARV_RT_APPLY_BEACON_GLOBAL_PER_HOUR + 10; $i++ ) {
+	$_SERVER['REMOTE_ADDR'] = '10.' . intdiv( $i, 250 ) . '.' . ( $i % 250 ) . '.1';
+	$last                   = arv_rt_apply_fail_beacon( new T_Request( json_encode( array( 'status' => 'network' ) ) ) );
+}
+ok( $last instanceof WP_Error && 429 === $last->data['status'], 'beacon: global hourly cap across many IPs (429)' );
+ok( ARV_RT_APPLY_BEACON_GLOBAL_PER_HOUR === count( get_option( 'arv_rt_apply_fail_log' ) ), 'beacon: global cap keeps the ring for server entries' );
+$_SERVER['REMOTE_ADDR'] = '203.0.113.9';
+// Stored entry bound: every field name at once, long strings, all under the line cap.
+$GLOBALS['t_trans']                         = array();
+$GLOBALS['t_opts']['arv_rt_apply_fail_log'] = array();
+$_SERVER['HTTP_USER_AGENT']                 = str_repeat( 'Safari/ ', 200 );
+$all_names = array_slice( arv_rt_apply_field_names(), 0, 60 );
+$ok        = arv_rt_apply_fail_beacon( new T_Request( json_encode( array( 'status' => 'network', 'fields' => $all_names ) ) ) );
+ok( is_array( $ok ) && strlen( json_encode( t_last() ) ) <= ARV_RT_APPLY_FAIL_LINE_MAX, 'beacon: stored entry at most ARV_RT_APPLY_FAIL_LINE_MAX bytes' );
+arv_rt_apply_fail_add( array( 'ts' => str_repeat( '9', 500 ), 'src' => 'server', 'status' => str_repeat( 'a', 900 ), 'fields' => array_fill( 0, 500, str_repeat( 'f', 300 ) ), 'files' => array_fill( 0, 50, 1.25 ), 'ua' => str_repeat( 'u', 900 ), 'extra' => str_repeat( 'e', 5000 ) ) );
+$tl = t_last();
+ok( strlen( json_encode( $tl ) ) <= ARV_RT_APPLY_FAIL_LINE_MAX && ! isset( $tl['extra'] ) && ! empty( $tl['cut'] ) && 4 >= count( $tl['files'] ), 'fail_add: any entry bounded (fields cut, unknown keys dropped)' );
+$_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
 // Routes.
 arv_rt_apply_fail_routes();
@@ -422,7 +448,7 @@ ok( false === arv_rt_apply_fail_can_read(), 'GET requires manage_options' );
 $GLOBALS['t_can'] = true;
 ok( true === arv_rt_apply_fail_can_read(), 'admin may read' );
 $read = arv_rt_apply_fail_read();
-ok( ARV_RT_APPLY_BEACON_PER_HOUR === $read['count'], 'GET returns the log' );
+ok( count( get_option( 'arv_rt_apply_fail_log' ) ) === $read['count'] && $read['count'] > 0 && t_last() === end( $read['log'] ), 'GET returns the log' );
 
 ok( 0 === $GLOBALS['t_remote'], 'no remote calls' );
 rmrf( $GLOBALS['t_up'] );

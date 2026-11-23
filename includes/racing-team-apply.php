@@ -2813,6 +2813,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 define( 'ARV_RT_APPLY_FAIL_MAX', 300 );
 define( 'ARV_RT_APPLY_BEACON_PER_HOUR', 12 );
+// All IPs together, per hour: many addresses cannot push real server entries out of the ring.
+define( 'ARV_RT_APPLY_BEACON_GLOBAL_PER_HOUR', 60 );
+// Raw beacon body, bytes. A real one is well under 1 KB.
+define( 'ARV_RT_APPLY_BEACON_BODY_MAX', 2048 );
+// One stored ring entry, JSON bytes (server and beacon lines alike).
+define( 'ARV_RT_APPLY_FAIL_LINE_MAX', 1024 );
 
 /** Statuses the browser beacon may report. */
 function arv_rt_apply_fail_statuses() {
@@ -2860,12 +2866,48 @@ function arv_rt_apply_ua_family( $ua ) {
 }
 
 /**
+ * Bound one ring entry: every string field short, lists capped, and the
+ * whole entry at most ARV_RT_APPLY_FAIL_LINE_MAX bytes of JSON (field names
+ * are dropped from the end until it fits, and 'cut' marks that).
+ *
+ * @param array $line Entry.
+ * @return array
+ */
+function arv_rt_apply_fail_bound( $line ) {
+	$line = is_array( $line ) ? $line : array();
+	$out  = array();
+	foreach ( array( 'ts' => 24, 'src' => 10, 'status' => 32, 'ua' => 40 ) as $k => $len ) {
+		if ( isset( $line[ $k ] ) ) {
+			$out[ $k ] = substr( is_scalar( $line[ $k ] ) ? (string) $line[ $k ] : '', 0, $len );
+		}
+	}
+	$fields = array();
+	foreach ( array_slice( isset( $line['fields'] ) ? (array) $line['fields'] : array(), 0, 60 ) as $f ) {
+		if ( is_scalar( $f ) ) {
+			$fields[] = substr( (string) $f, 0, 48 );
+		}
+	}
+	$out['fields'] = $fields;
+	$files         = array();
+	foreach ( array_slice( isset( $line['files'] ) ? (array) $line['files'] : array(), 0, 4, true ) as $k => $v ) {
+		$files[ substr( (string) $k, 0, 24 ) ] = is_numeric( $v ) ? round( (float) $v, 1 ) : 0;
+	}
+	$out['files'] = $files;
+	while ( strlen( (string) wp_json_encode( $out ) ) > ARV_RT_APPLY_FAIL_LINE_MAX && $out['fields'] ) {
+		array_pop( $out['fields'] );
+		$out['cut'] = true;
+	}
+	return $out;
+}
+
+/**
  * Add one line to the ring log.
  *
  * @param array $line Entry.
  * @return void
  */
 function arv_rt_apply_fail_add( $line ) {
+	$line  = arv_rt_apply_fail_bound( $line );
 	$log   = get_option( 'arv_rt_apply_fail_log', array() );
 	$log   = is_array( $log ) ? $log : array();
 	$log[] = $line;
@@ -2949,14 +2991,19 @@ function arv_rt_apply_fail_on_submit( $form, $result = array() ) {
 add_action( 'wpcf7_submit', 'arv_rt_apply_fail_on_submit', 30, 2 );
 
 /**
- * Beacon from the browser: status from the allowlist, field names from our
- * form only, rate limited per hashed IP. Anything else is refused.
+ * Beacon from the browser: body at most ARV_RT_APPLY_BEACON_BODY_MAX bytes,
+ * status from the allowlist, field names from our form only, rate limited
+ * per hashed IP and across all IPs per hour. Anything else is refused.
  *
  * @param mixed $request WP_REST_Request.
  * @return array|WP_Error
  */
 function arv_rt_apply_fail_beacon( $request ) {
-	$body = json_decode( (string) $request->get_body(), true );
+	$raw = (string) $request->get_body();
+	if ( strlen( $raw ) > ARV_RT_APPLY_BEACON_BODY_MAX ) {
+		return new WP_Error( 'rt_big', 'Report too big.', array( 'status' => 413 ) );
+	}
+	$body = json_decode( $raw, true );
 	if ( ! is_array( $body ) ) {
 		return new WP_Error( 'rt_bad', 'Bad request.', array( 'status' => 400 ) );
 	}
@@ -2977,7 +3024,12 @@ function arv_rt_apply_fail_beacon( $request ) {
 	if ( $n >= ARV_RT_APPLY_BEACON_PER_HOUR ) {
 		return new WP_Error( 'rt_slow', 'Too many reports.', array( 'status' => 429 ) );
 	}
+	$all = (int) get_transient( 'arv_rt_fb_all' );
+	if ( $all >= ARV_RT_APPLY_BEACON_GLOBAL_PER_HOUR ) {
+		return new WP_Error( 'rt_slow', 'Too many reports.', array( 'status' => 429 ) );
+	}
 	set_transient( $key, $n + 1, 3600 );
+	set_transient( 'arv_rt_fb_all', $all + 1, 3600 );
 	arv_rt_apply_fail_add(
 		array(
 			'ts'     => gmdate( 'Y-m-d\TH:i:s\Z' ),
