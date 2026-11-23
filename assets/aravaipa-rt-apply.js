@@ -196,8 +196,8 @@
 				w.classList.add('rt-bad');
 				var li = el('li');
 				var a = el('a', '', labelFor(n));
-				var t = focusTarget(w);
-				a.href = '#' + (t && t.id ? t.id : n);
+				// Plain '#' href: the click handler moves focus, so no DOM text ever lands in the URL.
+				a.setAttribute('href', '#');
 				a.addEventListener('click', function (e) {
 					e.preventDefault();
 					goTo(n);
