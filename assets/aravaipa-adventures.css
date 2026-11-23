@@ -97,6 +97,12 @@ body .arv-adv .aa-lede {
 body .arv-adv .aa-small-note {
 	font-size: 13px; color: var(--aa-muted); margin: 0;
 }
+body .arv-adv .aa-small-note.aa-contact-line {
+	margin-top: 18px; font-size: 14px; overflow-wrap: anywhere;
+}
+body .arv-adv .aa-contact-line a {
+	text-decoration: underline; text-underline-offset: 2px;
+}
 body .arv-adv .aa-btn {
 	display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   min-width: 150px; padding: 10px 26px; border-radius: 45px; border: 0;
