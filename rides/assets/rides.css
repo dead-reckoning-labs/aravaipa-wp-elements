@@ -1693,6 +1693,16 @@
 	color: #fff;
 }
 
+.rides-look-blend .rides-section--navy .rides-eyebrow {
+	color: var(--rides-yellow);
+}
+.rides-look-blend .rides-section--navy .rides-note {
+	color: rgba(255, 255, 255, 0.86);
+}
+.rides-look-blend #schedule .rides-two {
+	align-items: start;
+}
+
 /* Insomniac keeps the night feel; the distances panel is the live navy. */
 .rides-look-blend.rides-theme-night .rides-section--mist {
 	background: var(--rides-night);
