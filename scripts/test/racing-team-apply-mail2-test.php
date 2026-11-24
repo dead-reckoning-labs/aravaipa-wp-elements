@@ -9,7 +9,8 @@
  * it is a real field; house copy rules (no em or en dashes, no prices, no
  * banned flourishes); the runtime mail_2 filter applies to our form only; the
  * install command writes mail_2 and messages and is idempotent; mail_sent_ok
- * no longer says there is no confirmation email; the admin mail is unchanged.
+ * no longer says there is no confirmation email; the admin mail is unchanged;
+ * links in applicant text are neutralised in mail_2 only.
  *
  * Run: php scripts/test/racing-team-apply-mail2-test.php
  *
@@ -52,6 +53,29 @@ foreach ( array_unique( $mm[1] ) as $t ) {
 	ok( in_array( $t, $names, true ), 'tag is a field: ' . $t );
 }
 ok( false === strpos( $b, '[rt-headshot]' ) && false === strpos( $b, '[rt-resume-file]' ) && false === strpos( $b, '[rt-birth-date]' ) && false === strpos( $b, '[rt-phone]' ), 'no files, birth date or phone echoed' );
+
+// Never echo birth date or phone, under any tag spelling (Vaip review nit).
+ok( false === strpos( $b, '[rt-birth' ) && false === strpos( $b, '[rt-phone' ), 'no [rt-birth or [rt-phone tag in the confirmation' );
+
+// Links in applicant text are neutralised in mail_2 only (Vaip review item 2).
+class T_Mail { public $n; function __construct( $n ) { $this->n = $n; } function name() { return $this->n; } }
+$evil = "Hi Stella,\nRacing resume:\nhttps://evil.example.com/win?x=1 and www.Spam-Site.co.uk/p\nhttp://10.0.0.1/a\nsee ftp://files.bad.net\nWhy: mail me at x@phish.io\nRan 50K in 4:30, 5.5 hours at Mt. Lemmon.\n";
+$c    = arv_rt_apply_mail_components( array( 'subject' => 'S', 'body' => $evil ), new WPCF7_ContactForm( $ours ), new T_Mail( 'mail_2' ) );
+$d    = $c['body'];
+ok( ! preg_match( '~[a-z]+://~i', $d ), 'defang: no scheme left' );
+ok( ! preg_match( '~\b[a-z0-9-]+\.(com|net|io|uk|co)\b~i', $d ), 'defang: no plain host left' );
+ok( false !== strpos( $d, 'evil[.]example[.]com/win' ) && false !== strpos( $d, 'www[.]Spam-Site[.]co[.]uk' ), 'defang: hosts shown as text' );
+ok( false !== strpos( $d, '10[.]0[.]0[.]1' ), 'defang: numeric host' );
+ok( false !== strpos( $d, 'x@phish[.]io' ), 'defang: email host' );
+ok( false !== strpos( $d, 'Ran 50K in 4:30, 5.5 hours at Mt. Lemmon.' ), 'defang: ordinary text untouched' );
+ok( 0 === strpos( $d, 'Hi Stella,' ), 'defang: greeting intact' );
+$staff = arv_rt_apply_mail_components( array( 'body' => $evil ), new WPCF7_ContactForm( $ours ), new T_Mail( 'mail' ) );
+ok( $evil === $staff['body'], 'staff notice keeps answers as typed' );
+$other = arv_rt_apply_mail_components( array( 'body' => $evil ), new WPCF7_ContactForm( 777 ), new T_Mail( 'mail_2' ) );
+ok( $evil === $other['body'], 'other forms untouched' );
+ok( in_array( 'arv_rt_apply_mail_components', $GLOBALS['t_filters']['wpcf7_mail_components'], true ), 'mail components filter registered' );
+// The template itself has no links, so defanging it is a no-op.
+ok( arv_rt_apply_defang( $b ) === $b, 'template body has no links' );
 
 // House copy rules.
 $all = $m['subject'] . "\n" . $b . "\n" . arv_rt_apply_messages()['mail_sent_ok'];

@@ -1,5 +1,5 @@
 /**
- * 2027 Racing Team application helper (job ldqh0d, 0.101.28).
+ * 2027 Racing Team application helper (jobs ldqh0d, kfk1l8).
  *
  * Loaded by the [arv_rt_apply] shortcode only when the form renders. No
  * dependencies. Every part fails quietly: if anything here breaks, the plain
@@ -11,6 +11,9 @@
  *    can, else through the heic2any build vendored in the plugin (assets/vendor), else the
  *    original goes up as is (the server accepts heic and heif). PDFs are
  *    never touched.
+ *    Any image over 2 MB is shrunk with a "Large photo, shrinking it..."
+ *    note, never a size error; whatever still arrives large is resized on
+ *    the server (arv_rt_apply_resize_image).
  * 2. Errors: a list of fields to fix next to Submit, the first one scrolled
  *    to and focused, each bad field outlined. Spam, mail failed, server and
  *    network errors get a plain message with an email fallback.
@@ -628,10 +631,13 @@
 			return;
 		}
 		if (typeof DataTransfer === 'undefined' || !window.HTMLCanvasElement) {
+			if (file.size > MAX_BYTES) {
+				note.textContent = 'Large photo, we will shrink it on our end when you submit.';
+			}
 			return;
 		}
 		note.className = 'rt-photo-note rt-photo-note--busy';
-		note.textContent = 'Getting your photo ready...';
+		note.textContent = file.size > MAX_BYTES ? 'Large photo, shrinking it...' : 'Getting your photo ready...';
 		var job = decodeAny(file).then(function (img) {
 			return shrink(img).then(function (b) {
 				img.done();
@@ -651,8 +657,9 @@
 			note.textContent = 'Photo ready (' + mb(f.size) + ').';
 		}).catch(function () {
 			input.__rtSwapping = false;
-			note.className = 'rt-photo-note rt-photo-note--warn';
-			note.textContent = file.size > 10 * 1024 * 1024 ? 'This photo is over 10 MB and could not be shrunk here. Try a smaller one, or email it to ' + MAIL + '.' : (file.size > RR_MAX ? 'We will send your photo as it is. It is over 4 MB, so a smaller one helps if you have it.' : 'We will send your photo as it is.');
+			// Never a size error: the server shrinks any photo that arrives large.
+			note.className = 'rt-photo-note';
+			note.textContent = file.size > MAX_BYTES ? 'Large photo, we will shrink it on our end when you submit.' : 'We will send your photo as it is.';
 		});
 		pending.push(job);
 		job.then(function () {
