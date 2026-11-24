@@ -393,7 +393,7 @@ function arv_rt_apply_confirm_summary() {
 		. "Name: [rt-first-name] [rt-last-name]\n"
 		. "Region: [rt-region]\n"
 		. "Home: [rt-city], [rt-state]\n"
-		. "Races: [rt-disciplines]\n"
+		. "Disciplines: [rt-disciplines]\n"
 		. "On the team before: [rt-returning]\n"
 		. "Aravaipa races you plan to run: [rt-race-plans]\n"
 		. "Other 2027 races and goals: [rt-outside-races]\n"
@@ -419,14 +419,13 @@ add_filter( 'wpcf7_contact_form_property_mail_2', 'arv_rt_apply_mail2_prop', 10,
  * Full thank-you screen that replaces the form after a sent application.
  * Rendered visible inside the form on a no-JS submit (so the form's own
  * #wpcf7-f... anchor lands on it), or hidden beside the form for the script.
+ * The page already ends with a Meet the current team link, so the panel has none.
  *
  * @param bool   $visible Shown now (no-JS submit) or kept hidden for the script.
  * @param string $first   Applicant first name, if known.
  * @return string
  */
 function arv_rt_apply_thanks_html( $visible = false, $first = '' ) {
-	$team  = function_exists( 'home_url' ) ? home_url( '/racing-team/' ) : 'https://www.aravaiparunning.com/racing-team/';
-	$team  = function_exists( 'esc_url' ) ? esc_url( $team ) : htmlspecialchars( $team, ENT_QUOTES );
 	$first = trim( preg_replace( '/\s+/', ' ', (string) $first ) );
 	if ( function_exists( 'mb_substr' ) ) {
 		$first = mb_substr( $first, 0, 60 );
@@ -438,7 +437,6 @@ function arv_rt_apply_thanks_html( $visible = false, $first = '' ) {
 		. '<p>We&rsquo;re grateful you applied for the 2027 Aravaipa Racing Team. Your application came through, and a confirmation email is on its way to you now.</p>'
 		. '<p><strong>What happens next:</strong> applications close November 30. After the deadline, our team managers review every application, and we&rsquo;ll share decisions by email.</p>'
 		. '<p>Want to add or change something? Reply to the confirmation email or write to <a href="mailto:bryce@aravaiparunning.com">bryce@aravaiparunning.com</a>.</p>'
-		. '<p><a class="rt-thanks-link" href="' . $team . '">Meet the current team</a></p>'
 		. '</div>';
 }
 
