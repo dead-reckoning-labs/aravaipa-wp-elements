@@ -1,0 +1,175 @@
+{
+ "slug": "rough-canyon",
+ "name": "Rough Canyon Trail Rides",
+ "source": "https://aravaiparides.com/rough-canyon-trail-rides/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/rough-canyon.html)",
+ "date_label": "Postponed until 2024",
+ "place": "Las Colonias Park, Grand Junction, CO",
+ "intro": [
+  "Come join us in Grand Junction for a challenging and fun race covering some of the best trails Grand Junction has to offer!"
+ ],
+ "description": "Rough Canyon Trail Rides: 32 mile and 18 mile mountain bike races from Las Colonias Park, Grand Junction, CO.",
+ "distances": [
+  {
+   "name": "32 Mile",
+   "map": "https://caltopo.com/m/P8VJ1",
+   "facts": [
+    [
+     "Start Time",
+     "8:00AM"
+    ]
+   ]
+  },
+  {
+   "name": "18 Mile",
+   "map": "https://caltopo.com/m/P8VJ1",
+   "facts": [
+    [
+     "Start Time",
+     "9:00AM"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*estimated start times- official start times will be emailed prior to race day",
+ "course_map": {
+  "label": "Interactive Map on CalTopo",
+  "href": "https://caltopo.com/m/P8VJ1"
+ },
+ "courses": [
+  {
+   "name": "Course Summary",
+   "paras": [
+    "Both distances start at Las Colonias park before crossing the river (via pedestrian/bike path) and hopping onto the Tabeguache trail network (AKA Lunch Loops) for some technical twists and turns before looping back to finish where they started.",
+    "The 32 mile riders will continue from Lunch Loops onto BLM land where the landscape really opens up (there's a reason a historic bike race in this area is called \"Tour of the Moon\"). Surround yourself with an unreal rocky landscape populated by ancient juniper. Soak in expansive views of the canyons, overlooking the Colorado and Gunnison rivers.",
+    "This event is for experienced riders. Every course will hit black rated trails. Please familiarize yourself with the courses ahead of time. Ain't no shame in the hiking game! If you want to take on the challenge, but are worried about the technicality of the trails we want to let you know that walking obstacles with your bike is OKAY!"
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have EMTs based at the start/finish headquarters. This team is here to assist with basic and advanced first aid right on site. We reserve the right to pull you from the race if medical officials deem it necessary. Please understand that these decisions are made for your safety. Continuing on in a state where you cannot safely navigate is a recipe for disaster and we are here to prevent that.",
+    "Should something happen while you are out on the course, we will provide a phone number to call for immediate assistance."
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "Las Colonias Park",
+    "text": "725 Struthers Ave, Grand Junction, CO 81501"
+   }
+  ]
+ },
+ "schedule": [
+  {
+   "caption": "Start Times",
+   "rows": [
+    [
+     "8:00AM",
+     "32 Mile Start"
+    ],
+    [
+     "9:00AM",
+     "18 Mile Start"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Race Day",
+   "paras": [
+    "Please arrive early to park, check in and spin out prior to your ride. Restroom facilities are located at the start/finish area."
+   ]
+  },
+  {
+   "name": "Parking",
+   "paras": [
+    "Please arrive early to ensure a smooth parking process. We will provide parking information soon."
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Feed Tent",
+   "paras": [
+    "We are proud to offer a fully stocked drink and feed tent directly on course at our start/finish race village that is easily accessible each lap of the course. We'll be ready to serve you water, ice, electrolyte drinks, soda, iced coffee, salty and sweet snacks, fruit, pb&j, bean rollups, hot food (quesadillas, grilled cheese), and more."
+   ]
+  },
+  {
+   "name": "Aid Stations",
+   "paras": [
+    "In addition to a fully stocked drink and feed station at the start/finish line at the Main Staging Area, there will be additional aid stations on course. Our main aid station will be stocked with water, ice, electrolyte drinks, salty and sweet snacks, fruit, pb&j, bean rollups and more. Hot food may also be offered at the finish for participants."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access. Feel free to setup your own coolers and chairs in designated areas."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Awards",
+   "a": [
+    "All participants will receive a custom wood race medal featuring the Rough Canyon Rides logo.",
+    "The top three male and female riders in each race event will receive a custom podium award. Awards for each race will take place approximately 15 minutes after the race final cutoff.",
+    "As our races grow we hope to offer more age group awards, but for now we only offer podium awards."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect unpredictable weather for this October event. It might be a touch cool at the start, but will likely warm up as the sun continues to rises. Storms are possible. The race staff will monitor weather and reserves the right to cancel the race should the weather turn."
+   ]
+  },
+  {
+   "q": "Categories",
+   "a": [
+    "Should the entrant list be big enough we will divide start times by category. Awards will still be given by overall distance category, but we will utilize wave starts based on your self selection. Please designate your desired category during the registration process."
+   ]
+  },
+  {
+   "q": "Timing",
+   "a": [
+    "All races will be professionally chip timed with a disposable timing chip attached to you bike bib. Please attach to the front of your handlebars. Live results will be available during the event at Aravaipa Live"
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Trail Etiquette",
+   "a": [
+    "Remember to always remain on designed trails, no short cutting.",
+    "No headphones allowed.",
+    "No ebikes allowed.",
+    "This course includes some legit single track. If you are fast and attempting to pass, please alert the rider in front of you before flying past them. Likewise, if you hear a rider approaching you from behind, attempt to find a spot to allow the pass.",
+    "As a general rule, when passing a rider, announce, \"on your left.\" Remain in control and respect the other participants.",
+    "Everyone is after the same goal here so let's be respectful of each other's races and have fun."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all riders, no pets are allowed on-course at the race. Any pets at the race must be on a leash at all times, respect park rules, and be supervised."
+   ]
+  }
+ ],
+ "register": [],
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2021/07/2019_AravaipaLogo_Redesign_Aravaipa_RidesIcon_Text.png",
+  "width": 1875,
+  "height": 1959,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/rough-canyon.jpg",
+  "alt": "Colorado National Monument canyon road near Grand Junction"
+ }
+}

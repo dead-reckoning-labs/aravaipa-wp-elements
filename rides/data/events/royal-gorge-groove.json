@@ -1,0 +1,370 @@
+{
+ "slug": "royal-gorge-groove",
+ "name": "Royal Gorge Groove Rides",
+ "source": "https://aravaiparides.com/royal-gorge/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/royal-gorge-groove.html)",
+ "date_label": "Sunday, April 25, 2027",
+ "place": "Royal Gorge Ranch & Resort, Cañon City, CO",
+ "intro": [
+  "Come join us at Royal Gorge Park in Cañon City and play on the rolling climbs and descents through the park as you take in the views of the Sangre de Cristo Mountains and the Arkansas River! These trails offer plenty of rocks to play on mixed with flowy single track to make it a speedy day taking on either one or two loops. Grab a friend and make it a relay!",
+  "All rides will start and finish at the Royal Gorge Ranch & Resort with nearby amazing amenities & other activities including whitewater rafting on the Arkansas River & more."
+ ],
+ "description": "Royal Gorge Groove Rides, Sunday, April 25, 2027: 36 Mile Duo, 36 Mile Solo, 18 Mile Solo, 12 Mile Solo mountain bike races at Royal Gorge Ranch & Resort, Cañon City, CO.",
+ "distances": [
+  {
+   "name": "36 Mile Duo",
+   "map": "https://caltopo.com/m/M7APM",
+   "facts": [
+    [
+     "Start Time",
+     "8:00 AM"
+    ],
+    [
+     "Time Limit",
+     "7.5 Hours | Must start 2nd lap by 11:30 (3:30pm Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "36- Miles"
+    ],
+    [
+     "Format",
+     "2 (18 Mile) Loops"
+    ],
+    [
+     "Elevation Gain",
+     "2,178 feet"
+    ],
+    [
+     "Max Elevation",
+     "7,121 feet"
+    ]
+   ]
+  },
+  {
+   "name": "36 Mile Solo",
+   "map": "https://caltopo.com/m/M7APM",
+   "facts": [
+    [
+     "Start Time",
+     "8:00 AM"
+    ],
+    [
+     "Time Limit",
+     "7.5 Hours | Must start 2nd lap by 11:30 (3:30pm Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "36- Miles"
+    ],
+    [
+     "Format",
+     "2 (18 Mile) Loops"
+    ],
+    [
+     "Elevation Gain",
+     "2,178 feet"
+    ],
+    [
+     "Max Elevation",
+     "7,121 feet"
+    ]
+   ]
+  },
+  {
+   "name": "18 Mile Solo",
+   "map": "https://caltopo.com/m/M7APM",
+   "facts": [
+    [
+     "Start Time",
+     "8:30 AM"
+    ],
+    [
+     "Time Limit",
+     "6.5 Hours (3:30 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "18- Miles"
+    ],
+    [
+     "Format",
+     "One (18 Mile) Loop"
+    ],
+    [
+     "Elevation Gain",
+     "1,089 feet"
+    ],
+    [
+     "Max Elevation",
+     "7,121 feet"
+    ]
+   ]
+  },
+  {
+   "name": "12 Mile Solo",
+   "map": "https://caltopo.com/m/M7APM",
+   "facts": [
+    [
+     "Start Time",
+     "9:00 AM"
+    ],
+    [
+     "Time Limit",
+     "6.5- Hours (3:30 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "13+ Miles"
+    ],
+    [
+     "Format",
+     "One (12 Mile) Loop"
+    ],
+    [
+     "Elevation Gain",
+     "816 feet"
+    ],
+    [
+     "Max Elevation",
+     "6,850 feet"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/M7APM"
+ },
+ "courses": [
+  {
+   "name": "The Loop",
+   "paras": [
+    "This is the fast-paced spring race you're looking for to get back into racing mode for your summer schedule. With some technical sections, this course is perfect for the intermediate and advanced rider looking to push themselves and cover some distance with speed. The Royal Gorge trails are perfect for pushing the pace riding through the techy spots and rocky climbs before hitting some great flowy downhill.",
+    "An 18 mile loop through Royal Gorge Park that 36 mile riders go over 2x."
+   ]
+  },
+  {
+   "name": "12 Mile",
+   "paras": [
+    "We've also added a 12 mile category with the same start and epic finish across Point Alta Vista."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately.",
+    "MedStar Solutions Race Day Number: 480-269-4126"
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "Royal Gorge Ranch",
+    "text": "1 Buckskin Joe, Parkway, Cañon City, CO 81212. All rides will start and finish at the Royal Gorge Ranch & Resort.",
+    "map": "https://www.google.com/maps/search/1+Buckskin+Joe,+Parkway,+Ca%C3%B1on+City,+CO+81212/@38.4764016,-105.337236,2395m/data=!3m2!1e3!4b1?entry=ttu&g_ep=EgoyMDI0MTAwNS4yIKXMDSoASAFQAw%3D%3D"
+   }
+  ]
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Friday, April 23, 2027, 4:00-7:00 PM",
+     "Whitewater Bar & Grill, 45045 US-50, Cañon City, CO 81212"
+    ],
+    [
+     "Saturday, April 24, 2027, 9:00 AM-2:00 PM",
+     "Gunslingers @ Royal Gorge Ranch & Resort"
+    ],
+    [
+     "Sunday, April 25, 2027, 7:00- 9:15 AM",
+     "Race Morning Bib Pickup"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Start Times",
+   "rows": [
+    [
+     "8:00 AM",
+     "36 Mile Solo & Duo"
+    ],
+    [
+     "8:30 AM",
+     "18 Mile"
+    ],
+    [
+     "9:00 AM",
+     "12 Mile"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Parking",
+   "paras": [
+    "There is parking available just below the start/finish area at Gunslingers on the Royal Gorge Ranch & Resort property. Carpool to save!"
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "Camping options will also available at East Ridge Campground which is a six minute drive to the Royal Gorge Ranch where the start/finish is located. Aravaipa has rented the entire campground and overflow area for our participants. Camping fees are $25.00 per night and available during registration."
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Stations",
+   "paras": [
+    "In addition to a fully stocked drink and feed station at the start/finish line at the Main Staging Area, there will be some on course water and electrolytes at Canyon Rim Aid located at approximately mile 6.8. Our main aid station will be stocked with water, ice, electrolyte drinks (Tailwind), salty and sweet snacks, fruit, pb&j, bean rollups and more.."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect unpredictable weather for this April event. It might be a touch cool at the start, but will likely warm up as the sun continues to rises. Snow is sometimes possible in the spring."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all riders, no pets are allowed on-course during the race. Any pets at the race must be on a leash at all times, respect park rules, and be supervised."
+   ]
+  },
+  {
+   "q": "Mountain Biking and Trash",
+   "a": [
+    "Please respect the trails and the beauty of the desert by disposing of any trash at one of our aid stations. We do recycle and participate in the Terracycle program where we recycle used nutrition packets and gel wrappers. Please deposit them in the specified container at the feed station."
+   ]
+  },
+  {
+   "q": "Trail Etiquette",
+   "a": [
+    "Remember to always remain on designed trails, no short cutting.",
+    "Headphones are not permitted.",
+    "E-Bike are not permitted.",
+    "This course includes some legit single track. If you are fast and attempting to pass, please alert the rider in front of you before flying past them. Likewise, if you hear a rider approaching you from behind, attempt to find a spot to allow the pass.",
+    "As a general rule, when passing a rider, announce, \"on your left.\" Remain in control and respect the other participants.",
+    "Everyone is after the same goal here so let's be respectful of each other's races and have fun."
+   ]
+  }
+ ],
+ "mail_in": {
+  "label": "Mail-In Entry Form",
+  "href": "https://aravaiparides.com/wp-content/uploads/2025/11/RGGRides26-Race-Day-Entry-Form.pdf"
+ },
+ "register": [
+  {
+   "label": "Register Now",
+   "href": "https://racegoat.com/events/royal-gorge-groove-rides-2027"
+  }
+ ],
+ "register_headline": "Royal Gorge Groove Rides",
+ "register_note": "Online registration closes on 4/19 at 11:59PM MT",
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "Royal Gorge Ranch & Resort",
+   "href": "https://royalgorgeranchandresort.com",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2023/03/Screen-Shot-2023-03-21-at-2.36.56-PM.png"
+  },
+  {
+   "name": "Cañon City",
+   "href": "https://www.canoncity.org",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2022/02/CanonCityLogo.png"
+  },
+  {
+   "name": "Royal Gorge Vacation Rentals",
+   "href": "https://royalgorgevacationrentals.com",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2023/03/Email-Headers-2023-03-21T142659.220-1.png"
+  },
+  {
+   "name": "Tailwind Nutrition",
+   "href": "https://tailwindnutrition.com",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2022/02/TW-logo-nutrition-horizontal.png"
+  },
+  {
+   "name": "Squirrel's Nut Butter",
+   "href": "https://squirrelsnutbutter.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2022/03/SNB-saddlebutter-1.png"
+  },
+  {
+   "name": "Whitewater Bar & Grill",
+   "href": "https://whitewaterbar.com",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2025/02/326495298_1029063428050271_3769605289015262359_n.jpg"
+  }
+ ],
+ "volunteer": {
+  "text": "We need help to make Royal Gorge Groove possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com"
+ },
+ "live": {
+  "text": "Follow the 2027 Royal Gorge Groove Rides with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2026/11/rgg-1.png",
+  "width": 975,
+  "height": 648,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/royal-gorge-groove.jpg",
+  "alt": "Rider on Royal Gorge singletrack below snowy peaks"
+ }
+}

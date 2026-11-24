@@ -1,0 +1,51 @@
+{
+ "slug": "group-rides",
+ "name": "Group Rides",
+ "source": "https://aravaiparides.com/group_rides/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/group-rides.html)",
+ "date_label": "Every Monday, 6:30pm",
+ "place": "Pima Canyon Trailhead, South Mountain Park, Phoenix, Arizona",
+ "intro": [
+  "Join us for a weekly group ride at South Mountain Park in Phoenix, Arizona. We meet for a ride starting at 6:30pm at the Pima Canyon Trailhead followed by a social at Fate Brewing. All abilities are welcome! Head over to the Aravaipa Rides Community Facebook Page to get the most up to date information about upcoming group rides.",
+  "All rides are around one hour to 90 minutes in length. The ride is usually around 6-10 miles in length. At present, we ride as one group with frequent stops but if attendance grows and we have interested volunteers, we can split into various pace groups."
+ ],
+ "description": "Aravaipa Rides weekly group ride at South Mountain Park in Phoenix: Pima Canyon Trailhead, then a social at Fate Brewing. All abilities welcome.",
+ "course_map": {
+  "label": "Aravaipa Rides Community Facebook Page",
+  "href": "https://www.facebook.com/groups/363815797725826"
+ },
+ "courses": [
+  {
+   "name": "Group Rides Leaders",
+   "paras": [
+    "Aaron has been directing our races for Aravaipa rides since 2021. He is passionate about growing the Aravaipa rides community and creating top notch events for our riders. He will be heading up our group rides every Monday. Come out to join him on our next ride!"
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Meet",
+    "place": "Pima Canyon Trailhead",
+    "text": "South Mountain Park, Phoenix, Arizona",
+    "map": "https://goo.gl/maps/2kW9ipJKf8UjdVa96"
+   },
+   {
+    "name": "Social",
+    "place": "Fate Brewing",
+    "text": "After the ride",
+    "map": "https://g.page/FateBrewingTempe?share"
+   }
+  ]
+ },
+ "register": [],
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2019/08/2019_AravaipaLogo_Redesign_Aravaipa_RidesLogo-1.png",
+  "width": 3584,
+  "height": 834,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/group-rides.jpg",
+  "alt": "Group ride riders gathered under string lights at night"
+ }
+}

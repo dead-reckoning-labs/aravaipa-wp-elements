@@ -1744,3 +1744,123 @@
 		font-size: 18px;
 	}
 }
+
+/*
+ * Blend on the layout pages (0.1.7): home, events, results and photos take the same light
+ * Aravaipa Rides look as the ride pages, still only under .rides-look-blend. Gray sections,
+ * square white cards, navy small caps, black Lato headings, red text links, 4px buttons.
+ */
+.rides-look-blend .rides-section--night,
+.rides-look-blend .rides-community {
+	background: var(--rides-mist);
+	color: var(--rides-ink);
+}
+.rides-look-blend .rides-section--night .rides-eyebrow,
+.rides-look-blend .rides-section--night .rides-kicker {
+	color: var(--rides-navy);
+}
+.rides-look-blend .rides-intro {
+	background: #fff;
+}
+.rides-look-blend .rides-intro .rides-eyebrow,
+.rides-look-blend .rides-intro .rides-h2,
+.rides-v2.rides-look-blend .rides-intro h2.rides-h2 {
+	text-align: left;
+}
+.rides-v2.rides-look-blend .rides-intro-big {
+	font-family: "Lato", sans-serif;
+	color: var(--rides-navy);
+}
+/* Body copy on the layout pages is Lato 400 like the live pages; labels keep size and spacing. */
+.rides-v2.rides-look-blend:not(.rides-page-event) p {
+	font-weight: 400;
+}
+.rides-look-blend .rides-intro .rides-intro-copy p {
+	font-size: 17px;
+	color: #222;
+}
+.rides-look-blend .rides-tile {
+	background: #fff;
+	border: 0;
+	color: var(--rides-ink);
+}
+.rides-look-blend .rides-tile-media {
+	border-radius: 0;
+}
+.rides-look-blend .rides-tile-date {
+	color: var(--rides-navy);
+}
+.rides-look-blend .rides-tile.is-past .rides-tile-date {
+	color: #666;
+}
+.rides-look-blend .rides-tile h3 {
+	color: #000;
+}
+.rides-look-blend .rides-tile-place {
+	color: #444;
+}
+.rides-look-blend .rides-tile-dist {
+	color: #222;
+}
+.rides-look-blend .rides-tile-more {
+	font-family: "Lato", sans-serif;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--rides-blend-red);
+}
+.rides-look-blend .rides-tile:hover .rides-tile-more,
+.rides-look-blend .rides-tile:focus-visible .rides-tile-more {
+	color: #000;
+}
+.rides-look-blend .rides-community h3 {
+	color: #000;
+}
+.rides-look-blend .rides-strava h3 {
+	color: #fff;
+}
+.rides-look-blend .rides-video p {
+	color: #222;
+}
+.rides-look-blend .rides-comm-block {
+	background: #fff;
+	border: 0;
+}
+.rides-look-blend .rides-comm-block p {
+	color: #222;
+}
+.rides-look-blend .rides-strava {
+	background: #fc4c02;
+}
+.rides-look-blend .rides-strava p {
+	color: #fff;
+}
+.rides-v2.rides-look-blend .rides-comm-sub {
+	font-family: "Lato", sans-serif;
+	color: var(--rides-navy);
+}
+.rides-look-blend .rides-pagehead h1 {
+	color: #fff;
+}
+.rides-look-blend .rides-list-logo {
+	border-radius: 0;
+}
+.rides-look-blend .rides-list-ride h3 {
+	color: #000;
+}
+.rides-look-blend .rides-list-jump a {
+	color: var(--rides-navy);
+	font-weight: 700;
+}
+.rides-look-blend .rides-years a {
+	border-radius: var(--rides-blend-btn-radius);
+	font-weight: 700;
+	letter-spacing: 0;
+	color: var(--rides-navy);
+}
+.rides-look-blend .rides-years a:hover,
+.rides-look-blend .rides-years a:focus-visible {
+	background: var(--rides-yellow);
+	border-color: var(--rides-yellow);
+	color: #000;
+}

@@ -235,6 +235,46 @@
 			"logo": "assets/logos/tonto.png",
 			"hero": "assets/heroes/tonto.jpg",
 			"logo_plate": "light"
+		},
+		{
+			"slug": "rough-canyon",
+			"name": "Rough Canyon Trail Rides",
+			"date_label": "Postponed until 2024",
+			"date": null,
+			"year": 2022,
+			"status": "past",
+			"unlisted": true,
+			"location": {
+				"venue": "Las Colonias Park",
+				"city": "Grand Junction, CO"
+			},
+			"distances": [
+				"32 Mile | 18 Mile"
+			],
+			"url": "https://aravaiparides.com/rough-canyon-trail-rides/",
+			"register": [],
+			"register_label": "Register Now",
+			"hero": "assets/heroes/rough-canyon.jpg",
+			"logo": "assets/logos/rough-canyon.png"
+		},
+		{
+			"slug": "group-rides",
+			"name": "Group Rides",
+			"date_label": "Every Monday, 6:30pm",
+			"date": null,
+			"year": 2027,
+			"status": "upcoming",
+			"unlisted": true,
+			"location": {
+				"venue": "Pima Canyon Trailhead",
+				"city": "Phoenix, AZ"
+			},
+			"distances": [],
+			"url": "https://aravaiparides.com/group_rides/",
+			"register": [],
+			"register_label": "Register Now",
+			"hero": "assets/heroes/group-rides.jpg",
+			"logo": "assets/logos/group-rides.png"
 		}
 	]
 }

@@ -1,0 +1,266 @@
+{
+ "slug": "black-canyon-crusher",
+ "name": "Black Canyon Crusher",
+ "source": "https://aravaiparides.com/black-canyon-mtb/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/black-canyon-crusher.html)",
+ "date_label": "Saturday, February 27, 2027",
+ "place": "Black Canyon Trail, Mayer to Phoenix, AZ",
+ "intro": [
+  "The Black Canyon Crusher is built for athletes ready to test their limits on one of Arizona's most iconic singletrack routes. This demanding course pushes riders with relentless climbs, technical rocky descents, and long stretches of fast, flowing trail that reward power and precision. Every mile is a challenge, whether grinding up steep desert ridgelines or charging through rugged washes, but the payoff comes in the form of sweeping views, adrenaline-fueled descents, and the satisfaction of conquering a trail known for its grit. This race isn't just about speed; it's about resilience, skill, and the drive to push further than you thought possible."
+ ],
+ "description": "Black Canyon Crusher, Saturday, February 27, 2027: 70 Mile, 35 Mile mountain bike races at Black Canyon Trail, Mayer to Phoenix, AZ.",
+ "distances": [
+  {
+   "name": "70 Mile",
+   "map": "https://caltopo.com/m/RLS5JV0",
+   "facts": [
+    [
+     "Start Time",
+     "7:00 AM"
+    ],
+    [
+     "Time Limit",
+     "10 Hours (6:00 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "70 Miles"
+    ],
+    [
+     "Elevation Loss",
+     "7,911 feet"
+    ],
+    [
+     "Elevation Gain",
+     "5,877 feet"
+    ],
+    [
+     "Max Elevation",
+     "4,218 feet"
+    ]
+   ]
+  },
+  {
+   "name": "35 Mile",
+   "map": "https://caltopo.com/m/RLS5JV0",
+   "facts": [
+    [
+     "Start Time",
+     "10:00 AM"
+    ],
+    [
+     "Time Limit",
+     "8 Hours (6:00 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "35 Miles"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/RLS5JV0"
+ },
+ "courses": [
+  {
+   "name": "70 Mile",
+   "paras": [
+    "Racers start at higher desert elevations near Mayer and gradually descend toward the Agua Fria River basin, with a net downhill profile that can feel deceiving, as every descent is hard-earned with tough climbs scattered throughout. There are several water crossings which may be flowing during wetter winters. The Black Canyon's combination of rugged terrain, constant elevation changes, and remote beauty make it a true test of endurance and trail skill."
+   ]
+  },
+  {
+   "name": "35 Mile",
+   "paras": [
+    "The 35 mile race starts at Deep Canyon Ranch in Black Canyon City, AZ. Racers gradually descend toward the Agua Fria River basin and finish at Pioneer Living History Museum. The net downhill profile can feel deceiving, as every descent is hard-earned with tough climbs scattered throughout. Racers can expect flowing water crossings during wet, rainy years. The Black Canyon's combination of rugged terrain, constant elevation changes, and remote beauty makes it a true test of endurance and trail skill."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately.",
+    "MedStar Solutions Race Day Number: 480-269-4126"
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "70 Mile Start",
+    "place": "Chauncey Ranch",
+    "text": "Chauncey Ranch, Mayer, AZ",
+    "map": "https://maps.app.goo.gl/Vo7QyY6gvRdZHZNm6"
+   },
+   {
+    "name": "35 Mile Start",
+    "place": "Deep Canyon Ranch",
+    "text": "Deep Canyon Ranch, Black Canyon City, AZ",
+    "map": "https://maps.app.goo.gl/GNBhWjPydEWmK73J6"
+   }
+  ],
+  "finish": "Pioneer Living History Museum, 3901 W Pioneer Rd, Phoenix, AZ 85086. Our finish line and festival are held inside the museum grounds."
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Friday, February 26 (70 Mile and 35 Mile)",
+     "Aravaipa Office, 2401 S 24th St, Phoenix, AZ 85034"
+    ],
+    [
+     "Saturday, February 27, 6:00AM-9:00AM",
+     "Pioneer Living History Museum (Finish line and shuttle pick up spot)"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Start Times",
+   "rows": [
+    [
+     "7:00 AM",
+     "70 Mile"
+    ],
+    [
+     "10:00 AM",
+     "35 Mile"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Copy of Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Parking and Shuttles",
+   "paras": [
+    "Finish line parking will be at the Pioneer Living History Museum. There is no charge to park. Racers will purchase shuttle bus tickets at registration which will allow them transport to the start line of both distances on race morning. Shuttle information will be delivered closer to race week.",
+    "Bikes will be shuttled to the start line for all racers who take the shuttle bus.",
+    "Racers may elect to be dropped off at the start line. Note: There is no parking at the Chauncey Ranch or Deep Canyon Ranch start lines, and no transportation is available from the finish line back to the start."
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "Camping is not available at the either start line at this time.",
+    "Camping is currently not available at the finish line but may be in the future. Check back occasionally for camping updates."
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Stations",
+   "paras": [
+    "There are three Aid Stations on course. The first is near mile 23. The second is near the 36 mile mark and the last near mile 54. They are all stocked with water and electrolyte drinks, sweet and salty snacks and fresh fruit. Our main aid station at the finish line will have the same offerings as well as more hearty snacks."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at Deep Canyon Ranch aid station.",
+    "Racers may bring a drop bag to the start line for their cool weather outer layers and other supplies needed to start the race. These bags will be transported to the finish line for pick up after the race.",
+    "Please limit drop bags to a shoebox sized bag."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at Deep Canyon Ranch only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect a cold, brisk morning followed by near perfect daytime temperatures. We've occasionally seen rain in the past on this weekend, but it is somewhat rare."
+   ]
+  },
+  {
+   "q": "Bib Pick Up",
+   "a": [
+    "Bib pick up will be available Friday at our office on 24th St. Bibs can also be picked up Saturday morning before the shuttle depart. Please arrive early if you are planning to pick up before the race Saturday morning."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all racers, no pets are allowed on-course at any time. The finish line at Pioneer Living History Museum is dog friendly. Dogs must be leashed and supervised at all times. Please be aware, the museum is open-air and it is not uncommon to see snakes on the property. Watch your surroundings accordingly."
+   ]
+  },
+  {
+   "q": "Mountain Biking and Trash",
+   "a": [
+    "Please respect the trails and the beauty of the desert by disposing of any trash at one of our aid stations. We do recycle and participate in the Terracycle program, where we recycle used nutrition packets and gel wrappers. Please deposit them in the specified container at the aid station."
+   ]
+  }
+ ],
+ "register": [
+  {
+   "label": "Register Now",
+   "href": "https://www.bikereg.com/black-canyon-crusher"
+  }
+ ],
+ "register_headline": "Black Canyon Crusher",
+ "register_note": "Registration closes: Mon, February 22 @ 11:59PM MT",
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "BCTC",
+   "href": "https://mctpf.org/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2025/10/bctc-1.png"
+  }
+ ],
+ "volunteer": {
+  "text": "We need help to make the Black Canyon Crusher possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com"
+ },
+ "live": {
+  "text": "Follow the 2027 Black Canyon Crusher with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2026/08/2026-BlackCanyonCrusher-Logo-v1-scaled.png",
+  "width": 2033,
+  "height": 2560,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/black-canyon-crusher.jpg",
+  "alt": "Three riders on rocky Black Canyon singletrack"
+ }
+}

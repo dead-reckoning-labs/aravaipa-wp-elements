@@ -170,6 +170,18 @@ function rides_is_blend( $ctx ) {
 }
 
 /**
+ * Root class for a layout page: the page key plus rides-look-blend when the blend look is on
+ * (0.1.7: home, events, results and photos take the blend look too).
+ *
+ * @param array  $ctx  Render context.
+ * @param string $page Page key.
+ * @return string
+ */
+function rides_layout_root_key( $ctx, $page ) {
+	return $page . ( rides_is_blend( $ctx ) ? ' rides-look-blend' : '' );
+}
+
+/**
  * Root wrapper.
  *
  * @param string $page  Page key.
@@ -320,7 +332,7 @@ function rides_render_home( $ctx ) {
 		)
 	);
 	$out  = rides_render_slider( $ctx );
-	$out .= rides_render_intro();
+	$out .= rides_render_intro( $ctx );
 	$out .= '<section class="rides-section rides-section--night"><div class="rides-wrap">';
 	$out .= '<p class="rides-eyebrow">Mountain bike and gravel events in Arizona and Colorado</p>';
 	$out .= '<h2 class="rides-h2">Upcoming Rides</h2>';
@@ -328,17 +340,20 @@ function rides_render_home( $ctx ) {
 	$out .= '<div class="rides-actions rides-more-links"><a class="rides-btn rides-btn--line" href="/events/">All Events</a><a class="rides-btn rides-btn--line" href="/results/">Results</a><a class="rides-btn rides-btn--line" href="/photos/">Photos</a></div>';
 	$out .= '</div></section>';
 	$out .= rides_render_community();
-	return rides_root( 'home', $out );
+	return rides_root( rides_layout_root_key( $ctx, 'home' ), $out );
 }
 
 /**
- * Short welcome block, trimmed from the live homepage copy.
+ * Short welcome block, trimmed from the live homepage copy. In the blend look its title is the
+ * page h1 (the slider names are h2), like the live pages that lead with one Lato h1.
  *
+ * @param array $ctx Render context.
  * @return string
  */
-function rides_render_intro() {
+function rides_render_intro( $ctx = array() ) {
+	$tag = rides_is_blend( $ctx ) ? 'h1' : 'h2';
 	return '<section class="rides-section rides-intro"><div class="rides-wrap rides-intro-grid">'
-		. '<div><p class="rides-eyebrow">Endurance mountain bike events</p><h2 class="rides-h2">Welcome to Aravaipa Rides</h2></div>'
+		. '<div><p class="rides-eyebrow">Endurance mountain bike events</p><' . $tag . ' class="rides-h2">Welcome to Aravaipa Rides</' . $tag . '></div>'
 		. '<div class="rides-intro-copy">'
 		. '<p>We are an endurance mountain bike event company based in Phoenix, Arizona and Colorado Springs, Colorado. If you know the name Aravaipa, you know we come from a long background of endurance trail and ultra running.</p>'
 		. '<p class="rides-intro-big">We are bringing our expertise in trail events to the two wheeled space and we have never been more stoked.</p>'
@@ -399,7 +414,7 @@ function rides_render_events( $ctx ) {
 	$events = rides_events( $ctx['today'] );
 	$out    = rides_render_pagehead( $ctx, 'Events', 'Every Aravaipa Rides event, soonest first.', 'stunner' );
 	$out   .= '<section class="rides-section rides-section--night"><div class="rides-wrap">' . rides_render_tiles( $ctx, $events ) . '</div></section>';
-	return rides_root( 'events', $out );
+	return rides_root( rides_layout_root_key( $ctx, 'events' ), $out );
 }
 
 /**
@@ -437,7 +452,7 @@ function rides_group_rows( $rows ) {
  */
 function rides_row_ride( $rows, $slug ) {
 	$e = rides_event( $slug );
-	if ( $e ) {
+	if ( $e && empty( $e['unlisted'] ) ) {
 		return array( $e['name'], $e['logo'] );
 	}
 	$name = ! empty( $rows[0]['ride'] ) ? $rows[0]['ride'] : ucwords( str_replace( '-', ' ', $slug ) );
@@ -504,6 +519,7 @@ function rides_render_list( $kind, $rows, $ctx = array( 'base' => '' ) ) {
 		$jump .= '<li><a href="#' . rides_e( $id ) . '">' . rides_e( $name ) . '</a></li>';
 		$list .= '<li class="rides-list-ride" id="' . rides_e( $id ) . '">';
 		$ev    = rides_event( $slug );
+		$ev    = $ev && empty( $ev['unlisted'] ) ? $ev : null;
 		$plate = $ev && isset( $ev['logo_plate'] ) && 'light' === $ev['logo_plate'];
 		$list .= '<div class="rides-list-logo' . ( $plate ? ' is-plate' : '' ) . '">' . ( $logo ? '<img src="' . rides_e( rides_logo_src( $ctx, $logo ) ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
 		$list .= '<div><h3>' . rides_e( $name ) . '</h3><ul class="rides-years">';
@@ -530,7 +546,7 @@ function rides_render_list( $kind, $rows, $ctx = array( 'base' => '' ) ) {
 function rides_render_results( $ctx ) {
 	$out  = rides_render_pagehead( $ctx, 'Results', 'Official results for every Aravaipa Rides event, by ride and year.', 'tonto' );
 	$out .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_list( 'results', rides_data( 'results' ), $ctx ) . '</div></section>';
-	return rides_root( 'results', $out );
+	return rides_root( rides_layout_root_key( $ctx, 'results' ), $out );
 }
 
 /**
@@ -542,7 +558,7 @@ function rides_render_results( $ctx ) {
 function rides_render_photos( $ctx ) {
 	$out  = rides_render_pagehead( $ctx, 'Photos', 'Race photo galleries by ride and year.', 'big-woody' );
 	$out .= '<section class="rides-section"><div class="rides-wrap">' . rides_render_list( 'photos', rides_data( 'photos' ), $ctx ) . '</div></section>';
-	return rides_root( 'photos', $out );
+	return rides_root( rides_layout_root_key( $ctx, 'photos' ), $out );
 }
 
 /* --------------------------------------------------------- event page */

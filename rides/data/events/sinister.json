@@ -1,0 +1,397 @@
+{
+ "slug": "sinister",
+ "name": "Sinister Night Rides",
+ "source": "https://aravaiparides.com/sinister-night-rides-2/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/sinister.html)",
+ "date_label": "Friday, April 23, 2027",
+ "place": "San Tan Mountain Regional Park, Queen Creek, AZ",
+ "intro": [
+  "Experience the magic of night trail riding in the Sonoran Desert! Join us for Sinister Night Trail Rides at San Tan Mountain Regional Park. Ride a rolling 7.3-mile loop under the stars, past towering saguaros. Perfect for night race beginners, with challenges for all levels.",
+  "This race kicks off the Insomniac Night Trail Ride Series with events across the greater Phoenix, Arizona area. Join us and \"Carpe Noctem\" to \"seize the night\"!"
+ ],
+ "description": "Sinister Night Rides, Friday, April 23, 2027: night mountain bike races, 6 Hour Duo, 6 Hour Solo, 3 Hour Solo, 7.3 Mile Solo and juniors, at San Tan Mountain Regional Park, Queen Creek, AZ.",
+ "theme": "night",
+ "distances": [
+  {
+   "name": "6 Hour Duo",
+   "sport": "Duo",
+   "map": "https://caltopo.com/m/BQGF",
+   "facts": [
+    [
+     "Start Time",
+     "7:00 PM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (1:00 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "7.3 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "790 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1906 feet"
+    ]
+   ]
+  },
+  {
+   "name": "6 Hour Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/BQGF",
+   "facts": [
+    [
+     "Start Time",
+     "7:00 PM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (1:00 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "7.3 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "790 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1906 feet"
+    ]
+   ]
+  },
+  {
+   "name": "3 Hour Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/BQGF",
+   "facts": [
+    [
+     "Start Time",
+     "7:20 PM"
+    ],
+    [
+     "Time Limit",
+     "3 Hours (10:20 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "7.3 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "790 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1906 feet"
+    ]
+   ]
+  },
+  {
+   "name": "7.3 Mile Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/BQGF",
+   "facts": [
+    [
+     "Start Time",
+     "7:15 PM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (1 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "7.3 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "790 feet"
+    ],
+    [
+     "Max Elevation",
+     "1906 feet"
+    ]
+   ]
+  },
+  {
+   "name": "7.3 Mile Junior",
+   "sport": "Junior",
+   "map": "https://caltopo.com/m/BQGF",
+   "facts": [
+    [
+     "Start Time",
+     "7:30 PM"
+    ],
+    [
+     "Time Limit",
+     "5.5 Hours (1 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "7.3 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "790 feet"
+    ],
+    [
+     "Max Elevation",
+     "1906 feet"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/BQGF"
+ },
+ "courses": [
+  {
+   "name": "The Loop",
+   "paras": [
+    "Sinister is our first race in the Insomniac Night Trail Ride Series. All races will be held on the same 7.3 mile loop and repeated as many times as you'd like in your respective race.",
+    "The loop is comprised of the Littleleaf and San Tan Trails which feature a mix of wider rolling desert terrain, some more narrow and rocky single track and a short section of sandy wash.",
+    "Riders will experience a variety of conditions and challenges while looping under the full moon."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately."
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "San Tan Mountain Regional Park",
+    "text": "6533 W Phillips Rd., Queen Creek, AZ 85142. Our start/finish line is based just beyond the main parking area at the San Tan Trailhead.",
+    "map": "https://www.google.com/maps/place/San+Tan+Mountain+Regional+Park/@33.1955777,-111.6232011,28471m/data=!3m1!1e3!4m6!3m5!1s0x872a4e44a4f51731:0xc26329e023a36359!8m2!3d33.1652679!4d-111.6427949!16s%2Fg%2F11gt__lgy2?entry=ttu&g_ep=EgoyMDI1MDIyMy4xIKXMDSoASAFQAw%3D%3D"
+   }
+  ]
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Thursday, April 22, 12:00PM-5:00PM",
+     "Aravaipa Office, 2401 S. 24th Street, Phoenix, AZ 85034"
+    ],
+    [
+     "Friday, April 23, 6:00PM-7:30PM",
+     "Race Start/Finish, San Tan Mountain Regional Park"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Race Day Schedule",
+   "rows": [
+    [
+     "6:00 PM",
+     "Bib pickup / race day registration begin"
+    ],
+    [
+     "7:00 PM",
+     "6 Hour Start"
+    ],
+    [
+     "7:03 PM",
+     "Sunset"
+    ],
+    [
+     "7:15 PM",
+     "7 Mile Start"
+    ],
+    [
+     "7:20 PM",
+     "3 Hour Start"
+    ],
+    [
+     "7:29 PM",
+     "End of Civil Twilight"
+    ],
+    [
+     "7:30 PM",
+     "7 Mile Juniors Start"
+    ],
+    [
+     "10:30 PM",
+     "3 Hour Cutoff"
+    ],
+    [
+     "1:00 AM",
+     "6 Hour Cutoff"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Copy of Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Directions",
+   "paras": [
+    "From central Phoenix, take I-10 east to US 60 east. Exit Ellsworth Road south to Hunt Highway. Travel east on Hunt Highway to Thompson Road south. Turn west on Phillips Road to the San Tan Mountain Regional Park entrance."
+   ]
+  },
+  {
+   "name": "Parking",
+   "paras": [
+    "Remember the park now charges a $10 park entry fee per vehicle.",
+    "Please arrive early and have correct change (cash) available on race evening for a smooth entry process. Maricopa County Parks also offers an Annual Pass for $120. Carpool to save!"
+   ]
+  },
+  {
+   "name": "Timing",
+   "paras": [
+    "All races will be professionally chip timed with a disposable timing chip attached to your bike bib. Please attach to your handlebars on the front of your bike. Live results will be available during the event at Aravaipa Live"
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Station",
+   "paras": [
+    "Our Main Aid tent is located directly on course at our start/finish race village that is easily accessible each lap of the course. We'll be ready to serve you water, ice, electrolyte drinks, soda, iced coffee, and some pre-packaged snacks, but you'll have to ask a volunteer for assistance."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Duo Teams",
+   "a": [
+    "We will offer a duo team option for the 6 Hour race. 6 Hour Team participants are comprised of two riders on a single team who complete laps one at a time for their team. You decide who rides which laps and how many. Riders may elect to ride more than one loop in a row, but switching between riders may be done only in the transition zone at the start/finish area."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect a warm April night for this event. Be sure to stay hydrated even once the sun goes down."
+   ]
+  },
+  {
+   "q": "Trail Etiquette",
+   "a": [
+    "Remember to always remain on designed trails, no short cutting.",
+    "Headphones are not permitted. No E- Bikes.",
+    "This course includes some legit single track. If you are fast and attempting to pass, please alert the rider in front of you before flying past them. Likewise, if you hear a rider approaching you from behind, attempt to find a spot to allow the pass once it is safe to do so.",
+    "As a general rule, when passing a rider, announce, \"on your left.\" Remain in control and respect the other participants.",
+    "Everyone is after the same goal here so let's be respectful of each other's races and have fun."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all individuals, no pets are allowed on-course at the night races. Any pets at the race must be on a leash at all times, respect park rules, and be supervised."
+   ]
+  },
+  {
+   "q": "Mountain Biking and Trash",
+   "a": [
+    "Please respect the trails and the beauty of the desert by disposing of any trash at one of our aid stations. We do recycle and participate in the Terracycle program where we recycle used nutrition packets and gel wrappers. Please deposit them in the specified container at the feed station."
+   ]
+  }
+ ],
+ "mail_in": {
+  "label": "Mail-In Entry Form",
+  "href": "https://racegoat.com/events/sinister-night-rides-2027/mail-in"
+ },
+ "register": [
+  {
+   "label": "Register Now",
+   "href": "https://racegoat.com/events/sinister-night-rides-2027"
+  }
+ ],
+ "register_headline": "Sinister Night Rides",
+ "register_note": "Registration closes: Mon, April 19 @ 11:59PM MT",
+ "records": [
+  [
+   "6 Hour Solo, Men's",
+   "2022 Steve Carlson | 2023 & 2025 Andy Wentzel: 73.5 miles"
+  ],
+  [
+   "6 Hour Solo, Women's",
+   "2024 Carolyn Stokman: 61.1 miles"
+  ]
+ ],
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "Gnarly",
+   "href": "https://gognarly.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2021/05/Gnarly_Horizontal_BlueType.png"
+  }
+ ],
+ "volunteer": {
+  "text": "We need help to make Sinister Night Rides possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com"
+ },
+ "live": {
+  "text": "Follow the 2027 Sinister Night Rides with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2025/02/2020_Sinister_Logo_Rides_v2-Glow.png",
+  "width": 2288,
+  "height": 2477,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/sinister.jpg",
+  "alt": "Riders rolling out under the Insomniac start arch"
+ }
+}

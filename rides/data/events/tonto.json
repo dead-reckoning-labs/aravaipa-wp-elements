@@ -1,0 +1,347 @@
+{
+ "slug": "tonto",
+ "name": "Tonto Mountain Rides",
+ "source": "https://aravaiparides.com/tonto-2/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/tonto.html)",
+ "date_label": "Sunday, November 15, 2026",
+ "place": "Usery Mountain Regional Park, Mesa, AZ",
+ "intro": [
+  "Come explore the hills that once brought gold prospectors out to the desert in search of new fortunes! Choose from our relay or solo divisions, with a distance to fit riders of all calibers. All rides will start and finish at Usery Mountain Regional Park in Mesa, AZ, with the iconic Superstition Mountains looming in the background."
+ ],
+ "description": "Tonto Mountain Rides, Sunday, November 15, 2026: 60 Mile, 30 Mile, 9 Hour Relay, 20 and 10 Mile Races mountain bike races at Usery Mountain Regional Park, Mesa, AZ.",
+ "distances": [
+  {
+   "name": "60 Mile",
+   "map": "https://caltopo.com/m/GBRA3R9",
+   "facts": [
+    [
+     "Start Time",
+     "8:15 AM"
+    ],
+    [
+     "Time Limit",
+     "8 Hours"
+    ],
+    [
+     "Distance",
+     "60- Miles"
+    ],
+    [
+     "Elevation Gain",
+     "3,992 feet"
+    ],
+    [
+     "Max Elevation",
+     "2,369 feet"
+    ]
+   ]
+  },
+  {
+   "name": "30 Mile",
+   "map": "https://caltopo.com/m/GBRA3R9",
+   "facts": [
+    [
+     "Start Time",
+     "8:30 AM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours"
+    ],
+    [
+     "Distance",
+     "30- Miles"
+    ],
+    [
+     "Elevation Gain",
+     "1,996 feet"
+    ],
+    [
+     "Max Elevation",
+     "2,369 feet"
+    ]
+   ]
+  },
+  {
+   "name": "9 Hour Relay",
+   "map": "https://caltopo.com/m/D7DE",
+   "facts": [
+    [
+     "Start Time",
+     "8:00 AM"
+    ],
+    [
+     "Time Limit",
+     "9 Hours"
+    ],
+    [
+     "Max Elevation",
+     "1,968 feet"
+    ],
+    [
+     "Format",
+     "Teams of 2 or 4"
+    ]
+   ]
+  },
+  {
+   "name": "20 and 10 Mile Races",
+   "map": "https://caltopo.com/m/D7DE",
+   "facts": [
+    [
+     "Start Time",
+     "Various times starting at 9:00 AM"
+    ],
+    [
+     "Time Limit",
+     "5 Hours"
+    ],
+    [
+     "Distance",
+     "10 and 20 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "900 to 1,800 feet"
+    ],
+    [
+     "Max Elevation",
+     "1,968 feet"
+    ],
+    [
+     "Options",
+     "XC, Gravel, Juniors and aMTB"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/GBRA3R9"
+ },
+ "courses": [
+  {
+   "name": "60 and 30 Mile",
+   "paras": [
+    "The Tonto Mountain Rides 60-mile mountain bike race offers a thrilling challenge that combines the rolling trails of Usery Mountain Regional Park and the Hawes Trail System.",
+    "All riders will start/finish at the Trailhead Staging Area within Usery Mountain Regional Park. The distance you choose to tackle will determine just how far you wander outside of the park and into the rugged arms of the Tonto National Forest. 60 mile racers will complete two loops of the course."
+   ]
+  },
+  {
+   "name": "9 Hour Relay",
+   "paras": [
+    "The 9 Hour Relay will stay entirely within Usery Mountain Regional Park and will follow the same loop as the 10 and 20 mile races. Teams are comprised of 2 or 4 persons. See registration for team details. The team rider order is up to you but all team members must complete at least one loop of the 10 mile course.",
+    "All riders will start/finish at the Trailhead Staging Area within Usery Mountain Regional Park. Your team will have 9 hours to complete as many loops as you can. No partial loops are counted. If your last teammate crosses the finish line at +9 hours, the loop count will revert back to the total completed before the time has elapsed.",
+    "You will encounter a mix of wider rolling desert terrain, sandy wash sections, as well as rugged and rocky single track. The majority of the loop is singletrack however it is wide enough for safe passing in almost all areas."
+   ]
+  },
+  {
+   "name": "20 and 10 Mile Races",
+   "paras": [
+    "All 20 and 10 mile races will stay entirely within Usery Mountain Regional Park and are perfect for fast racing or those just getting started in mountain biking.",
+    "All riders will start/finish at the Trailhead Staging Area within Usery Mountain Regional Park. The 20 mile racers will complete two loops of this course.",
+    "You will encounter a mix of wider rolling desert terrain, sandy wash sections, as well as rugged and rocky single track."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately.",
+    "MedStar Solutions Race Day Number: 480-269-4126"
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "Usery Mountain Regional Park",
+    "text": "3939 N Usery Pass Rd, Mesa, AZ 85207. Our start/finish line is located at the Trailhead Staging Area",
+    "map": "https://goo.gl/maps/zCKDxSFWGss"
+   }
+  ]
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Thursday, November 12, 2026, 12:00 PM -5:00 PM",
+     "Aravaipa Office, Aravaipa Running Warehouse Drive Thru, 2401 S 24th St, Phoenix, AZ 85034"
+    ],
+    [
+     "Sunday, November 15, 2026, 6:00-8:00AM",
+     "Usery Mountain Regional Park, Trailhead Staging Area, 3939 North Usery Pass Rd"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Start Times",
+   "rows": [
+    [
+     "8:00AM",
+     "9 Hour Relay"
+    ],
+    [
+     "8:15AM",
+     "60&30 Mile Gravel Grinder and XC"
+    ],
+    [
+     "8:29AM",
+     "10 Mile Adaptive MTB Race"
+    ],
+    [
+     "8:30AM",
+     "All 20&10 Mile Races"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Copy of Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Parking",
+   "paras": [
+    "Remember the park now charges a $10 park entry fee per vehicle.",
+    "Please arrive early and have correct change (cash) available on race evening for a smooth entry process. Maricopa County Parks also offers an Annual Pass for $120. Carpool to save!"
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "Camping is allowed by Usery Mountain Regional Park for this event in their designated campgrounds. All sites in the campground may be reserved online at go here."
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Stations",
+   "paras": [
+    "In addition to a fully stocked drink and feed station at the start/finish line at the Trailhead Staging Area, there will be some water and electrolyte remote aid stations located along the course. Our main aid station will be stocked with water, ice, electrolyte drinks, salty and sweet snacks, fruit, pb&j, bean rollups, hot food (quesadillas, grilled cheese), and more."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect great weather for this November event. It might be a touch cool at the start, but will likely warm up as the sun continues to rise over the Superstitions."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all riders, no pets are allowed on-course during the race. Any pets at the race must be on a leash at all times, respect park rules, and be supervised."
+   ]
+  },
+  {
+   "q": "Mountain Biking and Trash",
+   "a": [
+    "Please respect the trails and the beauty of the desert by disposing of any trash at one of our aid stations. We do recycle and participate in the Terracycle program where we recycle used nutrition packets and gel wrappers. Please deposit them in the specified container at the feed station."
+   ]
+  }
+ ],
+ "register": [],
+ "records": [
+  [
+   "50 Mile MTB, Male",
+   "John Salskov, 4:17:27 (2025)"
+  ],
+  [
+   "50 Mile MTB, Female",
+   "Caitlin Braithwait, 8:25:49 (2025)"
+  ],
+  [
+   "30 Mile MTB, Male",
+   "Bryan Vahjen, 2:13:51 (2025)"
+  ],
+  [
+   "30 Mile MTB, Female",
+   "Devon Baumback, 3:01:25 (2025)"
+  ],
+  [
+   "30 Mile Gravel Grinder, Male",
+   "Lawrence Towner, 2:26:17 (2025)"
+  ],
+  [
+   "30 Mile Gravel Grinder, Female",
+   "Lynn Blanco, 2:52:53 (2025)"
+  ],
+  [
+   "10 Mile aMTB, Male",
+   "Jon Teel, 0:47:28 (2025)"
+  ]
+ ],
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "Gnarly",
+   "href": "https://gognarly.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2021/05/Gnarly_Horizontal_BlueType.png"
+  }
+ ],
+ "volunteer": {
+  "text": "We need help to make Tonto Rides possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com/pm26"
+ },
+ "live": {
+  "text": "Follow the 2025 Tonto Rides with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2024/10/fren-5.png",
+  "width": 975,
+  "height": 648,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/tonto.jpg",
+  "alt": "Rider in the Usery desert below the Superstitions"
+ }
+}

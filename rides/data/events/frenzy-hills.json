@@ -1,0 +1,419 @@
+{
+ "slug": "frenzy-hills",
+ "name": "Frenzy Hills Rides",
+ "source": "https://aravaiparides.com/frenzy/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/frenzy-hills.html)",
+ "date_label": "Sunday, December 6, 2026",
+ "place": "McDowell Mountain Regional Park, Fountain Hills, AZ",
+ "intro": [
+  "Join us for the Frenzy Hills Rides at McDowell Mountain Regional Park. Ride through stunning Sonoran desert scenery on various loop options, from 8 to 100 miles. Enjoy a less technical route than last year, with options for solo racers, duo, and quad relay events too. Register now and get ready to ride!"
+ ],
+ "description": "Frenzy Hills Rides, Sunday, December 6, 2026: 100 Mile, 50 Mile, 25 Mile, 9 Hour Relay, 15 Mile, 8 Mile mountain bike races at McDowell Mountain Regional Park, Fountain Hills, AZ.",
+ "distances": [
+  {
+   "name": "100 Mile",
+   "map": "https://caltopo.com/m/9MBK705#",
+   "facts": [
+    [
+     "Start Time",
+     "6:00 AM"
+    ],
+    [
+     "Last Lap Cutoff",
+     "5:00 PM"
+    ],
+    [
+     "Time Limit",
+     "13 Hours (7:00 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "100 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "6,876 feet"
+    ],
+    [
+     "Max Elevation",
+     "2,638 feet"
+    ],
+    [
+     "Options",
+     "Solo XC or Gravel Grinder"
+    ]
+   ]
+  },
+  {
+   "name": "50 Mile",
+   "map": "https://caltopo.com/m/9MBK705#",
+   "facts": [
+    [
+     "Start Time",
+     "7:30 AM"
+    ],
+    [
+     "Time Limit",
+     "10.5 Hours (7:00 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "50- Miles"
+    ],
+    [
+     "Elevation Gain",
+     "3,438 feet"
+    ],
+    [
+     "Max Elevation",
+     "2,484 feet"
+    ],
+    [
+     "Options",
+     "Solo XC or Gravel Grinder"
+    ]
+   ]
+  },
+  {
+   "name": "25 Mile",
+   "map": "https://caltopo.com/m/9MBK705#",
+   "facts": [
+    [
+     "Start Time",
+     "8:00 AM | aMTB 9:00 AM"
+    ],
+    [
+     "Time Limit",
+     "11 Hours (7:00 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "25- Miles"
+    ],
+    [
+     "Elevation Gain",
+     "1,719 feet"
+    ],
+    [
+     "Max Elevation",
+     "2,484 feet"
+    ],
+    [
+     "Options",
+     "Solo XC or Gravel Grinder, Adaptive MTB"
+    ]
+   ]
+  },
+  {
+   "name": "9 Hour Relay",
+   "map": "https://caltopo.com/m/9MBK705#",
+   "facts": [
+    [
+     "Start Time",
+     "7:00 AM"
+    ],
+    [
+     "Last Lap Cutoff",
+     "3:00 PM"
+    ],
+    [
+     "Time Limit",
+     "9 Hours (4:00 PM Overall Cutoff)"
+    ],
+    [
+     "Elevation Gain",
+     "1,026 feet per lap"
+    ],
+    [
+     "Max Elevation",
+     "2,429 feet"
+    ],
+    [
+     "Options",
+     "2-Person or 4-Person Teams"
+    ]
+   ]
+  },
+  {
+   "name": "15 Mile",
+   "map": "https://caltopo.com/m/9MBK705#",
+   "facts": [
+    [
+     "Start Time",
+     "8:30 AM"
+    ],
+    [
+     "Time Limit",
+     "10.5 Hours (7:00 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "15- Miles"
+    ],
+    [
+     "Elevation Gain",
+     "1,103 feet"
+    ],
+    [
+     "Max Elevation",
+     "2,429 feet"
+    ],
+    [
+     "Options",
+     "Solo Adult XC or Gravel Grinder and Juniors 13-17"
+    ]
+   ]
+  },
+  {
+   "name": "8 Mile",
+   "map": "https://caltopo.com/m/9MBK705#",
+   "facts": [
+    [
+     "Start Time",
+     "9:00 AM"
+    ],
+    [
+     "Time Limit",
+     "10.5+ Hours (7:00 PM Overall Cutoff)"
+    ],
+    [
+     "Distance",
+     "8 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "504 feet"
+    ],
+    [
+     "Max Elevation",
+     "1,898 feet"
+    ],
+    [
+     "Options",
+     "Solo Adult XC or Gravel Grinder and Juniors 8-13"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/9MBK705#"
+ },
+ "courses": [
+  {
+   "name": "100 Mile",
+   "paras": [
+    "The Frenzy Hills 100 mile course takes some classic local trails and connects them into a 25 mile loop through McDowell Mountain Regional Park. 100 mile riders will get to know the loop well with 4 complete circuits of the route.",
+    "The loop is comprised of several trails which feature a mix of wider rolling desert terrain, a sandy wash and some rock gardens. Racers will experience two decent climbs followed by a significant downhill after each."
+   ]
+  },
+  {
+   "name": "9 Hour Relay",
+   "paras": [
+    "The Frenzy Hills 9 hour relay course follows the 15 mile loop through McDowell Mountain Regional Park. Teams of 2 or 4 will complete as many laps as they can before the time limit expires.",
+    "The loop is comprised of several trails which feature a mix of wider rolling desert terrain, a sandy wash and some rock gardens. Racers will experience a punchy climb up Bluff Trail followed by a fun decent down Tonto Tank before finishing the loop on the park service road."
+   ]
+  },
+  {
+   "name": "15 Mile",
+   "paras": [
+    "The Frenzy Hills 15 mile loop is comprised of several trails which feature a mix of wider rolling desert terrain, a sandy wash and some rock gardens. Racers will experience a punchy climb up Bluff Trail followed by a fun decent down Tonto Tank before finishing the loop on the park service road."
+   ]
+  },
+  {
+   "name": "8 Mile",
+   "paras": [
+    "The 8 mile loop is comprised of several trails which feature a mix of wide rolling desert terrain."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately.",
+    "MedStar Solutions Race Day Number: 480-269-4126"
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "McDowell Mountain Regional Park",
+    "text": "16300 McDowell Mountain Park Dr, Fort McDowell, AZ 85264. Our start/finish line is located at Competitive Track parking lot to the left as you enter the park gates.",
+    "map": "https://www.google.com/maps/place/McDowell+Mountain+Regional+Park/@33.6654206,-111.6174705,28774m/data=!3m1!1e3!4m6!3m5!1s0x872b9bde79d541c9:0x8f770169c9b53558!8m2!3d33.6674891!4d-111.6978047!16s%2Fg%2F1tjy1znc?entry=ttu&g_ep=EgoyMDI0MTAwOC4wIKXMDSoASAFQAw%3D%3D"
+   }
+  ]
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Thursday, December 3, 2026, 12:00 PM - 5:00 PM",
+     "Aravaipa Office, Aravaipa Running Warehouse Drive Thru, 2401 S 24th St, Phoenix, AZ 85034"
+    ],
+    [
+     "Sunday, December 6, 2026, 5:00-9:00 AM",
+     "Competitive Track Parking Lot, 16300 McDowell Mountain Park Dr, Fountain Hills, AZ 85268"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Start Times",
+   "rows": [
+    [
+     "6:00 AM",
+     "100 Mile Gravel Grinder and XC"
+    ],
+    [
+     "7:00 AM",
+     "9 Hour Relay- 2 and 4 person"
+    ],
+    [
+     "7:30 AM",
+     "50 Mile Gravel Grinder and XC"
+    ],
+    [
+     "8:00 AM",
+     "25 Mile Gravel Grinder and XC"
+    ],
+    [
+     "8:30 AM",
+     "15 Mile - All Races"
+    ],
+    [
+     "9:00 AM",
+     "8 Mile - All Races"
+    ],
+    [
+     "10:00 AM",
+     "25 Mile Adaptive MTB Race"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Copy of Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Parking",
+   "paras": [
+    "Remember the park now charges a $10 park entry fee per vehicle.",
+    "Please arrive early and have correct change (cash) available on race evening for a smooth entry process. Maricopa County Parks also offers an Annual Pass for $120. Carpool to save!"
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "McDowell Mountain Regional Park offers 96 individual sites for tent or RV camping. Sites in the campground may be reserved online at Maricopa County Parks. Participants can also camp in the group campground for $22/night. Payment is taken at the park entrance. The group campground is 2.5 miles away from the event. All sites in the campground may be reserved online at go here."
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Stations",
+   "paras": [
+    "In addition to a fully stocked drink and feed station at the start/finish line, there will be one fully stocked aid station at Granite Tank on the Pemberton Trail. Our main aid station will be stocked with water, ice, electrolyte drinks, salty and sweet snacks, fruit, pb&j, bean rollups, hot food (quesadillas, grilled cheese), and more."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect a cold, brisk morning followed by near perfect daytime temperatures. We've occasionally seen rain in the past on this weekend, but it is somewhat rare."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all riders, no pets are allowed on-course during the race. Any pets at the race must be on a leash at all times, respect park rules, and be supervised."
+   ]
+  },
+  {
+   "q": "Mountain Biking and Trash",
+   "a": [
+    "Please respect the trails and the beauty of the desert by disposing of any trash at one of our aid stations. We do recycle and participate in the Terracycle program where we recycle used nutrition packets and gel wrappers. Please deposit them in the specified container at the feed station."
+   ]
+  }
+ ],
+ "register": [
+  {
+   "label": "Register Now",
+   "href": "https://www.bikereg.com/frenzy-hills-rides"
+  }
+ ],
+ "register_headline": "Frenzy Hills Rides",
+ "register_note": "Registration closes: Mon, Nov. 30 @ 11:59PM MT",
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "Gnarly",
+   "href": "https://gognarly.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2021/05/Gnarly_Horizontal_BlueType.png"
+  }
+ ],
+ "volunteer": {
+  "text": "We need help to make Frenzy Hills possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com/mmf26"
+ },
+ "live": {
+  "text": "Follow the 2025 Frenzy Hills Rides with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2024/10/fren-6.png",
+  "width": 975,
+  "height": 648,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/frenzy-hills.jpg",
+  "alt": "McDowell Mountain trail at sunset with saguaros"
+ }
+}
