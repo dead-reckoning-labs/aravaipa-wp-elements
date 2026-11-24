@@ -37,7 +37,14 @@ define( 'ARV_RT_APPLY_BRYCE', 'bryce@aravaiparunning.com' );
 // Upload cap per file field and the accepted types. Phone photos are shrunk in
 // the browser first (assets/aravaipa-rt-apply.js); HEIC/HEIF is accepted as a
 // last resort when the browser cannot convert it.
-define( 'ARV_RT_APPLY_FILE_LIMIT', '10mb' ); // Tags read limit:10mb.
+// Upload cap per file field follows the server's real PHP max
+// (upload_max_filesize / post_max_size via wp_max_upload_size), between a
+// 10 MB floor and this ceiling, so any phone photo fits (Jamil 2026-11-24:
+// "allow for any size images and resize them on our end").
+define( 'ARV_RT_APPLY_FILE_CAP_MB', 64 );
+// Server-side resize: images over this edge or size are re-encoded as JPEG.
+define( 'ARV_RT_APPLY_RESIZE_EDGE', 2000 );
+define( 'ARV_RT_APPLY_RESIZE_BYTES', 2 * 1024 * 1024 );
 define( 'ARV_RT_APPLY_TYPES_PHOTO', 'jpg|jpeg|png|webp|heic|heif' );
 define( 'ARV_RT_APPLY_TYPES_RESUME', 'pdf|jpg|jpeg|png|webp|heic|heif' );
 
@@ -60,7 +67,7 @@ function arv_rt_apply_fields() {
 		array( 'key' => 'returning', 'name' => 'rt-returning', 'label' => 'Have you been on the team before?', 'type' => 'radio', 'required' => true, 'section' => 'about', 'options' => array( 'Yes', 'No' ) ),
 		array( 'key' => 'returning-years', 'name' => 'rt-returning-years', 'label' => 'Which years?', 'type' => 'text', 'required' => false, 'section' => 'about', 'hint' => 'If yes, for example 2025, 2026.' ),
 		array( 'key' => 'resume', 'name' => 'rt-resume', 'label' => 'Racing resume', 'type' => 'textarea', 'required' => true, 'section' => 'racing', 'hint' => 'Your best results in the past 3 years: place, finish time, race name and year. One per line.' ),
-		array( 'key' => 'resume-file', 'name' => 'rt-resume-file', 'label' => 'Resume file', 'type' => 'file', 'required' => false, 'section' => 'racing', 'hint' => 'A PDF or image of a results list or athlete CV, if you keep one. 10 MB max.' ),
+		array( 'key' => 'resume-file', 'name' => 'rt-resume-file', 'label' => 'Resume file', 'type' => 'file', 'required' => false, 'section' => 'racing', 'hint' => 'A PDF or image of a results list or athlete CV, if you keep one. Any size works; large images are shrunk for you.' ),
 		array( 'key' => 'ultrasignup', 'name' => 'rt-ultrasignup', 'label' => 'UltraSignup profile', 'type' => 'text', 'required' => false, 'section' => 'racing' ),
 		array( 'key' => 'profiles', 'name' => 'rt-profiles', 'label' => 'Other result profiles', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'UTMB, Strava, Athlinks. One per line.' ),
 		array( 'key' => 'goals', 'name' => 'rt-goals', 'label' => 'Your goals for 2027 and beyond', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'Short term goals for the season and long term goals in the sport.' ),
@@ -80,7 +87,7 @@ function arv_rt_apply_fields() {
 		array( 'key' => 'size-top', 'name' => 'rt-size-top', 'label' => 'Long sleeve or jacket', 'type' => 'select', 'required' => true, 'section' => 'kit', 'options' => array( 'XS', 'S', 'M', 'L', 'XL', 'XXL' ) ),
 		array( 'key' => 'size-shorts', 'name' => 'rt-size-shorts', 'label' => 'Shorts', 'type' => 'select', 'required' => true, 'section' => 'kit', 'options' => array( 'XS', 'S', 'M', 'L', 'XL', 'XXL' ) ),
 		array( 'key' => 'shoe-size', 'name' => 'rt-shoe-size', 'label' => 'Shoe size (US)', 'type' => 'select', 'required' => true, 'section' => 'kit', 'options' => array( '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '12.5', '13', '13.5', '14', '14.5', '15', '15.5', '16' ), 'hint' => 'Running; riding shoe size for mountain bike.' ),
-		array( 'key' => 'headshot', 'name' => 'rt-headshot', 'label' => 'Photo', 'type' => 'file', 'required' => false, 'section' => 'kit', 'hint' => 'A clear, recent photo. Running shots welcome. Recommended. Phone photos are fine, 10 MB max.' ),
+		array( 'key' => 'headshot', 'name' => 'rt-headshot', 'label' => 'Photo', 'type' => 'file', 'required' => false, 'section' => 'kit', 'hint' => 'A clear, recent photo. Running shots welcome. Recommended. Phone photos of any size are fine; we shrink large ones for you.' ),
 	);
 }
 
@@ -178,6 +185,20 @@ function arv_rt_apply_is_ours( $form ) {
 }
 
 /**
+ * CF7 limit option for the file fields: the server's real upload max in MB
+ * (wp_max_upload_size, the smaller of upload_max_filesize and post_max_size),
+ * at least 10 MB and at most ARV_RT_APPLY_FILE_CAP_MB. Without WordPress the
+ * ceiling is used.
+ *
+ * @return string For example "64mb".
+ */
+function arv_rt_apply_file_limit() {
+	$max = function_exists( 'wp_max_upload_size' ) ? (int) wp_max_upload_size() : 0;
+	$mb  = $max > 0 ? (int) floor( $max / 1048576 ) : ARV_RT_APPLY_FILE_CAP_MB;
+	return max( 10, min( ARV_RT_APPLY_FILE_CAP_MB, $mb ) ) . 'mb';
+}
+
+/**
  * Quote a value for a CF7 tag.
  *
  * @param string $v Value.
@@ -230,7 +251,7 @@ function arv_rt_apply_tag( $f ) {
 			}
 			return '[checkbox' . $star . ' ' . $name . ' use_label_element' . $opts . ']';
 		case 'file':
-			return '[file ' . $name . ' ' . $id . ' limit:' . ARV_RT_APPLY_FILE_LIMIT . ' filetypes:' . arv_rt_apply_file_types( $f['key'] ) . ']';
+			return '[file ' . $name . ' ' . $id . ' limit:' . arv_rt_apply_file_limit() . ' filetypes:' . arv_rt_apply_file_types( $f['key'] ) . ']';
 		case 'email':
 		case 'tel':
 		case 'date':
@@ -449,19 +470,20 @@ function arv_rt_apply_mail() {
 /** CF7 messages that differ from the defaults. */
 function arv_rt_apply_messages() {
 	return array(
-		'mail_sent_ok'     => 'Thank you. Your application for the 2027 Aravaipa Racing Team is in, and the team managers read every one. A confirmation email is on its way.',
+		'mail_sent_ok'     => 'Thank you for applying to the 2027 Aravaipa Racing Team. Your application came through, and a confirmation email is on its way.',
 		'mail_sent_ng'     => 'Your application is saved, but the notice to the team did not send. No need to apply again.',
 		'validation_error' => 'Some answers need a look. The list next to Submit shows each one.',
 		'spam'             => 'We could not confirm you are human, so this did not go through. Press Submit again. If it keeps happening, email your answers to bryce@aravaiparunning.com.',
 		'upload_failed'    => 'The file did not upload. Try again, or email it to bryce@aravaiparunning.com.',
 		'upload_file_type_invalid' => 'That file type is not accepted. Use a photo (JPG, PNG, WEBP or HEIC) or a PDF.',
-		'upload_file_too_large'    => 'That file is over 10 MB. Try a smaller photo, or email it to bryce@aravaiparunning.com.',
+		'upload_file_too_large'    => 'That file is bigger than our server can take. Try a smaller one, or email it to bryce@aravaiparunning.com.',
 	);
 }
 
 /**
- * Applicant confirmation email (CF7 Mail (2)), applied at runtime for our form
- * only so the stored form needs no reinstall. Plain text, Reply-To marketing@.
+ * Applicant confirmation email (CF7 Mail (2)). Written into the stored form by
+ * the install command and applied at runtime for our form too, so it works
+ * before a reinstall. Plain text, Reply-To Bryce (team manager).
  *
  * @return array CF7 mail property.
  */
@@ -492,11 +514,38 @@ function arv_rt_apply_confirm_subject() {
  * @return string
  */
 function arv_rt_apply_confirm_body( $first, $followup = false ) {
-	$hi   = '' !== trim( (string) $first ) ? 'Hi ' . trim( (string) $first ) . ',' : 'Hi,';
-	$open = $followup
-		? "Thanks for applying to the 2027 Aravaipa Racing Team. We weren't sending confirmations when you applied, so here it is: your application came through and it's in front of our team managers. If you saw an error while submitting and tried more than once, no worries, we have you."
-		: 'Thanks for applying to the 2027 Aravaipa Racing Team. Your application is in, and this email is your confirmation.';
-	return $hi . "\n\n" . $open . "\n\nWhat's next: applications close November 30. Our team managers read every application, and we'll be in touch by email once the 2027 team is set.\n\nNeed to add or change something? Just reply to this email.\n\nSee you out there,\nAravaipa Running\n";
+	$hi = '' !== trim( (string) $first ) ? 'Hi ' . trim( (string) $first ) . ',' : 'Hi,';
+	if ( $followup ) {
+		$open = "Thanks for applying to the 2027 Aravaipa Racing Team. We weren't sending confirmations when you applied, so here it is: your application came through and it's in front of our team managers. If you saw an error while submitting and tried more than once, no worries, we have you.";
+		return $hi . "\n\n" . $open . "\n\nWhat's next: applications close November 30. Our team managers read every application, and we'll be in touch by email once the 2027 team is set.\n\nNeed to add or change something? Just reply to this email.\n\nSee you out there,\nAravaipa Running\n";
+	}
+	return $hi . "\n\n"
+		. "Thank you for applying to the 2027 Aravaipa Racing Team. We're grateful you want to race with us, and we're glad to confirm your application came through.\n\n"
+		. "What happens next\n"
+		. "Applications close November 30. After the deadline, our team managers review every application, and we'll share decisions with everyone by email.\n\n"
+		. "If you'd like to add or change anything, just reply to this email and it will reach our team.\n\n"
+		. arv_rt_apply_confirm_summary()
+		. "\nThanks again, and see you on the trail,\nAravaipa Running\n";
+}
+
+/**
+ * The short copy of the application in the confirmation email (CF7 tags).
+ *
+ * @return string
+ */
+function arv_rt_apply_confirm_summary() {
+	return "A copy of your application\n"
+		. "Name: [rt-first-name] [rt-last-name]\n"
+		. "Region: [rt-region]\n"
+		. "Home: [rt-city], [rt-state]\n"
+		. "Disciplines: [rt-disciplines]\n"
+		. "On the team before: [rt-returning]\n"
+		. "Aravaipa races you plan to run: [rt-race-plans]\n"
+		. "Other 2027 races and goals: [rt-outside-races]\n"
+		. "Kit: [rt-size-fit] fit, tee [rt-size-tee], top [rt-size-top], shorts [rt-size-shorts], shoe [rt-shoe-size]\n"
+		. "Photo and resume file: included with your application if you added them\n\n"
+		. "Racing resume:\n[rt-resume]\n\n"
+		. "Why you want to be on the team:\n[rt-why]\n";
 }
 
 /**
@@ -512,22 +561,106 @@ function arv_rt_apply_mail2_prop( $value, $form = null ) {
 add_filter( 'wpcf7_contact_form_property_mail_2', 'arv_rt_apply_mail2_prop', 10, 2 );
 
 /**
- * Full thank-you screen that replaces the form after a sent application.
+ * Neutralise links in applicant text before it goes back out in the
+ * confirmation. mail_2 goes to whatever address was typed, so without this the
+ * form could be used to send someone else a clickable link from
+ * wordpress@aravaiparunning.com. Schemes and "www." are dropped and the dots in
+ * any host name become "[.]", so mail apps show plain text, not a link.
+ * Our own template has no links, so the whole composed body is safe to run.
  *
- * @param bool $visible Shown now (no-JS submit) or kept hidden for the script.
+ * @param string $text Composed text.
  * @return string
  */
-function arv_rt_apply_thanks_html( $visible = false ) {
-	$team = function_exists( 'home_url' ) ? home_url( '/racing-team/' ) : 'https://www.aravaiparunning.com/racing-team/';
-	$team = function_exists( 'esc_url' ) ? esc_url( $team ) : htmlspecialchars( $team, ENT_QUOTES );
-	return '<div class="rt-thanks" id="rt-thanks" role="status" tabindex="-1"' . ( $visible ? '' : ' hidden' ) . '>'
+function arv_rt_apply_defang( $text ) {
+	$text = (string) $text;
+	$text = preg_replace( '~\b[a-z][a-z0-9+.\-]{1,15}://~i', '', $text );
+	$text = preg_replace( '~\bwww\.~i', 'www[.]', $text );
+	$text = preg_replace_callback(
+		'~\b(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?\.)+[a-z]{2,63}\b~i',
+		function ( $m ) {
+			return str_replace( '.', '[.]', $m[0] );
+		},
+		$text
+	);
+	// Numeric hosts (1.2.3.4) too.
+	return preg_replace_callback(
+		'~\b\d{1,3}(?:\.\d{1,3}){3}\b~',
+		function ( $m ) {
+			return str_replace( '.', '[.]', $m[0] );
+		},
+		$text
+	);
+}
+
+/**
+ * Defang the applicant confirmation (mail_2) of our form once CF7 has filled
+ * in the tags. The staff notice (mail) keeps the answers exactly as typed, and
+ * gets the resized photo in place of a large original.
+ *
+ * @param array $components CF7 mail components (subject, sender, body, ...).
+ * @param mixed $form       WPCF7_ContactForm.
+ * @param mixed $mail       WPCF7_Mail being composed.
+ * @return array
+ */
+function arv_rt_apply_mail_components( $components, $form = null, $mail = null ) {
+	if ( ! is_array( $components ) || ! arv_rt_apply_is_ours( $form ) ) {
+		return $components;
+	}
+	// Any mail of ours attaches the resized photo, not the original.
+	if ( ! empty( $components['attachments'] ) && is_array( $components['attachments'] ) ) {
+		$components['attachments'] = array_map( 'arv_rt_apply_upload_path', $components['attachments'] );
+	}
+	if ( ! is_object( $mail ) || ! method_exists( $mail, 'name' ) || 'mail_2' !== $mail->name() ) {
+		return $components;
+	}
+	foreach ( array( 'subject', 'body' ) as $k ) {
+		if ( isset( $components[ $k ] ) ) {
+			$components[ $k ] = arv_rt_apply_defang( $components[ $k ] );
+		}
+	}
+	return $components;
+}
+add_filter( 'wpcf7_mail_components', 'arv_rt_apply_mail_components', 10, 3 );
+
+/**
+ * Full thank-you screen that replaces the form after a sent application.
+ * Rendered visible inside the form on a no-JS submit (so the form's own
+ * #wpcf7-f... anchor lands on it), or hidden beside the form for the script.
+ * The page already ends with a Meet the current team link, so the panel has none.
+ *
+ * @param bool   $visible Shown now (no-JS submit) or kept hidden for the script.
+ * @param string $first   Applicant first name, if known.
+ * @return string
+ */
+function arv_rt_apply_thanks_html( $visible = false, $first = '' ) {
+	$first = trim( preg_replace( '/\s+/', ' ', (string) $first ) );
+	if ( function_exists( 'mb_substr' ) ) {
+		$first = mb_substr( $first, 0, 60 );
+	}
+	$name = '' !== $first ? ', ' . htmlspecialchars( $first, ENT_QUOTES, 'UTF-8' ) : '';
+	return '<div class="rt-thanks" id="rt-thanks" role="status" aria-live="polite" tabindex="-1"' . ( $visible ? '' : ' hidden' ) . '>'
 		. '<p class="rt-thanks-kicker">Application received</p>'
-		. '<h2 class="rt-thanks-title">You&rsquo;re in the running.</h2>'
-		. '<p>Thanks for applying to the 2027 Aravaipa Racing Team. We have your application, and a confirmation email is on its way to you now.</p>'
-		. '<p><strong>What&rsquo;s next:</strong> applications close November 30. Our team managers read every application, and we&rsquo;ll be in touch by email once the 2027 team is set.</p>'
-		. '<p>Need to add or change something? Reply to the confirmation email or write to <a href="mailto:bryce@aravaiparunning.com">bryce@aravaiparunning.com</a>.</p>'
-		. '<p><a class="rt-thanks-link" href="' . $team . '">Meet the current team</a></p>'
+		. '<h2 class="rt-thanks-title">Thank you<span class="rt-thanks-name">' . $name . '</span>.</h2>'
+		. '<p>We&rsquo;re grateful you applied for the 2027 Aravaipa Racing Team. Your application came through, and a confirmation email is on its way to you now.</p>'
+		. '<p><strong>What happens next:</strong> applications close November 30. After the deadline, our team managers review every application, and we&rsquo;ll share decisions by email.</p>'
+		. '<p>Want to add or change something? Reply to the confirmation email or write to <a href="mailto:bryce@aravaiparunning.com">bryce@aravaiparunning.com</a>.</p>'
 		. '</div>';
+}
+
+/**
+ * The browser side of the thank-you screen. With CF7's script on the page
+ * the form never reloads: on wpcf7mailsent fill in the first name, hide the
+ * form and bring the panel into view. After a no-JS submit the server already
+ * rendered the panel (data-sent="server"); just scroll to it.
+ *
+ * @return string Inline script.
+ */
+function arv_rt_apply_thanks_js() {
+	return '<script>(function(){var r=document.getElementById("rt-apply");if(!r)return;'
+		. 'function go(t){try{t.scrollIntoView({behavior:"smooth",block:"start"});}catch(x){t.scrollIntoView();}try{t.focus({preventScroll:true});}catch(y){}}'
+		. 'document.addEventListener("wpcf7mailsent",function(e){if(!e.target||!r.contains(e.target))return;var t=document.getElementById("rt-thanks");if(!t)return;var f="";((e.detail&&e.detail.inputs)||[]).forEach(function(i){if(i&&i.name==="rt-first-name"){f=String(i.value||"").replace(/\s+/g," ").trim().slice(0,60);}});var n=t.querySelector(".rt-thanks-name");if(n){n.textContent=f?", "+f:"";}r.setAttribute("data-sent","1");var o=r.querySelector(".rt-state-open");if(o){o.hidden=true;}t.hidden=false;go(t);});'
+		. 'if(r.getAttribute("data-sent")==="server"){var s=document.getElementById("rt-thanks");if(s){setTimeout(function(){go(s);},60);}}'
+		. '})();</script>';
 }
 
 /** True when this request is a no-JS submit of our form that was sent. */
@@ -680,7 +813,7 @@ function arv_rt_apply_file_tag( $tag ) {
 		}
 		$opts[] = $o;
 	}
-	$opts[]         = 'limit:' . ARV_RT_APPLY_FILE_LIMIT;
+	$opts[]         = 'limit:' . arv_rt_apply_file_limit();
 	$opts[]         = 'filetypes:' . arv_rt_apply_file_types( $key );
 	$tag['options'] = $opts;
 	return $tag;
@@ -697,7 +830,11 @@ function arv_rt_apply_form_elements( $html ) {
 	if ( ! class_exists( 'WPCF7_ContactForm' ) || ! arv_rt_apply_is_ours( WPCF7_ContactForm::get_current() ) ) {
 		return $html;
 	}
-	return arv_rt_apply_turnstile_attrs( $html );
+	$html = arv_rt_apply_turnstile_attrs( $html );
+	if ( arv_rt_apply_just_sent() ) {
+		$html = arv_rt_apply_thanks_html( true, arv_rt_apply_posted( 'rt-first-name' ) ) . $html;
+	}
+	return $html;
 }
 add_filter( 'wpcf7_form_elements', 'arv_rt_apply_form_elements', 20, 1 );
 
@@ -821,6 +958,102 @@ $GLOBALS['arv_rt_apply_last'] = null;
 /** Sample files from the staff test only (name => path). */
 $GLOBALS['arv_rt_apply_test_files'] = array();
 
+/** Resized uploads for this request (original path => resized JPEG path). */
+$GLOBALS['arv_rt_apply_resized'] = array();
+
+/**
+ * Shrink one uploaded image on the server: any image with a long edge over
+ * ARV_RT_APPLY_RESIZE_EDGE or a file over ARV_RT_APPLY_RESIZE_BYTES (and every
+ * HEIC/HEIF the image editor can read) is re-encoded with wp_get_image_editor
+ * to at most 2000 px on the long edge, JPEG quality 85, next to the original.
+ * PDFs and anything the editor cannot open are left alone, and the original
+ * is kept whenever the resize fails or would not make the file smaller.
+ *
+ * @param string $path Uploaded file path.
+ * @return string Path to send (resized JPEG or the original).
+ */
+function arv_rt_apply_resize_image( $path ) {
+	if ( ! is_string( $path ) || ! is_file( $path ) || ! function_exists( 'wp_get_image_editor' ) ) {
+		return $path;
+	}
+	$mime = function_exists( 'arv_rt_apply_rr_sniff_mime' ) ? (string) arv_rt_apply_rr_sniff_mime( $path ) : '';
+	if ( 0 !== strpos( $mime, 'image/' ) ) {
+		return $path;
+	}
+	$heic  = in_array( $mime, array( 'image/heic', 'image/heif' ), true );
+	$bytes = (int) filesize( $path );
+	$ed    = wp_get_image_editor( $path );
+	if ( ! is_object( $ed ) || ( function_exists( 'is_wp_error' ) && is_wp_error( $ed ) ) || ! method_exists( $ed, 'get_size' ) ) {
+		return $path;
+	}
+	$size = (array) $ed->get_size();
+	$edge = max( isset( $size['width'] ) ? (int) $size['width'] : 0, isset( $size['height'] ) ? (int) $size['height'] : 0 );
+	if ( ! $heic && $edge <= ARV_RT_APPLY_RESIZE_EDGE && $bytes <= ARV_RT_APPLY_RESIZE_BYTES ) {
+		return $path;
+	}
+	if ( $edge > ARV_RT_APPLY_RESIZE_EDGE ) {
+		$r = $ed->resize( ARV_RT_APPLY_RESIZE_EDGE, ARV_RT_APPLY_RESIZE_EDGE, false );
+		if ( true !== $r ) { // WP_Image_Editor::resize gives true or a WP_Error.
+			return $path;
+		}
+	}
+	if ( method_exists( $ed, 'set_quality' ) ) {
+		$ed->set_quality( 85 );
+	}
+	$dest  = dirname( $path ) . '/' . pathinfo( $path, PATHINFO_FILENAME ) . '-2000.jpg';
+	$saved = $ed->save( $dest, 'image/jpeg' );
+	if ( ! is_array( $saved ) || empty( $saved['path'] ) || ! is_file( $saved['path'] ) ) {
+		return $path;
+	}
+	$out = $saved['path'];
+	if ( ! $heic && $edge <= ARV_RT_APPLY_RESIZE_EDGE && (int) filesize( $out ) >= $bytes ) {
+		@unlink( $out ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		return $path;
+	}
+	return $out;
+}
+
+/**
+ * The path to send for an upload: the resized copy if there is one.
+ *
+ * @param string $path Original upload path.
+ * @return string
+ */
+function arv_rt_apply_upload_path( $path ) {
+	return is_string( $path ) && isset( $GLOBALS['arv_rt_apply_resized'][ $path ] ) ? $GLOBALS['arv_rt_apply_resized'][ $path ] : $path;
+}
+
+/**
+ * First thing before mail: shrink large photos and images in our two file
+ * fields. The staff email, the private copy and the RaceReach push then all
+ * use the resized file (see arv_rt_apply_upload_path and the mail components
+ * filter). CF7's own upload cleanup removes the resized file with the rest.
+ *
+ * @param object $form CF7 form.
+ */
+function arv_rt_apply_resize_uploads( $form ) {
+	$GLOBALS['arv_rt_apply_resized'] = array();
+	if ( ! arv_rt_apply_is_ours( $form ) || ! class_exists( 'WPCF7_Submission' ) ) {
+		return;
+	}
+	$s = WPCF7_Submission::get_instance();
+	if ( ! $s || ! method_exists( $s, 'uploaded_files' ) ) {
+		return;
+	}
+	foreach ( (array) $s->uploaded_files() as $name => $paths ) {
+		if ( ! in_array( $name, array( 'rt-headshot', 'rt-resume-file' ), true ) ) {
+			continue;
+		}
+		foreach ( (array) $paths as $path ) {
+			$new = arv_rt_apply_resize_image( $path );
+			if ( $new !== $path ) {
+				$GLOBALS['arv_rt_apply_resized'][ $path ] = $new;
+			}
+		}
+	}
+}
+add_action( 'wpcf7_before_send_mail', 'arv_rt_apply_resize_uploads', 1, 1 );
+
 /**
  * Before mail: keep the photo and resume file, and write the entry to the
  * private log, so the application survives even if mail and Flamingo fail.
@@ -842,6 +1075,7 @@ function arv_rt_apply_before_mail( $form ) {
 	$files = array();
 	foreach ( (array) $s->uploaded_files() as $name => $paths ) {
 		foreach ( (array) $paths as $i => $path ) {
+			$path = arv_rt_apply_upload_path( $path );
 			if ( ! $path || ! is_file( $path ) ) {
 				continue;
 			}
@@ -914,7 +1148,8 @@ add_action( 'wpcf7_after_flamingo', 'arv_rt_apply_after_flamingo', 10, 1 );
 /** Styles: the site's type, plain fields, no cards, no shadows. */
 function arv_rt_apply_css() {
 	// The page around the form mirrors the team page's own styles (scoped there to .page-id-79463).
-	return '.rt-thanks{padding:40px 32px;background:#f4f1ea;margin:8px 0 24px}.rt-thanks:focus{outline:none}.rt-thanks-kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#b3261e;margin:0 0 8px}.rt-thanks-title{font-size:34px;line-height:1.1;margin:0 0 16px}.rt-thanks p{font-size:17px;line-height:1.55;max-width:640px}.rt-thanks-link{display:inline-block;margin-top:8px;padding:12px 22px;background:#b3261e;color:#fff!important;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:.06em;font-size:14px}@media(max-width:600px){.rt-thanks{padding:28px 20px}.rt-thanks-title{font-size:27px}}.arv-rt-page{text-align:left}.arv-rt-page .arv-team-h1{text-align:center;margin:0 0 1.5rem}'
+	return '.rt-apply[data-sent] .rt-form,.rt-apply[data-sent] .wpcf7-response-output,.rt-cf7.sent .rt-form,.rt-cf7.sent .wpcf7-response-output,.rt-apply[data-sent] .rt-summary,.rt-apply[data-sent] .rt-alert{display:none!important}'
+		. '.rt-thanks{padding:40px 32px;background:#f4f1ea;margin:8px 0 24px;scroll-margin-top:120px}.rt-thanks:focus{outline:none}.rt-thanks-kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#b3261e;margin:0 0 8px}.rt-thanks-title{font-size:34px;line-height:1.1;margin:0 0 16px}.rt-thanks p{font-size:17px;line-height:1.55;max-width:640px}.rt-thanks-link{display:inline-block;margin-top:8px;padding:12px 22px;background:#b3261e;color:#fff!important;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:.06em;font-size:14px}@media(max-width:600px){.rt-thanks{padding:28px 20px}.rt-thanks-title{font-size:27px}}.arv-rt-page{text-align:left}.arv-rt-page .arv-team-h1{text-align:center;margin:0 0 1.5rem}'
 		. '.arv-rt-page .arv-team-intro{max-width:760px;margin-left:auto;margin-right:auto;text-align:center}'
 		. '.arv-rt-page .arv-team-sponsors{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2.5rem;margin:1.75rem auto 2.25rem}'
 		. '.arv-rt-page .arv-team-sponsors img{display:block;width:auto;max-width:100%;border:0;opacity:.9}'
@@ -986,19 +1221,21 @@ function arv_rt_apply_shortcode() {
 	}
 	$h  = '<style>' . arv_rt_apply_css() . arv_rt_apply_region_css() . '</style>';
 	$fail = function_exists( 'rest_url' ) ? rest_url( 'aravaipa/v1/rt-apply-fail' ) : '';
-	$h   .= '<div class="rt-apply" id="rt-apply"' . ( $form && arv_rt_apply_just_sent() ? ' data-sent="1"' : '' ) . ' data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '"' . ( $fail ? ' data-fail-url="' . esc_attr( $fail ) . '"' : '' ) . '>';
+	$sent = $form && arv_rt_apply_just_sent();
+	$h   .= '<div class="rt-apply" id="rt-apply"' . ( $sent ? ' data-sent="server"' : '' ) . ' data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '"' . ( $fail ? ' data-fail-url="' . esc_attr( $fail ) . '"' : '' ) . '>';
 	$h .= '<p class="rt-state rt-state-before"' . ( 'before' === $state ? '' : ' hidden' ) . '>Applications open November 20.</p>';
 	$h .= '<p class="rt-state rt-state-closed"' . ( 'closed' === $state ? '' : ' hidden' ) . '>Applications for the 2027 team are closed.</p>';
-	$sent = $form && arv_rt_apply_just_sent();
 	if ( $form ) {
-		$h .= arv_rt_apply_thanks_html( $sent );
-		$h .= '<div class="rt-state-open"' . ( 'open' === $state && ! $sent ? '' : ' hidden' ) . '>' . $form . '</div>';
+		// After a no-JS submit the panel is already inside the form (form_elements filter).
+		$h .= $sent ? '' : arv_rt_apply_thanks_html( false );
+		$h .= '<div class="rt-state-open"' . ( 'open' === $state ? '' : ' hidden' ) . '>' . $form . '</div>';
 	} elseif ( 'open' === $state ) {
 		$h .= '<p class="rt-state">The application form is not available right now. Email bryce@aravaiparunning.com and we will help.</p>';
 	}
 	$h .= '</div>';
 	if ( $form ) {
 		$h .= arv_rt_apply_region_hint_js();
+		$h .= arv_rt_apply_thanks_js();
 		arv_rt_apply_enqueue();
 	}
 	$h .= '<script>(function(){var r=document.getElementById("rt-apply");if(!r)return;function t(){var n=Date.now()/1000,o=+r.dataset.opens,c=+r.dataset.closes,s=n<o?"before":(n>c?"closed":"open");var was=r.dataset.state;r.dataset.state=s;["before","closed","open"].forEach(function(k){var e=r.querySelector(".rt-state-"+k);if(e)e.hidden=(k!==s)||(k==="open"&&r.dataset.sent==="1");});if(was!==s&&s==="open"&&window.turnstile){r.querySelectorAll(".wpcf7-turnstile,.cf-turnstile").forEach(function(w){try{window.turnstile.reset(w);}catch(x){}});}}t();setInterval(t,15000);})();</script>';
@@ -1634,13 +1871,11 @@ function arv_rt_apply_install( $dry_run = false ) {
 	if ( ! $cf ) {
 		$cf = WPCF7_ContactForm::get_template( array( 'title' => '2027 Racing Team Application' ) );
 	}
-	$mail2           = $cf->prop( 'mail_2' );
-	$mail2['active'] = false;
 	$cf->set_properties(
 		array(
 			'form'                => arv_rt_apply_form_template(),
 			'mail'                => arv_rt_apply_mail(),
-			'mail_2'              => $mail2,
+			'mail_2'              => arv_rt_apply_confirm_mail(),
 			'messages'            => array_merge( (array) $cf->prop( 'messages' ), arv_rt_apply_messages() ),
 			'additional_settings' => arv_rt_apply_additional_settings(),
 		)

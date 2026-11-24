@@ -7,7 +7,7 @@
  * outside the window and the staff test override lets one through; age and
  * returning-years checks; other form ids are ignored; the form template has
  * every field of the RaceReach form (out/fields.json when present, else the
- * include's own list) plus Turnstile; mail goes to marketing@ with the
+ * include's own list) plus Turnstile; mail goes to bryce@ with the
  * photo attached; the shortcode state and the hidden form; before-mail
  * copies the photo into the private folder (deny-all) and logs the entry;
  * the Flamingo link; export header and rows; delete-test removes only the
@@ -248,7 +248,7 @@ foreach ( $keys as $k ) {
 ok( false !== strpos( $tmpl, '[turnstile]' ), 'turnstile tag' );
 ok( false !== strpos( $tmpl, '[email* rt-email' ), 'email required' );
 ok( false !== strpos( $tmpl, '[textarea* rt-resume' ), 'resume required' );
-ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:10mb filetypes:jpg|jpeg|png|webp|heic|heif]' ), 'headshot file tag' );
+ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:64mb filetypes:jpg|jpeg|png|webp|heic|heif]' ), 'headshot file tag' );
 ok( false !== strpos( $tmpl, '[acceptance rt-consent-publicity optional]' ), 'publicity optional' );
 ok( false === strpos( $tmpl, "\u{2014}" ), 'no em dash in template' );
 
@@ -260,7 +260,6 @@ ok( array( 'x' ) === $o['values'], 'other tags untouched' );
 
 // Mail.
 $m = arv_rt_apply_mail();
-ok( false !== strpos( $m['recipient'], 'bryce@aravaiparunning.com' ), 'mail to bryce' );
 ok( false !== strpos( $m['recipient'], 'bryce@aravaiparunning.com' ), 'mail to bryce' );
 ok( false !== strpos( $m['attachments'], '[rt-headshot]' ), 'photo attached' );
 ok( '2027 Racing Team application: [rt-first-name] [rt-last-name]' === $m['subject'], 'subject' );
