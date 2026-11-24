@@ -248,7 +248,7 @@ foreach ( $keys as $k ) {
 ok( false !== strpos( $tmpl, '[turnstile]' ), 'turnstile tag' );
 ok( false !== strpos( $tmpl, '[email* rt-email' ), 'email required' );
 ok( false !== strpos( $tmpl, '[textarea* rt-resume' ), 'resume required' );
-ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:4mb filetypes:jpg|jpeg|png|webp]' ), 'headshot file tag' );
+ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:10mb filetypes:jpg|jpeg|png|webp|heic|heif]' ), 'headshot file tag' );
 ok( false !== strpos( $tmpl, '[acceptance rt-consent-publicity optional]' ), 'publicity optional' );
 ok( false === strpos( $tmpl, "\u{2014}" ), 'no em dash in template' );
 
@@ -298,7 +298,7 @@ ok( array() === $r->bad, 'valid inside the window' );
 $sub->posted = array( 'rt-birth-date' => '2009-06-01', 'rt-returning' => 'Yes', 'rt-returning-years' => '' );
 $r           = arv_rt_apply_validate( new WPCF7_Validation() );
 ok( isset( $r->bad['rt-birth-date'] ), 'under 18 on Jan 1 2027 rejected' );
-ok( isset( $r->bad['rt-returning-years'] ), 'returning yes needs years' );
+ok( ! isset( $r->bad['rt-returning-years'] ), 'returning yes without years is allowed (field is optional)' );
 $sub->posted = array( 'rt-birth-date' => '2009-01-01', 'rt-returning' => 'Yes', 'rt-returning-years' => '2026' );
 $r           = arv_rt_apply_validate( new WPCF7_Validation() );
 ok( array() === $r->bad, '18 exactly on Jan 1 2027 ok' );
@@ -353,6 +353,7 @@ $GLOBALS['t_flam'] = array(
 	new Flamingo_Inbound_Message( 9001, array( 'rt-first-name' => 'Ann', 'rt-email' => 'ann@example.com', 'rt-disciplines' => array( 'Trail', 'Ultra' ), 'rt-consent-age' => '1' ) ),
 	new Flamingo_Inbound_Message( 9002, array( 'rt-first-name' => 'TEST', 'rt-email' => 'jamil+rtapply@aravaiparunning.com' ) ),
 );
+$GLOBALS['t_meta'][9001]['_arv_rt_rr'] = array( 'status' => 'sent', 'skipped_files' => array( 'resume_file over 4 MB' ) );
 $fh = fopen( 'php://memory', 'w+' );
 $c  = arv_rt_apply_export_csv( $fh );
 rewind( $fh );
@@ -363,6 +364,7 @@ foreach ( $keys as $k ) {
 	ok( in_array( $k, $head, true ), "export header has $k" );
 }
 $ix = array_flip( $head );
+ok( 'sent' === $row[ $ix['rr_status'] ] && 'resume_file over 4 MB' === $row[ $ix['rr_skipped_files'] ], 'export shows skipped files with the reason' );
 ok( 'Ann' === $row[ $ix['first-name'] ] && 'Trail; Ultra' === $row[ $ix['disciplines'] ] && basename( $saved ) === $row[ $ix['headshot'] ] && 'yes' === $row[ $ix['consent-age'] ] && 'no' === $row[ $ix['consent-publicity'] ], 'export row values' );
 
 // Delete test: only the given email.

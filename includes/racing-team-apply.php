@@ -34,6 +34,12 @@ define( 'ARV_RT_APPLY_SEASON', 2027 );
 define( 'ARV_RT_APPLY_MIN_AGE', 18 );
 define( 'ARV_RT_APPLY_TO', 'marketing@aravaiparunning.com' );
 define( 'ARV_RT_APPLY_BRYCE', 'bryce@aravaiparunning.com' );
+// Upload cap per file field and the accepted types. Phone photos are shrunk in
+// the browser first (assets/aravaipa-rt-apply.js); HEIC/HEIF is accepted as a
+// last resort when the browser cannot convert it.
+define( 'ARV_RT_APPLY_FILE_LIMIT', '10mb' ); // Tags read limit:10mb.
+define( 'ARV_RT_APPLY_TYPES_PHOTO', 'jpg|jpeg|png|webp|heic|heif' );
+define( 'ARV_RT_APPLY_TYPES_RESUME', 'pdf|jpg|jpeg|png|webp|heic|heif' );
 
 /**
  * Every question, in form order (RaceReach racereach main 4e203f3).
@@ -54,7 +60,7 @@ function arv_rt_apply_fields() {
 		array( 'key' => 'returning', 'name' => 'rt-returning', 'label' => 'Have you been on the team before?', 'type' => 'radio', 'required' => true, 'section' => 'about', 'options' => array( 'Yes', 'No' ) ),
 		array( 'key' => 'returning-years', 'name' => 'rt-returning-years', 'label' => 'Which years?', 'type' => 'text', 'required' => false, 'section' => 'about', 'hint' => 'If yes, for example 2025, 2026.' ),
 		array( 'key' => 'resume', 'name' => 'rt-resume', 'label' => 'Racing resume', 'type' => 'textarea', 'required' => true, 'section' => 'racing', 'hint' => 'Your best results in the past 3 years: place, finish time, race name and year. One per line.' ),
-		array( 'key' => 'resume-file', 'name' => 'rt-resume-file', 'label' => 'Resume file', 'type' => 'file', 'required' => false, 'section' => 'racing', 'hint' => 'A PDF or image of a results list or athlete CV, if you keep one. 4 MB max.' ),
+		array( 'key' => 'resume-file', 'name' => 'rt-resume-file', 'label' => 'Resume file', 'type' => 'file', 'required' => false, 'section' => 'racing', 'hint' => 'A PDF or image of a results list or athlete CV, if you keep one. 10 MB max.' ),
 		array( 'key' => 'ultrasignup', 'name' => 'rt-ultrasignup', 'label' => 'UltraSignup profile', 'type' => 'url', 'required' => false, 'section' => 'racing' ),
 		array( 'key' => 'profiles', 'name' => 'rt-profiles', 'label' => 'Other result profiles', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'UTMB, Strava, Athlinks. One per line.' ),
 		array( 'key' => 'goals', 'name' => 'rt-goals', 'label' => 'Your goals for 2027 and beyond', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'Short term goals for the season and long term goals in the sport.' ),
@@ -74,7 +80,7 @@ function arv_rt_apply_fields() {
 		array( 'key' => 'size-top', 'name' => 'rt-size-top', 'label' => 'Long sleeve or jacket', 'type' => 'select', 'required' => true, 'section' => 'kit', 'options' => array( 'XS', 'S', 'M', 'L', 'XL', 'XXL' ) ),
 		array( 'key' => 'size-shorts', 'name' => 'rt-size-shorts', 'label' => 'Shorts', 'type' => 'select', 'required' => true, 'section' => 'kit', 'options' => array( 'XS', 'S', 'M', 'L', 'XL', 'XXL' ) ),
 		array( 'key' => 'shoe-size', 'name' => 'rt-shoe-size', 'label' => 'Shoe size (US)', 'type' => 'select', 'required' => true, 'section' => 'kit', 'options' => array( '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '12.5', '13', '13.5', '14', '14.5', '15', '15.5', '16' ), 'hint' => 'Running; riding shoe size for mountain bike.' ),
-		array( 'key' => 'headshot', 'name' => 'rt-headshot', 'label' => 'Photo', 'type' => 'file', 'required' => false, 'section' => 'kit', 'hint' => 'A clear, recent photo. Running shots welcome. Recommended.' ),
+		array( 'key' => 'headshot', 'name' => 'rt-headshot', 'label' => 'Photo', 'type' => 'file', 'required' => false, 'section' => 'kit', 'hint' => 'A clear, recent photo. Running shots welcome. Recommended. Phone photos are fine, 10 MB max.' ),
 	);
 }
 
@@ -182,6 +188,16 @@ function arv_rt_apply_q( $v ) {
 }
 
 /**
+ * Accepted file types for a file field key (headshot or resume-file).
+ *
+ * @param string $key Field key.
+ * @return string
+ */
+function arv_rt_apply_file_types( $key ) {
+	return 'headshot' === $key ? ARV_RT_APPLY_TYPES_PHOTO : ARV_RT_APPLY_TYPES_RESUME;
+}
+
+/**
  * The CF7 tag for one field.
  *
  * @param array $f Field.
@@ -214,8 +230,7 @@ function arv_rt_apply_tag( $f ) {
 			}
 			return '[checkbox' . $star . ' ' . $name . ' use_label_element' . $opts . ']';
 		case 'file':
-			$types = 'headshot' === $f['key'] ? 'jpg|jpeg|png|webp' : 'pdf|jpg|jpeg|png|webp';
-			return '[file ' . $name . ' ' . $id . ' limit:4mb filetypes:' . $types . ']';
+			return '[file ' . $name . ' ' . $id . ' limit:' . ARV_RT_APPLY_FILE_LIMIT . ' filetypes:' . arv_rt_apply_file_types( $f['key'] ) . ']';
 		case 'email':
 		case 'tel':
 		case 'date':
@@ -310,16 +325,137 @@ function arv_rt_apply_mail() {
 /** CF7 messages that differ from the defaults. */
 function arv_rt_apply_messages() {
 	return array(
-		'mail_sent_ok'     => 'Thank you. Your application for the 2027 Aravaipa Racing Team is in, and the team managers read every one. This page is your receipt: we do not send a confirmation email.',
+		'mail_sent_ok'     => 'Thank you. Your application for the 2027 Aravaipa Racing Team is in, and the team managers read every one. A confirmation email is on its way.',
 		'mail_sent_ng'     => 'Your application is saved, but the notice to the team did not send. No need to apply again.',
-		'validation_error' => 'Some answers need a look. Check the fields marked below.',
+		'validation_error' => 'Some answers need a look. The list next to Submit shows each one.',
+		'spam'             => 'We could not confirm you are human, so this did not go through. Press Submit again. If it keeps happening, email your answers to marketing@aravaiparunning.com.',
+		'upload_failed'    => 'The file did not upload. Try again, or email it to marketing@aravaiparunning.com.',
+		'upload_file_type_invalid' => 'That file type is not accepted. Use a photo (JPG, PNG, WEBP or HEIC) or a PDF.',
+		'upload_file_too_large'    => 'That file is over 10 MB. Try a smaller photo, or email it to marketing@aravaiparunning.com.',
 	);
 }
 
+/**
+ * Applicant confirmation email (CF7 Mail (2)), applied at runtime for our form
+ * only so the stored form needs no reinstall. Plain text, Reply-To marketing@.
+ *
+ * @return array CF7 mail property.
+ */
+function arv_rt_apply_confirm_mail() {
+	return array(
+		'active'             => true,
+		'subject'            => arv_rt_apply_confirm_subject(),
+		'sender'             => 'Aravaipa Running <wordpress@aravaiparunning.com>',
+		'recipient'          => '[rt-email]',
+		'body'               => arv_rt_apply_confirm_body( '[rt-first-name]', false ),
+		'additional_headers' => 'Reply-To: marketing@aravaiparunning.com',
+		'attachments'        => '',
+		'use_html'           => false,
+		'exclude_blank'      => false,
+	);
+}
+
+/** Confirmation subject. */
+function arv_rt_apply_confirm_subject() {
+	return 'We got your 2027 Aravaipa Racing Team application';
+}
+
+/**
+ * Confirmation body.
+ *
+ * @param string $first    First name or a CF7 tag.
+ * @param bool   $followup True for the one-time note to people who applied before confirmations existed.
+ * @return string
+ */
+function arv_rt_apply_confirm_body( $first, $followup = false ) {
+	$hi   = '' !== trim( (string) $first ) ? 'Hi ' . trim( (string) $first ) . ',' : 'Hi,';
+	$open = $followup
+		? "Thanks for applying to the 2027 Aravaipa Racing Team. We weren't sending confirmations when you applied, so here it is: your application came through and it's in front of our team managers. If you saw an error while submitting and tried more than once, no worries, we have you."
+		: 'Thanks for applying to the 2027 Aravaipa Racing Team. Your application is in, and this email is your confirmation.';
+	return $hi . "\n\n" . $open . "\n\nWhat's next: applications close November 30. Our team managers read every application, and we'll be in touch by email once the 2027 team is set.\n\nNeed to add or change something? Just reply to this email.\n\nSee you out there,\nAravaipa Running\n";
+}
+
+/**
+ * CF7 Mail (2) for our form: the applicant confirmation.
+ *
+ * @param mixed $value Stored mail_2.
+ * @param mixed $form  WPCF7_ContactForm.
+ * @return mixed
+ */
+function arv_rt_apply_mail2_prop( $value, $form = null ) {
+	return arv_rt_apply_is_ours( $form ) ? arv_rt_apply_confirm_mail() : $value;
+}
+add_filter( 'wpcf7_contact_form_property_mail_2', 'arv_rt_apply_mail2_prop', 10, 2 );
+
+/**
+ * Full thank-you screen that replaces the form after a sent application.
+ *
+ * @param bool $visible Shown now (no-JS submit) or kept hidden for the script.
+ * @return string
+ */
+function arv_rt_apply_thanks_html( $visible = false ) {
+	$team = function_exists( 'home_url' ) ? home_url( '/racing-team/' ) : 'https://www.aravaiparunning.com/racing-team/';
+	$team = function_exists( 'esc_url' ) ? esc_url( $team ) : htmlspecialchars( $team, ENT_QUOTES );
+	return '<div class="rt-thanks" id="rt-thanks" role="status" tabindex="-1"' . ( $visible ? '' : ' hidden' ) . '>'
+		. '<p class="rt-thanks-kicker">Application received</p>'
+		. '<h2 class="rt-thanks-title">You&rsquo;re in the running.</h2>'
+		. '<p>Thanks for applying to the 2027 Aravaipa Racing Team. We have your application, and a confirmation email is on its way to you now.</p>'
+		. '<p><strong>What&rsquo;s next:</strong> applications close November 30. Our team managers read every application, and we&rsquo;ll be in touch by email once the 2027 team is set.</p>'
+		. '<p>Need to add or change something? Reply to the confirmation email or write to <a href="mailto:marketing@aravaiparunning.com">marketing@aravaiparunning.com</a>.</p>'
+		. '<p><a class="rt-thanks-link" href="' . $team . '">Meet the current team</a></p>'
+		. '</div>';
+}
+
+/** True when this request is a no-JS submit of our form that was sent. */
+function arv_rt_apply_just_sent() {
+	if ( ! class_exists( 'WPCF7_Submission' ) ) {
+		return false;
+	}
+	$sub = WPCF7_Submission::get_instance();
+	if ( ! $sub || ! method_exists( $sub, 'get_status' ) ) {
+		return false;
+	}
+	$cf = method_exists( $sub, 'get_contact_form' ) ? $sub->get_contact_form() : null;
+	return arv_rt_apply_is_ours( $cf ) && 'mail_sent' === $sub->get_status();
+}
+
+/**
+ * Our friendly copy at display time too, so the stored form needs no reinstall.
+ *
+ * @param string $message Message.
+ * @param string $status  CF7 message key.
+ * @return string
+ */
+function arv_rt_apply_display_message( $message, $status = '' ) {
+	if ( ! class_exists( 'WPCF7_ContactForm' ) || ! arv_rt_apply_is_ours( WPCF7_ContactForm::get_current() ) ) {
+		return $message;
+	}
+	$ours = arv_rt_apply_messages();
+	return isset( $ours[ $status ] ) ? $ours[ $status ] : $message;
+}
+add_filter( 'wpcf7_display_message', 'arv_rt_apply_display_message', 10, 2 );
+
 /** CF7 additional settings: what Flamingo shows in its list. */
 function arv_rt_apply_additional_settings() {
-	return "flamingo_email: [rt-email]\nflamingo_name: [rt-first-name] [rt-last-name]\nflamingo_subject: 2027 Racing Team application";
+	return "flamingo_email: [rt-email]\nflamingo_name: [rt-first-name] [rt-last-name]\nflamingo_subject: 2027 Racing Team application\nacceptance_as_validation: on";
 }
+
+/**
+ * Required agreements are checked like any other answer. Without this, CF7's
+ * script keeps Submit disabled until every box is ticked, with no word why.
+ * Applied at runtime so the stored form needs no reinstall.
+ *
+ * @param string $value Additional settings.
+ * @param mixed  $form  WPCF7_ContactForm.
+ * @return string
+ */
+function arv_rt_apply_additional_prop( $value, $form = null ) {
+	if ( ! arv_rt_apply_is_ours( $form ) || false !== strpos( (string) $value, 'acceptance_as_validation' ) ) {
+		return $value;
+	}
+	return rtrim( (string) $value ) . "\nacceptance_as_validation: on";
+}
+add_filter( 'wpcf7_contact_form_property_additional_settings', 'arv_rt_apply_additional_prop', 10, 2 );
 
 /**
  * 2027 races for the race plans list: "Name, Mon D".
@@ -354,6 +490,9 @@ function arv_rt_apply_race_options() {
  * @return array
  */
 function arv_rt_apply_form_tag( $tag, $replace ) {
+	if ( is_array( $tag ) && isset( $tag['name'] ) && in_array( $tag['name'], array( 'rt-headshot', 'rt-resume-file' ), true ) ) {
+		return arv_rt_apply_file_tag( $tag );
+	}
 	if ( ! is_array( $tag ) || ! isset( $tag['name'] ) || 'rt-race-plans' !== $tag['name'] ) {
 		return $tag;
 	}
@@ -370,6 +509,69 @@ function arv_rt_apply_form_tag( $tag, $replace ) {
 	return $tag;
 }
 add_filter( 'wpcf7_form_tag', 'arv_rt_apply_form_tag', 10, 2 );
+
+/**
+ * The file limit and types for our two file fields, at render and validation
+ * time, so the stored form (installed with the old 4 MB cap) needs no hand edit.
+ * Only on our form: CF7 sets the current form while it renders or validates.
+ *
+ * @param array $tag Tag.
+ * @return array
+ */
+function arv_rt_apply_file_tag( $tag ) {
+	if ( ! class_exists( 'WPCF7_ContactForm' ) || ! arv_rt_apply_is_ours( WPCF7_ContactForm::get_current() ) ) {
+		return $tag;
+	}
+	$key  = 'rt-headshot' === $tag['name'] ? 'headshot' : 'resume-file';
+	$opts = array();
+	foreach ( isset( $tag['options'] ) ? (array) $tag['options'] : array() as $o ) {
+		if ( 0 === strpos( $o, 'limit:' ) || 0 === strpos( $o, 'filetypes:' ) ) {
+			continue;
+		}
+		$opts[] = $o;
+	}
+	$opts[]         = 'limit:' . ARV_RT_APPLY_FILE_LIMIT;
+	$opts[]         = 'filetypes:' . arv_rt_apply_file_types( $key );
+	$tag['options'] = $opts;
+	return $tag;
+}
+
+/**
+ * Turnstile on our form refreshes expired tokens by itself and retries.
+ * The attributes go on before api.js renders the widget.
+ *
+ * @param string $html Form elements HTML.
+ * @return string
+ */
+function arv_rt_apply_form_elements( $html ) {
+	if ( ! class_exists( 'WPCF7_ContactForm' ) || ! arv_rt_apply_is_ours( WPCF7_ContactForm::get_current() ) ) {
+		return $html;
+	}
+	return arv_rt_apply_turnstile_attrs( $html );
+}
+add_filter( 'wpcf7_form_elements', 'arv_rt_apply_form_elements', 20, 1 );
+
+/**
+ * Add data-refresh-expired="auto" and data-retry="auto" to the Turnstile div.
+ *
+ * @param string $html HTML.
+ * @return string
+ */
+function arv_rt_apply_turnstile_attrs( $html ) {
+	return preg_replace_callback(
+		'/<div\b[^>]*\bcf-turnstile\b[^>]*>/',
+		function ( $m ) {
+			$t = $m[0];
+			foreach ( array( 'data-refresh-expired' => 'auto', 'data-refresh-timeout' => 'auto', 'data-retry' => 'auto' ) as $a => $v ) {
+				if ( false === strpos( $t, $a . '=' ) ) {
+					$t = substr( $t, 0, -1 ) . ' ' . $a . '="' . $v . '">';
+				}
+			}
+			return $t;
+		},
+		(string) $html
+	);
+}
 
 /**
  * A posted value as a string.
@@ -442,12 +644,7 @@ function arv_rt_apply_validate( $result, $tags = array() ) {
 			}
 		}
 	}
-	if ( 'Yes' === arv_rt_apply_posted( 'rt-returning' ) && '' === arv_rt_apply_posted( 'rt-returning-years' ) ) {
-		$t = arv_rt_apply_find_tag( $form, 'rt-returning-years' );
-		if ( $t ) {
-			$result->invalidate( $t, 'Which years were you on the team?' );
-		}
-	}
+	// Which years stays optional, as its label says: returning members were blocked by a hidden rule.
 	return $result;
 }
 add_filter( 'wpcf7_validate', 'arv_rt_apply_validate', 20, 2 );
@@ -567,7 +764,7 @@ add_action( 'wpcf7_after_flamingo', 'arv_rt_apply_after_flamingo', 10, 1 );
 /** Styles: the site's type, plain fields, no cards, no shadows. */
 function arv_rt_apply_css() {
 	// The page around the form mirrors the team page's own styles (scoped there to .page-id-79463).
-	return '.arv-rt-page{text-align:left}.arv-rt-page .arv-team-h1{text-align:center;margin:0 0 1.5rem}'
+	return '.rt-thanks{padding:40px 32px;background:#f4f1ea;margin:8px 0 24px}.rt-thanks:focus{outline:none}.rt-thanks-kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#b3261e;margin:0 0 8px}.rt-thanks-title{font-size:34px;line-height:1.1;margin:0 0 16px}.rt-thanks p{font-size:17px;line-height:1.55;max-width:640px}.rt-thanks-link{display:inline-block;margin-top:8px;padding:12px 22px;background:#b3261e;color:#fff!important;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:.06em;font-size:14px}@media(max-width:600px){.rt-thanks{padding:28px 20px}.rt-thanks-title{font-size:27px}}.arv-rt-page{text-align:left}.arv-rt-page .arv-team-h1{text-align:center;margin:0 0 1.5rem}'
 		. '.arv-rt-page .arv-team-intro{max-width:760px;margin-left:auto;margin-right:auto;text-align:center}'
 		. '.arv-rt-page .arv-team-sponsors{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2.5rem;margin:1.75rem auto 2.25rem}'
 		. '.arv-rt-page .arv-team-sponsors img{display:block;width:auto;max-width:100%;border:0;opacity:.9}'
@@ -597,7 +794,25 @@ function arv_rt_apply_css() {
 		. '.rt-submit{padding:32px 0 8px}'
 		. '.rt-submit .wpcf7-submit{background:#d71f20;color:#fff;border:0;border-radius:0;padding:14px 36px;font-size:16px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;margin-top:12px}'
 		. '.rt-region-hint{display:block;margin:10px 0 0;font-size:15px;line-height:1.5;color:#272727}.rt-region-hint a{font-weight:600;margin-left:6px;text-decoration:underline;text-underline-offset:3px}.rt-region-hint__sw{display:inline-block;width:13px;height:13px;margin-right:8px;vertical-align:-1px}.rt-region-hint--out{color:#5f5f5f}'
-		. '@media (max-width:767px){.rt-sec{grid-template-columns:1fr;gap:16px;padding:28px 0}.rt-sec-body{grid-template-columns:1fr}.rt-submit .wpcf7-submit{width:100%}}';
+		. '@media (max-width:767px){.rt-sec{grid-template-columns:1fr;gap:16px;padding:28px 0}.rt-sec-body{grid-template-columns:1fr}.rt-submit .wpcf7-submit{width:100%}}'
+		. arv_rt_apply_harden_css();
+}
+
+/**
+ * Styles for the error list, highlighted fields and notes added by
+ * assets/aravaipa-rt-apply.js. Full borders or tints only, never an edge stripe.
+ *
+ * @return string
+ */
+function arv_rt_apply_harden_css() {
+	return '.rt-form .rt-f{scroll-margin-top:140px}'
+		. '.rt-form .rt-f.rt-bad{background:#fff3f3;outline:2px solid #d71f20;outline-offset:6px}'
+		. '.rt-summary,.rt-alert{border:1px solid #e3b4b4;background:#fff6f6;color:#272727;padding:14px 16px;margin:0 0 16px;font-size:15px;line-height:1.5}'
+		. '.rt-summary strong,.rt-alert strong{display:block;margin:0 0 6px}'
+		. '.rt-summary ul{margin:0;padding-left:1.25rem}.rt-summary li{margin:2px 0}'
+		. '.rt-summary a,.rt-alert a{font-weight:600;text-decoration:underline;text-underline-offset:3px}'
+		. '.rt-notice{border:1px solid #d5d5d5;background:#f6f6f6;color:#272727;padding:10px 14px;margin:0 0 16px;font-size:15px;line-height:1.5}'
+		. '.rt-photo-note{display:block;margin:8px 0 0;font-size:14px;color:#3d6b35}.rt-photo-note--busy{color:#666}.rt-photo-note--warn{color:#8a5a00}';
 }
 
 /**
@@ -620,22 +835,75 @@ function arv_rt_apply_shortcode() {
 		define( 'DONOTCACHEPAGE', true );
 	}
 	$h  = '<style>' . arv_rt_apply_css() . arv_rt_apply_region_css() . '</style>';
-	$h .= '<div class="rt-apply" id="rt-apply" data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '">';
+	$fail = function_exists( 'rest_url' ) ? rest_url( 'aravaipa/v1/rt-apply-fail' ) : '';
+	$h   .= '<div class="rt-apply" id="rt-apply"' . ( $form && arv_rt_apply_just_sent() ? ' data-sent="1"' : '' ) . ' data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '"' . ( $fail ? ' data-fail-url="' . esc_attr( $fail ) . '"' : '' ) . '>';
 	$h .= '<p class="rt-state rt-state-before"' . ( 'before' === $state ? '' : ' hidden' ) . '>Applications open November 20.</p>';
 	$h .= '<p class="rt-state rt-state-closed"' . ( 'closed' === $state ? '' : ' hidden' ) . '>Applications for the 2027 team are closed.</p>';
+	$sent = $form && arv_rt_apply_just_sent();
 	if ( $form ) {
-		$h .= '<div class="rt-state-open"' . ( 'open' === $state ? '' : ' hidden' ) . '>' . $form . '</div>';
+		$h .= arv_rt_apply_thanks_html( $sent );
+		$h .= '<div class="rt-state-open"' . ( 'open' === $state && ! $sent ? '' : ' hidden' ) . '>' . $form . '</div>';
 	} elseif ( 'open' === $state ) {
 		$h .= '<p class="rt-state">The application form is not available right now. Email marketing@aravaiparunning.com and we will help.</p>';
 	}
 	$h .= '</div>';
 	if ( $form ) {
 		$h .= arv_rt_apply_region_hint_js();
+		arv_rt_apply_enqueue();
 	}
-	$h .= '<script>(function(){var r=document.getElementById("rt-apply");if(!r)return;function t(){var n=Date.now()/1000,o=+r.dataset.opens,c=+r.dataset.closes,s=n<o?"before":(n>c?"closed":"open");var was=r.dataset.state;r.dataset.state=s;["before","closed","open"].forEach(function(k){var e=r.querySelector(".rt-state-"+k);if(e)e.hidden=(k!==s);});if(was!==s&&s==="open"&&window.turnstile){r.querySelectorAll(".wpcf7-turnstile,.cf-turnstile").forEach(function(w){try{window.turnstile.reset(w);}catch(x){}});}}t();setInterval(t,15000);})();</script>';
+	$h .= '<script>(function(){var r=document.getElementById("rt-apply");if(!r)return;function t(){var n=Date.now()/1000,o=+r.dataset.opens,c=+r.dataset.closes,s=n<o?"before":(n>c?"closed":"open");var was=r.dataset.state;r.dataset.state=s;["before","closed","open"].forEach(function(k){var e=r.querySelector(".rt-state-"+k);if(e)e.hidden=(k!==s)||(k==="open"&&r.dataset.sent==="1");});if(was!==s&&s==="open"&&window.turnstile){r.querySelectorAll(".wpcf7-turnstile,.cf-turnstile").forEach(function(w){try{window.turnstile.reset(w);}catch(x){}});}}t();setInterval(t,15000);})();</script>';
 	return $h;
 }
 add_shortcode( 'arv_rt_apply', 'arv_rt_apply_shortcode' );
+
+/**
+ * The HEIC converter (heic2any 0.0.4, MIT) ships inside the plugin at
+ * assets/vendor/heic2any.min.js; the client loads it on demand from this
+ * URL (handed over as a JS value next to the script, never read from page
+ * markup and never a third-party CDN). Versioned so a release busts the cache.
+ *
+ * @return string '' when the plugin URL is unknown.
+ */
+function arv_rt_apply_heic_url() {
+	if ( ! defined( 'ARV_ELEMENTS_URL' ) ) {
+		return '';
+	}
+	$url = ARV_ELEMENTS_URL . 'assets/vendor/heic2any.min.js';
+	return defined( 'ARV_ELEMENTS_VERSION' ) ? $url . '?ver=' . rawurlencode( ARV_ELEMENTS_VERSION ) : $url;
+}
+
+/**
+ * The form's browser helper (photo shrink, HEIC, error list, Turnstile
+ * check, autosave, failure beacon). Only when the form renders; footer.
+ */
+function arv_rt_apply_enqueue() {
+	// The live site does not load CF7's own script and styles (CF7 runs in
+	// its no-JS mode, so every submit reloads the page and a failed one
+	// drops the answers). Load them for this form, the way CF7 documents for
+	// sites that turn its assets off globally.
+	if ( function_exists( 'wpcf7_enqueue_scripts' ) ) {
+		wpcf7_enqueue_scripts();
+	}
+	if ( function_exists( 'wpcf7_enqueue_styles' ) ) {
+		wpcf7_enqueue_styles();
+	}
+	if ( ! function_exists( 'wp_enqueue_script' ) || ! defined( 'ARV_ELEMENTS_URL' ) ) {
+		return;
+	}
+	// After CF7's script, so the helper sees CF7's settings (cached page reset).
+	$deps = function_exists( 'wp_script_is' ) && wp_script_is( 'contact-form-7', 'registered' ) ? array( 'contact-form-7' ) : array();
+	wp_enqueue_script(
+		'aravaipa-rt-apply',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-rt-apply.js',
+		$deps,
+		defined( 'ARV_ELEMENTS_VERSION' ) ? ARV_ELEMENTS_VERSION : false,
+		true
+	);
+	$heic = arv_rt_apply_heic_url();
+	if ( $heic && function_exists( 'wp_add_inline_script' ) ) {
+		wp_add_inline_script( 'aravaipa-rt-apply', 'window.arvRtApplyHeicUrl=' . wp_json_encode( $heic ) . ';', 'before' );
+	}
+}
 
 /* ------------------------------------------------------------------------
  * v2 page: [arv_rt_apply_page] (job 70sv0c, 0.101.21)
@@ -1097,6 +1365,7 @@ function arv_rt_apply_export_header() {
 	}
 	$h[] = 'flamingo_id';
 	$h[] = 'rr_status';
+	$h[] = 'rr_skipped_files';
 	return $h;
 }
 
@@ -1127,6 +1396,7 @@ function arv_rt_apply_export_csv( $fh ) {
 		}
 		$row[] = $r['id'];
 		$row[] = arv_rt_apply_rr_status( $r['id'] );
+		$row[] = arv_rt_apply_rr_skipped( $r['id'] );
 		fputcsv( $fh, $row, ',', '"', '\\' );
 		++$n;
 	}
@@ -1836,7 +2106,69 @@ function arv_rt_apply_rr_mime( $path ) {
 }
 
 /**
- * Which saved files go along: each under 4 MB, together under about 4 MB.
+ * Mime type from the file's bytes: finfo when the server has it, else a
+ * magic-byte sniff for the types we care about. Empty when unknown.
+ *
+ * @param string $path File path.
+ * @return string
+ */
+function arv_rt_apply_rr_sniff_mime( $path ) {
+	if ( function_exists( 'finfo_open' ) ) {
+		$fi = finfo_open( FILEINFO_MIME_TYPE );
+		if ( $fi ) {
+			$m = finfo_file( $fi, $path );
+			finfo_close( $fi );
+			if ( is_string( $m ) && '' !== $m ) {
+				return strtolower( $m );
+			}
+		}
+	}
+	$h = (string) file_get_contents( $path, false, null, 0, 16 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+	if ( 0 === strpos( $h, "\xFF\xD8\xFF" ) ) {
+		return 'image/jpeg';
+	}
+	if ( 0 === strpos( $h, "\x89PNG\r\n\x1A\n" ) ) {
+		return 'image/png';
+	}
+	if ( 0 === strpos( $h, 'RIFF' ) && 'WEBP' === substr( $h, 8, 4 ) ) {
+		return 'image/webp';
+	}
+	if ( 'ftyp' === substr( $h, 4, 4 ) && preg_match( '/^(heic|heix|hevc|heim|heis|mif1|msf1)/', substr( $h, 8, 4 ) ) ) {
+		return 'image/heic';
+	}
+	return '';
+}
+
+/**
+ * Headshot check: extension AND detected mime must both be jpg/jpeg/png/webp
+ * and agree. RaceReach only takes those, so anything else (a HEIC the
+ * browser could not convert, a mislabeled file) stays behind.
+ *
+ * @param string $path File path.
+ * @return string Empty when fine, else the skip reason.
+ */
+function arv_rt_apply_rr_headshot_problem( $path ) {
+	$ok  = array(
+		'jpg'  => 'image/jpeg',
+		'jpeg' => 'image/jpeg',
+		'png'  => 'image/png',
+		'webp' => 'image/webp',
+	);
+	$ext = strtolower( pathinfo( (string) $path, PATHINFO_EXTENSION ) );
+	$ext = preg_replace( '/[^a-z0-9]/', '', $ext );
+	if ( ! isset( $ok[ $ext ] ) ) {
+		return 'headshot not jpg/png/webp (' . ( '' !== $ext ? substr( $ext, 0, 10 ) : 'no extension' ) . ')';
+	}
+	$mime = arv_rt_apply_rr_sniff_mime( $path );
+	if ( $mime !== $ok[ $ext ] ) {
+		return 'headshot not jpg/png/webp (' . $ext . ' file, ' . ( '' !== $mime ? substr( preg_replace( '/[^a-z0-9.\/+-]/', '', $mime ), 0, 40 ) : 'unknown' ) . ' inside)';
+	}
+	return '';
+}
+
+/**
+ * Which saved files go along: each under 4 MB, together under about 4 MB,
+ * and the headshot only when it really is a jpg, png or webp.
  *
  * @param array $files Saved files keyed rt-headshot, rt-resume-file.
  * @return array array( parts => array( field => path ), skipped => string[] )
@@ -1858,6 +2190,14 @@ function arv_rt_apply_rr_pick_files( $files ) {
 		if ( $sz <= 0 || $sz >= ARV_RT_APPLY_RR_FILE_MAX ) {
 			$skipped[] = $rr . ' over 4 MB';
 			continue;
+		}
+		if ( 'headshot' === $rr ) {
+			// Extension AND sniffed mime (finfo, else magic bytes) must be jpg/jpeg/png/webp; HEIC and the rest stay behind.
+			$bad = arv_rt_apply_rr_headshot_problem( $p );
+			if ( '' !== $bad ) {
+				$skipped[] = $bad;
+				continue;
+			}
 		}
 		if ( $total + $sz > ARV_RT_APPLY_RR_BODY_MAX ) {
 			$skipped[] = $rr . ' over the 4 MB total';
@@ -2189,6 +2529,21 @@ function arv_rt_apply_rr_status( $id ) {
 }
 
 /**
+ * Files that did not go to RaceReach for an entry, with the reason each
+ * (for example 'resume_file over 4 MB'); '' when none.
+ *
+ * @param int $id Flamingo id.
+ * @return string
+ */
+function arv_rt_apply_rr_skipped( $id ) {
+	if ( ! $id ) {
+		return '';
+	}
+	$m = get_post_meta( (int) $id, '_arv_rt_rr', true );
+	return is_array( $m ) && ! empty( $m['skipped_files'] ) ? implode( '; ', (array) $m['skipped_files'] ) : '';
+}
+
+/**
  * Scheduled retry for one entry.
  *
  * @param int $id Flamingo id.
@@ -2511,6 +2866,79 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		}
 
 		/**
+		 * One-time thank-you to everyone who applied before confirmations existed.
+		 *
+		 * ## OPTIONS
+		 *
+		 * [--send]
+		 * : Send for real. Without it, a dry run that lists counts only.
+		 *
+		 * [--before=<datetime>]
+		 * : Only applications saved before this local time (Y-m-d H:i:s); later ones got the automatic confirmation.
+		 *
+		 * [--only=<email>]
+		 * : Send to this one applicant address only (a check before the batch).
+		 *
+		 * [--preview]
+		 * : Print the subject and one body.
+		 *
+		 * @param array $args  Args.
+		 * @param array $assoc Flags.
+		 */
+		public function thank( $args, $assoc ) {
+			global $wpdb;
+			$before = isset( $assoc['before'] ) ? (string) $assoc['before'] : current_time( 'mysql' );
+			$rows   = $wpdb->get_results( $wpdb->prepare(
+				"SELECT p.ID, p.post_date, e.meta_value AS email, f.meta_value AS first FROM {$wpdb->posts} p
+				 JOIN {$wpdb->postmeta} e ON e.post_id = p.ID AND e.meta_key = '_field_rt-email'
+				 LEFT JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_field_rt-first-name'
+				 WHERE p.post_type = 'flamingo_inbound' AND p.post_status NOT IN ('flamingo-spam','trash') AND p.post_title LIKE %s AND p.post_date < %s
+				 ORDER BY p.post_date ASC",
+				'2027 Racing Team%',
+				$before
+			), ARRAY_A );
+			$seen = array();
+			foreach ( $rows as $r ) {
+				$em = strtolower( trim( (string) $r['email'] ) );
+				if ( '' === $em || ! is_email( $em ) || preg_match( '/\+rtapply(-[a-z0-9]+)?@/i', $em ) ) {
+					continue;
+				}
+				$seen[ $em ] = trim( (string) $r['first'] );
+			}
+			if ( isset( $assoc['only'] ) ) {
+				$o    = strtolower( trim( (string) $assoc['only'] ) );
+				$seen = isset( $seen[ $o ] ) ? array( $o => $seen[ $o ] ) : array( $o => '' );
+			}
+			$done = get_option( 'arv_rt_apply_thanked', array() );
+			$done = is_array( $done ) ? $done : array();
+			$todo = array_diff_key( $seen, $done );
+			if ( isset( $assoc['preview'] ) ) {
+				WP_CLI::log( 'Subject: ' . arv_rt_apply_confirm_subject() . "\n\n" . arv_rt_apply_confirm_body( 'Stella', true ) );
+			}
+			WP_CLI::log( 'applicants ' . count( $seen ) . ', already thanked ' . ( count( $seen ) - count( $todo ) ) . ', to send ' . count( $todo ) . ' (before ' . $before . ')' );
+			if ( empty( $assoc['send'] ) ) {
+				WP_CLI::log( 'dry run, nothing sent' );
+				return;
+			}
+			$headers = array( 'From: Aravaipa Running <wordpress@aravaiparunning.com>', 'Reply-To: marketing@aravaiparunning.com' );
+			$sent    = 0;
+			$fail    = 0;
+			foreach ( $todo as $em => $first ) {
+				$ok = wp_mail( $em, arv_rt_apply_confirm_subject(), arv_rt_apply_confirm_body( $first, true ), $headers );
+				if ( $ok ) {
+					$done[ $em ] = gmdate( 'c' );
+					update_option( 'arv_rt_apply_thanked', $done, false );
+					++$sent;
+				} else {
+					++$fail;
+					WP_CLI::warning( 'failed ' . arv_rt_apply_rr_mask( $em ) );
+				}
+				usleep( 400000 );
+			}
+			WP_CLI::log( 'sent ' . $sent . ', failed ' . $fail );
+		}
+
+		/**
 		 * Remove the stored test entry for one email.
 		 *
 		 * --email=<e>
@@ -2529,3 +2957,285 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	}
 	WP_CLI::add_command( 'arv-rt-apply', 'ARV_RT_Apply_CLI' );
 }
+
+/* ------------------------------------------------------------------------
+ * Failed submit log (job ldqh0d, 0.101.28)
+ *
+ * Every result other than mail_sent for our form adds one line to a ring
+ * option: time, CF7 status, the names of invalid fields, which file fields
+ * had a file and how big (0.1 MB), and the browser family. Never names,
+ * emails, answers or IPs. The browser script also sends a beacon when the
+ * request never reached CF7 (network down, server error) or Turnstile gave
+ * no token. Admins read it at GET /wp-json/aravaipa/v1/rt-apply-fail.
+ * --------------------------------------------------------------------- */
+
+define( 'ARV_RT_APPLY_FAIL_MAX', 300 );
+define( 'ARV_RT_APPLY_BEACON_PER_HOUR', 12 );
+// All IPs together, per hour: many addresses cannot push real server entries out of the ring.
+define( 'ARV_RT_APPLY_BEACON_GLOBAL_PER_HOUR', 60 );
+// Raw beacon body, bytes. A real one is well under 1 KB.
+define( 'ARV_RT_APPLY_BEACON_BODY_MAX', 2048 );
+// One stored ring entry, JSON bytes (server and beacon lines alike).
+define( 'ARV_RT_APPLY_FAIL_LINE_MAX', 1024 );
+
+/** Statuses the browser beacon may report. */
+function arv_rt_apply_fail_statuses() {
+	return array( 'network', 'server', 'timeout', 'no_token', 'spam', 'mail_failed', 'aborted' );
+}
+
+/** Every field name on the form (rt-...), for the beacon allowlist. */
+function arv_rt_apply_field_names() {
+	$out = array();
+	foreach ( arv_rt_apply_fields() as $f ) {
+		$out[] = 'rt-' . $f['key'];
+	}
+	foreach ( arv_rt_apply_consents() as $c ) {
+		$out[] = 'rt-consent-' . $c['key'];
+	}
+	return $out;
+}
+
+/**
+ * Browser family from a user agent, coarse on purpose.
+ *
+ * @param string $ua User agent.
+ * @return string
+ */
+function arv_rt_apply_ua_family( $ua ) {
+	$ua = (string) $ua;
+	if ( '' === $ua ) {
+		return 'unknown';
+	}
+	$os = preg_match( '/iPhone|iPad|iPod/', $ua ) ? 'iOS' : ( false !== stripos( $ua, 'Android' ) ? 'Android' : ( false !== stripos( $ua, 'Mac OS X' ) ? 'Mac' : ( false !== stripos( $ua, 'Windows' ) ? 'Windows' : 'other' ) ) );
+	if ( preg_match( '/Edg\//', $ua ) ) {
+		$b = 'Edge';
+	} elseif ( preg_match( '/FBAN|FBAV|Instagram/', $ua ) ) {
+		$b = 'In-app';
+	} elseif ( preg_match( '/CriOS|Chrome\//', $ua ) ) {
+		$b = 'Chrome';
+	} elseif ( preg_match( '/FxiOS|Firefox\//', $ua ) ) {
+		$b = 'Firefox';
+	} elseif ( false !== strpos( $ua, 'Safari/' ) ) {
+		$b = 'Safari';
+	} else {
+		$b = 'other';
+	}
+	return $os . ' ' . $b;
+}
+
+/**
+ * Bound one ring entry: every string field short, lists capped, and the
+ * whole entry at most ARV_RT_APPLY_FAIL_LINE_MAX bytes of JSON (field names
+ * are dropped from the end until it fits, and 'cut' marks that).
+ *
+ * @param array $line Entry.
+ * @return array
+ */
+function arv_rt_apply_fail_bound( $line ) {
+	$line = is_array( $line ) ? $line : array();
+	$out  = array();
+	foreach ( array( 'ts' => 24, 'src' => 10, 'status' => 32, 'ua' => 40 ) as $k => $len ) {
+		if ( isset( $line[ $k ] ) ) {
+			$out[ $k ] = substr( is_scalar( $line[ $k ] ) ? (string) $line[ $k ] : '', 0, $len );
+		}
+	}
+	$fields = array();
+	foreach ( array_slice( isset( $line['fields'] ) ? (array) $line['fields'] : array(), 0, 60 ) as $f ) {
+		if ( is_scalar( $f ) ) {
+			$fields[] = substr( (string) $f, 0, 48 );
+		}
+	}
+	$out['fields'] = $fields;
+	$files         = array();
+	foreach ( array_slice( isset( $line['files'] ) ? (array) $line['files'] : array(), 0, 4, true ) as $k => $v ) {
+		$files[ substr( (string) $k, 0, 24 ) ] = is_numeric( $v ) ? round( (float) $v, 1 ) : 0;
+	}
+	$out['files'] = $files;
+	while ( strlen( (string) wp_json_encode( $out ) ) > ARV_RT_APPLY_FAIL_LINE_MAX && $out['fields'] ) {
+		array_pop( $out['fields'] );
+		$out['cut'] = true;
+	}
+	return $out;
+}
+
+/**
+ * Add one line to the ring log.
+ *
+ * @param array $line Entry.
+ * @return void
+ */
+function arv_rt_apply_fail_add( $line ) {
+	$line  = arv_rt_apply_fail_bound( $line );
+	$log   = get_option( 'arv_rt_apply_fail_log', array() );
+	$log   = is_array( $log ) ? $log : array();
+	$log[] = $line;
+	if ( count( $log ) > ARV_RT_APPLY_FAIL_MAX ) {
+		$log = array_slice( $log, -ARV_RT_APPLY_FAIL_MAX );
+	}
+	update_option( 'arv_rt_apply_fail_log', $log, false );
+}
+
+/**
+ * Invalid field names from a CF7 result (keyed by name, or a list of
+ * { field } rows), kept only when they are our fields.
+ *
+ * @param mixed $inv invalid_fields.
+ * @return string[]
+ */
+function arv_rt_apply_fail_fields( $inv ) {
+	$names = array();
+	foreach ( (array) $inv as $k => $v ) {
+		$n = is_string( $k ) ? $k : ( is_array( $v ) && isset( $v['field'] ) ? (string) $v['field'] : '' );
+		$n = preg_replace( '/\[\]$/', '', $n );
+		if ( in_array( $n, arv_rt_apply_field_names(), true ) && ! in_array( $n, $names, true ) ) {
+			$names[] = $n;
+		}
+	}
+	return $names;
+}
+
+/**
+ * File fields with a file, size in MB to one decimal. Sizes only.
+ *
+ * @param mixed $submission WPCF7_Submission or null.
+ * @return array
+ */
+function arv_rt_apply_fail_files( $submission ) {
+	$out = array();
+	foreach ( array( 'rt-headshot', 'rt-resume-file' ) as $n ) {
+		$size = 0;
+		if ( isset( $_FILES[ $n ]['size'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$size = (int) ( is_array( $_FILES[ $n ]['size'] ) ? array_sum( $_FILES[ $n ]['size'] ) : $_FILES[ $n ]['size'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput
+		} elseif ( $submission && method_exists( $submission, 'uploaded_files' ) ) {
+			$up = (array) $submission->uploaded_files();
+			foreach ( isset( $up[ $n ] ) ? (array) $up[ $n ] : array() as $path ) {
+				$size += is_string( $path ) && is_file( $path ) ? (int) filesize( $path ) : 0;
+			}
+		}
+		if ( $size > 0 ) {
+			$out[ substr( $n, 3 ) ] = round( $size / 1048576, 1 );
+		}
+	}
+	return $out;
+}
+
+/**
+ * Log every non-sent result for our form.
+ *
+ * @param mixed $form   WPCF7_ContactForm.
+ * @param array $result CF7 result.
+ * @return void
+ */
+function arv_rt_apply_fail_on_submit( $form, $result = array() ) {
+	if ( ! arv_rt_apply_is_ours( $form ) ) {
+		return;
+	}
+	$status = isset( $result['status'] ) ? (string) $result['status'] : 'unknown';
+	if ( 'mail_sent' === $status ) {
+		return;
+	}
+	$sub = class_exists( 'WPCF7_Submission' ) ? WPCF7_Submission::get_instance() : null;
+	arv_rt_apply_fail_add(
+		array(
+			'ts'     => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			'src'    => 'server',
+			'status' => preg_replace( '/[^a-z0-9_]/', '', strtolower( $status ) ),
+			'fields' => arv_rt_apply_fail_fields( isset( $result['invalid_fields'] ) ? $result['invalid_fields'] : array() ),
+			'files'  => arv_rt_apply_fail_files( $sub ),
+			'ua'     => arv_rt_apply_ua_family( isset( $_SERVER['HTTP_USER_AGENT'] ) ? wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		)
+	);
+}
+add_action( 'wpcf7_submit', 'arv_rt_apply_fail_on_submit', 30, 2 );
+
+/**
+ * Beacon from the browser: body at most ARV_RT_APPLY_BEACON_BODY_MAX bytes,
+ * status from the allowlist, field names from our form only, rate limited
+ * per hashed IP and across all IPs per hour. Anything else is refused.
+ *
+ * @param mixed $request WP_REST_Request.
+ * @return array|WP_Error
+ */
+function arv_rt_apply_fail_beacon( $request ) {
+	$raw = (string) $request->get_body();
+	if ( strlen( $raw ) > ARV_RT_APPLY_BEACON_BODY_MAX ) {
+		return new WP_Error( 'rt_big', 'Report too big.', array( 'status' => 413 ) );
+	}
+	$body = json_decode( $raw, true );
+	if ( ! is_array( $body ) ) {
+		return new WP_Error( 'rt_bad', 'Bad request.', array( 'status' => 400 ) );
+	}
+	$status = isset( $body['status'] ) ? (string) $body['status'] : '';
+	$fields = isset( $body['fields'] ) && is_array( $body['fields'] ) ? array_values( $body['fields'] ) : array();
+	if ( ! in_array( $status, arv_rt_apply_fail_statuses(), true ) || count( $fields ) > 60 ) {
+		return new WP_Error( 'rt_bad', 'Bad request.', array( 'status' => 400 ) );
+	}
+	$allowed = arv_rt_apply_field_names();
+	foreach ( $fields as $f ) {
+		if ( ! is_string( $f ) || ! in_array( $f, $allowed, true ) ) {
+			return new WP_Error( 'rt_bad', 'Bad request.', array( 'status' => 400 ) );
+		}
+	}
+	$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+	$key = 'arv_rt_fb_' . substr( hash( 'sha256', $ip . '|' . ( function_exists( 'wp_salt' ) ? wp_salt( 'nonce' ) : 'rt' ) ), 0, 20 );
+	$n   = (int) get_transient( $key );
+	if ( $n >= ARV_RT_APPLY_BEACON_PER_HOUR ) {
+		return new WP_Error( 'rt_slow', 'Too many reports.', array( 'status' => 429 ) );
+	}
+	$all = (int) get_transient( 'arv_rt_fb_all' );
+	if ( $all >= ARV_RT_APPLY_BEACON_GLOBAL_PER_HOUR ) {
+		return new WP_Error( 'rt_slow', 'Too many reports.', array( 'status' => 429 ) );
+	}
+	set_transient( $key, $n + 1, 3600 );
+	set_transient( 'arv_rt_fb_all', $all + 1, 3600 );
+	arv_rt_apply_fail_add(
+		array(
+			'ts'     => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			'src'    => 'beacon',
+			'status' => $status,
+			'fields' => array_values( array_unique( $fields ) ),
+			'files'  => array(),
+			'ua'     => arv_rt_apply_ua_family( isset( $_SERVER['HTTP_USER_AGENT'] ) ? wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		)
+	);
+	return array( 'ok' => true );
+}
+
+/**
+ * Admin read of the log, newest last.
+ *
+ * @return array
+ */
+function arv_rt_apply_fail_read() {
+	$log = get_option( 'arv_rt_apply_fail_log', array() );
+	return array(
+		'count' => is_array( $log ) ? count( $log ) : 0,
+		'log'   => is_array( $log ) ? array_values( $log ) : array(),
+	);
+}
+
+/** Only admins read the log. */
+function arv_rt_apply_fail_can_read() {
+	return current_user_can( 'manage_options' );
+}
+
+/** Routes: POST beacon (public), GET log (manage_options). */
+function arv_rt_apply_fail_routes() {
+	register_rest_route(
+		'aravaipa/v1',
+		'/rt-apply-fail',
+		array(
+			array(
+				'methods'             => 'POST',
+				'callback'            => 'arv_rt_apply_fail_beacon',
+				'permission_callback' => '__return_true',
+			),
+			array(
+				'methods'             => 'GET',
+				'callback'            => 'arv_rt_apply_fail_read',
+				'permission_callback' => 'arv_rt_apply_fail_can_read',
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'arv_rt_apply_fail_routes' );

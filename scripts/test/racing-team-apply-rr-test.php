@@ -328,6 +328,13 @@ function t_reset() {
 	$GLOBALS['t_sched']     = array();
 	rmrf( $GLOBALS['t_up'] );
 }
+/** Tiny real images (4x4, made with GD) for the headshot type checks. */
+define( 'T_JPG', base64_decode( '/9j/4AAQSkZJRgABAQEAYABgAAD//gA+Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcgSlBFRyB2NjIpLCBkZWZhdWx0IHF1YWxpdHkK/9sAQwAIBgYHBgUIBwcHCQkICgwUDQwLCwwZEhMPFB0aHx4dGhwcICQuJyAiLCMcHCg3KSwwMTQ0NB8nOT04MjwuMzQy/9sAQwEJCQkMCwwYDQ0YMiEcITIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIy/8AAEQgABAAEAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/aAAwDAQACEQMRAD8A+f6KKKAP/9k=' ) );
+define( 'T_PNG', base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAADElEQVQImWNgIB0AAAA0AAEjQ4N1AAAAAElFTkSuQmCC' ) );
+define( 'T_WEBP', base64_decode( 'UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoEAAQAAUAmJaQAA3AA/v02aAA=' ) );
+/** HEIC-shaped bytes: an ftyp box with the heic brand. */
+define( 'T_HEIC', "\x00\x00\x00\x18ftypheic\x00\x00\x00\x00mif1heic" . str_repeat( "\x00", 64 ) );
+
 function t_on() {
 	$GLOBALS['t_opts']['arv_rt_apply_rr_push']   = '1';
 	$GLOBALS['t_opts']['arv_rt_apply_rr_secret'] = T_SECRET;
@@ -544,7 +551,7 @@ t_reset();
 t_on();
 wp_mkdir_p( $GLOBALS['t_up'] );
 $small = $GLOBALS['t_up'] . '/head.jpg';
-file_put_contents( $small, str_repeat( 'J', 2000 ) );
+file_put_contents( $small, T_JPG . str_repeat( 'J', 2000 ) );
 $pdf = $GLOBALS['t_up'] . '/cv.pdf';
 file_put_contents( $pdf, '%PDF-1.4 test' );
 $r  = arv_rt_apply_rr_push( t_entry( 501, array(), array( 'rt-headshot' => $small, 'rt-resume-file' => $pdf ) ) );
@@ -568,13 +575,70 @@ $log = get_option( 'arv_rt_apply_log' );
 ok( false !== strpos( end( $log ), 'headshot over 4 MB' ), 'skipped file in the ring log' );
 $h3 = $GLOBALS['t_up'] . '/h3.jpg';
 $r3 = $GLOBALS['t_up'] . '/r3.pdf';
+file_put_contents( $h3, T_JPG );
 foreach ( array( $h3, $r3 ) as $pth ) {
-	$fh = fopen( $pth, 'w' );
+	$fh = fopen( $pth, 'c' );
 	ftruncate( $fh, 2500000 );
 	fclose( $fh );
 }
 $pick = arv_rt_apply_rr_pick_files( array( 'rt-headshot' => $h3, 'rt-resume-file' => $r3 ) );
 ok( array( 'headshot' ) === array_keys( $pick['parts'] ) && array( 'resume_file over the 4 MB total' ) === $pick['skipped'], 'together over 4 MB: second file skipped' );
+
+// ---- 7b. Headshot type: extension AND bytes must be jpg/png/webp -------------------------------
+t_reset();
+t_on();
+wp_mkdir_p( $GLOBALS['t_up'] );
+$up = $GLOBALS['t_up'];
+file_put_contents( $up . '/me.heic', T_HEIC );
+file_put_contents( $up . '/fake.jpg', '%PDF-1.4 not a picture' );
+file_put_contents( $up . '/heic-inside.jpg', T_HEIC );
+file_put_contents( $up . '/ok.jpg', T_JPG );
+file_put_contents( $up . '/ok.jpeg', T_JPG );
+file_put_contents( $up . '/ok.png', T_PNG );
+file_put_contents( $up . '/ok.webp', T_WEBP );
+file_put_contents( $up . '/png-inside.jpg', T_PNG );
+file_put_contents( $up . '/cv2.pdf', '%PDF-1.4 resume' );
+$pick = arv_rt_apply_rr_pick_files( array( 'rt-headshot' => $up . '/me.heic', 'rt-resume-file' => $up . '/cv2.pdf' ) );
+ok( array( 'resume_file' ) === array_keys( $pick['parts'] ), 'heic headshot: resume still goes' );
+ok( array( 'headshot not jpg/png/webp (heic)' ) === $pick['skipped'], 'heic headshot skipped with the type named' );
+$pick = arv_rt_apply_rr_pick_files( array( 'rt-headshot' => $up . '/fake.jpg' ) );
+ok( ! $pick['parts'] && 1 === count( $pick['skipped'] ) && 0 === strpos( $pick['skipped'][0], 'headshot not jpg/png/webp (jpg file' ), '.jpg that is not an image skipped' );
+$pick = arv_rt_apply_rr_pick_files( array( 'rt-headshot' => $up . '/heic-inside.jpg' ) );
+ok( ! $pick['parts'] && 1 === count( $pick['skipped'] ), '.jpg with HEIC bytes skipped' );
+$pick = arv_rt_apply_rr_pick_files( array( 'rt-headshot' => $up . '/png-inside.jpg' ) );
+ok( ! $pick['parts'] && 1 === count( $pick['skipped'] ), 'extension and bytes must agree (png bytes in .jpg skipped)' );
+foreach ( array( 'ok.jpg', 'ok.jpeg', 'ok.png', 'ok.webp' ) as $fn ) {
+	$pick = arv_rt_apply_rr_pick_files( array( 'rt-headshot' => $up . '/' . $fn ) );
+	ok( array( 'headshot' ) === array_keys( $pick['parts'] ) && ! $pick['skipped'], 'real ' . $fn . ' headshot kept' );
+}
+ok( 'image/jpeg' === arv_rt_apply_rr_sniff_mime( $up . '/ok.jpg' ) && 'image/png' === arv_rt_apply_rr_sniff_mime( $up . '/ok.png' ) && 'image/webp' === arv_rt_apply_rr_sniff_mime( $up . '/ok.webp' ), 'sniff finds jpg, png, webp' );
+$r = arv_rt_apply_rr_push( t_entry( 503, array(), array( 'rt-headshot' => $up . '/me.heic', 'rt-resume-file' => $up . '/cv2.pdf' ) ) );
+$p = end( $GLOBALS['t_posts'] );
+ok( 'sent' === $r['status'], 'heic headshot: the application still pushes' );
+ok( false === strpos( $p['args']['body'], 'name="headshot"' ) && false !== strpos( $p['args']['body'], 'name="resume_file"' ), 'heic headshot: no headshot part, resume part kept' );
+ok( false === strpos( $p['args']['body'], 'image/heic' ), 'no image/heic sent to RaceReach' );
+ok( array( 'headshot not jpg/png/webp (heic)' ) === $r['skipped_files'], 'heic skip reason on the record' );
+$log = get_option( 'arv_rt_apply_log' );
+ok( false !== strpos( end( $log ), 'files: headshot not jpg/png/webp (heic)' ), 'heic skip reason in the ring log' );
+
+// ---- 7c. A 5 MB resume: not copied to RaceReach, but never silent ---------------------------------
+t_reset();
+t_on();
+wp_mkdir_p( $GLOBALS['t_up'] );
+$cv5 = $GLOBALS['t_up'] . '/cv5.pdf';
+file_put_contents( $cv5, '%PDF-1.4 big' );
+$fh = fopen( $cv5, 'c' );
+ftruncate( $fh, 5 * 1024 * 1024 );
+fclose( $fh );
+file_put_contents( $GLOBALS['t_up'] . '/hs5.jpg', T_JPG );
+$r = arv_rt_apply_rr_push( t_entry( 504, array(), array( 'rt-headshot' => $GLOBALS['t_up'] . '/hs5.jpg', 'rt-resume-file' => $cv5 ) ) );
+$p = end( $GLOBALS['t_posts'] );
+ok( 'sent' === $r['status'] && false !== strpos( $p['args']['body'], 'name="headshot"' ) && false === strpos( $p['args']['body'], 'name="resume_file"' ), '5 MB resume: application and headshot sent, resume left out' );
+$rec = get_post_meta( 504, '_arv_rt_rr', true );
+ok( is_array( $rec ) && array( 'resume_file over 4 MB' ) === $rec['skipped_files'], '5 MB resume: skip reason stored on the entry record' );
+ok( 'resume_file over 4 MB' === arv_rt_apply_rr_skipped( 504 ), '5 MB resume: reason for the CSV column' );
+$log = get_option( 'arv_rt_apply_log' );
+ok( false !== strpos( end( $log ), 'files: resume_file over 4 MB' ), '5 MB resume: rr-status ring line says files: resume_file over 4 MB' );
 
 // ---- 8. Retry schedule ------------------------------------------------------------------------
 t_reset();
