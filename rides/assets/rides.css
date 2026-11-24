@@ -1775,7 +1775,7 @@
 .rides-v2.rides-look-blend:not(.rides-page-event) p {
 	font-weight: 400;
 }
-.rides-look-blend .rides-intro-copy p {
+.rides-look-blend .rides-intro .rides-intro-copy p {
 	font-size: 17px;
 	color: #222;
 }
