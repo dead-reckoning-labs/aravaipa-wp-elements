@@ -160,6 +160,16 @@ function rides_register_links( $e ) {
 }
 
 /**
+ * True when the render context asks for the blend look (option B).
+ *
+ * @param array $ctx Render context.
+ * @return bool
+ */
+function rides_is_blend( $ctx ) {
+	return isset( $ctx['look'] ) && 'blend' === $ctx['look'];
+}
+
+/**
  * Root wrapper.
  *
  * @param string $page  Page key.
@@ -601,7 +611,7 @@ function rides_render_event( $ctx, $slug ) {
 		}
 		$out .= '</div><div class="rides-actions">' . rides_register_buttons( $d['register'] ) . '</div></div></section>';
 	}
-	return rides_root( 'event' . ( $night ? ' rides-theme-night' : '' ), $out );
+	return rides_root( 'event' . ( $night ? ' rides-theme-night' : '' ) . ( rides_is_blend( $ctx ) ? ' rides-look-blend' : '' ), $out );
 }
 
 /**
@@ -618,7 +628,13 @@ function rides_event_hero( $ctx, $e, $d, $tone ) {
 	$out  = '<header class="rides-event-hero rides-event-hero--' . rides_e( $tone ) . '" id="hero">';
 	$out .= $hero ? '<img class="rides-event-photo" src="' . rides_e( $hero ) . '" alt="" width="1920" height="900" fetchpriority="high">' : '';
 	$out .= '<div class="rides-event-glow" aria-hidden="true"></div>';
-	$out .= '<div class="rides-event-hero-body">' . rides_logo_img( $ctx, $e, 'rides-event-logo', array( 'fetchpriority' => 'high' ), false );
+	$xl   = rides_is_blend( $ctx ) && ! empty( $d['existing_logo']['src'] ) ? $d['existing_logo'] : array();
+	if ( $xl ) {
+		$logo = '<img class="rides-event-logo" src="' . rides_e( $xl['src'] ) . '" alt="' . rides_e( $e['name'] . ' logo' ) . '" width="' . (int) ( $xl['width'] ?? 0 ) . '" height="' . (int) ( $xl['height'] ?? 0 ) . '" fetchpriority="high">';
+	} else {
+		$logo = rides_logo_img( $ctx, $e, 'rides-event-logo', array( 'fetchpriority' => 'high' ), false );
+	}
+	$out .= '<div class="rides-event-hero-body">' . $logo;
 	$out .= '<h1 class="rides-sr">' . rides_e( $e['name'] ) . '</h1></div>';
 	return $out . '</header>';
 }
@@ -660,12 +676,16 @@ function rides_event_intro( $ctx, $e, $d ) {
 	$has  = ! empty( $ph['src'] ) && is_readable( RIDES_DIR . '/' . $ph['src'] );
 	$out  = '<section class="rides-section" id="intro"><div class="rides-wrap rides-event-intro' . ( $has ? '' : ' is-single' ) . '">';
 	$out .= '<div class="rides-intro-copy">';
-	if ( ! empty( $d['kicker'] ) ) {
-		$out .= '<p class="rides-eyebrow">' . rides_e( $d['kicker'] ) . '</p>';
+	if ( rides_is_blend( $ctx ) ) {
+		$out .= '<h2 class="rides-h2 rides-intro-name">' . rides_e( $e['name'] ) . '</h2>';
+		$sub  = array_values( array_filter( array( $d['kicker'] ?? '', $d['headline'] ?? '' ) ) );
+		foreach ( $sub as $i => $line ) {
+			$out .= '<p class="rides-intro-sub' . ( $i ? ' is-light' : '' ) . '">' . rides_e( $line ) . '</p>';
+		}
 	} else {
-		$out .= '<p class="rides-eyebrow">The Ride</p>';
+		$out .= '<p class="rides-eyebrow">' . rides_e( ! empty( $d['kicker'] ) ? $d['kicker'] : 'The Ride' ) . '</p>';
+		$out .= '<h2 class="rides-h2">' . rides_e( $d['headline'] ?? $e['name'] ) . '</h2>';
 	}
-	$out .= '<h2 class="rides-h2">' . rides_e( $d['headline'] ?? $e['name'] ) . '</h2>';
 	$out .= '<div class="rides-intro-text">' . rides_paras( $d['intro'] ?? array() ) . '</div></div>';
 	if ( $has ) {
 		$size = '';

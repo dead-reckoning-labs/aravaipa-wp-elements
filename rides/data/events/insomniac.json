@@ -110,5 +110,11 @@
  "intro_photo": {
   "src": "assets/photos/insomniac.jpg",
   "alt": "Night start: riders with headlamps rolling out at dusk"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2025/02/2020-Insomniac_SeriesLogo-Rides-Glow.png",
+  "width": 2408,
+  "height": 1605,
+  "note": "Logo file the live page shows in its hero (blend look only)."
  }
 }

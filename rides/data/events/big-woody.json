@@ -427,5 +427,11 @@
    "href": "https://gognarly.com/",
    "logo": "https://aravaiparides.com/wp-content/uploads/2021/05/Gnarly_Horizontal_BlueType.png"
   }
- ]
+ ],
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2025/03/bwr-2.png",
+  "width": 975,
+  "height": 648,
+  "note": "Logo file the live page shows in its hero (blend look only)."
+ }
 }
