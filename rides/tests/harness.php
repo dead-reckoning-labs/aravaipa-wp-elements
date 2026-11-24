@@ -28,6 +28,8 @@ $pages = array(
 	'results'       => 'results',
 	'photos'        => 'photos',
 	'prickly-pedal' => 'event:prickly-pedal',
+	'insomniac'     => 'event:insomniac',
+	'big-woody'     => 'event:big-woody',
 );
 $css   = rides_asset( $ctx, 'assets/rides.css' );
 $js    = rides_asset( $ctx, 'assets/rides.js' );

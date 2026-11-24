@@ -282,14 +282,14 @@ foreach ( rides_events() as $e ) {
 }
 ok( false !== strpos( $home, 'class="rides-slide-logo' ), 'slides carry the ride logo as an HTML image' );
 ok( false === strpos( $home, 'rides-tile-logo' ) && false !== strpos( $home, 'rides-tile-mark' ), 'tiles carry the big logo, no corner badge' );
-ok( false !== strpos( $pp, 'rides-event-lockup' ) && false !== strpos( $pp, 'assets/logos/prickly-pedal.png' ), 'Prickly hero has the logo lockup' );
+ok( false !== strpos( $pp, 'class="rides-event-logo"' ) && false !== strpos( $pp, 'assets/logos/prickly-pedal.png' ) && false === strpos( $pp, 'is-plate' ), 'Prickly hero has the logo as artwork, no plate' );
 ok( false !== strpos( $home, 'Welcome to Aravaipa Rides' ) && false !== strpos( $home, 'never been more stoked' ), 'home has the welcome intro' );
 
 // 11. v3 meet in the middle: eyebrows, normal-case headings, balanced grid, soft CSS.
 $evh = rides_render_events( array( 'base' => '', 'today' => '2026-11-20' ) );
 ok( substr_count( $home, 'class="rides-eyebrow"' ) >= 2 && false === strpos( $home, 'class="rides-kicker"' ), 'home section labels are .rides-eyebrow' );
 ok( false !== strpos( $home, 'rides-slide-kicker rides-eyebrow' ), 'slide date line is an eyebrow' );
-ok( false !== strpos( $pp, 'rides-slide-kicker rides-eyebrow' ) && false === strpos( $pp, 'class="rides-kicker"' ), 'Prickly section labels are eyebrows' );
+ok( substr_count( $pp, 'class="rides-eyebrow"' ) >= 4 && false === strpos( $pp, 'class="rides-kicker"' ), 'Prickly section labels are eyebrows' );
 ok( 1 === preg_match( '#<ul class="rides-tiles"[^>]*>(\s*<li>.*?</li>)+\s*</ul>#s', $evh ), 'events tiles are list items inside ul.rides-tiles (balanced grid hooks)' );
 ok( 10 === substr_count( $evh, '<li><a class="rides-tile' ) || 10 <= substr_count( $evh, 'class="rides-tile ' ) + substr_count( $evh, 'class="rides-tile"' ), 'events render all 10 tiles' );
 $css = file_get_contents( RIDES_DIR . '/assets/rides.css' );
@@ -300,6 +300,46 @@ ok( 0 === preg_match( '#box-shadow\s*:\s*+(?!none)#', $css ), 'no box shadows' )
 preg_match_all( '#border-radius\s*:\s*([^;]+);#', $css, $rm );
 $bad = array_filter( $rm[1], function ( $v ) { return ! in_array( trim( $v ), array( '0', 'var(--rides-radius)', '6px', '7px', '8px', '50%' ), true ); } );
 ok( ! $bad, 'border-radius only 0, 6 to 8px or 50% (dots): ' . implode( ', ', $bad ) );
+
+// 12. 0.1.5 ride page pass: full-bleed hero, yellow band, intro photo, one distance table, race page order.
+$ectx = array( 'base' => '', 'today' => '2026-11-20' );
+foreach ( array( 'prickly-pedal', 'insomniac', 'big-woody' ) as $es ) {
+	$ev = rides_render_layout( 'event:' . $es, $ectx );
+	$ed = rides_data( 'events/' . $es );
+	ok( '' !== $ev, "$es renders" );
+	ok( rides_valid_layout( 'event:' . $es ), "$es is a valid layout" );
+	ok( 1 === preg_match( '#<header class="rides-event-hero[^"]*" id="hero"><img class="rides-event-photo"#', $ev ), "$es hero is a full-bleed photo" );
+	ok( false === strpos( $ev, 'is-plate' ) && false === strpos( $ev, 'rides-stats' ) && false === strpos( $ev, 'rides-distance-head' ), "$es has no plate, stats strip or dark distance cards" );
+	ok( 1 === preg_match( '#<h1 class="rides-sr">#', $ev ), "$es keeps the name in a visually hidden h1" );
+	ok( 1 === preg_match( '#</header><section class="rides-band" id="band">#', $ev ), "$es band sits right under the hero" );
+	ok( false !== strpos( $ev, rides_e( $ed['date_label'] ) ), "$es band has the date" );
+	ok( 1 === substr_count( $ev, 'class="rides-dist-table"' ), "$es has one distance table" );
+	ok( false !== strpos( $ev, 'assets/photos/' . $es . '.jpg' ) && is_readable( RIDES_DIR . '/assets/photos/' . $es . '.jpg' ), "$es intro uses its ride photo" );
+	$tb = substr( $ev, strpos( $ev, 'rides-dist-table' ) );
+	$tb = substr( $tb, 0, strpos( $tb, '</table>' ) );
+	ok( false === strpos( $tb, '$' ), "$es distance table has no prices" );
+	foreach ( (array) ( $ed['register'] ?? array() ) as $r ) {
+		ok( false !== strpos( $ev, 'href="' . rides_e( $r['href'] ) . '"' ), "$es keeps register link {$r['href']}" );
+	}
+	preg_match_all( '#\bid="(hero|band|intro|distances|course|schedule|aid|faq|results|photos|sponsors)"#', $ev, $im );
+	$order = array( 'hero', 'band', 'intro', 'distances', 'course', 'schedule', 'aid', 'faq', 'results', 'photos', 'sponsors' );
+	$pos   = array_map( function ( $i ) use ( $order ) { return array_search( $i, $order, true ); }, $im[1] );
+	$sorted = $pos;
+	sort( $sorted );
+	ok( $pos === $sorted && count( $pos ) === count( array_unique( $pos ) ), "$es sections follow the race page order: " . implode( ',', $im[1] ) );
+	ok( 0 === preg_match( '/\x{2014}/u', $ev ), "$es has no em dash" );
+}
+$ins = rides_render_layout( 'event:insomniac', $ectx );
+ok( false !== strpos( $ins, 'rides-theme-night' ) && false === strpos( $ins, 'class="rides-btn rides-register' ), 'Insomniac is night themed with no register button' );
+foreach ( array( 'sinister', 'adrenaline', 'stunner' ) as $sr ) {
+	$se = rides_event( $sr );
+	ok( false !== strpos( $ins, 'href="' . rides_e( $se['url'] ) . '"' ), "Insomniac links to $sr" );
+}
+$bw = rides_render_layout( 'event:big-woody', $ectx );
+ok( false !== strpos( $bw, 'caltopo.com/m/R4NB188' ) && false !== strpos( $bw, 'id="course"' ), 'Big Woody has the CalTopo course map' );
+ok( false === strpos( $ins, 'id="results"' ) && false === strpos( $ins, 'id="sponsors"' ), 'Insomniac omits sections without data' );
+$pm = rides_preview_pages();
+ok( 'event:insomniac' === ( $pm[21756] ?? '' ) && 'event:big-woody' === ( $pm[24565] ?? '' ), 'preview map carries Insomniac 21756 and Big Woody 24565' );
 
 echo "$count checks, $fails failed\n";
 exit( $fails ? 1 : 0 );
