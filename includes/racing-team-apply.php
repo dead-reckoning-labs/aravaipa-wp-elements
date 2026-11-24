@@ -1110,6 +1110,25 @@ function arv_rt_apply_confirm_html_body( $first, $followup = false ) {
 }
 
 /**
+ * Plain text of a filled-in HTML confirmation body, for its AltBody: one
+ * paragraph per <p>, <br> as a line break, entities decoded.
+ *
+ * @param string $html Filled-in HTML body.
+ * @return string
+ */
+function arv_rt_apply_confirm_html_to_text( $html ) {
+	$html = (string) $html;
+	if ( preg_match( '~<body[^>]*>(.*)</body>~is', $html, $m ) ) {
+		$html = $m[1];
+	}
+	$html = preg_replace( '~<br\s*/?>\s*~i', "\n", $html );
+	$html = preg_replace( '~</p>\s*~i', "\n\n", $html );
+	$text = html_entity_decode( strip_tags( $html ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+	$text = preg_replace( "/[ \t]+\n/", "\n", $text );
+	return trim( preg_replace( "/\n{3,}/", "\n\n", $text ) ) . "\n";
+}
+
+/**
  * Mail (2) components when the HTML confirmation is on: arm the plain-text
  * confirmation as the AltBody for that one send.
  *
@@ -1128,8 +1147,9 @@ function arv_rt_apply_confirm_mail_components( $components, $form = null, $mail 
 	try {
 		$GLOBALS['arv_rt_apply_mailer'] = array(
 			'subject' => isset( $components['subject'] ) ? (string) $components['subject'] : '',
-			// Defanged like the plain mail_2 body (#396): the applicant typed the name.
-			'alt'     => arv_rt_apply_defang( arv_rt_apply_confirm_body( arv_rt_apply_posted( 'rt-first-name' ), false ) ),
+			// The AltBody is the text of the body CF7 already filled in (so no
+			// raw [rt-...] tags), defanged like the plain mail_2 body (#396).
+			'alt'     => arv_rt_apply_defang( arv_rt_apply_confirm_html_to_text( isset( $components['body'] ) ? $components['body'] : '' ) ),
 			'embed'   => '',
 		);
 	} catch ( \Throwable $e ) {

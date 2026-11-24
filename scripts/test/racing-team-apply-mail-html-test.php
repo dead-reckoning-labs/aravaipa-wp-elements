@@ -365,13 +365,17 @@ ok( true === arv_rt_apply_confirm_html_on() && true === $cm['use_html'] && has( 
 ok( has( $cm['body'], 'Hi [rt-first-name],' ) && has( $cm['body'], '<strong>What happens next</strong><br>' ) && has( $cm['body'], 'Applications close November 30.' ), 'HTML confirmation: same copy, tag for CF7 to fill and escape' );
 ok( has( $cm['body'], 'just reply to this email' ) && has( $cm['body'], 'Thanks again, and see you on the trail,<br>' ) && has( $cm['body'], '<strong>A copy of your application</strong><br>' ) && has( $cm['body'], 'Name: [rt-first-name] [rt-last-name]' ), 'HTML confirmation: reply line, summary and sign-off' );
 $GLOBALS['t_posted']['rt-first-name'] = 'evil.example.com';
-$cx = run_filter( 'wpcf7_mail_components', array( 'subject' => 'S', 'body' => $cm['body'] ), $form, new T_Mail( 'mail_2' ) );
-ok( ! has( $cx['body'], 'evil.example.com' ) && is_array( $GLOBALS['arv_rt_apply_mailer'] ) && has( $GLOBALS['arv_rt_apply_mailer']['alt'], 'evil[.]example[.]com' ) && ! has( $GLOBALS['arv_rt_apply_mailer']['alt'], 'evil.example.com' ), 'HTML confirmation on: AltBody defanged like the plain mail_2' );
+// CF7 fills the tags (esc_html in HTML mode) before our components filters run.
+$filled = preg_replace( '/\[rt-[a-z0-9-]+\]/', 'x', str_replace( array( '[rt-first-name]', '[rt-city]' ), array( 'evil.example.com', 'Tucson &amp; Oro Valley' ), $cm['body'] ) );
+$cx = run_filter( 'wpcf7_mail_components', array( 'subject' => 'S', 'body' => $filled ), $form, new T_Mail( 'mail_2' ) );
+$alt = is_array( $GLOBALS['arv_rt_apply_mailer'] ) ? (string) $GLOBALS['arv_rt_apply_mailer']['alt'] : '';
+ok( ! has( $cx['body'], 'evil.example.com' ) && has( $alt, 'evil[.]example[.]com' ) && ! has( $alt, 'evil.example.com' ), 'HTML confirmation on: AltBody defanged like the plain mail_2' );
+ok( ! has( $alt, '[rt-' ) && ! has( $alt, '<' ) && has( $alt, 'Home: Tucson & Oro Valley,' ) && has( $alt, "What happens next\nApplications close November 30." ) && has( $alt, "see you on the trail,\nAravaipa Running" ), 'HTML confirmation on: AltBody is the filled-in text, no raw tags or markup' );
 $GLOBALS['t_posted']['rt-first-name'] = 'Lindsay';
 ok( ! has( $cm['body'], "\u{2014}" ) && no_stripes( $cm['body'] ) && ! has( $cm['body'], '<img' ), 'HTML confirmation: no em dash, no stripes, no images' );
 ok( 'Reply-To: bryce@aravaiparunning.com' === $cm['additional_headers'] && $cm['subject'] === arv_rt_apply_confirm_subject(), 'HTML confirmation: same subject and Reply-To' );
 ok( ! has( arv_rt_apply_confirm_html_body( '<b>Al</b>' ), '<b>Al' ), 'HTML confirmation escapes a literal name' );
-run_filter( 'wpcf7_mail_components', array( 'subject' => arv_rt_apply_confirm_subject(), 'body' => 'x' ), $form, new T_Mail( 'mail_2' ) );
+run_filter( 'wpcf7_mail_components', array( 'subject' => arv_rt_apply_confirm_subject(), 'body' => arv_rt_apply_confirm_html_body( 'Lindsay' ) ), $form, new T_Mail( 'mail_2' ) );
 $pm4 = new T_PHPMailer();
 $pm4->Subject = arv_rt_apply_confirm_subject();
 run_filter( 'phpmailer_init', $pm4 );
