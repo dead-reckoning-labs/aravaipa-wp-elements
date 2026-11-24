@@ -291,24 +291,148 @@ function arv_rt_apply_recipients() {
 }
 
 /**
+ * Staff email body (0.101.30): a summary line, then one block per form
+ * section with a heading. Short answers stay on one line; long answers
+ * (textareas) get their label on its own line and a blank line after, so a
+ * racing resume reads as a list instead of running into the next field.
+ *
+ * @return string
+ */
+function arv_rt_apply_mail_body() {
+	$skip = array( 'first-name', 'last-name', 'region', 'city', 'state' );
+	$short = array(
+		'disciplines'     => 'Races',
+		'returning'       => 'Returning',
+		'returning-years' => 'Years on the team',
+		'ultrasignup'     => 'UltraSignup',
+		'profiles'        => 'Other profiles',
+		'goals'           => 'Goals',
+		'race-plans'      => 'Aravaipa races planned',
+		'outside-races'   => 'Other 2027 races',
+		'summit'          => 'Summit',
+		'why'             => 'Why the team',
+		'bring'           => 'Beyond racing',
+		'socials'         => 'Other socials',
+		'content-links'   => 'Content',
+		'sponsors'        => 'Sponsors',
+		'support'         => 'Support wanted',
+		'size-top'        => 'Long sleeve or jacket',
+	);
+	$body = "[rt-first-name] [rt-last-name] applied for the 2027 Aravaipa Racing Team.\n"
+		. "Region: [rt-region]   Home: [rt-city], [rt-state]\n";
+	$by = array();
+	foreach ( arv_rt_apply_fields() as $f ) {
+		$by[ $f['section'] ][] = $f;
+	}
+	foreach ( arv_rt_apply_sections() as $key => $sec ) {
+		if ( 'consents' === $key ) {
+			$body .= "\n\n" . strtoupper( $sec[1] ) . "\n";
+			foreach ( arv_rt_apply_consents() as $c ) {
+				$body .= '- ' . $c['text'] . ' [rt-consent-' . $c['key'] . "]\n";
+			}
+			continue;
+		}
+		if ( empty( $by[ $key ] ) ) {
+			continue;
+		}
+		$body .= "\n\n" . strtoupper( $sec[1] ) . "\n";
+		$prev_long = false;
+		foreach ( $by[ $key ] as $f ) {
+			if ( in_array( $f['key'], $skip, true ) ) {
+				continue;
+			}
+			$f['label'] = isset( $short[ $f['key'] ] ) ? $short[ $f['key'] ] : $f['label'];
+			if ( 'file' === $f['type'] ) {
+				$body .= ( $prev_long ? "\n" : '' ) . $f['label'] . ': [rt-' . $f['key'] . "]\n";
+				$prev_long = false;
+				continue;
+			}
+			if ( 'textarea' === $f['type'] ) {
+				$body     .= "\n" . $f['label'] . ":\n[rt-" . $f['key'] . "]\n";
+				$prev_long = true;
+				continue;
+			}
+			$body     .= ( $prev_long ? "\n" : '' ) . $f['label'] . ': [rt-' . $f['key'] . "]\n";
+			$prev_long = false;
+		}
+	}
+	$body .= "\n\nSent from [_url] on [_date] at [_time].\nEvery application is also kept in WP Admin, Flamingo, Inbound Messages.";
+	return $body;
+}
+
+/**
+ * Staff mail for our form at runtime, so the stored form needs no reinstall.
+ *
+ * @param mixed $value Stored mail.
+ * @param mixed $form  WPCF7_ContactForm.
+ * @return mixed
+ */
+function arv_rt_apply_mail_prop( $value, $form = null ) {
+	if ( ! arv_rt_apply_is_ours( $form ) || ! is_array( $value ) ) {
+		return $value;
+	}
+	$value['body'] = arv_rt_apply_mail_body();
+	return $value;
+}
+add_filter( 'wpcf7_contact_form_property_mail', 'arv_rt_apply_mail_prop', 10, 2 );
+
+/**
+ * Tidy the rendered staff email: drop questions the applicant left blank
+ * ("Label: " lines, and long-answer labels with nothing under them) and
+ * collapse the gaps they leave, so only real answers show.
+ *
+ * @param string $body Rendered body.
+ * @return string
+ */
+function arv_rt_apply_mail_tidy( $body ) {
+	$lines = explode( "\n", str_replace( "\r\n", "\n", (string) $body ) );
+	$out   = array();
+	$n     = count( $lines );
+	for ( $i = 0; $i < $n; $i++ ) {
+		$l = $lines[ $i ];
+		if ( preg_match( '/^[^\n]{1,200}: $/', $l ) ) {
+			continue;
+		}
+		if ( preg_match( '/^[^\n]{1,200}\S:$/', $l ) && ( $i + 1 >= $n || '' === trim( $lines[ $i + 1 ] ) ) ) {
+			continue;
+		}
+		$out[] = $l;
+	}
+	$body = implode( "\n", $out );
+	$body = preg_replace( "/\n{3,}/", "\n\n", $body );
+	// A heading with nothing left under it goes; otherwise it sits right on its first answer.
+	$body = preg_replace( "/(^|\n\n)[A-Z0-9 ]{3,40}\n\n(?=[A-Z0-9 ]{3,40}\n|Sent from )/", '$1', $body );
+	$body = preg_replace( "/^([A-Z0-9 ]{3,40})\n\n/m", "\$1\n", $body );
+	return trim( $body ) . "\n";
+}
+
+/**
+ * Staff mail (name "mail") of our form: tidy the body at send time.
+ *
+ * @param array $components CF7 mail components.
+ * @param mixed $form       WPCF7_ContactForm.
+ * @param mixed $mail       WPCF7_Mail.
+ * @return array
+ */
+function arv_rt_apply_staff_mail_components( $components, $form = null, $mail = null ) {
+	if ( ! is_array( $components ) || ! isset( $components['body'] ) || ! arv_rt_apply_is_ours( $form ) ) {
+		return $components;
+	}
+	if ( ! is_object( $mail ) || ! method_exists( $mail, 'name' ) || 'mail' !== $mail->name() ) {
+		return $components;
+	}
+	$components['body'] = arv_rt_apply_mail_tidy( $components['body'] );
+	return $components;
+}
+add_filter( 'wpcf7_mail_components', 'arv_rt_apply_staff_mail_components', 20, 3 );
+
+/**
  * The CF7 mail property.
  *
  * @return array
  */
 function arv_rt_apply_mail() {
-	$body = "New 2027 Aravaipa Racing Team application.\n\n";
-	foreach ( arv_rt_apply_fields() as $f ) {
-		if ( 'file' === $f['type'] ) {
-			$body .= $f['label'] . ": attached if given\n";
-			continue;
-		}
-		$body .= $f['label'] . ': [rt-' . $f['key'] . "]\n";
-	}
-	$body .= "\nAgreements\n";
-	foreach ( arv_rt_apply_consents() as $c ) {
-		$body .= $c['text'] . ' [rt-consent-' . $c['key'] . "]\n";
-	}
-	$body .= "\nSent from [_url] on [_date] at [_time].\nEvery application is also kept in WP Admin, Flamingo, Inbound Messages.";
+	$body = arv_rt_apply_mail_body();
 	return array(
 		'active'             => true,
 		'subject'            => '2027 Racing Team application: [rt-first-name] [rt-last-name]',
