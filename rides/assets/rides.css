@@ -1695,6 +1695,7 @@
 
 .rides-look-blend .rides-section--navy .rides-eyebrow {
 	color: var(--rides-yellow);
+	text-align: left;
 }
 .rides-look-blend .rides-section--navy .rides-note {
 	color: rgba(255, 255, 255, 0.86);
