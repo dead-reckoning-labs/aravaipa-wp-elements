@@ -61,7 +61,7 @@ function arv_rt_apply_fields() {
 		array( 'key' => 'returning-years', 'name' => 'rt-returning-years', 'label' => 'Which years?', 'type' => 'text', 'required' => false, 'section' => 'about', 'hint' => 'If yes, for example 2025, 2026.' ),
 		array( 'key' => 'resume', 'name' => 'rt-resume', 'label' => 'Racing resume', 'type' => 'textarea', 'required' => true, 'section' => 'racing', 'hint' => 'Your best results in the past 3 years: place, finish time, race name and year. One per line.' ),
 		array( 'key' => 'resume-file', 'name' => 'rt-resume-file', 'label' => 'Resume file', 'type' => 'file', 'required' => false, 'section' => 'racing', 'hint' => 'A PDF or image of a results list or athlete CV, if you keep one. 10 MB max.' ),
-		array( 'key' => 'ultrasignup', 'name' => 'rt-ultrasignup', 'label' => 'UltraSignup profile', 'type' => 'url', 'required' => false, 'section' => 'racing' ),
+		array( 'key' => 'ultrasignup', 'name' => 'rt-ultrasignup', 'label' => 'UltraSignup profile', 'type' => 'text', 'required' => false, 'section' => 'racing' ),
 		array( 'key' => 'profiles', 'name' => 'rt-profiles', 'label' => 'Other result profiles', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'UTMB, Strava, Athlinks. One per line.' ),
 		array( 'key' => 'goals', 'name' => 'rt-goals', 'label' => 'Your goals for 2027 and beyond', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'Short term goals for the season and long term goals in the sport.' ),
 		array( 'key' => 'race-plans', 'name' => 'rt-race-plans', 'label' => 'Aravaipa races you plan to run', 'type' => 'checkbox', 'required' => false, 'section' => 'season', 'hint' => '2027 Aravaipa races, filled from the race calendar.' ),
@@ -509,6 +509,36 @@ function arv_rt_apply_form_tag( $tag, $replace ) {
 	return $tag;
 }
 add_filter( 'wpcf7_form_tag', 'arv_rt_apply_form_tag', 10, 2 );
+
+/**
+ * UltraSignup takes any text, not only a full web address. The stored form
+ * has it as a url field, so applicants who typed their name or a short link
+ * were stopped with "check the fields" (3 of the first 10 failed submits
+ * after 0.101.28). At render and validation time, our form only.
+ *
+ * @param array $tag Tag.
+ * @return array
+ */
+function arv_rt_apply_ultrasignup_tag( $tag ) {
+	if ( ! is_array( $tag ) || ! isset( $tag['name'] ) || 'rt-ultrasignup' !== $tag['name'] ) {
+		return $tag;
+	}
+	if ( ! class_exists( 'WPCF7_ContactForm' ) || ! arv_rt_apply_is_ours( WPCF7_ContactForm::get_current() ) ) {
+		return $tag;
+	}
+	$req             = isset( $tag['type'] ) && '*' === substr( (string) $tag['type'], -1 );
+	$tag['type']     = $req ? 'text*' : 'text';
+	$tag['basetype'] = 'text';
+	$opts            = array();
+	foreach ( isset( $tag['options'] ) ? (array) $tag['options'] : array() as $o ) {
+		if ( 0 !== strpos( (string) $o, 'placeholder' ) ) {
+			$opts[] = $o;
+		}
+	}
+	$tag['options'] = $opts;
+	return $tag;
+}
+add_filter( 'wpcf7_form_tag', 'arv_rt_apply_ultrasignup_tag', 11, 1 );
 
 /**
  * The file limit and types for our two file fields, at render and validation
@@ -2014,6 +2044,9 @@ function arv_rt_apply_rr_payload( array $fields, array $race_ids ) {
 	$us          = arv_rt_apply_rr_https( $g( 'ultrasignup' ) );
 	if ( '' !== $us ) {
 		$p['ultrasignup'] = $us;
+	} elseif ( '' !== $g( 'ultrasignup' ) ) {
+		// Not a link (a name, say): keep it with the resume so it is not lost.
+		$p['resume'] = rtrim( $p['resume'] ) . "\n\nUltraSignup: " . ( function_exists( 'mb_substr' ) ? mb_substr( $g( 'ultrasignup' ), 0, 200 ) : substr( $g( 'ultrasignup' ), 0, 200 ) );
 	}
 	$prof = array();
 	$raw  = isset( $fields['rt-profiles'] ) ? $fields['rt-profiles'] : '';
