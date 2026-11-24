@@ -312,16 +312,13 @@ function arv_rt_apply_recipients() {
 }
 
 /**
- * Staff email body (0.101.30): a summary line, then one block per form
- * section with a heading. Short answers stay on one line; long answers
- * (textareas) get their label on its own line and a blank line after, so a
- * racing resume reads as a list instead of running into the next field.
+ * Short labels for the staff email (0.101.31), shared by the text and HTML
+ * versions.
  *
- * @return string
+ * @return string[] Field key => label.
  */
-function arv_rt_apply_mail_body() {
-	$skip = array( 'first-name', 'last-name', 'region', 'city', 'state' );
-	$short = array(
+function arv_rt_apply_mail_labels() {
+	return array(
 		'disciplines'     => 'Races',
 		'returning'       => 'Returning',
 		'returning-years' => 'Years on the team',
@@ -339,6 +336,19 @@ function arv_rt_apply_mail_body() {
 		'support'         => 'Support wanted',
 		'size-top'        => 'Long sleeve or jacket',
 	);
+}
+
+/**
+ * Staff email body (0.101.30): a summary line, then one block per form
+ * section with a heading. Short answers stay on one line; long answers
+ * (textareas) get their label on its own line and a blank line after, so a
+ * racing resume reads as a list instead of running into the next field.
+ *
+ * @return string
+ */
+function arv_rt_apply_mail_body() {
+	$skip = array( 'first-name', 'last-name', 'region', 'city', 'state' );
+	$short = arv_rt_apply_mail_labels();
 	$body = "[rt-first-name] [rt-last-name] applied for the 2027 Aravaipa Racing Team.\n"
 		. "Region: [rt-region]   Home: [rt-city], [rt-state]\n";
 	$by = array();
@@ -392,7 +402,8 @@ function arv_rt_apply_mail_prop( $value, $form = null ) {
 	if ( ! arv_rt_apply_is_ours( $form ) || ! is_array( $value ) ) {
 		return $value;
 	}
-	$value['body'] = arv_rt_apply_mail_body();
+	$value['body']     = arv_rt_apply_mail_body();
+	$value['use_html'] = true; // 0.101.32: the body is replaced with our own HTML in wpcf7_mail_components.
 	return $value;
 }
 add_filter( 'wpcf7_contact_form_property_mail', 'arv_rt_apply_mail_prop', 10, 2 );
@@ -428,7 +439,8 @@ function arv_rt_apply_mail_tidy( $body ) {
 }
 
 /**
- * Staff mail (name "mail") of our form: tidy the body at send time.
+ * Staff mail (name "mail") of our form: replace the body with the HTML
+ * email (0.101.32) at send time.
  *
  * @param array $components CF7 mail components.
  * @param mixed $form       WPCF7_ContactForm.
@@ -442,10 +454,435 @@ function arv_rt_apply_staff_mail_components( $components, $form = null, $mail = 
 	if ( ! is_object( $mail ) || ! method_exists( $mail, 'name' ) || 'mail' !== $mail->name() ) {
 		return $components;
 	}
-	$components['body'] = arv_rt_apply_mail_tidy( $components['body'] );
+	$components['body'] = arv_rt_apply_mail_html_components_body( $components['body'], isset( $components['subject'] ) ? $components['subject'] : '' );
 	return $components;
 }
 add_filter( 'wpcf7_mail_components', 'arv_rt_apply_staff_mail_components', 20, 3 );
+
+/*
+ * HTML staff email (0.101.32).
+ *
+ * The staff mail runs with use_html on, but its body is not built from CF7
+ * mail tags: with use_html CF7 runs every tag value through esc_html and
+ * wptexturize (which turns "--" into a dash and quotes into curly quotes) and
+ * wraps a body without its own <html> in a header, footer and wpautop. So the
+ * finished body is built here in wpcf7_mail_components, after CF7's tag pass,
+ * straight from the posted answers, each escaped exactly once by
+ * arv_rt_apply_h(). The headshot is embedded (cid) and a plain-text AltBody
+ * is set through phpmailer_init, armed only for this one send.
+ */
+
+/** Aravaipa teal, used only on section headings and the region badge. */
+define( 'ARV_RT_APPLY_MAIL_TEAL', '#2a5e6b' );
+
+/** Content id of the inline headshot. */
+define( 'ARV_RT_APPLY_HEADSHOT_CID', 'rt-headshot' );
+
+/** What the next staff wp_mail() should add in phpmailer_init, or null. */
+$GLOBALS['arv_rt_apply_mailer'] = null;
+
+/**
+ * Escape text for the HTML email, exactly once (existing entities are
+ * escaped too, so "&amp;" typed by an applicant shows as typed).
+ *
+ * @param string $s Text.
+ * @return string
+ */
+function arv_rt_apply_h( $s ) {
+	return htmlspecialchars( (string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', true );
+}
+
+/**
+ * A safe https href for a link the applicant typed, or ''. Only https links
+ * come out (http is upgraded, bare hosts get https://), so javascript:,
+ * data: and vbscript: can never become a link.
+ *
+ * @param string $v Link.
+ * @return string
+ */
+function arv_rt_apply_mail_href( $v ) {
+	$url = arv_rt_apply_rr_https( $v );
+	if ( '' === $url || 0 !== strpos( strtolower( $url ), 'https://' ) || preg_match( '/[\x00-\x20"\'<>\\\\]/', $url ) ) {
+		return '';
+	}
+	return $url;
+}
+
+/**
+ * An <a> tag, or the escaped text when there is no safe link.
+ *
+ * @param string $href Link (already checked).
+ * @param string $text Link text (raw).
+ * @return string
+ */
+function arv_rt_apply_mail_a( $href, $text ) {
+	if ( '' === $href ) {
+		return arv_rt_apply_h( $text );
+	}
+	return '<a href="' . arv_rt_apply_h( $href ) . '" style="color:' . ARV_RT_APPLY_MAIL_TEAL . ';text-decoration:underline;word-break:break-all">' . arv_rt_apply_h( $text ) . '</a>';
+}
+
+/**
+ * Instagram answer => handle without @, or '' when it does not look like one.
+ *
+ * @param string $v Answer (@handle, handle or instagram.com link).
+ * @return string
+ */
+function arv_rt_apply_mail_ig_handle( $v ) {
+	$v = trim( (string) $v );
+	if ( preg_match( '#^(?:https?://)?(?:www\.)?instagram\.com/([A-Za-z0-9._]{1,30})/?(?:\?.*)?$#i', $v, $m ) ) {
+		return $m[1];
+	}
+	$v = ltrim( $v, '@' );
+	return preg_match( '/^[A-Za-z0-9._]{1,30}$/', $v ) ? $v : '';
+}
+
+/**
+ * Escape free text and turn the links in it into <a> tags. Matches http(s)
+ * links, www. hosts and bare hosts with a common ending; everything else,
+ * including javascript: or data: text, stays plain escaped text.
+ *
+ * @param string $text Raw text, may be several lines.
+ * @return string HTML, line breaks as <br>.
+ */
+function arv_rt_apply_mail_linkify( $text ) {
+	$text = str_replace( array( "\r\n", "\r" ), "\n", (string) $text );
+	$re   = '~(?<![\w@/.:-])((?:https?://|www\.)[^\s<>"\']+|[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|co|me|app|run|us|ca|uk|run|events|racing|blog)(?:/[^\s<>"\']*)?)~i';
+	$out  = array();
+	foreach ( explode( "\n", $text ) as $line ) {
+		$html = '';
+		$pos  = 0;
+		if ( preg_match_all( $re, $line, $m, PREG_OFFSET_CAPTURE ) ) {
+			foreach ( $m[1] as $hit ) {
+				$raw   = $hit[0];
+				$start = $hit[1];
+				$trail = '';
+				while ( '' !== $raw && false !== strpos( '.,;:!?)]}', substr( $raw, -1 ) ) ) {
+					$trail = substr( $raw, -1 ) . $trail;
+					$raw   = substr( $raw, 0, -1 );
+				}
+				$html .= arv_rt_apply_h( substr( $line, $pos, $start - $pos ) );
+				$html .= arv_rt_apply_mail_a( arv_rt_apply_mail_href( $raw ), $raw ) . arv_rt_apply_h( $trail );
+				$pos   = $start + strlen( $hit[0] );
+			}
+		}
+		$html .= arv_rt_apply_h( substr( $line, $pos ) );
+		$out[] = $html;
+	}
+	return implode( "<br>\n", $out );
+}
+
+/**
+ * The answers of the current submission, keyed by field key, plus consents
+ * (consent-<key> => yes|no) and the saved files (key => path).
+ *
+ * @return array array( answers, files ).
+ */
+function arv_rt_apply_mail_answers() {
+	$a = array();
+	foreach ( arv_rt_apply_fields() as $f ) {
+		if ( 'file' !== $f['type'] ) {
+			$a[ $f['key'] ] = arv_rt_apply_posted( 'rt-' . $f['key'] );
+		}
+	}
+	foreach ( arv_rt_apply_consents() as $c ) {
+		$a[ 'consent-' . $c['key'] ] = arv_rt_apply_posted( 'rt-consent-' . $c['key'] ) ? 'yes' : 'no';
+	}
+	$files = array();
+	$last  = isset( $GLOBALS['arv_rt_apply_last'] ) && is_array( $GLOBALS['arv_rt_apply_last'] ) ? $GLOBALS['arv_rt_apply_last'] : array();
+	foreach ( array( 'headshot', 'resume-file' ) as $k ) {
+		if ( ! empty( $last['files'][ 'rt-' . $k ] ) && is_file( $last['files'][ 'rt-' . $k ] ) ) {
+			$files[ $k ] = $last['files'][ 'rt-' . $k ];
+		}
+	}
+	if ( class_exists( 'WPCF7_Submission' ) ) {
+		$s = WPCF7_Submission::get_instance();
+		if ( $s ) {
+			foreach ( (array) $s->uploaded_files() as $name => $paths ) {
+				$k     = preg_replace( '/^rt-/', '', (string) $name );
+				$paths = array_values( array_filter( (array) $paths ) );
+				if ( ! isset( $files[ $k ] ) && in_array( $k, array( 'headshot', 'resume-file' ), true ) && $paths && is_file( $paths[0] ) ) {
+					$files[ $k ] = $paths[0];
+				}
+			}
+		}
+	}
+	return array( $a, $files );
+}
+
+/**
+ * Where and when the application was sent, for the footer line.
+ *
+ * @return string[] array( url, date, time ).
+ */
+function arv_rt_apply_mail_meta() {
+	$url = '';
+	if ( class_exists( 'WPCF7_Submission' ) ) {
+		$s = WPCF7_Submission::get_instance();
+		if ( $s && method_exists( $s, 'get_meta' ) ) {
+			$url = (string) $s->get_meta( 'url' );
+		}
+	}
+	$ts = arv_rt_apply_now();
+	if ( function_exists( 'wp_date' ) ) {
+		return array( $url, wp_date( 'F j, Y', $ts ), wp_date( 'g:i a', $ts ) );
+	}
+	return array( $url, gmdate( 'F j, Y', $ts ), gmdate( 'g:i a', $ts ) );
+}
+
+/**
+ * Can this saved photo be shown inline (mail clients cannot show HEIC).
+ *
+ * @param string $path File path.
+ * @return bool
+ */
+function arv_rt_apply_mail_inline_ok( $path ) {
+	$ext = strtolower( pathinfo( (string) $path, PATHINFO_EXTENSION ) );
+	return '' !== (string) $path && is_file( $path ) && in_array( $ext, array( 'jpg', 'jpeg', 'png', 'gif', 'webp' ), true ) && filesize( $path ) <= 15 * 1024 * 1024;
+}
+
+/**
+ * The staff email as plain text (the AltBody), from the same layout as the
+ * 0.101.31 text email: the CF7 template filled with the answers, then tidied.
+ *
+ * @param array    $a     Answers (arv_rt_apply_mail_answers()).
+ * @param array    $files Files (key => path).
+ * @param string[] $meta  array( url, date, time ).
+ * @return string
+ */
+function arv_rt_apply_mail_text( $a, $files = array(), $meta = array( '', '', '' ) ) {
+	$map = array(
+		'[_url]'  => (string) $meta[0],
+		'[_date]' => (string) $meta[1],
+		'[_time]' => (string) $meta[2],
+	);
+	foreach ( arv_rt_apply_fields() as $f ) {
+		if ( 'file' === $f['type'] ) {
+			$map[ '[rt-' . $f['key'] . ']' ] = empty( $files[ $f['key'] ] ) ? '' : 'attached';
+		} else {
+			$v = isset( $a[ $f['key'] ] ) ? str_replace( array( "\r\n", "\r" ), "\n", trim( (string) $a[ $f['key'] ] ) ) : '';
+			$map[ '[rt-' . $f['key'] . ']' ] = $v;
+		}
+	}
+	foreach ( arv_rt_apply_consents() as $c ) {
+		$map[ '[rt-consent-' . $c['key'] . ']' ] = ( isset( $a[ 'consent-' . $c['key'] ] ) && 'yes' === $a[ 'consent-' . $c['key'] ] ) ? 'Yes' : 'No';
+	}
+	return arv_rt_apply_mail_tidy( strtr( arv_rt_apply_mail_body(), $map ) );
+}
+
+/**
+ * One answer as HTML (links where they belong).
+ *
+ * @param array  $f Field.
+ * @param string $v Raw answer.
+ * @return string
+ */
+function arv_rt_apply_mail_value_html( $f, $v ) {
+	switch ( $f['key'] ) {
+		case 'email':
+			return is_email( $v ) ? '<a href="mailto:' . arv_rt_apply_h( $v ) . '" style="color:' . ARV_RT_APPLY_MAIL_TEAL . '">' . arv_rt_apply_h( $v ) . '</a>' : arv_rt_apply_h( $v );
+		case 'phone':
+			$digits = preg_replace( '/[^0-9+]/', '', $v );
+			return strlen( $digits ) >= 7 ? '<a href="tel:' . arv_rt_apply_h( $digits ) . '" style="color:' . ARV_RT_APPLY_MAIL_TEAL . '">' . arv_rt_apply_h( $v ) . '</a>' : arv_rt_apply_h( $v );
+		case 'ultrasignup':
+			$url = arv_rt_apply_rr_ultrasignup( $v );
+			return arv_rt_apply_mail_a( '' !== $url && 0 === strpos( $url, 'https://' ) ? $url : '', $v ) . ( '' !== $url && '' === arv_rt_apply_rr_https( $v ) ? ' <span style="color:#6b7280">(name search)</span>' : '' );
+		case 'strava':
+			$url = arv_rt_apply_mail_href( $v );
+			return '' !== $url ? arv_rt_apply_mail_a( $url, $v ) : arv_rt_apply_mail_linkify( $v );
+		case 'instagram':
+			$h = arv_rt_apply_mail_ig_handle( $v );
+			return '' !== $h ? arv_rt_apply_mail_a( 'https://www.instagram.com/' . $h . '/', '@' . $h ) : arv_rt_apply_h( $v );
+	}
+	if ( 'textarea' === $f['type'] ) {
+		return arv_rt_apply_mail_linkify( $v );
+	}
+	return arv_rt_apply_h( $v );
+}
+
+/**
+ * The staff email as one-column HTML: a header block (name, region, home,
+ * returning), then one heading per section with bold labels. Blank answers
+ * and sections left with nothing are dropped.
+ *
+ * @param array    $a     Answers (arv_rt_apply_mail_answers()).
+ * @param array    $files Files (key => path).
+ * @param string[] $meta  array( url, date, time ).
+ * @param bool     $inline_photo True when the headshot goes in as cid:rt-headshot.
+ * @return string
+ */
+function arv_rt_apply_mail_html( $a, $files = array(), $meta = array( '', '', '' ), $inline_photo = false ) {
+	$get   = function ( $k ) use ( $a ) {
+		return isset( $a[ $k ] ) ? trim( (string) $a[ $k ] ) : '';
+	};
+	$teal  = ARV_RT_APPLY_MAIL_TEAL;
+	$font  = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+	$name  = trim( $get( 'first-name' ) . ' ' . $get( 'last-name' ) );
+	$home  = implode( ', ', array_filter( array( $get( 'city' ), $get( 'state' ) ), 'strlen' ) );
+	$ret   = $get( 'returning' );
+	$years = $get( 'returning-years' );
+	if ( '' !== $ret ) {
+		$ret = 0 === strcasecmp( $ret, 'yes' ) ? 'Yes' . ( '' !== $years ? ', ' . $years : '' ) : ( 0 === strcasecmp( $ret, 'no' ) ? 'No, new applicant' : $ret );
+	}
+	$labels = arv_rt_apply_mail_labels();
+	$skip   = array( 'first-name', 'last-name', 'region', 'city', 'state', 'returning', 'returning-years' );
+	$row    = function ( $label, $value_html, $long ) use ( $font ) {
+		if ( $long ) {
+			return '<tr><td style="padding:0 0 14px;font-family:' . $font . ';font-size:15px;line-height:1.5;color:#1f2328"><strong style="display:block;margin:0 0 2px">' . arv_rt_apply_h( $label ) . '</strong>' . $value_html . '</td></tr>' . "\n";
+		}
+		return '<tr><td style="padding:0 0 8px;font-family:' . $font . ';font-size:15px;line-height:1.5;color:#1f2328"><strong>' . arv_rt_apply_h( $label ) . ':</strong> ' . $value_html . '</td></tr>' . "\n";
+	};
+
+	$h  = '<!doctype html>' . "\n" . '<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . arv_rt_apply_h( '2027 Racing Team application: ' . $name ) . '</title></head>' . "\n";
+	$h .= '<body style="margin:0;padding:0;background:#f3f4f2">' . "\n";
+	$h .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f4f2"><tr><td align="center" style="padding:20px 12px">' . "\n";
+	$h .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:4px"><tr><td style="padding:24px 22px">' . "\n";
+
+	// Header block.
+	$h .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' . "\n";
+	$h .= '<tr><td style="padding:0 0 6px;font-family:' . $font . ';font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:#6b7280">2027 Racing Team application</td></tr>' . "\n";
+	$h .= '<tr><td style="padding:0 0 10px;font-family:' . $font . ';font-size:24px;line-height:1.25;font-weight:700;color:#111827">' . arv_rt_apply_h( '' !== $name ? $name : 'New applicant' ) . '</td></tr>' . "\n";
+	if ( '' !== $get( 'region' ) ) {
+		$h .= '<tr><td style="padding:0 0 10px"><span style="display:inline-block;padding:3px 10px;border-radius:12px;background:' . $teal . ';color:#ffffff;font-family:' . $font . ';font-size:13px;font-weight:600">' . arv_rt_apply_h( $get( 'region' ) ) . '</span></td></tr>' . "\n";
+	}
+	foreach ( array( 'Home' => $home, 'Returning' => $ret ) as $l => $v ) {
+		if ( '' !== $v ) {
+			$h .= $row( $l, arv_rt_apply_h( $v ), false );
+		}
+	}
+	$h .= '</table>' . "\n";
+
+	// Sections.
+	$by = array();
+	foreach ( arv_rt_apply_fields() as $f ) {
+		$by[ $f['section'] ][] = $f;
+	}
+	foreach ( arv_rt_apply_sections() as $key => $sec ) {
+		$rows = '';
+		if ( 'consents' === $key ) {
+			foreach ( arv_rt_apply_consents() as $c ) {
+				$yes   = 'yes' === $get( 'consent-' . $c['key'] );
+				$rows .= '<tr><td style="padding:0 0 8px;font-family:' . $font . ';font-size:14px;line-height:1.45;color:#1f2328"><strong>' . ( $yes ? 'Yes' : 'No' ) . ':</strong> ' . arv_rt_apply_h( $c['text'] ) . '</td></tr>' . "\n";
+			}
+		} else {
+			foreach ( isset( $by[ $key ] ) ? $by[ $key ] : array() as $f ) {
+				if ( in_array( $f['key'], $skip, true ) ) {
+					continue;
+				}
+				$label = isset( $labels[ $f['key'] ] ) ? $labels[ $f['key'] ] : $f['label'];
+				if ( 'file' === $f['type'] ) {
+					if ( empty( $files[ $f['key'] ] ) ) {
+						continue;
+					}
+					if ( 'headshot' === $f['key'] && $inline_photo ) {
+						$rows .= '<tr><td style="padding:0 0 14px;font-family:' . $font . ';font-size:15px;color:#1f2328"><strong style="display:block;margin:0 0 6px">' . arv_rt_apply_h( $label ) . '</strong><img src="cid:' . ARV_RT_APPLY_HEADSHOT_CID . '" alt="' . arv_rt_apply_h( 'Photo of ' . $name ) . '" width="280" style="display:block;width:100%;max-width:280px;height:auto;border:0;border-radius:4px"><span style="display:block;margin:4px 0 0;font-size:13px;color:#6b7280">Full size photo attached.</span></td></tr>' . "\n";
+					} else {
+						$rows .= $row( $label, 'attached to this email', false );
+					}
+					continue;
+				}
+				$v = $get( $f['key'] );
+				if ( '' === $v ) {
+					continue;
+				}
+				$rows .= $row( $label, arv_rt_apply_mail_value_html( $f, $v ), 'textarea' === $f['type'] );
+			}
+		}
+		if ( '' === $rows ) {
+			continue;
+		}
+		$h .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0">' . "\n";
+		$h .= '<tr><td style="padding:0 0 10px;font-family:' . $font . ';font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' . $teal . '">' . arv_rt_apply_h( $sec[1] ) . '</td></tr>' . "\n";
+		$h .= $rows . '</table>' . "\n";
+	}
+
+	// Footer.
+	$sent = 'Sent' . ( '' !== $meta[0] ? ' from ' . $meta[0] : '' ) . ( '' !== $meta[1] ? ' on ' . $meta[1] : '' ) . ( '' !== $meta[2] ? ' at ' . $meta[2] : '' ) . '.';
+	$h   .= '<p style="margin:22px 0 0;font-family:' . $font . ';font-size:12px;line-height:1.5;color:#6b7280">' . arv_rt_apply_h( $sent ) . ' Every application is also kept in WP Admin, Flamingo, Inbound Messages. Reply to this email to write to the applicant.</p>' . "\n";
+	$h   .= '</td></tr></table>' . "\n" . '</td></tr></table>' . "\n" . '</body></html>' . "\n";
+	return $h;
+}
+
+/**
+ * The staff body at send time: our HTML, with the inline photo and the
+ * AltBody armed for phpmailer_init. Never throws: a failure falls back to the
+ * text version in a <pre>, and failing that to what CF7 rendered, so the
+ * notice always goes out.
+ *
+ * @param string $cf7_body Body CF7 rendered from the template.
+ * @param string $subject  Rendered subject; phpmailer_init only acts on a mail with this subject.
+ * @return string
+ */
+function arv_rt_apply_mail_html_components_body( $cf7_body, $subject = '' ) {
+	$GLOBALS['arv_rt_apply_mailer'] = null;
+	try {
+		list( $a, $files ) = arv_rt_apply_mail_answers();
+		$meta   = arv_rt_apply_mail_meta();
+		$text   = arv_rt_apply_mail_text( $a, $files, $meta );
+		$inline = ! empty( $files['headshot'] ) && arv_rt_apply_mail_inline_ok( $files['headshot'] );
+		$GLOBALS['arv_rt_apply_mailer'] = array(
+			'subject' => (string) $subject,
+			'alt'     => $text,
+			'embed'   => $inline ? $files['headshot'] : '',
+		);
+		try {
+			return arv_rt_apply_mail_html( $a, $files, $meta, $inline );
+		} catch ( \Throwable $e ) {
+			$GLOBALS['arv_rt_apply_mailer']['embed'] = '';
+			return '<html><body><pre style="white-space:pre-wrap;font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px">' . arv_rt_apply_h( $text ) . '</pre></body></html>';
+		}
+	} catch ( \Throwable $e ) {
+		$GLOBALS['arv_rt_apply_mailer'] = null;
+		return $cf7_body;
+	}
+}
+
+/**
+ * phpmailer_init, after CF7's own (priority 10, which runs msgHTML): add the
+ * inline headshot and our plain-text AltBody to the one staff send that armed
+ * them, then disarm so no other mail on the site is touched.
+ *
+ * @param object $phpmailer PHPMailer.
+ */
+function arv_rt_apply_phpmailer_init( $phpmailer ) {
+	$m = isset( $GLOBALS['arv_rt_apply_mailer'] ) ? $GLOBALS['arv_rt_apply_mailer'] : null;
+	$GLOBALS['arv_rt_apply_mailer'] = null;
+	if ( ! is_array( $m ) || ! is_object( $phpmailer ) ) {
+		return;
+	}
+	// Only the mail that armed this (wp_mail strips newlines from the subject the same way).
+	if ( ! isset( $phpmailer->Subject ) || trim( str_replace( array( "\r", "\n" ), ' ', (string) $m['subject'] ) ) !== trim( str_replace( array( "\r", "\n" ), ' ', (string) $phpmailer->Subject ) ) ) {
+		return;
+	}
+	try {
+		if ( ! empty( $m['alt'] ) && property_exists( $phpmailer, 'AltBody' ) ) {
+			$phpmailer->AltBody = (string) $m['alt'];
+		}
+		if ( ! empty( $m['embed'] ) && method_exists( $phpmailer, 'addEmbeddedImage' ) && is_file( $m['embed'] ) ) {
+			$phpmailer->addEmbeddedImage( $m['embed'], ARV_RT_APPLY_HEADSHOT_CID, 'photo.' . strtolower( pathinfo( $m['embed'], PATHINFO_EXTENSION ) ) );
+		}
+	} catch ( \Throwable $e ) {
+		return; // The mail still goes out without the extras.
+	}
+}
+add_action( 'phpmailer_init', 'arv_rt_apply_phpmailer_init', 20, 1 );
+
+/**
+ * Disarm before every CF7 mail is composed and after every submission, so a
+ * staff send that never reached phpmailer_init (a pre_wp_mail short circuit)
+ * can never leak its text or photo into the applicant confirmation.
+ *
+ * @param mixed $components CF7 mail components (passed through).
+ * @return mixed
+ */
+function arv_rt_apply_mailer_disarm( $components = null ) {
+	$GLOBALS['arv_rt_apply_mailer'] = null;
+	return $components;
+}
+add_filter( 'wpcf7_mail_components', 'arv_rt_apply_mailer_disarm', 1, 1 );
+add_action( 'wpcf7_mail_sent', 'arv_rt_apply_mailer_disarm', 1, 0 );
+add_action( 'wpcf7_mail_failed', 'arv_rt_apply_mailer_disarm', 1, 0 );
+
 
 /**
  * The CF7 mail property.
@@ -462,7 +899,7 @@ function arv_rt_apply_mail() {
 		'body'               => $body,
 		'additional_headers' => 'Reply-To: [rt-email]',
 		'attachments'        => "[rt-headshot]\n[rt-resume-file]",
-		'use_html'           => false,
+		'use_html'           => true,
 		'exclude_blank'      => false,
 	);
 }
@@ -484,19 +921,22 @@ function arv_rt_apply_messages() {
  * Applicant confirmation email (CF7 Mail (2)). Written into the stored form by
  * the install command and applied at runtime for our form too, so it works
  * before a reinstall. Plain text, Reply-To Bryce (team manager).
+ * An HTML variant goes out instead only when arv_rt_apply_confirm_html_on()
+ * is true; the default stays plain text.
  *
  * @return array CF7 mail property.
  */
 function arv_rt_apply_confirm_mail() {
+	$html = arv_rt_apply_confirm_html_on();
 	return array(
 		'active'             => true,
 		'subject'            => arv_rt_apply_confirm_subject(),
 		'sender'             => 'Aravaipa Running <wordpress@aravaiparunning.com>',
 		'recipient'          => '[rt-email]',
-		'body'               => arv_rt_apply_confirm_body( '[rt-first-name]', false ),
+		'body'               => $html ? arv_rt_apply_confirm_html_body( '[rt-first-name]', false ) : arv_rt_apply_confirm_body( '[rt-first-name]', false ),
 		'additional_headers' => 'Reply-To: bryce@aravaiparunning.com',
 		'attachments'        => '',
-		'use_html'           => false,
+		'use_html'           => $html,
 		'exclude_blank'      => false,
 	);
 }
@@ -547,6 +987,85 @@ function arv_rt_apply_confirm_summary() {
 		. "Racing resume:\n[rt-resume]\n\n"
 		. "Why you want to be on the team:\n[rt-why]\n";
 }
+
+// HTML applicant confirmation (0.101.32): off by default, so the plain text
+// keeps going out. Turn on with the option arv_rt_apply_confirm_html = 1
+// (or define the constant true in wp-config.php before the plugin loads).
+if ( ! defined( 'ARV_RT_APPLY_CONFIRM_HTML' ) ) {
+	define( 'ARV_RT_APPLY_CONFIRM_HTML', false );
+}
+
+/**
+ * Should the applicant confirmation go out as HTML. The option, when set,
+ * wins over the constant.
+ *
+ * @return bool
+ */
+function arv_rt_apply_confirm_html_on() {
+	$opt = get_option( 'arv_rt_apply_confirm_html', null );
+	if ( null !== $opt && false !== $opt && '' !== $opt ) {
+		return in_array( strtolower( (string) $opt ), array( '1', 'yes', 'true', 'on' ), true );
+	}
+	return (bool) ARV_RT_APPLY_CONFIRM_HTML;
+}
+
+/**
+ * Confirmation body as a short, personal HTML email: the same paragraphs as
+ * arv_rt_apply_confirm_body(), one column, system fonts, no images, the
+ * season line in teal. The first name stays a CF7 tag, which CF7 escapes
+ * (esc_html) when it fills it in; the body carries its own <html>, so CF7
+ * adds no header, footer or auto paragraphs.
+ *
+ * @param string $first    First name or a CF7 tag.
+ * @param bool   $followup Follow-up wording.
+ * @return string
+ */
+function arv_rt_apply_confirm_html_body( $first, $followup = false ) {
+	$font  = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+	$paras = preg_split( "/\n\n+/", trim( arv_rt_apply_confirm_body( $first, $followup ) ) );
+	$p     = '';
+	foreach ( $paras as $para ) {
+		$html = nl2br( arv_rt_apply_h( $para ), false );
+		$html = preg_replace( "/^(What&#039;s next:)/", '<strong>$1</strong>', $html );
+		$p   .= '<p style="margin:0 0 16px;font-family:' . $font . ';font-size:16px;line-height:1.55;color:#1f2328">' . $html . '</p>' . "\n";
+	}
+	return '<!doctype html>' . "\n" . '<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . arv_rt_apply_h( arv_rt_apply_confirm_subject() ) . '</title></head>' . "\n"
+		. '<body style="margin:0;padding:0;background:#ffffff">' . "\n"
+		. '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:24px 16px">' . "\n"
+		. '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px"><tr><td style="text-align:left">' . "\n"
+		. '<p style="margin:0 0 18px;font-family:' . $font . ';font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:' . ARV_RT_APPLY_MAIL_TEAL . '">2027 Aravaipa Racing Team</p>' . "\n"
+		. $p
+		. '</td></tr></table>' . "\n" . '</td></tr></table>' . "\n" . '</body></html>' . "\n";
+}
+
+/**
+ * Mail (2) components when the HTML confirmation is on: arm the plain-text
+ * confirmation as the AltBody for that one send.
+ *
+ * @param array $components CF7 mail components.
+ * @param mixed $form       WPCF7_ContactForm.
+ * @param mixed $mail       WPCF7_Mail.
+ * @return array
+ */
+function arv_rt_apply_confirm_mail_components( $components, $form = null, $mail = null ) {
+	if ( ! is_array( $components ) || ! arv_rt_apply_is_ours( $form ) || ! is_object( $mail ) || ! method_exists( $mail, 'name' ) || 'mail_2' !== $mail->name() ) {
+		return $components;
+	}
+	if ( ! arv_rt_apply_confirm_html_on() ) {
+		return $components;
+	}
+	try {
+		$GLOBALS['arv_rt_apply_mailer'] = array(
+			'subject' => isset( $components['subject'] ) ? (string) $components['subject'] : '',
+			'alt'     => arv_rt_apply_confirm_body( arv_rt_apply_posted( 'rt-first-name' ), false ),
+			'embed'   => '',
+		);
+	} catch ( \Throwable $e ) {
+		$GLOBALS['arv_rt_apply_mailer'] = null;
+	}
+	return $components;
+}
+add_filter( 'wpcf7_mail_components', 'arv_rt_apply_confirm_mail_components', 20, 3 );
 
 /**
  * CF7 Mail (2) for our form: the applicant confirmation.
