@@ -325,7 +325,7 @@ function arv_rt_apply_mail() {
 /** CF7 messages that differ from the defaults. */
 function arv_rt_apply_messages() {
 	return array(
-		'mail_sent_ok'     => 'Thank you. Your application for the 2027 Aravaipa Racing Team is in, and the team managers read every one. This page is your receipt: we do not send a confirmation email.',
+		'mail_sent_ok'     => 'Thank you. Your application for the 2027 Aravaipa Racing Team is in, and the team managers read every one. A confirmation email is on its way.',
 		'mail_sent_ng'     => 'Your application is saved, but the notice to the team did not send. No need to apply again.',
 		'validation_error' => 'Some answers need a look. The list next to Submit shows each one.',
 		'spam'             => 'We could not confirm you are human, so this did not go through. Press Submit again. If it keeps happening, email your answers to marketing@aravaiparunning.com.',
@@ -333,6 +333,90 @@ function arv_rt_apply_messages() {
 		'upload_file_type_invalid' => 'That file type is not accepted. Use a photo (JPG, PNG, WEBP or HEIC) or a PDF.',
 		'upload_file_too_large'    => 'That file is over 10 MB. Try a smaller photo, or email it to marketing@aravaiparunning.com.',
 	);
+}
+
+/**
+ * Applicant confirmation email (CF7 Mail (2)), applied at runtime for our form
+ * only so the stored form needs no reinstall. Plain text, Reply-To marketing@.
+ *
+ * @return array CF7 mail property.
+ */
+function arv_rt_apply_confirm_mail() {
+	return array(
+		'active'             => true,
+		'subject'            => arv_rt_apply_confirm_subject(),
+		'sender'             => 'Aravaipa Running <wordpress@aravaiparunning.com>',
+		'recipient'          => '[rt-email]',
+		'body'               => arv_rt_apply_confirm_body( '[rt-first-name]', false ),
+		'additional_headers' => 'Reply-To: marketing@aravaiparunning.com',
+		'attachments'        => '',
+		'use_html'           => false,
+		'exclude_blank'      => false,
+	);
+}
+
+/** Confirmation subject. */
+function arv_rt_apply_confirm_subject() {
+	return 'We got your 2027 Aravaipa Racing Team application';
+}
+
+/**
+ * Confirmation body.
+ *
+ * @param string $first    First name or a CF7 tag.
+ * @param bool   $followup True for the one-time note to people who applied before confirmations existed.
+ * @return string
+ */
+function arv_rt_apply_confirm_body( $first, $followup = false ) {
+	$hi   = '' !== trim( (string) $first ) ? 'Hi ' . trim( (string) $first ) . ',' : 'Hi,';
+	$open = $followup
+		? "Thanks for applying to the 2027 Aravaipa Racing Team. We weren't sending confirmations when you applied, so here it is: your application came through and it's in front of our team managers. If you saw an error while submitting and tried more than once, no worries, we have you."
+		: 'Thanks for applying to the 2027 Aravaipa Racing Team. Your application is in, and this email is your confirmation.';
+	return $hi . "\n\n" . $open . "\n\nWhat's next: applications close November 30. Our team managers read every application, and we'll be in touch by email once the 2027 team is set.\n\nNeed to add or change something? Just reply to this email.\n\nSee you out there,\nAravaipa Running\n";
+}
+
+/**
+ * CF7 Mail (2) for our form: the applicant confirmation.
+ *
+ * @param mixed $value Stored mail_2.
+ * @param mixed $form  WPCF7_ContactForm.
+ * @return mixed
+ */
+function arv_rt_apply_mail2_prop( $value, $form = null ) {
+	return arv_rt_apply_is_ours( $form ) ? arv_rt_apply_confirm_mail() : $value;
+}
+add_filter( 'wpcf7_contact_form_property_mail_2', 'arv_rt_apply_mail2_prop', 10, 2 );
+
+/**
+ * Full thank-you screen that replaces the form after a sent application.
+ *
+ * @param bool $visible Shown now (no-JS submit) or kept hidden for the script.
+ * @return string
+ */
+function arv_rt_apply_thanks_html( $visible = false ) {
+	$team = function_exists( 'home_url' ) ? home_url( '/racing-team/' ) : 'https://www.aravaiparunning.com/racing-team/';
+	$team = function_exists( 'esc_url' ) ? esc_url( $team ) : htmlspecialchars( $team, ENT_QUOTES );
+	return '<div class="rt-thanks" id="rt-thanks" role="status" tabindex="-1"' . ( $visible ? '' : ' hidden' ) . '>'
+		. '<p class="rt-thanks-kicker">Application received</p>'
+		. '<h2 class="rt-thanks-title">You&rsquo;re in the running.</h2>'
+		. '<p>Thanks for applying to the 2027 Aravaipa Racing Team. We have your application, and a confirmation email is on its way to you now.</p>'
+		. '<p><strong>What&rsquo;s next:</strong> applications close November 30. Our team managers read every application, and we&rsquo;ll be in touch by email once the 2027 team is set.</p>'
+		. '<p>Need to add or change something? Reply to the confirmation email or write to <a href="mailto:marketing@aravaiparunning.com">marketing@aravaiparunning.com</a>.</p>'
+		. '<p><a class="rt-thanks-link" href="' . $team . '">Meet the current team</a></p>'
+		. '</div>';
+}
+
+/** True when this request is a no-JS submit of our form that was sent. */
+function arv_rt_apply_just_sent() {
+	if ( ! class_exists( 'WPCF7_Submission' ) ) {
+		return false;
+	}
+	$sub = WPCF7_Submission::get_instance();
+	if ( ! $sub || ! method_exists( $sub, 'get_status' ) ) {
+		return false;
+	}
+	$cf = method_exists( $sub, 'get_contact_form' ) ? $sub->get_contact_form() : null;
+	return arv_rt_apply_is_ours( $cf ) && 'mail_sent' === $sub->get_status();
 }
 
 /**
@@ -680,7 +764,7 @@ add_action( 'wpcf7_after_flamingo', 'arv_rt_apply_after_flamingo', 10, 1 );
 /** Styles: the site's type, plain fields, no cards, no shadows. */
 function arv_rt_apply_css() {
 	// The page around the form mirrors the team page's own styles (scoped there to .page-id-79463).
-	return '.arv-rt-page{text-align:left}.arv-rt-page .arv-team-h1{text-align:center;margin:0 0 1.5rem}'
+	return '.rt-thanks{padding:40px 32px;background:#f4f1ea;margin:8px 0 24px}.rt-thanks:focus{outline:none}.rt-thanks-kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#b3261e;margin:0 0 8px}.rt-thanks-title{font-size:34px;line-height:1.1;margin:0 0 16px}.rt-thanks p{font-size:17px;line-height:1.55;max-width:640px}.rt-thanks-link{display:inline-block;margin-top:8px;padding:12px 22px;background:#b3261e;color:#fff!important;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:.06em;font-size:14px}@media(max-width:600px){.rt-thanks{padding:28px 20px}.rt-thanks-title{font-size:27px}}.arv-rt-page{text-align:left}.arv-rt-page .arv-team-h1{text-align:center;margin:0 0 1.5rem}'
 		. '.arv-rt-page .arv-team-intro{max-width:760px;margin-left:auto;margin-right:auto;text-align:center}'
 		. '.arv-rt-page .arv-team-sponsors{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2.5rem;margin:1.75rem auto 2.25rem}'
 		. '.arv-rt-page .arv-team-sponsors img{display:block;width:auto;max-width:100%;border:0;opacity:.9}'
@@ -752,11 +836,13 @@ function arv_rt_apply_shortcode() {
 	}
 	$h  = '<style>' . arv_rt_apply_css() . arv_rt_apply_region_css() . '</style>';
 	$fail = function_exists( 'rest_url' ) ? rest_url( 'aravaipa/v1/rt-apply-fail' ) : '';
-	$h   .= '<div class="rt-apply" id="rt-apply" data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '"' . ( $fail ? ' data-fail-url="' . esc_attr( $fail ) . '"' : '' ) . '>';
+	$h   .= '<div class="rt-apply" id="rt-apply"' . ( $form && arv_rt_apply_just_sent() ? ' data-sent="1"' : '' ) . ' data-state="' . esc_attr( $state ) . '" data-opens="' . (int) $opens . '" data-closes="' . (int) $closes . '"' . ( $fail ? ' data-fail-url="' . esc_attr( $fail ) . '"' : '' ) . '>';
 	$h .= '<p class="rt-state rt-state-before"' . ( 'before' === $state ? '' : ' hidden' ) . '>Applications open November 20.</p>';
 	$h .= '<p class="rt-state rt-state-closed"' . ( 'closed' === $state ? '' : ' hidden' ) . '>Applications for the 2027 team are closed.</p>';
+	$sent = $form && arv_rt_apply_just_sent();
 	if ( $form ) {
-		$h .= '<div class="rt-state-open"' . ( 'open' === $state ? '' : ' hidden' ) . '>' . $form . '</div>';
+		$h .= arv_rt_apply_thanks_html( $sent );
+		$h .= '<div class="rt-state-open"' . ( 'open' === $state && ! $sent ? '' : ' hidden' ) . '>' . $form . '</div>';
 	} elseif ( 'open' === $state ) {
 		$h .= '<p class="rt-state">The application form is not available right now. Email marketing@aravaiparunning.com and we will help.</p>';
 	}
@@ -765,7 +851,7 @@ function arv_rt_apply_shortcode() {
 		$h .= arv_rt_apply_region_hint_js();
 		arv_rt_apply_enqueue();
 	}
-	$h .= '<script>(function(){var r=document.getElementById("rt-apply");if(!r)return;function t(){var n=Date.now()/1000,o=+r.dataset.opens,c=+r.dataset.closes,s=n<o?"before":(n>c?"closed":"open");var was=r.dataset.state;r.dataset.state=s;["before","closed","open"].forEach(function(k){var e=r.querySelector(".rt-state-"+k);if(e)e.hidden=(k!==s);});if(was!==s&&s==="open"&&window.turnstile){r.querySelectorAll(".wpcf7-turnstile,.cf-turnstile").forEach(function(w){try{window.turnstile.reset(w);}catch(x){}});}}t();setInterval(t,15000);})();</script>';
+	$h .= '<script>(function(){var r=document.getElementById("rt-apply");if(!r)return;function t(){var n=Date.now()/1000,o=+r.dataset.opens,c=+r.dataset.closes,s=n<o?"before":(n>c?"closed":"open");var was=r.dataset.state;r.dataset.state=s;["before","closed","open"].forEach(function(k){var e=r.querySelector(".rt-state-"+k);if(e)e.hidden=(k!==s)||(k==="open"&&r.dataset.sent==="1");});if(was!==s&&s==="open"&&window.turnstile){r.querySelectorAll(".wpcf7-turnstile,.cf-turnstile").forEach(function(w){try{window.turnstile.reset(w);}catch(x){}});}}t();setInterval(t,15000);})();</script>';
 	return $h;
 }
 add_shortcode( 'arv_rt_apply', 'arv_rt_apply_shortcode' );
@@ -2777,6 +2863,79 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				WP_CLI::log( '#' . $e['id'] . ' ' . arv_rt_apply_rr_mask( $e['email'] ) . ' ' . $r['status'] . ' ' . $r['code'] . ( $r['error'] ? ' ' . $r['error'] : '' ) . $extra );
 			}
 			WP_CLI::log( count( $list ) . ' entries ' . wp_json_encode( $n ) . ( $dry ? ' (dry run)' : '' ) );
+		}
+
+		/**
+		 * One-time thank-you to everyone who applied before confirmations existed.
+		 *
+		 * ## OPTIONS
+		 *
+		 * [--send]
+		 * : Send for real. Without it, a dry run that lists counts only.
+		 *
+		 * [--before=<datetime>]
+		 * : Only applications saved before this local time (Y-m-d H:i:s); later ones got the automatic confirmation.
+		 *
+		 * [--only=<email>]
+		 * : Send to this one applicant address only (a check before the batch).
+		 *
+		 * [--preview]
+		 * : Print the subject and one body.
+		 *
+		 * @param array $args  Args.
+		 * @param array $assoc Flags.
+		 */
+		public function thank( $args, $assoc ) {
+			global $wpdb;
+			$before = isset( $assoc['before'] ) ? (string) $assoc['before'] : current_time( 'mysql' );
+			$rows   = $wpdb->get_results( $wpdb->prepare(
+				"SELECT p.ID, p.post_date, e.meta_value AS email, f.meta_value AS first FROM {$wpdb->posts} p
+				 JOIN {$wpdb->postmeta} e ON e.post_id = p.ID AND e.meta_key = '_field_rt-email'
+				 LEFT JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_field_rt-first-name'
+				 WHERE p.post_type = 'flamingo_inbound' AND p.post_status NOT IN ('flamingo-spam','trash') AND p.post_title LIKE %s AND p.post_date < %s
+				 ORDER BY p.post_date ASC",
+				'2027 Racing Team%',
+				$before
+			), ARRAY_A );
+			$seen = array();
+			foreach ( $rows as $r ) {
+				$em = strtolower( trim( (string) $r['email'] ) );
+				if ( '' === $em || ! is_email( $em ) || preg_match( '/\+rtapply(-[a-z0-9]+)?@/i', $em ) ) {
+					continue;
+				}
+				$seen[ $em ] = trim( (string) $r['first'] );
+			}
+			if ( isset( $assoc['only'] ) ) {
+				$o    = strtolower( trim( (string) $assoc['only'] ) );
+				$seen = isset( $seen[ $o ] ) ? array( $o => $seen[ $o ] ) : array( $o => '' );
+			}
+			$done = get_option( 'arv_rt_apply_thanked', array() );
+			$done = is_array( $done ) ? $done : array();
+			$todo = array_diff_key( $seen, $done );
+			if ( isset( $assoc['preview'] ) ) {
+				WP_CLI::log( 'Subject: ' . arv_rt_apply_confirm_subject() . "\n\n" . arv_rt_apply_confirm_body( 'Stella', true ) );
+			}
+			WP_CLI::log( 'applicants ' . count( $seen ) . ', already thanked ' . ( count( $seen ) - count( $todo ) ) . ', to send ' . count( $todo ) . ' (before ' . $before . ')' );
+			if ( empty( $assoc['send'] ) ) {
+				WP_CLI::log( 'dry run, nothing sent' );
+				return;
+			}
+			$headers = array( 'From: Aravaipa Running <wordpress@aravaiparunning.com>', 'Reply-To: marketing@aravaiparunning.com' );
+			$sent    = 0;
+			$fail    = 0;
+			foreach ( $todo as $em => $first ) {
+				$ok = wp_mail( $em, arv_rt_apply_confirm_subject(), arv_rt_apply_confirm_body( $first, true ), $headers );
+				if ( $ok ) {
+					$done[ $em ] = gmdate( 'c' );
+					update_option( 'arv_rt_apply_thanked', $done, false );
+					++$sent;
+				} else {
+					++$fail;
+					WP_CLI::warning( 'failed ' . arv_rt_apply_rr_mask( $em ) );
+				}
+				usleep( 400000 );
+			}
+			WP_CLI::log( 'sent ' . $sent . ', failed ' . $fail );
 		}
 
 		/**

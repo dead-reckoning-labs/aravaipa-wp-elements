@@ -319,6 +319,17 @@
 		clearBad();
 		storeClear();
 		form.querySelectorAll('.rt-photo-note,.rt-notice').forEach(function (x) { x.remove(); });
+		// Swap the form for the full thank-you screen and bring it into view.
+		var root = document.getElementById('rt-apply');
+		var thanks = document.getElementById('rt-thanks');
+		if (root && thanks) {
+			root.setAttribute('data-sent', '1');
+			var open = root.querySelector('.rt-state-open');
+			if (open) { open.hidden = true; }
+			thanks.hidden = false;
+			try { thanks.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (x) { thanks.scrollIntoView(); }
+			try { thanks.focus({ preventScroll: true }); } catch (x2) { /* old browsers */ }
+		}
 	});
 
 	// CF7 throws away network errors and non-2xx answers without an event.
