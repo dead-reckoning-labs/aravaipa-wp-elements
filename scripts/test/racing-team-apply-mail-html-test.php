@@ -323,6 +323,21 @@ $GLOBALS['t_files'] = array( 'rt-headshot' => array( $cf7tmp ) );
 list( $cu, $pmu ) = $send( $jpg );
 ok( ! in_array( $cf7tmp, $cu['attachments'], true ) && in_array( $pdf, $cu['attachments'], true ) && 1 === count( $pmu->embedded ), 'small headshot: CF7 upload path dropped from attachments too' );
 $GLOBALS['t_files'] = array();
+// #396 resize: a big phone original shrunk before mail. The resized copy is
+// what rides, so it is embedded once and neither file is also attached.
+$resized = $GLOBALS['t_tmp'] . '/cf7-upload-headshot-resized.jpg';
+copy( $jpg, $resized );
+$GLOBALS['t_files']             = array( 'rt-headshot' => array( $big ) );
+$GLOBALS['arv_rt_apply_resized'] = array( $big => $resized );
+list( $cr, $pmr ) = $send( $jpg );
+ok( ! in_array( $big, $cr['attachments'], true ) && ! in_array( $resized, $cr['attachments'], true ) && in_array( $pdf, $cr['attachments'], true ) && 1 === count( $pmr->embedded ) && has( $cr['body'], 'src="cid:rt-headshot"' ), 'resized big headshot: embedded once, not attached' );
+$GLOBALS['arv_rt_apply_last'] = null;
+$c5  = run_filter( 'wpcf7_mail_components', array( 'subject' => 'Size check', 'body' => 'CF7 body', 'attachments' => array( $big, $pdf ) ), $form, new T_Mail( 'mail' ) );
+$pm5 = new T_PHPMailer();
+$pm5->Subject = 'Size check';
+run_filter( 'phpmailer_init', $pm5 );
+ok( 1 === count( $pm5->embedded ) && $resized === $pm5->embedded[0][0] && array( $pdf ) === array_values( $c5['attachments'] ), 'no private copy: the resized upload is what the inline test sees and embeds' );
+$GLOBALS['arv_rt_apply_resized'] = array();
 // HTML build fails: the fallback clears embed (or the mailer), so the photo stays attached.
 $GLOBALS['arv_rt_apply_mailer'] = array( 'subject' => 'S', 'alt' => 't', 'embed' => '' );
 $kf = arv_rt_apply_mail_drop_embedded_attachment( array( 'attachments' => array( $jpg, $pdf ) ) );
@@ -347,8 +362,12 @@ ok( false === $cm['use_html'] && arv_rt_apply_confirm_body( '[rt-first-name]', f
 $GLOBALS['t_opts']['arv_rt_apply_confirm_html'] = '1';
 $cm = arv_rt_apply_confirm_mail();
 ok( true === arv_rt_apply_confirm_html_on() && true === $cm['use_html'] && has( $cm['body'], '<html' ), 'option on: HTML confirmation' );
-ok( has( $cm['body'], 'Hi [rt-first-name],' ) && has( $cm['body'], '<strong>What&#039;s next:</strong> applications close November 30.' ), 'HTML confirmation: same copy, tag for CF7 to fill and escape' );
-ok( has( $cm['body'], 'Just reply to this email.' ) && has( $cm['body'], 'See you out there,<br>' ), 'HTML confirmation: reply line and sign-off' );
+ok( has( $cm['body'], 'Hi [rt-first-name],' ) && has( $cm['body'], '<strong>What happens next</strong><br>' ) && has( $cm['body'], 'Applications close November 30.' ), 'HTML confirmation: same copy, tag for CF7 to fill and escape' );
+ok( has( $cm['body'], 'just reply to this email' ) && has( $cm['body'], 'Thanks again, and see you on the trail,<br>' ) && has( $cm['body'], '<strong>A copy of your application</strong><br>' ) && has( $cm['body'], 'Name: [rt-first-name] [rt-last-name]' ), 'HTML confirmation: reply line, summary and sign-off' );
+$GLOBALS['t_posted']['rt-first-name'] = 'evil.example.com';
+$cx = run_filter( 'wpcf7_mail_components', array( 'subject' => 'S', 'body' => $cm['body'] ), $form, new T_Mail( 'mail_2' ) );
+ok( ! has( $cx['body'], 'evil.example.com' ) && is_array( $GLOBALS['arv_rt_apply_mailer'] ) && has( $GLOBALS['arv_rt_apply_mailer']['alt'], 'evil[.]example[.]com' ) && ! has( $GLOBALS['arv_rt_apply_mailer']['alt'], 'evil.example.com' ), 'HTML confirmation on: AltBody defanged like the plain mail_2' );
+$GLOBALS['t_posted']['rt-first-name'] = 'Lindsay';
 ok( ! has( $cm['body'], "\u{2014}" ) && no_stripes( $cm['body'] ) && ! has( $cm['body'], '<img' ), 'HTML confirmation: no em dash, no stripes, no images' );
 ok( 'Reply-To: bryce@aravaiparunning.com' === $cm['additional_headers'] && $cm['subject'] === arv_rt_apply_confirm_subject(), 'HTML confirmation: same subject and Reply-To' );
 ok( ! has( arv_rt_apply_confirm_html_body( '<b>Al</b>' ), '<b>Al' ), 'HTML confirmation escapes a literal name' );

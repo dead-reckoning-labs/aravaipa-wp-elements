@@ -484,6 +484,10 @@ function arv_rt_apply_mail_drop_embedded_attachment( $components ) {
 				if ( isset( $up['rt-headshot'] ) ) {
 					foreach ( array_filter( (array) $up['rt-headshot'] ) as $p ) {
 						$drop[] = (string) $p;
+						// And the resized copy that actually rides as the attachment (#396).
+						if ( function_exists( 'arv_rt_apply_upload_path' ) ) {
+							$drop[] = (string) arv_rt_apply_upload_path( $p );
+						}
 					}
 				}
 			}
@@ -662,8 +666,12 @@ function arv_rt_apply_mail_answers() {
 			foreach ( (array) $s->uploaded_files() as $name => $paths ) {
 				$k     = preg_replace( '/^rt-/', '', (string) $name );
 				$paths = array_values( array_filter( (array) $paths ) );
-				if ( ! isset( $files[ $k ] ) && in_array( $k, array( 'headshot', 'resume-file' ), true ) && $paths && is_file( $paths[0] ) ) {
-					$files[ $k ] = $paths[0];
+				if ( ! isset( $files[ $k ] ) && in_array( $k, array( 'headshot', 'resume-file' ), true ) && $paths ) {
+					// The resized copy when there is one (#396), so the 3 MB inline test sees what is sent.
+					$p = function_exists( 'arv_rt_apply_upload_path' ) ? arv_rt_apply_upload_path( $paths[0] ) : $paths[0];
+					if ( is_file( $p ) ) {
+						$files[ $k ] = $p;
+					}
 				}
 			}
 		}
@@ -1089,7 +1097,7 @@ function arv_rt_apply_confirm_html_body( $first, $followup = false ) {
 	$p     = '';
 	foreach ( $paras as $para ) {
 		$html = nl2br( arv_rt_apply_h( $para ), false );
-		$html = preg_replace( "/^(What&#039;s next:)/", '<strong>$1</strong>', $html );
+		$html = preg_replace( "/^(What&#039;s next:|What happens next(?=<br>)|A copy of your application(?=<br>))/", '<strong>$1</strong>', $html );
 		$p   .= '<p style="margin:0 0 16px;font-family:' . $font . ';font-size:16px;line-height:1.55;color:#1f2328">' . $html . '</p>' . "\n";
 	}
 	return '<!doctype html>' . "\n" . '<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . arv_rt_apply_h( arv_rt_apply_confirm_subject() ) . '</title></head>' . "\n"
@@ -1120,7 +1128,8 @@ function arv_rt_apply_confirm_mail_components( $components, $form = null, $mail 
 	try {
 		$GLOBALS['arv_rt_apply_mailer'] = array(
 			'subject' => isset( $components['subject'] ) ? (string) $components['subject'] : '',
-			'alt'     => arv_rt_apply_confirm_body( arv_rt_apply_posted( 'rt-first-name' ), false ),
+			// Defanged like the plain mail_2 body (#396): the applicant typed the name.
+			'alt'     => arv_rt_apply_defang( arv_rt_apply_confirm_body( arv_rt_apply_posted( 'rt-first-name' ), false ) ),
 			'embed'   => '',
 		);
 	} catch ( \Throwable $e ) {
