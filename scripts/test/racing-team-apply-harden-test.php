@@ -305,7 +305,7 @@ ok( in_array( 'arv_rt_apply_form_tag', $GLOBALS['t_filters']['wpcf7_form_tag'], 
 
 // Friendly messages at display time, ours only.
 WPCF7_ContactForm::$current = new WPCF7_ContactForm( $ours );
-ok( false !== strpos( arv_rt_apply_display_message( 'x', 'spam' ), 'marketing@aravaiparunning.com' ), 'spam message has the email fallback' );
+ok( false !== strpos( arv_rt_apply_display_message( 'x', 'spam' ), 'bryce@aravaiparunning.com' ), 'spam message has the email fallback' );
 ok( false !== strpos( arv_rt_apply_display_message( 'x', 'upload_file_too_large' ), '10 MB' ), 'too large message says 10 MB' );
 ok( 'x' === arv_rt_apply_display_message( 'x', 'not_ours_key' ), 'unknown key passes through' );
 WPCF7_ContactForm::$current = new WPCF7_ContactForm( $other );
