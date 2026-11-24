@@ -8,7 +8,8 @@
  * and vbscript: never become links; Instagram, Strava, UltraSignup and URLs
  * inside long answers become links; blank answers and empty sections are
  * dropped; line breaks kept; no em dash and no edge stripes; the inline
- * headshot (cid) with the attachment kept, and HEIC shown as attached; the
+ * headshot: a small one embedded (cid) and not attached, a large or HEIC one
+ * attached and not embedded, never both; the
  * plain-text AltBody and the photo armed through phpmailer_init for the staff
  * send only; the applicant confirmation stays plain text by default and the
  * HTML variant only comes in behind the flag.
@@ -73,7 +74,7 @@ class WPCF7_Submission {
 		return $GLOBALS['t_files'];
 	}
 	public function get_meta( $k ) {
-		return 'url' === $k ? 'https://aravaiparunning.com/racing-team/apply/' : '';
+		return 'url' === $k ? 'https://aravaiparunning.com/racing-team-apply/' : '';
 	}
 }
 class T_Mail {
@@ -167,7 +168,7 @@ $lindsay = array(
 $c1 = '#2a5e6b';
 $c2 = 'rgb(1,2,3)';
 ok( ! no_stripes( '<td style="border-left:4px solid ' . $c1 . '">' ) && ! no_stripes( '<div style="border-top: 3px solid ' . $c2 . '">' ) && no_stripes( '<img style="border:0">' ), 'stripe detector works' );
-$meta = array( 'https://aravaiparunning.com/racing-team/apply/', 'November 24, 2026', '9:15 am' );
+$meta = array( 'https://aravaiparunning.com/racing-team-apply/', 'November 24, 2026', '9:15 am' );
 
 // Header, sections, labels.
 $h = arv_rt_apply_mail_html( $lindsay, array(), $meta, false );
@@ -187,7 +188,7 @@ ok( ! has( $h, "\u{2014}" ) && ! has( $h, '&mdash;' ), 'no em dash' );
 ok( no_stripes( $h ), 'no edge stripes' );
 ok( 1 >= substr_count( $h, ARV_RT_APPLY_MAIL_TEAL . ';color:#ffffff' ), 'teal background only on the region badge' );
 ok( has( $h, '<strong>Yes:</strong> I am 18' ) && has( $h, '<strong>No:</strong> If selected, you may use my name' ), 'agreements yes and no' );
-ok( has( $h, 'Sent from https://aravaiparunning.com/racing-team/apply/ on November 24, 2026 at 9:15 am.' ), 'footer line' );
+ok( has( $h, 'Sent from https://aravaiparunning.com/racing-team-apply/ on November 24, 2026 at 9:15 am.' ), 'footer line' );
 
 // Blank answers and empty sections dropped.
 ok( ! has( $h, 'Goals' ) && ! has( $h, 'Summit' ) && ! has( $h, 'Sponsors' ) && ! has( $h, 'Support wanted' ), 'blank answers dropped' );
@@ -240,7 +241,7 @@ file_put_contents( $heic, 'heic' );
 $pdf = $GLOBALS['t_tmp'] . '/x-rt-resume-file.pdf';
 file_put_contents( $pdf, '%PDF' );
 $hp = arv_rt_apply_mail_html( $lindsay, array( 'headshot' => $jpg, 'resume-file' => $pdf ), $meta, true );
-ok( has( $hp, 'src="cid:rt-headshot"' ) && has( $hp, 'Full size photo attached.' ), 'headshot inline by cid, attachment noted' );
+ok( has( $hp, 'src="cid:rt-headshot"' ) && ! has( $hp, 'photo attached' ), 'headshot inline by cid, not called attached' );
 ok( has( $hp, '<strong>Resume file:</strong> attached to this email' ), 'resume file noted as attached' );
 ok( has( $hp, 'max-width:280px' ) && no_stripes( $hp ), 'photo sized for phones, no stripes' );
 ok( arv_rt_apply_mail_inline_ok( $jpg ) && ! arv_rt_apply_mail_inline_ok( $heic ) && ! arv_rt_apply_mail_inline_ok( '' ), 'heic not inline' );
@@ -284,6 +285,52 @@ $pm3 = new T_PHPMailer();
 $pm3->Subject = arv_rt_apply_confirm_subject();
 run_filter( 'phpmailer_init', $pm3 );
 ok( 'plain' === $c2['body'] && '' === $pm3->AltBody && ! $pm3->embedded, 'staff extras never leak into the confirmation' );
+// Small headshot vs large headshot: embedded or attached, never both.
+$big = $GLOBALS['t_tmp'] . '/x-rt-headshot-big.jpg';
+$fh  = fopen( $big, 'w' );
+fwrite( $fh, "\xFF\xD8\xFF\xE0" );
+ftruncate( $fh, 30 * 1024 * 1024 ); // A 30 MB phone original (sparse).
+fclose( $fh );
+$edge = $GLOBALS['t_tmp'] . '/x-rt-headshot-edge.png';
+$fh   = fopen( $edge, 'w' );
+ftruncate( $fh, ARV_RT_APPLY_INLINE_MAX + 1 );
+fclose( $fh );
+ok( 3 * 1024 * 1024 === ARV_RT_APPLY_INLINE_MAX && arv_rt_apply_mail_inline_ok( $jpg ) && ! arv_rt_apply_mail_inline_ok( $big ) && ! arv_rt_apply_mail_inline_ok( $edge ), 'inline limit is about 3 MB (old 15 MB limit gone)' );
+$send = function ( $photo ) use ( $form, $pdf ) {
+	$GLOBALS['arv_rt_apply_last'] = array( 'files' => array( 'rt-headshot' => $photo, 'rt-resume-file' => $pdf ) );
+	$c  = run_filter( 'wpcf7_mail_components', array( 'subject' => 'Size check', 'body' => 'CF7 body', 'attachments' => array( $photo, $pdf ) ), $form, new T_Mail( 'mail' ) );
+	$pm = new T_PHPMailer();
+	$pm->Subject = 'Size check';
+	run_filter( 'phpmailer_init', $pm );
+	return array( $c, $pm );
+};
+list( $cs, $pms ) = $send( $jpg );
+ok( has( $cs['body'], 'src="cid:rt-headshot"' ) && ! has( $cs['body'], '<strong>Photo:</strong> attached' ), 'small headshot: shown inline in the HTML' );
+ok( ! in_array( $jpg, $cs['attachments'], true ), 'small headshot: embedded, not in attachments' );
+ok( in_array( $pdf, $cs['attachments'], true ), 'small headshot: resume file still in attachments' );
+ok( 1 === count( $pms->embedded ) && $jpg === $pms->embedded[0][0], 'small headshot: phpmailer_init embeds it' );
+list( $cl, $pml ) = $send( $big );
+ok( ! has( $cl['body'], 'cid:' ) && has( $cl['body'], '<strong>Photo:</strong> attached to this email' ), 'large headshot: HTML says attached' );
+ok( in_array( $big, $cl['attachments'], true ), 'large headshot: in attachments' );
+ok( in_array( $pdf, $cl['attachments'], true ), 'large headshot: resume file still in attachments' );
+ok( ! $pml->embedded, 'large headshot: attached, not embedded' );
+list( $ch, $pmh ) = $send( $heic );
+ok( in_array( $heic, $ch['attachments'], true ) && in_array( $pdf, $ch['attachments'], true ) && ! $pmh->embedded && ! has( $ch['body'], 'cid:' ), 'heic headshot: attached, not embedded' );
+// CF7 attaches its own upload path; a small photo saved elsewhere still leaves once.
+$cf7tmp = $GLOBALS['t_tmp'] . '/cf7-upload-headshot.jpg';
+copy( $jpg, $cf7tmp );
+$GLOBALS['t_files'] = array( 'rt-headshot' => array( $cf7tmp ) );
+list( $cu, $pmu ) = $send( $jpg );
+ok( ! in_array( $cf7tmp, $cu['attachments'], true ) && in_array( $pdf, $cu['attachments'], true ) && 1 === count( $pmu->embedded ), 'small headshot: CF7 upload path dropped from attachments too' );
+$GLOBALS['t_files'] = array();
+// HTML build fails: the fallback clears embed (or the mailer), so the photo stays attached.
+$GLOBALS['arv_rt_apply_mailer'] = array( 'subject' => 'S', 'alt' => 't', 'embed' => '' );
+$kf = arv_rt_apply_mail_drop_embedded_attachment( array( 'attachments' => array( $jpg, $pdf ) ) );
+$GLOBALS['arv_rt_apply_mailer'] = null;
+$kn = arv_rt_apply_mail_drop_embedded_attachment( array( 'attachments' => array( $jpg, $pdf ) ) );
+ok( array( $jpg, $pdf ) === $kf['attachments'] && array( $jpg, $pdf ) === $kn['attachments'], 'html build fails: small headshot still attached when embed is cleared' );
+$GLOBALS['arv_rt_apply_last'] = array( 'files' => array( 'rt-headshot' => $jpg ) );
+
 // Other forms: no change.
 $c3 = run_filter( 'wpcf7_mail_components', array( 'subject' => 'S', 'body' => 'other' ), new WPCF7_ContactForm( 9 ), new T_Mail( 'mail' ) );
 ok( 'other' === $c3['body'] && null === $GLOBALS['arv_rt_apply_mailer'], 'other forms: body and mailer untouched' );

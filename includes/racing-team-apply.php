@@ -455,9 +455,61 @@ function arv_rt_apply_staff_mail_components( $components, $form = null, $mail = 
 		return $components;
 	}
 	$components['body'] = arv_rt_apply_mail_html_components_body( $components['body'], isset( $components['subject'] ) ? $components['subject'] : '' );
+	// Only now that the body is known good: an embedded photo is not attached too.
+	$components = arv_rt_apply_mail_drop_embedded_attachment( $components );
 	return $components;
 }
 add_filter( 'wpcf7_mail_components', 'arv_rt_apply_staff_mail_components', 20, 3 );
+
+/**
+ * When the staff mail embeds the headshot (cid), take that photo out of the
+ * CF7 attachments so it rides once, never twice. A large or HEIC photo is
+ * never embedded and so stays attached. Never throws.
+ *
+ * @param array $components CF7 mail components.
+ * @return array
+ */
+function arv_rt_apply_mail_drop_embedded_attachment( $components ) {
+	try {
+		$m = isset( $GLOBALS['arv_rt_apply_mailer'] ) ? $GLOBALS['arv_rt_apply_mailer'] : null;
+		if ( ! is_array( $m ) || empty( $m['embed'] ) || empty( $components['attachments'] ) || ! is_array( $components['attachments'] ) ) {
+			return $components;
+		}
+		// The embedded file plus every path CF7 holds for the headshot upload.
+		$drop = array( (string) $m['embed'] );
+		if ( class_exists( 'WPCF7_Submission' ) ) {
+			$s = WPCF7_Submission::get_instance();
+			if ( $s ) {
+				$up = (array) $s->uploaded_files();
+				if ( isset( $up['rt-headshot'] ) ) {
+					foreach ( array_filter( (array) $up['rt-headshot'] ) as $p ) {
+						$drop[] = (string) $p;
+					}
+				}
+			}
+		}
+		$real = array();
+		foreach ( $drop as $p ) {
+			$real[] = $p;
+			$r      = realpath( $p );
+			if ( false !== $r ) {
+				$real[] = $r;
+			}
+		}
+		$keep = array();
+		foreach ( $components['attachments'] as $att ) {
+			$r = is_string( $att ) ? realpath( $att ) : false;
+			if ( is_string( $att ) && ( in_array( $att, $real, true ) || ( false !== $r && in_array( $r, $real, true ) ) ) ) {
+				continue;
+			}
+			$keep[] = $att;
+		}
+		$components['attachments'] = $keep;
+	} catch ( \Throwable $e ) {
+		return $components;
+	}
+	return $components;
+}
 
 /*
  * HTML staff email (0.101.32).
@@ -468,8 +520,9 @@ add_filter( 'wpcf7_mail_components', 'arv_rt_apply_staff_mail_components', 20, 3
  * wraps a body without its own <html> in a header, footer and wpautop. So the
  * finished body is built here in wpcf7_mail_components, after CF7's tag pass,
  * straight from the posted answers, each escaped exactly once by
- * arv_rt_apply_h(). The headshot is embedded (cid) and a plain-text AltBody
- * is set through phpmailer_init, armed only for this one send.
+ * arv_rt_apply_h(). A small headshot is embedded (cid) instead of attached,
+ * a large or HEIC one stays attached only, and a plain-text AltBody is set
+ * through phpmailer_init, armed only for this one send.
  */
 
 /** Aravaipa teal, used only on section headings and the region badge. */
@@ -477,6 +530,14 @@ define( 'ARV_RT_APPLY_MAIL_TEAL', '#2a5e6b' );
 
 /** Content id of the inline headshot. */
 define( 'ARV_RT_APPLY_HEADSHOT_CID', 'rt-headshot' );
+
+/**
+ * Largest headshot shown inline (about 3 MB). A bigger photo is attached
+ * only, so the staff mail stays well under Gmail's 25 MB per-message cap.
+ */
+if ( ! defined( 'ARV_RT_APPLY_INLINE_MAX' ) ) {
+	define( 'ARV_RT_APPLY_INLINE_MAX', 3 * 1024 * 1024 );
+}
 
 /** What the next staff wp_mail() should add in phpmailer_init, or null. */
 $GLOBALS['arv_rt_apply_mailer'] = null;
@@ -631,14 +692,16 @@ function arv_rt_apply_mail_meta() {
 }
 
 /**
- * Can this saved photo be shown inline (mail clients cannot show HEIC).
+ * Can this saved photo be shown inline: a mail-safe image (mail clients
+ * cannot show HEIC) no bigger than ARV_RT_APPLY_INLINE_MAX. An inline photo
+ * is embedded only, never attached as well.
  *
  * @param string $path File path.
  * @return bool
  */
 function arv_rt_apply_mail_inline_ok( $path ) {
 	$ext = strtolower( pathinfo( (string) $path, PATHINFO_EXTENSION ) );
-	return '' !== (string) $path && is_file( $path ) && in_array( $ext, array( 'jpg', 'jpeg', 'png', 'gif', 'webp' ), true ) && filesize( $path ) <= 15 * 1024 * 1024;
+	return '' !== (string) $path && is_file( $path ) && in_array( $ext, array( 'jpg', 'jpeg', 'png', 'gif', 'webp' ), true ) && filesize( $path ) <= ARV_RT_APPLY_INLINE_MAX;
 }
 
 /**
@@ -775,7 +838,7 @@ function arv_rt_apply_mail_html( $a, $files = array(), $meta = array( '', '', ''
 						continue;
 					}
 					if ( 'headshot' === $f['key'] && $inline_photo ) {
-						$rows .= '<tr><td style="padding:0 0 14px;font-family:' . $font . ';font-size:15px;color:#1f2328"><strong style="display:block;margin:0 0 6px">' . arv_rt_apply_h( $label ) . '</strong><img src="cid:' . ARV_RT_APPLY_HEADSHOT_CID . '" alt="' . arv_rt_apply_h( 'Photo of ' . $name ) . '" width="280" style="display:block;width:100%;max-width:280px;height:auto;border:0;border-radius:4px"><span style="display:block;margin:4px 0 0;font-size:13px;color:#6b7280">Full size photo attached.</span></td></tr>' . "\n";
+						$rows .= '<tr><td style="padding:0 0 14px;font-family:' . $font . ';font-size:15px;color:#1f2328"><strong style="display:block;margin:0 0 6px">' . arv_rt_apply_h( $label ) . '</strong><img src="cid:' . ARV_RT_APPLY_HEADSHOT_CID . '" alt="' . arv_rt_apply_h( 'Photo of ' . $name ) . '" width="280" style="display:block;width:100%;max-width:280px;height:auto;border:0;border-radius:4px"></td></tr>' . "\n";
 					} else {
 						$rows .= $row( $label, 'attached to this email', false );
 					}
