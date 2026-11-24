@@ -19,7 +19,7 @@ if ( ! defined( 'RIDES_DIR' ) ) {
 	exit;
 }
 
-/** Phase 1 pages that may be previewed before they get the meta. */
+/** Pages that may be previewed before they get the meta (0.1.7: every current rides page). */
 function rides_preview_pages() {
 	return array(
 		26    => 'home',
@@ -29,6 +29,15 @@ function rides_preview_pages() {
 		24080 => 'event:prickly-pedal',
 		21756 => 'event:insomniac',
 		24565 => 'event:big-woody',
+		24389 => 'event:adrenaline',
+		24335 => 'event:sinister',
+		24475 => 'event:stunner',
+		23895 => 'event:frenzy-hills',
+		24799 => 'event:black-canyon-crusher',
+		23930 => 'event:royal-gorge-groove',
+		23746 => 'event:tonto',
+		22615 => 'event:rough-canyon',
+		22738 => 'event:group-rides',
 	);
 }
 

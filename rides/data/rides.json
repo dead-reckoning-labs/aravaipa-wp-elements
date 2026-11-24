@@ -254,7 +254,8 @@
 			"url": "https://aravaiparides.com/rough-canyon-trail-rides/",
 			"register": [],
 			"register_label": "Register Now",
-			"hero": "assets/heroes/rough-canyon.jpg"
+			"hero": "assets/heroes/rough-canyon.jpg",
+			"logo": "assets/logos/rough-canyon.png"
 		},
 		{
 			"slug": "group-rides",
@@ -272,7 +273,8 @@
 			"url": "https://aravaiparides.com/group_rides/",
 			"register": [],
 			"register_label": "Register Now",
-			"hero": "assets/heroes/group-rides.jpg"
+			"hero": "assets/heroes/group-rides.jpg",
+			"logo": "assets/logos/group-rides.png"
 		}
 	]
 }

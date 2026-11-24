@@ -189,10 +189,10 @@ foreach ( $map as $id => $layout ) {
 	ok( false === strpos( $html, 'ytimg' ), "preview $id has no YouTube thumbnails" );
 }
 
-// 5. Preview token on a page outside phase 1 changes nothing.
-req( 23895, array( 'rides_preview' => $TOKEN ) );
-ok( '' === rides_current_layout(), 'preview token on Frenzy (not phase 1) does nothing' );
-ok( apply( 'template_include', $orig ) === $orig, 'Frenzy keeps template under preview' );
+// 5. Preview token on a page outside the preview map changes nothing (calendar 24316).
+req( 24316, array( 'rides_preview' => $TOKEN ) );
+ok( '' === rides_current_layout(), 'preview token on the calendar page (not in the map) does nothing' );
+ok( apply( 'template_include', $orig ) === $orig, 'calendar page keeps template under preview' );
 
 // 6. Rollout: meta alone switches the layout, with no preview headers.
 req( 24080, array(), 'event:prickly-pedal' );
@@ -390,6 +390,25 @@ foreach ( array( 'prickly-pedal', 'insomniac', 'big-woody' ) as $es ) {
 	preg_match_all( '#\bid="(hero|band|intro|distances|course|schedule|aid|faq|results|photos|sponsors)"#', $bl, $tb );
 	ok( $ta[1] === $tb[1], "$es blend sections match take 2 order" );
 	ok( 0 === preg_match( '/\x{2014}/u', $bl ), "$es blend has no em dash" );
+}
+
+// 0.1.7: the preview map covers every rides page, and the layout pages take the blend look.
+$pm7 = rides_preview_pages();
+foreach ( array( 24389 => 'adrenaline', 24335 => 'sinister', 24475 => 'stunner', 23895 => 'frenzy-hills', 24799 => 'black-canyon-crusher', 23930 => 'royal-gorge-groove', 23746 => 'tonto', 22615 => 'rough-canyon', 22738 => 'group-rides' ) as $pid => $ps ) {
+	ok( 'event:' . $ps === ( $pm7[ $pid ] ?? '' ) && rides_valid_layout( $pm7[ $pid ] ), "preview map carries $ps $pid" );
+}
+req( 24389, array( 'rides_preview' => $TOKEN, 'rides_look' => 'blend' ) );
+ok( 'event:adrenaline' === rides_current_layout() && 'blend' === rides_current_look(), 'Adrenaline 24389 previews in blend under the token' );
+req( 24389, array() );
+ok( '' === rides_current_layout(), 'Adrenaline 24389 without token or meta is untouched' );
+foreach ( array( 'home', 'events', 'results', 'photos' ) as $lp ) {
+	$lb = rides_render_layout( $lp, $ectx + array( 'look' => 'blend' ) );
+	$lt = rides_render_layout( $lp, $ectx );
+	ok( 1 === preg_match( '#^<div class="rides-v2 rides-page-' . $lp . ' rides-look-blend"#', $lb ), "$lp blend root carries rides-look-blend" );
+	ok( false === strpos( $lt, 'rides-look-blend' ), "$lp take 2 root has no rides-look-blend" );
+	$lbn = 'home' === $lp ? str_replace( array( '<h1 class="rides-h2">Welcome to Aravaipa Rides</h1>' ), array( '<h2 class="rides-h2">Welcome to Aravaipa Rides</h2>' ), $lb ) : $lb;
+	ok( substr( $lbn, strpos( $lbn, '>' ) ) === substr( $lt, strpos( $lt, '>' ) ), "$lp blend differs from take 2 only by the root class" . ( 'home' === $lp ? ' and the welcome h1' : '' ) );
+	ok( 1 === substr_count( $lb, '<h1' ), "$lp blend has exactly one h1" );
 }
 
 // Unlisted rows (Rough Canyon, Group Rides): their own page renders, but they stay off the slider,
