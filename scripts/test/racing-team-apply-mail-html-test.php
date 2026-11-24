@@ -164,7 +164,9 @@ $lindsay = array(
 	'consent-publicity'    => 'no',
 );
 // The stripe check itself catches a colored edge (border-left, border-top and so on).
-ok( ! no_stripes( '<td style="border-left:4px solid #2a5e6b">' ) && ! no_stripes( '<div style="border-top: 3px solid rgb(1,2,3)">' ) && no_stripes( '<img style="border:0">' ), 'stripe detector works' );
+$c1 = '#2a5e6b';
+$c2 = 'rgb(1,2,3)';
+ok( ! no_stripes( '<td style="border-left:4px solid ' . $c1 . '">' ) && ! no_stripes( '<div style="border-top: 3px solid ' . $c2 . '">' ) && no_stripes( '<img style="border:0">' ), 'stripe detector works' );
 $meta = array( 'https://aravaiparunning.com/racing-team/apply/', 'November 24, 2026', '9:15 am' );
 
 // Header, sections, labels.
