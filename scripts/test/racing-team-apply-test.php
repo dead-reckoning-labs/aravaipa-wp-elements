@@ -472,6 +472,15 @@ ok( preg_match( '/>Applications closed</', $p ) && false === strpos( $p, 'FORM-5
 ok( false === strpos( arv_rt_apply_page_shortcode( array( 'hero_url' => 'https://i.ytimg.com/vi/x/maxresdefault.jpg' ) ), 'ytimg' ), 'ytimg hero refused' );
 ok( isset( $GLOBALS['t_shortcode']['arv_rt_apply_page'] ) && isset( $GLOBALS['t_shortcode']['arv_rt_apply'] ), 'both shortcodes registered' );
 
+// Staff email layout (0.101.30): sections, short labels, blank answers dropped.
+$mb = arv_rt_apply_mail_body();
+ok( false !== strpos( $mb, "YOUR RACING\n" ) && false !== strpos( $mb, "\nRacing resume:\n[rt-resume]\n" ), 'staff body: section heading and long answer on its own line' );
+ok( false !== strpos( $mb, 'Races: [rt-disciplines]' ) && false === strpos( $mb, '?:' ), 'staff body: short labels, no "?:"' );
+ok( false === strpos( $mb, '—' ), 'staff body: no em dash' );
+$tidy = arv_rt_apply_mail_tidy( "Ann Lee applied.\n\n\nABOUT YOU\nEmail: a@b.co\nStrava: \n\nGoals:\n\nRacing resume:\nWon X\n\n\nKIT\nFit: \n\n\nSent from u" );
+ok( false === strpos( $tidy, 'Strava' ) && false === strpos( $tidy, 'Goals' ) && false === strpos( $tidy, 'KIT' ), 'tidy drops blank answers and empty sections' );
+ok( false !== strpos( $tidy, "ABOUT YOU\nEmail: a@b.co" ) && false !== strpos( $tidy, "Racing resume:\nWon X" ) && false === strpos( $tidy, "\n\n\n" ), 'tidy keeps answers, single gaps' );
+
 // No RaceReach push configured: nothing leaves the server.
 ok( 0 === $GLOBALS['t_remote'], 'no remote calls' );
 
