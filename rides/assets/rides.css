@@ -1864,3 +1864,21 @@
 	border-color: var(--rides-yellow);
 	color: #000;
 }
+
+/* Blend tiles: the ride logo sits on white as a transparent PNG, no dark box,
+   no photo behind it (Jamil 2026-11-24, like the old home page). */
+.rides-look-blend .rides-tile-media {
+	background: transparent;
+}
+.rides-look-blend .rides-tile-media::after,
+.rides-look-blend .rides-v2 .rides-tile-photo,
+.rides-v2.rides-look-blend .rides-tile-photo {
+	display: none;
+}
+.rides-look-blend .rides-tile-media .rides-tile-photo {
+	display: none;
+}
+.rides-look-blend img.rides-tile-mark {
+	width: 74%;
+	max-height: 92%;
+}
