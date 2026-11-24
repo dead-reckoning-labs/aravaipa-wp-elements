@@ -1882,3 +1882,8 @@
 	width: 74%;
 	max-height: 92%;
 }
+.rides-look-blend img.rides-tile-mark.is-plate {
+	background: transparent;
+	padding: 0;
+	border-radius: 0;
+}
