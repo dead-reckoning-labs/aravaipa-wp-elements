@@ -6,7 +6,7 @@
  *
  * Covers: the install template writes limit:10mb and HEIC/HEIF on both file
  * tags; the wpcf7_form_tag filter rewrites limit and filetypes on our form
- * and leaves other forms alone; hint copy says 10 MB; the friendly display
+ * and leaves other forms alone; hint copy says any size; the limit follows the server max; the friendly display
  * messages apply to our form only; Turnstile gets refresh-expired and retry;
  * the shortcode enqueues assets/aravaipa-rt-apply.js with the plugin version
  * and passes the beacon URL; the failed submit log (fail_log): mail_sent is
@@ -54,6 +54,10 @@ function get_option( $k, $d = false ) {
 function update_option( $k, $v, $autoload = null ) {
 	$GLOBALS['t_opts'][ $k ] = $v;
 	return true;
+}
+$GLOBALS['t_max_up'] = 0;
+function wp_max_upload_size() {
+	return $GLOBALS['t_max_up'];
 }
 function wp_upload_dir() {
 	return array( 'basedir' => $GLOBALS['t_up'] );
@@ -277,12 +281,21 @@ $ours  = 501;
 $other = 777;
 $GLOBALS['t_opts']['arv_rt_apply_form_id'] = $ours;
 
-// Template: 10 MB and HEIC on both file tags.
+// Template: server max upload and HEIC on both file tags.
 $tmpl = arv_rt_apply_form_template();
-ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:10mb filetypes:jpg|jpeg|png|webp|heic|heif]' ), 'template headshot: 10mb + heic' );
-ok( false !== strpos( $tmpl, '[file rt-resume-file id:rt-resume-file limit:10mb filetypes:pdf|jpg|jpeg|png|webp|heic|heif]' ), 'template resume: 10mb + heic' );
+ok( false !== strpos( $tmpl, '[file rt-headshot id:rt-headshot limit:64mb filetypes:jpg|jpeg|png|webp|heic|heif]' ), 'template headshot: server max (64mb ceiling here) + heic' );
+ok( false !== strpos( $tmpl, '[file rt-resume-file id:rt-resume-file limit:64mb filetypes:pdf|jpg|jpeg|png|webp|heic|heif]' ), 'template resume: server max + heic' );
 ok( false === strpos( $tmpl, 'limit:4mb' ), 'no 4mb left in the template' );
-ok( false !== strpos( $tmpl, '10 MB max' ) && false === strpos( $tmpl, '4 MB' ), 'hint copy says 10 MB' );
+ok( false !== strpos( $tmpl, 'Any size works' ) && false !== strpos( $tmpl, 'of any size are fine' ) && false === strpos( $tmpl, 'MB max' ), 'hint copy says any size' );
+// The cap follows the server's PHP max, floor 10 MB, ceiling 64 MB.
+$GLOBALS['t_max_up'] = 32 * 1048576;
+ok( '32mb' === arv_rt_apply_file_limit(), 'limit: server max 32 MB' );
+$GLOBALS['t_max_up'] = 2 * 1048576;
+ok( '10mb' === arv_rt_apply_file_limit(), 'limit: floor 10 MB' );
+$GLOBALS['t_max_up'] = 512 * 1048576;
+ok( '64mb' === arv_rt_apply_file_limit(), 'limit: ceiling 64 MB' );
+$GLOBALS['t_max_up'] = 0;
+ok( '64mb' === arv_rt_apply_file_limit(), 'limit: unknown server max uses the ceiling' );
 
 // Runtime filter: the stored form still says limit:4mb.
 $stored = array(
@@ -292,11 +305,11 @@ $stored = array(
 );
 WPCF7_ContactForm::$current = new WPCF7_ContactForm( $ours );
 $t = arv_rt_apply_form_tag( $stored, true );
-ok( in_array( 'limit:10mb', $t['options'], true ) && ! in_array( 'limit:4mb', $t['options'], true ), 'our form: limit becomes 10mb' );
+ok( in_array( 'limit:64mb', $t['options'], true ) && ! in_array( 'limit:4mb', $t['options'], true ), 'our form: limit becomes the server max' );
 ok( in_array( 'filetypes:jpg|jpeg|png|webp|heic|heif', $t['options'], true ), 'our form: headshot takes heic' );
 ok( in_array( 'id:rt-headshot', $t['options'], true ) && 3 === count( $t['options'] ), 'our form: other options kept, no duplicates' );
 $r = arv_rt_apply_form_tag( array( 'type' => 'file', 'name' => 'rt-resume-file', 'options' => array( 'limit:4mb', 'filetypes:pdf|jpg' ) ), false );
-ok( in_array( 'limit:10mb', $r['options'], true ) && in_array( 'filetypes:pdf|jpg|jpeg|png|webp|heic|heif', $r['options'], true ), 'our form: resume 10mb + heic at validation time' );
+ok( in_array( 'limit:64mb', $r['options'], true ) && in_array( 'filetypes:pdf|jpg|jpeg|png|webp|heic|heif', $r['options'], true ), 'our form: resume server max + heic at validation time' );
 WPCF7_ContactForm::$current = new WPCF7_ContactForm( $other );
 ok( $stored === arv_rt_apply_form_tag( $stored, true ), 'other form: file tag untouched' );
 WPCF7_ContactForm::$current = null;
@@ -306,7 +319,7 @@ ok( in_array( 'arv_rt_apply_form_tag', $GLOBALS['t_filters']['wpcf7_form_tag'], 
 // Friendly messages at display time, ours only.
 WPCF7_ContactForm::$current = new WPCF7_ContactForm( $ours );
 ok( false !== strpos( arv_rt_apply_display_message( 'x', 'spam' ), 'bryce@aravaiparunning.com' ), 'spam message has the email fallback' );
-ok( false !== strpos( arv_rt_apply_display_message( 'x', 'upload_file_too_large' ), '10 MB' ), 'too large message says 10 MB' );
+ok( false === strpos( arv_rt_apply_display_message( 'x', 'upload_file_too_large' ), '10 MB' ) && false !== strpos( arv_rt_apply_display_message( 'x', 'upload_file_too_large' ), 'bryce@' ), 'too large message: no fixed size, email fallback' );
 ok( 'x' === arv_rt_apply_display_message( 'x', 'not_ours_key' ), 'unknown key passes through' );
 WPCF7_ContactForm::$current = new WPCF7_ContactForm( $other );
 ok( 'x' === arv_rt_apply_display_message( 'x', 'spam' ), 'other form keeps its own messages' );
