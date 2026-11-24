@@ -560,12 +560,7 @@ function arv_rt_apply_validate( $result, $tags = array() ) {
 			}
 		}
 	}
-	if ( 'Yes' === arv_rt_apply_posted( 'rt-returning' ) && '' === arv_rt_apply_posted( 'rt-returning-years' ) ) {
-		$t = arv_rt_apply_find_tag( $form, 'rt-returning-years' );
-		if ( $t ) {
-			$result->invalidate( $t, 'Which years were you on the team?' );
-		}
-	}
+	// Which years stays optional, as its label says: returning members were blocked by a hidden rule.
 	return $result;
 }
 add_filter( 'wpcf7_validate', 'arv_rt_apply_validate', 20, 2 );

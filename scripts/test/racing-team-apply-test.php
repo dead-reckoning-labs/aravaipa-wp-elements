@@ -298,7 +298,7 @@ ok( array() === $r->bad, 'valid inside the window' );
 $sub->posted = array( 'rt-birth-date' => '2009-06-01', 'rt-returning' => 'Yes', 'rt-returning-years' => '' );
 $r           = arv_rt_apply_validate( new WPCF7_Validation() );
 ok( isset( $r->bad['rt-birth-date'] ), 'under 18 on Jan 1 2027 rejected' );
-ok( isset( $r->bad['rt-returning-years'] ), 'returning yes needs years' );
+ok( ! isset( $r->bad['rt-returning-years'] ), 'returning yes without years is allowed (field is optional)' );
 $sub->posted = array( 'rt-birth-date' => '2009-01-01', 'rt-returning' => 'Yes', 'rt-returning-years' => '2026' );
 $r           = arv_rt_apply_validate( new WPCF7_Validation() );
 ok( array() === $r->bad, '18 exactly on Jan 1 2027 ok' );
