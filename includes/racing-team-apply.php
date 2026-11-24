@@ -32,7 +32,7 @@ define( 'ARV_RT_APPLY_OPENS', '2026-11-20T00:00:00-07:00' );
 define( 'ARV_RT_APPLY_CLOSES', '2026-11-30T23:59:59-07:00' );
 define( 'ARV_RT_APPLY_SEASON', 2027 );
 define( 'ARV_RT_APPLY_MIN_AGE', 18 );
-define( 'ARV_RT_APPLY_TO', 'marketing@aravaiparunning.com' );
+define( 'ARV_RT_APPLY_TO', 'bryce@aravaiparunning.com' );
 define( 'ARV_RT_APPLY_BRYCE', 'bryce@aravaiparunning.com' );
 // Upload cap per file field and the accepted types. Phone photos are shrunk in
 // the browser first (assets/aravaipa-rt-apply.js); HEIC/HEIF is accepted as a
@@ -328,10 +328,10 @@ function arv_rt_apply_messages() {
 		'mail_sent_ok'     => 'Thank you. Your application for the 2027 Aravaipa Racing Team is in, and the team managers read every one. A confirmation email is on its way.',
 		'mail_sent_ng'     => 'Your application is saved, but the notice to the team did not send. No need to apply again.',
 		'validation_error' => 'Some answers need a look. The list next to Submit shows each one.',
-		'spam'             => 'We could not confirm you are human, so this did not go through. Press Submit again. If it keeps happening, email your answers to marketing@aravaiparunning.com.',
-		'upload_failed'    => 'The file did not upload. Try again, or email it to marketing@aravaiparunning.com.',
+		'spam'             => 'We could not confirm you are human, so this did not go through. Press Submit again. If it keeps happening, email your answers to bryce@aravaiparunning.com.',
+		'upload_failed'    => 'The file did not upload. Try again, or email it to bryce@aravaiparunning.com.',
 		'upload_file_type_invalid' => 'That file type is not accepted. Use a photo (JPG, PNG, WEBP or HEIC) or a PDF.',
-		'upload_file_too_large'    => 'That file is over 10 MB. Try a smaller photo, or email it to marketing@aravaiparunning.com.',
+		'upload_file_too_large'    => 'That file is over 10 MB. Try a smaller photo, or email it to bryce@aravaiparunning.com.',
 	);
 }
 
@@ -348,7 +348,7 @@ function arv_rt_apply_confirm_mail() {
 		'sender'             => 'Aravaipa Running <wordpress@aravaiparunning.com>',
 		'recipient'          => '[rt-email]',
 		'body'               => arv_rt_apply_confirm_body( '[rt-first-name]', false ),
-		'additional_headers' => 'Reply-To: marketing@aravaiparunning.com',
+		'additional_headers' => 'Reply-To: bryce@aravaiparunning.com',
 		'attachments'        => '',
 		'use_html'           => false,
 		'exclude_blank'      => false,
@@ -401,7 +401,7 @@ function arv_rt_apply_thanks_html( $visible = false ) {
 		. '<h2 class="rt-thanks-title">You&rsquo;re in the running.</h2>'
 		. '<p>Thanks for applying to the 2027 Aravaipa Racing Team. We have your application, and a confirmation email is on its way to you now.</p>'
 		. '<p><strong>What&rsquo;s next:</strong> applications close November 30. Our team managers read every application, and we&rsquo;ll be in touch by email once the 2027 team is set.</p>'
-		. '<p>Need to add or change something? Reply to the confirmation email or write to <a href="mailto:marketing@aravaiparunning.com">marketing@aravaiparunning.com</a>.</p>'
+		. '<p>Need to add or change something? Reply to the confirmation email or write to <a href="mailto:bryce@aravaiparunning.com">bryce@aravaiparunning.com</a>.</p>'
 		. '<p><a class="rt-thanks-link" href="' . $team . '">Meet the current team</a></p>'
 		. '</div>';
 }
@@ -844,7 +844,7 @@ function arv_rt_apply_shortcode() {
 		$h .= arv_rt_apply_thanks_html( $sent );
 		$h .= '<div class="rt-state-open"' . ( 'open' === $state && ! $sent ? '' : ' hidden' ) . '>' . $form . '</div>';
 	} elseif ( 'open' === $state ) {
-		$h .= '<p class="rt-state">The application form is not available right now. Email marketing@aravaiparunning.com and we will help.</p>';
+		$h .= '<p class="rt-state">The application form is not available right now. Email bryce@aravaiparunning.com and we will help.</p>';
 	}
 	$h .= '</div>';
 	if ( $form ) {
@@ -2920,7 +2920,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				WP_CLI::log( 'dry run, nothing sent' );
 				return;
 			}
-			$headers = array( 'From: Aravaipa Running <wordpress@aravaiparunning.com>', 'Reply-To: marketing@aravaiparunning.com' );
+			$headers = array( 'From: Aravaipa Running <wordpress@aravaiparunning.com>', 'Reply-To: bryce@aravaiparunning.com' );
 			$sent    = 0;
 			$fail    = 0;
 			foreach ( $todo as $em => $first ) {

@@ -34,7 +34,7 @@
 	}
 	root.setAttribute('data-rt-helper', '1');
 
-	var MAIL = 'marketing@aravaiparunning.com';
+	var MAIL = 'bryce@aravaiparunning.com';
 	var MAILTO = 'mailto:' + MAIL + '?subject=' + encodeURIComponent('2027 Racing Team application');
 	var STORE_KEY = 'arv-rt-apply-2027-v1';
 	var MAX_EDGE = 2000;

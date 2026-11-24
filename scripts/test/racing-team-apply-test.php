@@ -260,7 +260,7 @@ ok( array( 'x' ) === $o['values'], 'other tags untouched' );
 
 // Mail.
 $m = arv_rt_apply_mail();
-ok( false !== strpos( $m['recipient'], 'marketing@aravaiparunning.com' ), 'mail to marketing' );
+ok( false !== strpos( $m['recipient'], 'bryce@aravaiparunning.com' ), 'mail to bryce' );
 ok( false !== strpos( $m['recipient'], 'bryce@aravaiparunning.com' ), 'mail to bryce' );
 ok( false !== strpos( $m['attachments'], '[rt-headshot]' ), 'photo attached' );
 ok( '2027 Racing Team application: [rt-first-name] [rt-last-name]' === $m['subject'], 'subject' );
