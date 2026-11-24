@@ -61,7 +61,7 @@ function arv_rt_apply_fields() {
 		array( 'key' => 'returning-years', 'name' => 'rt-returning-years', 'label' => 'Which years?', 'type' => 'text', 'required' => false, 'section' => 'about', 'hint' => 'If yes, for example 2025, 2026.' ),
 		array( 'key' => 'resume', 'name' => 'rt-resume', 'label' => 'Racing resume', 'type' => 'textarea', 'required' => true, 'section' => 'racing', 'hint' => 'Your best results in the past 3 years: place, finish time, race name and year. One per line.' ),
 		array( 'key' => 'resume-file', 'name' => 'rt-resume-file', 'label' => 'Resume file', 'type' => 'file', 'required' => false, 'section' => 'racing', 'hint' => 'A PDF or image of a results list or athlete CV, if you keep one. 10 MB max.' ),
-		array( 'key' => 'ultrasignup', 'name' => 'rt-ultrasignup', 'label' => 'UltraSignup profile', 'type' => 'url', 'required' => false, 'section' => 'racing' ),
+		array( 'key' => 'ultrasignup', 'name' => 'rt-ultrasignup', 'label' => 'UltraSignup profile', 'type' => 'text', 'required' => false, 'section' => 'racing' ),
 		array( 'key' => 'profiles', 'name' => 'rt-profiles', 'label' => 'Other result profiles', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'UTMB, Strava, Athlinks. One per line.' ),
 		array( 'key' => 'goals', 'name' => 'rt-goals', 'label' => 'Your goals for 2027 and beyond', 'type' => 'textarea', 'required' => false, 'section' => 'racing', 'hint' => 'Short term goals for the season and long term goals in the sport.' ),
 		array( 'key' => 'race-plans', 'name' => 'rt-race-plans', 'label' => 'Aravaipa races you plan to run', 'type' => 'checkbox', 'required' => false, 'section' => 'season', 'hint' => '2027 Aravaipa races, filled from the race calendar.' ),
@@ -237,7 +237,7 @@ function arv_rt_apply_tag( $f ) {
 		case 'url':
 			return '[' . $f['type'] . $star . ' ' . $name . ' ' . $id . ']';
 		default:
-			$ph = 'instagram' === $f['key'] ? ' placeholder "@yourhandle"' : ( 'strava' === $f['key'] ? ' placeholder "Profile link"' : '' );
+			$ph = 'instagram' === $f['key'] ? ' placeholder "@yourhandle"' : ( 'strava' === $f['key'] ? ' placeholder "Profile link"' : ( 'ultrasignup' === $f['key'] ? ' placeholder "Profile link or your name"' : '' ) );
 			$ac = array(
 				'first-name' => 'given-name',
 				'last-name'  => 'family-name',
@@ -493,6 +493,9 @@ function arv_rt_apply_form_tag( $tag, $replace ) {
 	if ( is_array( $tag ) && isset( $tag['name'] ) && in_array( $tag['name'], array( 'rt-headshot', 'rt-resume-file' ), true ) ) {
 		return arv_rt_apply_file_tag( $tag );
 	}
+	if ( is_array( $tag ) && isset( $tag['name'] ) && 'rt-ultrasignup' === $tag['name'] ) {
+		return arv_rt_apply_ultrasignup_tag( $tag );
+	}
 	if ( ! is_array( $tag ) || ! isset( $tag['name'] ) || 'rt-race-plans' !== $tag['name'] ) {
 		return $tag;
 	}
@@ -509,6 +512,29 @@ function arv_rt_apply_form_tag( $tag, $replace ) {
 	return $tag;
 }
 add_filter( 'wpcf7_form_tag', 'arv_rt_apply_form_tag', 10, 2 );
+
+/**
+ * The UltraSignup box takes any text (0.101.30). The stored form was
+ * installed as [url rt-ultrasignup], which CF7 rejects unless the answer is a
+ * full https address; people type their name or a short link. Turning the tag
+ * into a text tag here fixes render and validation without a reinstall.
+ *
+ * @param array $tag Tag.
+ * @return array
+ */
+function arv_rt_apply_ultrasignup_tag( $tag ) {
+	$tag['type']     = ( isset( $tag['type'] ) && '*' === substr( $tag['type'], -1 ) ) ? 'text*' : 'text';
+	$tag['basetype'] = 'text';
+	$opts            = isset( $tag['options'] ) && is_array( $tag['options'] ) ? $tag['options'] : array();
+	if ( ! in_array( 'placeholder', $opts, true ) ) {
+		$opts[]            = 'placeholder';
+		$tag['raw_values'] = array( 'Profile link or your name' );
+		$tag['values']     = array( 'Profile link or your name' );
+		$tag['labels']     = array( 'Profile link or your name' );
+	}
+	$tag['options'] = $opts;
+	return $tag;
+}
 
 /**
  * The file limit and types for our two file fields, at render and validation
@@ -1893,6 +1919,32 @@ function arv_rt_apply_rr_races( $fresh = false ) {
 }
 
 /**
+ * UltraSignup answer for RaceReach: a link as typed (https), or for a plain
+ * name an UltraSignup results search link for that name, or ''.
+ *
+ * @param string $v Raw answer.
+ * @return string
+ */
+function arv_rt_apply_rr_ultrasignup( $v ) {
+	$v   = trim( (string) $v );
+	$url = arv_rt_apply_rr_https( $v );
+	if ( '' !== $url || '' === $v ) {
+		return $url;
+	}
+	if ( ! preg_match( "/^[\\p{L}][\\p{L} .'-]{1,80}$/u", $v ) ) {
+		return '';
+	}
+	$parts = preg_split( '/\\s+/', $v );
+	$first = array_shift( $parts );
+	$last  = implode( ' ', $parts );
+	$q     = 'fname=' . rawurlencode( $first );
+	if ( '' !== $last ) {
+		$q .= '&lname=' . rawurlencode( $last );
+	}
+	return 'https://ultrasignup.com/results_participant.aspx?' . $q;
+}
+
+/**
  * An https link, or ''. Bare hosts get https://, http:// is upgraded.
  *
  * @param string $v Link.
@@ -2011,7 +2063,7 @@ function arv_rt_apply_rr_payload( array $fields, array $race_ids ) {
 		$p['returning_years'] = $g( 'returning-years' );
 	}
 	$p['resume'] = function_exists( 'mb_substr' ) ? mb_substr( $g( 'resume' ), 0, 6000 ) : substr( $g( 'resume' ), 0, 6000 );
-	$us          = arv_rt_apply_rr_https( $g( 'ultrasignup' ) );
+	$us          = arv_rt_apply_rr_ultrasignup( $g( 'ultrasignup' ) );
 	if ( '' !== $us ) {
 		$p['ultrasignup'] = $us;
 	}
