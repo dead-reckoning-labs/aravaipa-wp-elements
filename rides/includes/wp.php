@@ -9,6 +9,10 @@
  * Preview: ?rides_preview=<token> renders the new layout on the phase 1 pages
  * before rollout. The token is compared with hash_equals against the option
  * rides_preview_token, and a preview is sent noindex and no-store.
+ *
+ * Looks: take 2 (default) and blend. A page picks blend with the post meta
+ * _rides_v2_look = blend; a preview may pick it with ?rides_look=blend. Any
+ * other value falls back to take 2.
  */
 
 if ( ! defined( 'RIDES_DIR' ) ) {
@@ -104,6 +108,41 @@ function rides_resolve_layout() {
 }
 
 /**
+ * Looks we can render.
+ *
+ * @return array
+ */
+function rides_looks() {
+	return array( 'take2', 'blend' );
+}
+
+/**
+ * Look for the current request: page meta _rides_v2_look, overridden by ?rides_look on a
+ * valid preview. Anything outside the allowlist falls back to take2.
+ *
+ * @return string take2 or blend.
+ */
+function rides_current_look() {
+	if ( isset( $GLOBALS['rides_state']['look'] ) ) {
+		return $GLOBALS['rides_state']['look'];
+	}
+	$look = 'take2';
+	$id   = (int) get_queried_object_id();
+	$meta = $id ? (string) get_post_meta( $id, '_rides_v2_look', true ) : '';
+	if ( in_array( $meta, rides_looks(), true ) ) {
+		$look = $meta;
+	}
+	if ( rides_is_preview() && isset( $_GET['rides_look'] ) && is_string( $_GET['rides_look'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$want = (string) wp_unslash( $_GET['rides_look'] ); // phpcs:ignore WordPress.Security.NonceVerification
+		if ( in_array( $want, rides_looks(), true ) ) {
+			$look = $want;
+		}
+	}
+	$GLOBALS['rides_state']['look'] = $look;
+	return $look;
+}
+
+/**
  * Send a header (tests capture them instead).
  *
  * @param string $line Header line.
@@ -127,6 +166,7 @@ function rides_wp_ctx() {
 	return array(
 		'base'  => plugins_url( '/', RIDES_DIR . '/aravaipa-rides.php' ),
 		'today' => wp_date( 'Y-m-d' ),
+		'look'  => rides_current_look(),
 	);
 }
 

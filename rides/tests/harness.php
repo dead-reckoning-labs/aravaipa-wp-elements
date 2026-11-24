@@ -2,13 +2,26 @@
 /**
  * Local harness: renders the phase 1 pages to static HTML with file:// assets.
  *
- *   php rides/tests/harness.php <outdir> [today Y-m-d]
+ *   php rides/tests/harness.php <outdir> [today Y-m-d] [--look=take2|blend]
+ *
+ * A look outside the allowlist falls back to take2, like rides_current_look().
  */
 
 define( 'RIDES_HARNESS', true );
 require dirname( __DIR__ ) . '/aravaipa-rides.php';
 
-$out = isset( $argv[1] ) ? rtrim( $argv[1], '/' ) : '';
+$look = 'take2';
+$args = array();
+foreach ( array_slice( $argv, 1 ) as $a ) {
+	if ( 0 === strpos( $a, '--look=' ) ) {
+		$want = substr( $a, 7 );
+		$look = in_array( $want, array( 'take2', 'blend' ), true ) ? $want : 'take2';
+	} else {
+		$args[] = $a;
+	}
+}
+$argv = array_merge( array( $argv[0] ), $args );
+$out  = isset( $argv[1] ) ? rtrim( $argv[1], '/' ) : '';
 if ( ! $out ) {
 	fwrite( STDERR, "usage: php rides/tests/harness.php <outdir> [today]\n" );
 	exit( 2 );
@@ -21,6 +34,7 @@ if ( ! is_dir( $out ) && ! mkdir( $out, 0755, true ) ) {
 $ctx   = array(
 	'base'  => 'file://' . RIDES_DIR . '/',
 	'today' => isset( $argv[2] ) ? $argv[2] : gmdate( 'Y-m-d' ),
+	'look'  => $look,
 );
 $pages = array(
 	'home'          => 'home',

@@ -341,5 +341,39 @@ ok( false === strpos( $ins, 'id="results"' ) && false === strpos( $ins, 'id="spo
 $pm = rides_preview_pages();
 ok( 'event:insomniac' === ( $pm[21756] ?? '' ) && 'event:big-woody' === ( $pm[24565] ?? '' ), 'preview map carries Insomniac 21756 and Big Woody 24565' );
 
+// 13. 0.1.6 option B: the look switch (take2 default, blend by meta or preview query, allowlist).
+$PP = 24080;
+req( $PP, array( 'rides_preview' => $TOKEN ) );
+ok( 'take2' === rides_current_look(), 'preview without rides_look is take2 (default)' );
+req( $PP, array( 'rides_preview' => $TOKEN, 'rides_look' => 'blend' ) );
+ok( 'blend' === rides_current_look(), 'preview with rides_look=blend picks blend (query)' );
+req( $PP, array( 'rides_preview' => $TOKEN, 'rides_look' => 'bogus' ) );
+ok( 'take2' === rides_current_look(), 'bogus rides_look falls back to take2' );
+req( $PP, array( 'rides_preview' => $TOKEN, 'rides_look' => array( 'blend' ) ) );
+ok( 'take2' === rides_current_look(), 'array rides_look is ignored' );
+req( $PP, array( 'rides_preview' => 'wrong-token-wrong-token', 'rides_look' => 'blend' ) );
+ok( 'take2' === rides_current_look() && '' === rides_current_layout(), 'rides_look without a valid token does nothing' );
+req( $PP, array( 'rides_look' => 'blend' ) );
+ok( 'take2' === rides_current_look() && '' === rides_current_layout(), 'rides_look alone on a plain page does nothing' );
+req( $PP, array(), 'event:prickly-pedal' );
+$GLOBALS['rides_meta'][ $PP ]['_rides_v2_look'] = 'blend';
+ok( 'blend' === rides_current_look(), 'meta _rides_v2_look=blend picks blend' );
+ok( 'blend' === rides_wp_ctx()['look'], 'live render context carries the look' );
+req( $PP, array(), 'event:prickly-pedal' );
+$GLOBALS['rides_meta'][ $PP ]['_rides_v2_look'] = '<script>';
+ok( 'take2' === rides_current_look(), 'junk _rides_v2_look meta falls back to take2' );
+req( $PP, array( 'rides_preview' => $TOKEN, 'rides_look' => 'take2' ), 'event:prickly-pedal' );
+$GLOBALS['rides_meta'][ $PP ]['_rides_v2_look'] = 'blend';
+ok( 'take2' === rides_current_look(), 'preview rides_look=take2 overrides blend meta' );
+unset( $GLOBALS['rides_meta'][ $PP ] );
+foreach ( array( 'prickly-pedal', 'insomniac', 'big-woody' ) as $es ) {
+	$t2 = rides_render_layout( 'event:' . $es, $ectx );
+	$t2b = rides_render_layout( 'event:' . $es, $ectx + array( 'look' => 'take2' ) );
+	$t2x = rides_render_layout( 'event:' . $es, $ectx + array( 'look' => 'bogus' ) );
+	$bl  = rides_render_layout( 'event:' . $es, $ectx + array( 'look' => 'blend' ) );
+	ok( false === strpos( $t2, 'rides-look-blend' ) && $t2 === $t2b && $t2 === $t2x, "$es take 2 render has no rides-look-blend and ignores look=take2 or a bogus look" );
+	ok( 1 === preg_match( '#^<div class="rides-v2 rides-page-event[^"]*\brides-look-blend\b#', $bl ), "$es blend root carries rides-look-blend" );
+}
+
 echo "$count checks, $fails failed\n";
 exit( $fails ? 1 : 0 );

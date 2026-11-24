@@ -160,6 +160,16 @@ function rides_register_links( $e ) {
 }
 
 /**
+ * True when the render context asks for the blend look (option B).
+ *
+ * @param array $ctx Render context.
+ * @return bool
+ */
+function rides_is_blend( $ctx ) {
+	return isset( $ctx['look'] ) && 'blend' === $ctx['look'];
+}
+
+/**
  * Root wrapper.
  *
  * @param string $page  Page key.
@@ -601,7 +611,7 @@ function rides_render_event( $ctx, $slug ) {
 		}
 		$out .= '</div><div class="rides-actions">' . rides_register_buttons( $d['register'] ) . '</div></div></section>';
 	}
-	return rides_root( 'event' . ( $night ? ' rides-theme-night' : '' ), $out );
+	return rides_root( 'event' . ( $night ? ' rides-theme-night' : '' ) . ( rides_is_blend( $ctx ) ? ' rides-look-blend' : '' ), $out );
 }
 
 /**
