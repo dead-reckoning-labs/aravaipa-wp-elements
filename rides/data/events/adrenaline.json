@@ -1,0 +1,401 @@
+{
+ "slug": "adrenaline",
+ "name": "Adrenaline Night Rides",
+ "source": "https://aravaiparides.com/adrenaline-night-rides/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/adrenaline.html)",
+ "date_label": "Friday, May 21, 2027",
+ "place": "McDowell Mountain Regional Park, Fountain Hills, AZ",
+ "intro": [
+  "Experience the magic of night trail riding in the Sonoran desert at the Adrenaline Night Trail Rides held on a rolling 9.5 mile loop at McDowell Mountain Regional Park. This is a perfect beginner night ride with distances for all. Ride past towering saguaro cactus under the night stars! All categories race on the same loop.",
+  "This race is the 2nd in the Insomniac Night Trail Ride Series with events across the greater Phoenix, Arizona area. Join us and \"Carpe Noctem\" to \"seize the night\"!"
+ ],
+ "description": "Adrenaline Night Rides, Friday, May 21, 2027: night mountain bike races, 6 Hour Duo, 6 Hour Solo, 3 Hour Solo, 9.5 Mile Solo and juniors, at McDowell Mountain Regional Park, Fountain Hills, AZ.",
+ "theme": "night",
+ "distances": [
+  {
+   "name": "6 Hour Duo",
+   "sport": "Duo",
+   "map": "https://caltopo.com/m/6QV9",
+   "facts": [
+    [
+     "Start Time",
+     "7:30 PM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (1:30 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "9.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "280 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1905 feet"
+    ]
+   ]
+  },
+  {
+   "name": "6 Hour Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/6QV9",
+   "facts": [
+    [
+     "Start Time",
+     "7:30 PM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (1:30 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "9.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "280 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1905 feet"
+    ]
+   ]
+  },
+  {
+   "name": "3 Hour Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/6QV9",
+   "facts": [
+    [
+     "Start Time",
+     "7:45 PM"
+    ],
+    [
+     "Time Limit",
+     "3 Hours (10:45 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "9.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "280 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1905 feet"
+    ]
+   ]
+  },
+  {
+   "name": "9.5 Mile Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/6QV9",
+   "facts": [
+    [
+     "Start Time",
+     "8:00 PM"
+    ],
+    [
+     "Time Limit",
+     "5 Hours (1 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "9.5 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "280 feet"
+    ],
+    [
+     "Max Elevation",
+     "1905 feet"
+    ]
+   ]
+  },
+  {
+   "name": "9.5 Mile Junior",
+   "sport": "Junior",
+   "map": "https://caltopo.com/m/6QV9",
+   "facts": [
+    [
+     "Start Time",
+     "8:05 PM"
+    ],
+    [
+     "Time Limit",
+     "5 Hours (1 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "9.5 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "280 feet"
+    ],
+    [
+     "Max Elevation",
+     "1905 feet"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/6QV9"
+ },
+ "courses": [
+  {
+   "name": "The Loop",
+   "paras": [
+    "Adrenaline is the second race in the Insomniac Night Trail Ride Series. All races will be held on the same 9.5 mile loop and repeated as many times as you'd like in your respective race.",
+    "The loop is comprised of the Escondido, Pemberton and Shallmo trails which feature a mix of wider rolling desert terrain and some more narrow and rocky single track and a short section of sandy wash.",
+    "Riders will experience a variety of conditions and challenges while looping under the full moon."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately."
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "McDowell Mountain Regional Park",
+    "text": "16300 McDowell Mountain Park Dr, Fort McDowell, AZ 85264. Our start/finish line is based in the Four Peaks Trailhead Parking Area. Your first right after passing through the gate.",
+    "map": "https://www.google.com/maps/place/McDowell+Mountain+Regional+Park/@33.5914789,-111.8200113,40822m/data=!3m1!1e3!4m6!3m5!1s0x872b9bde79d541c9:0x8f770169c9b53558!8m2!3d33.6674891!4d-111.6978047!16s%2Fg%2F1tjy1znc?entry=ttu&g_ep=EgoyMDI1MDIyNS4wIKXMDSoASAFQAw%3D%3D"
+   }
+  ]
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Thursday May 20, 12:00-5:00 PM",
+     "Aravaipa Office, 2401 S. 24th Street, Phoenix, AZ 85034"
+    ],
+    [
+     "Friday May 21, 6:30-8:00 PM",
+     "Race Start/Finish, McDowell Mountain Regional Park"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Race Day Schedule",
+   "rows": [
+    [
+     "6:30 PM",
+     "Bib pickup / race day registration begin"
+    ],
+    [
+     "7:24 PM",
+     "Sunset"
+    ],
+    [
+     "7:30 PM",
+     "6 Hour Duo & Solo Start"
+    ],
+    [
+     "7:45 PM",
+     "3 Hour Solo Start"
+    ],
+    [
+     "7:52 PM",
+     "End of Civil Twilight"
+    ],
+    [
+     "8:00 PM",
+     "9.5 Mile Solo Start"
+    ],
+    [
+     "8:05 PM",
+     "9.5 Mile Junior Start"
+    ],
+    [
+     "10:15 PM",
+     "3 Hour Final Loop Cutoff"
+    ],
+    [
+     "10:45 PM",
+     "3 Hour Race Ends"
+    ],
+    [
+     "12:50 AM",
+     "6 Hour Final Loop Cutoff"
+    ],
+    [
+     "1:30 AM",
+     "6 Hour Races End"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Copy of Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Directions",
+   "paras": [
+    "From central Phoenix, take Loop 202 east to Beeline Highway (SR 87). Continue northeast on SR 87 to Shea Blvd. Travel west on Shea Blvd. to Saguaro Blvd.; turn north. Continue through Town of Fountain Hills to Fountain Hills Blvd; turn right and travel four miles to the McDowell Mountain Regional Park entrance."
+   ]
+  },
+  {
+   "name": "Parking",
+   "paras": [
+    "Remember the park now charges a $10 park entry fee per vehicle.",
+    "Please arrive early and have correct change (cash) available on race evening for a smooth entry process. Maricopa County Parks also offers an Annual Pass for $120. Carpool to save!"
+   ]
+  },
+  {
+   "name": "Timing",
+   "paras": [
+    "All races will be professionally chip timed with a disposable timing chip attached to your bike bib. Please attach to your handlebars on the front of your bike. Live results will be available during the event at Aravaipa Live"
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "Camping is allowed by McDowell Mountain Regional Park for this event in their dirt parking lot as long as you purchase a camping permit here. One $15 camping permit will be good for one truck / van / camper for the night of the race."
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Station",
+   "paras": [
+    "Our Main Aid tent is located directly on course at our start/finish race village that is easily accessible each lap of the course. We'll be ready to serve you water, ice, electrolyte drinks, soda, iced coffee, and some pre-packaged snacks, but you'll have to ask a volunteer for assistance."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Duo Teams",
+   "a": [
+    "We will offer a duo team option for the 6 Hour race. 6 Hour Team participants are comprised of two riders on a single team who complete laps one at a time for their team. You decide who rides which laps and how many. Riders may elect to ride more than one loop in a row, but switching between riders may be done only in the transition zone at the start/finish area."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect great weather for this May night event. It might be a touch hot at the start, but should cool down nicely into the evening. There will be 98% moon illumination for the race this year, with moonrise around 9:06 PM."
+   ]
+  },
+  {
+   "q": "Trail Etiquette",
+   "a": [
+    "Remember to always remain on designed trails, no short cutting.",
+    "Headphones are not permitted. No E- Bikes.",
+    "This course includes some legit single track. If you are fast and attempting to pass, please alert the rider in front of you before flying past them. Likewise, if you hear a rider approaching you from behind, attempt to find a spot to allow the pass once it is safe to do so.",
+    "As a general rule, when passing a rider, announce, \"on your left.\" Remain in control and respect the other participants.",
+    "Everyone is after the same goal here so let's be respectful of each other's races and have fun."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all individuals, no pets are allowed on-course at the night races. Any pets at the race must be on a leash at all times, respect park rules, and be supervised."
+   ]
+  },
+  {
+   "q": "Mountain Biking and Trash",
+   "a": [
+    "Please respect the trails and the beauty of the desert by disposing of any trash at one of our aid stations. We do recycle and participate in the Terracycle program where we recycle used nutrition packets and gel wrappers. Please deposit them in the specified container at the feed station."
+   ]
+  }
+ ],
+ "mail_in": {
+  "label": "Mail-In Entry Form",
+  "href": "https://racegoat.com/events/adrenaline-night-rides-2027/mail-in"
+ },
+ "register": [
+  {
+   "label": "Register Now",
+   "href": "https://racegoat.com/events/adrenaline-night-rides-2027"
+  }
+ ],
+ "register_headline": "Adrenaline Night Rides",
+ "register_note": "Online registration closes on 5/17 at 11:59PM.",
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "Gnarly",
+   "href": "https://gognarly.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2021/05/Gnarly_Horizontal_BlueType.png"
+  }
+ ],
+ "volunteer": {
+  "text": "We need help to make Adrenaline Night Rides possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com"
+ },
+ "live": {
+  "text": "Follow the 2027 Adrenaline Night Rides with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2025/02/2020_Adrenaline_Logo_Rides_v1-Glow-2.png",
+  "width": 2288,
+  "height": 2549,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/adrenaline.jpg",
+  "alt": "Riders lined up at the start tent at dusk"
+ }
+}

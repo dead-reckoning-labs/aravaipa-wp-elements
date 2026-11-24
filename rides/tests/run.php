@@ -392,5 +392,39 @@ foreach ( array( 'prickly-pedal', 'insomniac', 'big-woody' ) as $es ) {
 	ok( 0 === preg_match( '/\x{2014}/u', $bl ), "$es blend has no em dash" );
 }
 
+// Unlisted rows (Rough Canyon, Group Rides): their own page renders, but they stay off the slider,
+// the tiles, the results/photos order and the home and events pages.
+$unlisted = array( 'rough-canyon', 'group-rides' );
+$listed   = rides_pluck( rides_events( '2026-11-24' ), 'slug' );
+$every    = rides_pluck( rides_events( '2026-11-24', true ), 'slug' );
+foreach ( $unlisted as $us ) {
+	$ue = rides_event( $us );
+	ok( $ue && ! empty( $ue['unlisted'] ), "$us row is unlisted and rides_event still finds it" );
+	ok( ! in_array( $us, $listed, true ) && in_array( $us, $every, true ), "$us left out of rides_events() unless all" );
+	foreach ( array( 'home', 'events' ) as $lp ) {
+		foreach ( array( 'take2', 'blend' ) as $lk ) {
+			$lh = rides_render_layout( $lp, $ectx + array( 'look' => $lk ) );
+			ok( false === strpos( $lh, $ue['url'] ), "$lp ($lk) does not link unlisted $us" );
+		}
+	}
+}
+$rr = rides_render_layout( 'results', $ectx );
+ok( false === strpos( $rr, 'Rough Canyon Trail Rides' ) && false !== strpos( $rr, 'id="rides-results-rough-canyon"' ), 'results keeps the Rough Canyon archive row under its old name, not the unlisted row' );
+
+// The nine pages added in 0.1.7: blend render with the live register links, intro photo on disk.
+foreach ( array( 'adrenaline', 'sinister', 'stunner', 'frenzy-hills', 'black-canyon-crusher', 'royal-gorge-groove', 'tonto', 'rough-canyon', 'group-rides' ) as $ns ) {
+	$nd = rides_data( 'events/' . $ns );
+	$nb = rides_render_layout( 'event:' . $ns, $ectx + array( 'look' => 'blend' ) );
+	ok( $nd && $ns === $nd['slug'], "$ns event data file loads" );
+	ok( 1 === preg_match( '#^<div class="rides-v2 rides-page-event[^"]*\brides-look-blend\b#', $nb ), "$ns blend root carries rides-look-blend" );
+	preg_match_all( '#class="rides-btn rides-register[^"]*" href="([^"]+)"#', $nb, $nm );
+	$want = array_column( (array) ( $nd['register'] ?? array() ), 'href' );
+	ok( array_values( array_unique( $nm[1] ) ) === $want, "$ns blend register links equal the data (live page)" );
+	ok( is_readable( RIDES_DIR . '/' . $nd['intro_photo']['src'] ), "$ns intro photo ships" );
+	ok( false !== strpos( $nb, 'class="rides-event-logo" src="' . rides_e( $nd['existing_logo']['src'] ) . '"' ), "$ns blend hero shows the live page logo" );
+	ok( 0 === preg_match( '/\x{2014}/u', $nb ), "$ns blend has no em dash" );
+}
+ok( 'night' === rides_data( 'events/adrenaline' )['theme'] && 'night' === rides_data( 'events/sinister' )['theme'] && 'night' === rides_data( 'events/stunner' )['theme'], 'night rides use the night theme' );
+
 echo "$count checks, $fails failed\n";
 exit( $fails ? 1 : 0 );

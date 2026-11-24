@@ -45,6 +45,9 @@ $pages = array(
 	'insomniac'     => 'event:insomniac',
 	'big-woody'     => 'event:big-woody',
 );
+foreach ( array( 'adrenaline', 'sinister', 'stunner', 'frenzy-hills', 'black-canyon-crusher', 'royal-gorge-groove', 'tonto', 'rough-canyon', 'group-rides' ) as $slug ) {
+	$pages[ $slug ] = 'event:' . $slug;
+}
 $css   = rides_asset( $ctx, 'assets/rides.css' );
 $js    = rides_asset( $ctx, 'assets/rides.js' );
 $logo  = 'https://aravaiparides.com/wp-content/uploads/2019/08/2019_AravaipaLogo_Redesign_Aravaipa_RidesLogo-1.png';

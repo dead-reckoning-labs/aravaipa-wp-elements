@@ -1,0 +1,443 @@
+{
+ "slug": "stunner",
+ "name": "Stunner Night Rides",
+ "source": "https://aravaiparides.com/stunner-night-rides/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/stunner.html)",
+ "date_label": "Friday, July 9, 2027",
+ "place": "Usery Mountain Regional Park, Mesa, AZ",
+ "intro": [
+  "Join us for Stunner Night Rides at beautiful Usery Mountain Regional Park! This course utilizes the Noso, Blevins, Chain Fruit, Lost Sheep, Moon Rock, Levee, Ruidoso, & Meridian Trails. Wind through Chain Fruit cholla at the base of Pass Mountain.",
+  "This race is part of the Insomniac Night Trail Ride Series with events all across the state of Arizona. Join us and \"Carpe Noctem\" to \"seize the night\"!"
+ ],
+ "description": "Stunner Night Rides, Friday, July 9, 2027: night mountain bike races, 6 Hour Duo, 6 Hour Solo, 3 Hour Solo, 10.5 Mile Solo and juniors, at Usery Mountain Regional Park, Mesa, AZ.",
+ "theme": "night",
+ "distances": [
+  {
+   "name": "6 Hour Duo",
+   "sport": "Duo",
+   "map": "https://caltopo.com/m/TUR8",
+   "facts": [
+    [
+     "Start Time",
+     "7:00 PM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (1:00 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "10.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "255 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1968 feet"
+    ]
+   ]
+  },
+  {
+   "name": "6 Hour Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/TUR8",
+   "facts": [
+    [
+     "Start Time",
+     "7:00 PM"
+    ],
+    [
+     "Time Limit",
+     "6 Hours (1:00 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "10.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "255 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1968 feet"
+    ]
+   ]
+  },
+  {
+   "name": "3 Hour Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/TUR8",
+   "facts": [
+    [
+     "Start Time",
+     "7:15 PM"
+    ],
+    [
+     "Time Limit",
+     "3 Hours (10:15 PM Cutoff)"
+    ],
+    [
+     "Distance",
+     "10.5 Mile Loop"
+    ],
+    [
+     "Elevation Gain",
+     "255 feet per loop"
+    ],
+    [
+     "Max Elevation",
+     "1968 feet"
+    ]
+   ]
+  },
+  {
+   "name": "10.5 Mile Solo",
+   "sport": "Solo",
+   "map": "https://caltopo.com/m/TUR8",
+   "facts": [
+    [
+     "Start Time",
+     "7:30 PM"
+    ],
+    [
+     "Time Limit",
+     "5.5 Hours (1 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "10.5 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "255 feet"
+    ],
+    [
+     "Max Elevation",
+     "1968 feet"
+    ]
+   ]
+  },
+  {
+   "name": "10.5 Mile Juniors",
+   "sport": "Junior",
+   "map": "https://caltopo.com/m/TUR8",
+   "facts": [
+    [
+     "Start Time",
+     "7:45 PM"
+    ],
+    [
+     "Time Limit",
+     "5+ Hours (1 AM Cutoff)"
+    ],
+    [
+     "Distance",
+     "10.5 Miles"
+    ],
+    [
+     "Elevation Gain",
+     "255 feet"
+    ],
+    [
+     "Max Elevation",
+     "1968 feet"
+    ]
+   ]
+  }
+ ],
+ "distance_note": "*Distances may vary slightly each year due to permitting.",
+ "course_map": {
+  "label": "CalTopo Course Map",
+  "href": "https://caltopo.com/m/TUR8"
+ },
+ "courses": [
+  {
+   "name": "The Loop",
+   "paras": [
+    "Join us for Stunner Night Rides at the beautiful Usery Mountain Regional Park!",
+    "This course utilizes the Noso, Blevins, Chain Fruit, Lost Sheep, Moon Rock, Levee, Ruidoso, & Meridian Trails. Wind through Chain Fruit cholla at the base of Pass Mountain.",
+    "Riders will experience a variety of conditions and challenges while looping under the first quarter moon."
+   ]
+  },
+  {
+   "name": "Medical",
+   "paras": [
+    "We will have our MedStar Solutions medical staff based at the start / finish headquarters to assist with first aid onsite. We reserve the right to pull you from the race if medical officials deem it necessary.",
+    "NOTE: Please do NOT call 911 in a medical emergency. Our medical team is highly trained and understands the terrain and driving access points. Please call the race day number and they will dispatch immediately."
+   ]
+  }
+ ],
+ "location": {
+  "start_lines": [
+   {
+    "name": "Start / Finish",
+    "place": "Usery Mountain Regional Park",
+    "text": "3939 N Usery Pass Rd, Mesa, AZ 85207. Our start/finish is at the far side of the park at the Blevins trailhead.",
+    "map": "https://www.google.com/maps/place/Usery+Mountain+Regional+Park/@33.518322,-111.695694,36259m/data=!3m1!1e3!4m6!3m5!1s0x872bba5ccc561ef7:0x8a8d82aaadbb87a1!8m2!3d33.4791764!4d-111.6194709!16s%2Fg%2F1tfbyyf5?entry=ttu&g_ep=EgoyMDI1MDMwMi4wIKXMDSoASAFQAw%3D%3D"
+   }
+  ]
+ },
+ "bib_pickup": [
+  {
+   "caption": "Bib Pickup",
+   "rows": [
+    [
+     "Thursday, July 8, 12:00-5:00 PM",
+     "Aravaipa Headquarters, 2401 S. 24th Street, Phoenix, AZ 85034"
+    ],
+    [
+     "Friday, July 9, 6:00-7:45 PM",
+     "Usery Mountain Regional Park"
+    ]
+   ]
+  }
+ ],
+ "schedule": [
+  {
+   "caption": "Race Day Schedule",
+   "rows": [
+    [
+     "8:59 AM",
+     "Moonrise"
+    ],
+    [
+     "6:00 PM",
+     "Bib pickup / race day registration begin"
+    ],
+    [
+     "7:00 PM",
+     "6 Hour Duo & Solo Start"
+    ],
+    [
+     "7:15 PM",
+     "3 Hour Solo Start"
+    ],
+    [
+     "7:30 PM",
+     "10.5 Mile Solo Start"
+    ],
+    [
+     "7:35 PM",
+     "Sunset"
+    ],
+    [
+     "7:45 PM",
+     "10.5 Mile Juniors Start"
+    ],
+    [
+     "8:03 PM",
+     "End of Civil Twilight"
+    ],
+    [
+     "9:25 PM",
+     "3 Hour Final Loop Cutoff"
+    ],
+    [
+     "10:15 PM",
+     "3 Hour Race Ends"
+    ],
+    [
+     "12:10 AM",
+     "6 Hour Final Loop Cutoff"
+    ],
+    [
+     "1:00 AM",
+     "6 Hour Races End"
+    ]
+   ]
+  },
+  {
+   "caption": "Race Perks",
+   "rows": [
+    [
+     "Finish",
+     "Finish Line Photo"
+    ],
+    [
+     "Timing",
+     "Copy of Chip timed race results"
+    ],
+    [
+     "Aid",
+     "Well stocked aid station"
+    ],
+    [
+     "Award",
+     "Finisher award by Aravaipa Artworx"
+    ]
+   ]
+  }
+ ],
+ "info": [
+  {
+   "name": "Directions",
+   "paras": [
+    "Directions: From all points Take 202 Loop E to exit 24 McKellips Rd. Follow McKellips Rd. E to Ellswoth. Take Ellsworth Rd. N. It becomes Usery Pass Rd."
+   ]
+  },
+  {
+   "name": "Parking",
+   "paras": [
+    "Remember the park now charges a $10 park entry fee per vehicle.",
+    "Please arrive early and have correct change (cash) available on race evening for a smooth entry process. Maricopa County Parks also offers an Annual Pass for $120. Carpool to save!"
+   ]
+  },
+  {
+   "name": "Timing",
+   "paras": [
+    "All races will be professionally chip timed with a disposable timing chip attached to your bike bib. Please attach to your handlebars on the front of your bike. Live results will be available during the event at Aravaipa Live"
+   ]
+  },
+  {
+   "name": "Camping",
+   "paras": [
+    "We've partnered up with Usery Mountain Regional Park to offer on site camping in their attached parking lot. Feel free to bring your van, truck or camper and spend the night on site after your race is over. Camping permits are $15/unit per night and can be purchased with registration or with this link: Camping Permit."
+   ]
+  }
+ ],
+ "aid": [
+  {
+   "name": "Aid Station",
+   "paras": [
+    "Our main aid station will be stocked with water, ice, electrolyte drinks, salty and sweet snacks, fruit, pb&j, bean rollups, hot food (quesadillas, grilled cheese), and more."
+   ]
+  },
+  {
+   "name": "Drop Bags",
+   "paras": [
+    "We will have an area specified for your personal drop bag at the start/finish area that will allow for easy and quick access."
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "q": "Crews and pacers",
+   "a": [
+    "Crews will be allowed at the start/finish only.",
+    "There are no pacers allowed for any distance."
+   ]
+  },
+  {
+   "q": "Duo Teams",
+   "a": [
+    "We will offer a duo team option for the 6 Hour race. 6 Hour Team participants are comprised of two riders on a single team who complete laps one at a time for their team. You decide who rides which laps and how many. Riders may elect to ride more than one loop in a row, but switching between riders may be done only in the transition zone at the start/finish area."
+   ]
+  },
+  {
+   "q": "Course Marking",
+   "a": [
+    "The race courses will be well marked with orange plastic ribbons with black polka dots and reflective medallions. Trail junctions and turns will be well marked with reflective laminated signs. In addition, blue & white checkerboard plastic flagging and RED reflective WRONG WAY signs will be hung to designate non-race or \"WRONG WAY\" trails. All riders are responsible for understanding the layout of the course. Please familiarize yourself with the course maps on our website prior to race day and/or print a map to bring along with you."
+   ]
+  },
+  {
+   "q": "Weather",
+   "a": [
+    "Expect warmer riding conditions at the start (95+ degrees) with temperatures typically in the mid 80's as the night progresses. We will have plenty of ice and water on course to keep you hydrated."
+   ]
+  },
+  {
+   "q": "Trail Etiquette",
+   "a": [
+    "Remember to always remain on designed trails, no short cutting.",
+    "Headphones are not permitted. No E- Bikes.",
+    "This course includes some legit single track. If you are fast and attempting to pass, please alert the rider in front of you before flying past them. Likewise, if you hear a rider approaching you from behind, attempt to find a spot to allow the pass once it is safe to do so.",
+    "As a general rule, when passing a rider, announce, \"on your left.\" Remain in control and respect the other participants.",
+    "Everyone is after the same goal here so let's be respectful of each other's races and have fun."
+   ]
+  },
+  {
+   "q": "Pets",
+   "a": [
+    "For the safety of all individuals, no pets are allowed on-course at the night races. Any pets at the race must be on a leash at all times, respect park rules, and be supervised."
+   ]
+  },
+  {
+   "q": "Mountain Biking and Trash",
+   "a": [
+    "Please respect the trails and the beauty of the desert by disposing of any trash at one of our aid stations. We do recycle and participate in the Terracycle program where we recycle used nutrition packets and gel wrappers. Please deposit them in the specified container at the feed station."
+   ]
+  }
+ ],
+ "mail_in": {
+  "label": "Mail-In Entry Form",
+  "href": "https://racegoat.com/events/stunner-night-rides-2027/mail-in"
+ },
+ "register": [
+  {
+   "label": "Register Now",
+   "href": "https://racegoat.com/events/stunner-night-rides-2027"
+  }
+ ],
+ "register_headline": "Stunner Night Rides",
+ "register_note": "Online registration closes on 7/5/27 at 11:59PM.",
+ "records": [
+  [
+   "6 Hour Duo",
+   "Dawyn Hardy & Dustin Hardy, 53.9 Miles"
+  ],
+  [
+   "6 Hour Solo, Male",
+   "Zane Koogler, 8 Laps/86 Miles, 5:33:55 (2026)"
+  ],
+  [
+   "6 Hour Solo, Female",
+   "Christina Summers, 5 Laps/53 Miles, 5:02:40 (2026)"
+  ],
+  [
+   "3 Hour Solo, Male",
+   "Bryce Bonilla, 4 Laps/43 Miles, 2:44:55 (2026)"
+  ],
+  [
+   "3 Hour Solo, Female",
+   "Christina Summers, 32.3 Miles in 2:48:51"
+  ],
+  [
+   "10.5 Mile, Male",
+   "Joe Shea, 38:53"
+  ],
+  [
+   "10.5 Mile, Female",
+   "Kayla Hawk, 47:14 (2025)"
+  ],
+  [
+   "Junior, Male",
+   "Jacob Longstreet, 43:32 (2025)"
+  ],
+  [
+   "Junior, Female",
+   "Brooklyn Despeaux, 56:02"
+  ]
+ ],
+ "sponsors": [
+  {
+   "name": "MedStar Solutions",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2024/09/MedStar-Solutions-Logo.jpg"
+  },
+  {
+   "name": "Gnarly",
+   "href": "https://gognarly.com/",
+   "logo": "https://aravaiparides.com/wp-content/uploads/2021/05/Gnarly_Horizontal_BlueType.png"
+  }
+ ],
+ "volunteer": {
+  "text": "We need help to make Stunner Night Rides possible. Volunteer perks include Aravaipa race credits and race swag!",
+  "href": "https://aravaiparunning.ivolunteer.com"
+ },
+ "live": {
+  "text": "Follow the 2027 Stunner Night Rides with live split points throughout the race.",
+  "href": "https://live.aravaiparunning.com/#/",
+  "label": "Aravaipa Live"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2025/03/stunner-rides-9.png",
+  "width": 975,
+  "height": 648,
+  "note": "Logo file the live page shows at its top (blend look only)."
+ },
+ "intro_photo": {
+  "src": "assets/photos/stunner.jpg",
+  "alt": "Riders on the Usery road at golden hour"
+ }
+}

@@ -437,7 +437,7 @@ function rides_group_rows( $rows ) {
  */
 function rides_row_ride( $rows, $slug ) {
 	$e = rides_event( $slug );
-	if ( $e ) {
+	if ( $e && empty( $e['unlisted'] ) ) {
 		return array( $e['name'], $e['logo'] );
 	}
 	$name = ! empty( $rows[0]['ride'] ) ? $rows[0]['ride'] : ucwords( str_replace( '-', ' ', $slug ) );
@@ -504,6 +504,7 @@ function rides_render_list( $kind, $rows, $ctx = array( 'base' => '' ) ) {
 		$jump .= '<li><a href="#' . rides_e( $id ) . '">' . rides_e( $name ) . '</a></li>';
 		$list .= '<li class="rides-list-ride" id="' . rides_e( $id ) . '">';
 		$ev    = rides_event( $slug );
+		$ev    = $ev && empty( $ev['unlisted'] ) ? $ev : null;
 		$plate = $ev && isset( $ev['logo_plate'] ) && 'light' === $ev['logo_plate'];
 		$list .= '<div class="rides-list-logo' . ( $plate ? ' is-plate' : '' ) . '">' . ( $logo ? '<img src="' . rides_e( rides_logo_src( $ctx, $logo ) ) . '" alt="" loading="lazy">' : '<span class="rides-list-initials" aria-hidden="true">' . rides_e( rides_initials( $name ) ) . '</span>' ) . '</div>';
 		$list .= '<div><h3>' . rides_e( $name ) . '</h3><ul class="rides-years">';

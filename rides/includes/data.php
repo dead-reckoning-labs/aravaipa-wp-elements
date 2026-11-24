@@ -29,15 +29,28 @@ function rides_data( $name ) {
 }
 
 /**
- * All events, upcoming first (by date, undated last within their year), then past ones.
+ * All listed events, upcoming first (by date, undated last within their year), then past ones.
+ * Rows with "unlisted": true (pages that have a blend layout but are not on the slider, tiles or
+ * results order, like Rough Canyon and Group Rides) are left out unless $all is true.
  *
  * @param string|null $today Y-m-d, defaults to today.
+ * @param bool        $all   Include unlisted rows.
  * @return array
  */
-function rides_events( $today = null ) {
+function rides_events( $today = null, $all = false ) {
 	$raw    = rides_data( 'rides' );
 	$events = isset( $raw['events'] ) ? $raw['events'] : $raw;
 	$today  = $today ? $today : gmdate( 'Y-m-d' );
+	if ( ! $all ) {
+		$events = array_values(
+			array_filter(
+				$events,
+				function ( $e ) {
+					return empty( $e['unlisted'] );
+				}
+			)
+		);
+	}
 	foreach ( $events as $i => $e ) {
 		$events[ $i ]['_order']  = $i;
 		$events[ $i ]['is_past'] = rides_event_is_past( $e, $today );
@@ -69,13 +82,13 @@ function rides_event_is_past( $e, $today ) {
 }
 
 /**
- * One event by slug.
+ * One event by slug, unlisted rows included (their own page still renders).
  *
  * @param string $slug Event slug.
  * @return array|null
  */
 function rides_event( $slug ) {
-	foreach ( rides_events() as $e ) {
+	foreach ( rides_events( null, true ) as $e ) {
 		if ( $e['slug'] === $slug ) {
 			return $e;
 		}
