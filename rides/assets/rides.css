@@ -1461,3 +1461,275 @@
 		transform: none !important;
 	}
 }
+
+/*
+ * Option B "blend" (0.1.6), only under .rides-look-blend so take 2 never moves.
+ * Take 2 structure (full-bleed hero, yellow date band, two-column intro, one distance table,
+ * running race order, phone cards) in the existing Aravaipa Rides look read from the live
+ * pages (job r5gzzw out/existing/dna.json): the ride's own logo straight on the photo, Lato
+ * throughout with Lato 700 sentence case headings, black centered section titles, navy #30586F
+ * heading bars, square gray panels (#f5f5f5 cards, #f2f2f2 sections), yellow buttons with a
+ * beige hover, red inline links. Square corners (buttons 4px), no shadows, no edge stripes.
+ */
+.rides-v2.rides-look-blend {
+	--rides-navy: #30586f;
+	--rides-teal-dark: #30586f;
+	--rides-mist: #f2f2f2;
+	--rides-line: #dddddd;
+	--rides-muted: #222222;
+	--rides-ink: #111111;
+	--rides-radius: 0px;
+	--rides-fw-h1: 700;
+	--rides-fw-btn: 400;
+	--rides-ls-btn: 0;
+	--rides-blend-card: #f5f5f5;
+	--rides-blend-beige: #fffce5;
+	--rides-blend-red: #ff2a13;
+	--rides-blend-btn-radius: 4px;
+	font-family: "Lato", sans-serif;
+	color: var(--rides-ink);
+}
+.rides-v2.rides-look-blend h1,
+.rides-v2.rides-look-blend h2,
+.rides-v2.rides-look-blend h3,
+.rides-v2.rides-look-blend h4 {
+	font-family: "Lato", sans-serif;
+	font-weight: 700;
+	text-transform: none;
+}
+
+/* Rhythm: a touch tighter than take 2 so the gray card panels never open a gap. */
+.rides-v2.rides-look-blend .rides-section {
+	padding: 2.5rem 0;
+}
+
+/* Section titles: centered, black, Lato 700 sentence case, like the live pages. */
+.rides-look-blend .rides-h2,
+.rides-v2.rides-look-blend h2.rides-h2 {
+	color: #000;
+	font-size: clamp(26px, 2.6vw, 34px);
+	text-align: center;
+	margin: 0 0 1.5rem;
+}
+.rides-look-blend .rides-eyebrow {
+	text-align: center;
+	color: var(--rides-navy);
+	font-size: 13px;
+	letter-spacing: 1.5px;
+}
+.rides-look-blend .rides-head-row {
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	text-align: center;
+}
+.rides-look-blend .rides-block .rides-eyebrow,
+.rides-look-blend .rides-block .rides-h2,
+.rides-v2.rides-look-blend .rides-block h2.rides-h2 {
+	text-align: left;
+}
+.rides-look-blend .rides-block a:not(.rides-btn),
+.rides-look-blend .rides-dist-map a,
+.rides-look-blend .rides-live a,
+.rides-look-blend .rides-intro-text a,
+.rides-look-blend .rides-faq-a a {
+	color: var(--rides-blend-red);
+	font-weight: 700;
+}
+.rides-look-blend .rides-note {
+	color: #444;
+}
+
+/* Buttons: the live yellow and beige hover, Lato 400, short sentence case labels, 4px corners. */
+.rides-look-blend .rides-btn {
+	border-radius: var(--rides-blend-btn-radius);
+	font-family: "Lato", sans-serif;
+	font-size: 17px;
+	font-weight: 400;
+	letter-spacing: 0;
+	text-transform: none;
+	min-height: 46px;
+	padding: 0.7rem 1.6rem;
+	background: var(--rides-yellow);
+	border: 1px solid var(--rides-yellow);
+	color: #000 !important;
+}
+.rides-look-blend .rides-btn:hover,
+.rides-look-blend .rides-btn:focus-visible {
+	background: var(--rides-blend-beige);
+	border-color: var(--rides-blend-beige);
+	color: #000 !important;
+}
+.rides-look-blend .rides-btn--navy {
+	background: var(--rides-navy);
+	border-color: var(--rides-navy);
+	color: #fff !important;
+}
+.rides-look-blend .rides-btn--outline {
+	background: transparent;
+	border-color: var(--rides-navy);
+	color: var(--rides-navy) !important;
+}
+.rides-look-blend .rides-btn--line {
+	background: #fff;
+	border-color: var(--rides-line);
+	color: #000 !important;
+	font-size: 15px;
+	min-height: 40px;
+	padding: 0.5rem 1.2rem;
+}
+.rides-look-blend .rides-btn--navy:hover,
+.rides-look-blend .rides-btn--navy:focus-visible,
+.rides-look-blend .rides-btn--outline:hover,
+.rides-look-blend .rides-btn--outline:focus-visible,
+.rides-look-blend .rides-btn--line:hover,
+.rides-look-blend .rides-btn--line:focus-visible {
+	background: var(--rides-blend-beige);
+	border-color: var(--rides-blend-beige);
+	color: #000 !important;
+}
+
+/* Hero: the ride's own logo straight on the photo, as on the live page. */
+.rides-look-blend .rides-event-hero--dark .rides-event-glow,
+.rides-look-blend .rides-event-hero--light .rides-event-glow {
+	background: radial-gradient(ellipse 34% 46% at 50% 50%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+}
+.rides-look-blend .rides-event-hero--dark .rides-event-glow {
+	background: linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0%, rgba(0, 0, 0, 0) 35%);
+}
+.rides-look-blend.rides-theme-night .rides-event-glow {
+	background: radial-gradient(ellipse 50% 60% at 50% 50%, rgba(5, 10, 18, 0.45) 0%, rgba(5, 10, 18, 0.15) 60%, rgba(5, 10, 18, 0) 100%),
+		linear-gradient(0deg, rgba(5, 10, 18, 0.55) 0%, rgba(5, 10, 18, 0) 45%);
+}
+.rides-v2.rides-look-blend img.rides-event-logo {
+	height: clamp(260px, 38vh, 360px) !important;
+	max-width: min(620px, 86vw);
+}
+
+/* Yellow date band: date in Lato 700. */
+.rides-look-blend .rides-band {
+	color: #000;
+}
+.rides-look-blend .rides-band-date {
+	font-weight: 700;
+}
+.rides-look-blend .rides-band-place,
+.rides-look-blend .rides-band-note {
+	font-weight: 400;
+}
+
+/* Intro: name as the heading, then the live page's bold and light sub lines. */
+.rides-look-blend .rides-intro-copy .rides-intro-name,
+.rides-v2.rides-look-blend .rides-intro-copy h2.rides-intro-name {
+	text-align: left;
+	font-size: clamp(30px, 3vw, 38px);
+	margin: 0 0 0.5rem;
+}
+.rides-look-blend .rides-intro-sub {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 1.35;
+	color: #000;
+}
+.rides-look-blend .rides-intro-sub.is-light {
+	font-weight: 300;
+	margin-bottom: 1.1rem;
+}
+.rides-look-blend .rides-intro-sub:last-of-type {
+	margin-bottom: 1.1rem;
+}
+.rides-look-blend .rides-intro-text p {
+	font-size: 16px;
+	font-weight: 400;
+	color: #222;
+}
+
+/* Panels: gray sections, square gray cards, navy heading bars. */
+.rides-look-blend .rides-section--mist {
+	background: var(--rides-mist);
+}
+.rides-look-blend .rides-section:not(.rides-section--mist):not(.rides-section--navy) .rides-two > .rides-block {
+	background: var(--rides-blend-card);
+	padding: 28px;
+}
+.rides-look-blend .rides-section--mist .rides-two > .rides-block {
+	background: #fff;
+	padding: 28px;
+}
+.rides-look-blend .rides-dist-table thead th {
+	background: var(--rides-navy);
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+}
+.rides-look-blend .rides-dist-table tbody th b {
+	font-weight: 700;
+}
+.rides-look-blend .rides-dist-table tbody th span,
+.rides-look-blend .rides-schedule caption {
+	font-weight: 700;
+	color: var(--rides-navy);
+}
+.rides-look-blend .rides-schedule th,
+.rides-look-blend .rides-faq summary {
+	font-weight: 700;
+}
+.rides-look-blend .rides-faq {
+	margin: 0 auto;
+}
+.rides-look-blend .rides-faq summary::after {
+	color: var(--rides-navy);
+}
+.rides-look-blend #sponsors {
+	background: var(--rides-mist);
+}
+.rides-look-blend .rides-sponsors a,
+.rides-look-blend .rides-sponsors span {
+	border-color: #fff;
+}
+.rides-look-blend .rides-section--navy h2 {
+	color: #fff;
+}
+
+/* Insomniac keeps the night feel; the distances panel is the live navy. */
+.rides-look-blend.rides-theme-night .rides-section--mist {
+	background: var(--rides-night);
+	color: #fff;
+}
+.rides-look-blend.rides-theme-night #distances {
+	background: var(--rides-navy);
+}
+.rides-look-blend.rides-theme-night .rides-section--mist .rides-h2,
+.rides-v2.rides-look-blend.rides-theme-night .rides-section--mist h2.rides-h2 {
+	color: #fff;
+}
+.rides-look-blend.rides-theme-night .rides-section--mist .rides-eyebrow {
+	color: var(--rides-yellow);
+}
+.rides-look-blend.rides-theme-night .rides-dist-table thead th {
+	background: #000;
+}
+.rides-look-blend.rides-theme-night .rides-dist-table tbody th span,
+.rides-look-blend.rides-theme-night .rides-dist-map a,
+.rides-look-blend.rides-theme-night .rides-section--mist .rides-block a:not(.rides-btn),
+.rides-look-blend.rides-theme-night .rides-schedule caption {
+	color: var(--rides-yellow);
+}
+.rides-look-blend.rides-theme-night .rides-section--mist .rides-two > .rides-block {
+	background: var(--rides-night-2);
+}
+
+@media (max-width: 640px) {
+	.rides-v2.rides-look-blend img.rides-event-logo {
+		height: 200px !important;
+	}
+	.rides-look-blend .rides-section:not(.rides-section--mist):not(.rides-section--navy) .rides-two > .rides-block,
+	.rides-look-blend .rides-section--mist .rides-two > .rides-block {
+		padding: 20px 16px;
+	}
+	.rides-look-blend .rides-intro-sub {
+		font-size: 18px;
+	}
+}

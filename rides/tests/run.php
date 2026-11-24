@@ -293,13 +293,14 @@ ok( substr_count( $pp, 'class="rides-eyebrow"' ) >= 4 && false === strpos( $pp, 
 ok( 1 === preg_match( '#<ul class="rides-tiles"[^>]*>(\s*<li>.*?</li>)+\s*</ul>#s', $evh ), 'events tiles are list items inside ul.rides-tiles (balanced grid hooks)' );
 ok( 10 === substr_count( $evh, '<li><a class="rides-tile' ) || 10 <= substr_count( $evh, 'class="rides-tile ' ) + substr_count( $evh, 'class="rides-tile"' ), 'events render all 10 tiles' );
 $css = file_get_contents( RIDES_DIR . '/assets/rides.css' );
+ok( false !== strpos( $css, '.rides-v2.rides-look-blend {' ), 'blend CSS block exists, scoped under .rides-look-blend' );
 ok( false !== strpos( $css, 'grid-template-columns: repeat(8, minmax(0, 1fr))' ) && false !== strpos( $css, ':nth-child(4n+1):nth-last-child(2)' ), 'tile grid centers a short last row' );
 ok( false !== strpos( $css, 'height: min(60vh, 560px)' ) && false !== strpos( $css, 'height: 420px' ), 'hero slider is 60vh capped at 560px, 420px on phone' );
 ok( 0 === preg_match( '#Oswald|Bebas#', $css ), 'no condensed display face left' );
 ok( 0 === preg_match( '#box-shadow\s*:\s*+(?!none)#', $css ), 'no box shadows' );
 preg_match_all( '#border-radius\s*:\s*([^;]+);#', $css, $rm );
-$bad = array_filter( $rm[1], function ( $v ) { return ! in_array( trim( $v ), array( '0', 'var(--rides-radius)', '6px', '7px', '8px', '50%' ), true ); } );
-ok( ! $bad, 'border-radius only 0, 6 to 8px or 50% (dots): ' . implode( ', ', $bad ) );
+$bad = array_filter( $rm[1], function ( $v ) { return ! in_array( trim( $v ), array( '0', 'var(--rides-radius)', 'var(--rides-blend-btn-radius)', '6px', '7px', '8px', '50%' ), true ); } );
+ok( ! $bad, 'border-radius only 0, 6 to 8px, 50% (dots) or the blend 4px button var: ' . implode( ', ', $bad ) );
 
 // 12. 0.1.5 ride page pass: full-bleed hero, yellow band, intro photo, one distance table, race page order.
 $ectx = array( 'base' => '', 'today' => '2026-11-20' );
@@ -373,6 +374,22 @@ foreach ( array( 'prickly-pedal', 'insomniac', 'big-woody' ) as $es ) {
 	$bl  = rides_render_layout( 'event:' . $es, $ectx + array( 'look' => 'blend' ) );
 	ok( false === strpos( $t2, 'rides-look-blend' ) && $t2 === $t2b && $t2 === $t2x, "$es take 2 render has no rides-look-blend and ignores look=take2 or a bogus look" );
 	ok( 1 === preg_match( '#^<div class="rides-v2 rides-page-event[^"]*\brides-look-blend\b#', $bl ), "$es blend root carries rides-look-blend" );
+	$bd = rides_data( 'events/' . $es );
+	$be = rides_event( $es );
+	ok( false !== strpos( $bl, 'class="rides-event-logo" src="' . rides_e( $bd['existing_logo']['src'] ) . '"' ), "$es blend hero shows the live page logo file" );
+	ok( 0 === strpos( $bd['existing_logo']['src'], 'https://aravaiparides.com/wp-content/uploads/' ), "$es existing logo is a live upload" );
+	ok( 1 === preg_match( '#</header><section class="rides-band" id="band">#', $bl ) && false !== strpos( $bl, rides_e( $bd['date_label'] ) ), "$es blend band sits under the hero with the date" );
+	ok( false !== strpos( $bl, '<h2 class="rides-h2 rides-intro-name">' . rides_e( $be['name'] ) . '</h2>' ), "$es blend intro leads with the ride name" );
+	ok( 1 === substr_count( $bl, 'class="rides-dist-table"' ), "$es blend has one distance table" );
+	$btb = substr( $bl, strpos( $bl, 'rides-dist-table' ) );
+	ok( false === strpos( substr( $btb, 0, strpos( $btb, '</table>' ) ), '$' ), "$es blend table has no prices" );
+	foreach ( (array) ( $bd['register'] ?? array() ) as $r ) {
+		ok( false !== strpos( $bl, 'href="' . rides_e( $r['href'] ) . '"' ), "$es blend keeps register link {$r['href']}" );
+	}
+	preg_match_all( '#\bid="(hero|band|intro|distances|course|schedule|aid|faq|results|photos|sponsors)"#', $t2, $ta );
+	preg_match_all( '#\bid="(hero|band|intro|distances|course|schedule|aid|faq|results|photos|sponsors)"#', $bl, $tb );
+	ok( $ta[1] === $tb[1], "$es blend sections match take 2 order" );
+	ok( 0 === preg_match( '/\x{2014}/u', $bl ), "$es blend has no em dash" );
 }
 
 echo "$count checks, $fails failed\n";

@@ -386,5 +386,11 @@
  "intro_photo": {
   "src": "assets/photos/prickly-pedal.jpg",
   "alt": "Riders rolling out from the Cave Creek start line at sunrise"
+ },
+ "existing_logo": {
+  "src": "https://aravaiparides.com/wp-content/uploads/2024/12/PPedal-1.png",
+  "width": 975,
+  "height": 648,
+  "note": "Logo file the live page shows in its hero (blend look only)."
  }
 }
