@@ -3,7 +3,7 @@
  * Plugin Name:       Aravaipa Elements
  * Plugin URI:        https://github.com/dead-reckoning-labs/aravaipa-wp-elements
  * Description:       Custom Cornerstone elements for aravaiparunning.com: race hero, distance cards, event timeline, partner grid, countdown and region map. Replaces the hand-built blocks currently rebuilt on every race page.
- * Version:           0.101.33
+ * Version:           0.102.0
  * Author:            Dead Reckoning Labs
  * Author URI:        https://deadreckoninglabs.com
  * License:           GPL-2.0-or-later
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ARV_ELEMENTS_VERSION', '0.101.33' );
+define( 'ARV_ELEMENTS_VERSION', '0.102.0' );
 define( 'ARV_ELEMENTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ARV_ELEMENTS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -215,6 +215,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/racing-team-apply.php';
 // inline when the race's shifts are live there, else its iVolunteer event.
 // [aravaipa_volunteer_list] and the volunteer-list element.
 require_once ARV_ELEMENTS_PATH . 'includes/volunteer-list.php';
+
+// Series pass block: [aravaipa_series_pass series="..."] under the
+// registration area of every Sonoran Desert Cup, Insomniac and White
+// Mountain Endurance Cup race, priced from includes/data/series-passes.json.
+require_once ARV_ELEMENTS_PATH . 'includes/series-pass.php';
 
 // Admin only: every hook in updater.php answers questions WordPress only
 // asks inside wp-admin (the Plugins screen, the update cron that runs

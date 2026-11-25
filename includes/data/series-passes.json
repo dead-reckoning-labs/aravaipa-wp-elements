@@ -1,0 +1,59 @@
+{
+ "_note": "Series pass block data for [aravaipa_series_pass]. Prices are copied from the live RaceGoat pass pages; each price is valid from 'from' through 'until' (dates in the series timezone, inclusive, null means open). After closes_at the pass button and deal line hide and only the series page button stays. Edit this file, bump the patch version and release to change a price.",
+ "sonoran-desert-cup": {
+  "name": "Sonoran Desert Cup",
+  "season": "2026-27",
+  "timezone": "America/Phoenix",
+  "deal": "Pick any 3 Cup races plus the Dam Good Run 26K final",
+  "price_label": "{price}",
+  "pass_url": "https://racegoat.com/events/sonoran-desert-cup-2026-27",
+  "pass_label": "Get the pass",
+  "page_url": "https://www.aravaiparunning.com/sonoran-desert-cup/",
+  "page_label": "About the cup",
+  "closes_at": "2027-01-04T23:59:00-07:00",
+  "prices": [
+   {"cents": 36000, "tier": "Series Pass", "from": null, "until": "2027-01-04"}
+  ]
+ },
+ "insomniac": {
+  "name": "Insomniac Night Trail Run Series",
+  "season": "2027",
+  "timezone": "America/Phoenix",
+  "deal": "All six 2027 night runs on one registration",
+  "price_label": "five tiers from {price}",
+  "pass_url": "https://racegoat.com/events/insomniac-night-trail-run-series-2027",
+  "pass_label": "Get the pass",
+  "page_url": "https://www.aravaiparunning.com/insomniac/",
+  "page_label": "About the series",
+  "closes_at": "2027-04-19T23:59:00-07:00",
+  "prices": [
+   {"cents": 21600, "tier": "Jitters (7K-10K)", "from": null, "until": "2026-12-14"},
+   {"cents": 25200, "tier": "Jitters (7K-10K)", "from": "2026-12-15", "until": null},
+   {"cents": 28000, "tier": "Wingsuit (15K-20K)", "from": null, "until": "2026-12-31"},
+   {"cents": 32000, "tier": "Wingsuit (15K-20K)", "from": "2027-01-01", "until": null},
+   {"cents": 36800, "tier": "Vigil (23K-31K)", "from": null, "until": "2027-01-14"},
+   {"cents": 41600, "tier": "Vigil (23K-31K)", "from": "2027-01-15", "until": null},
+   {"cents": 33600, "tier": "Evolution (9K-50K)", "from": null, "until": "2027-02-14"},
+   {"cents": 38400, "tier": "Evolution (9K-50K)", "from": "2027-02-15", "until": null},
+   {"cents": 57600, "tier": "Delirium (50K-54K)", "from": null, "until": "2027-02-28"},
+   {"cents": 64800, "tier": "Delirium (50K-54K)", "from": "2027-03-01", "until": null}
+  ]
+ },
+ "white-mountain": {
+  "name": "White Mountain Endurance Cup",
+  "season": "2027",
+  "timezone": "America/New_York",
+  "deal": "All four White Mountain races on one registration",
+  "price_label": "{price}",
+  "pass_url": "https://racegoat.com/events/wme-cup-2027",
+  "pass_label": "Get the pass",
+  "page_url": "https://www.aravaiparunning.com/white-mountain-endurance/wme-cup/",
+  "page_label": "About the cup",
+  "closes_at": null,
+  "prices": [
+   {"cents": 43200, "tier": "Series Pass", "from": null, "until": "2026-12-14"},
+   {"cents": 46400, "tier": "Series Pass", "from": "2026-12-15", "until": "2027-03-31"},
+   {"cents": 49500, "tier": "Series Pass", "from": "2027-04-01", "until": null}
+  ]
+ }
+}
