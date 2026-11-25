@@ -612,6 +612,7 @@ function rides_render_event( $ctx, $slug ) {
 	$out   = rides_event_hero( $ctx, $e, $d, $tone );
 	$out  .= rides_event_band( $d );
 	$out  .= rides_event_intro( $ctx, $e, $d );
+	$out  .= rides_event_trail_run( $d );
 	$out  .= rides_event_table( $d );
 	$out  .= rides_event_course( $d );
 	$out  .= rides_event_schedule( $d );
@@ -676,7 +677,71 @@ function rides_event_band( $d ) {
 	if ( ! empty( $d['register_note'] ) ) {
 		$out .= '<div class="rides-wrap"><p class="rides-band-note">' . rides_e( $d['register_note'] ) . '</p></div>';
 	}
+	$tr = $d['trail_run'] ?? array();
+	if ( ! empty( $tr['note'] ) && ! empty( $tr['anchor'] ) ) {
+		$out .= '<div class="rides-wrap"><p class="rides-band-note rides-band-run">' . rides_e( $tr['note'] ) . ' <a href="#' . rides_e( $tr['anchor'] ) . '">' . rides_e( $tr['note_link'] ?? 'Details' ) . '</a></p></div>';
+	}
 	return $out . '</section>';
+}
+
+/**
+ * A second sport on a ride page (the Prickly Pedal trail run): its own anchored section right after the
+ * intro with what it is, a facts table, course, map, packet pickup, records, results and its Register
+ * button. Values the data marks TBA show as TBA. Renders nothing without a trail_run block.
+ *
+ * @param array $d Event data.
+ * @return string
+ */
+function rides_event_trail_run( $d ) {
+	$tr = $d['trail_run'] ?? array();
+	if ( empty( $tr['anchor'] ) || empty( $tr['title'] ) ) {
+		return '';
+	}
+	$out  = '<section class="rides-section rides-trail-run" id="' . rides_e( $tr['anchor'] ) . '"><div class="rides-wrap">';
+	$out .= '<div class="rides-head-row"><div><p class="rides-eyebrow">' . rides_e( $tr['eyebrow'] ?? 'Trail Run' ) . '</p><h2 class="rides-h2">' . rides_e( $tr['title'] ) . '</h2></div>';
+	$out .= '<div class="rides-actions">';
+	if ( ! empty( $tr['register']['href'] ) ) {
+		$out .= rides_register_buttons( array( $tr['register'] ) );
+	}
+	if ( ! empty( $tr['map']['href'] ) ) {
+		$out .= '<a class="rides-btn rides-btn--teal" href="' . rides_e( $tr['map']['href'] ) . '" rel="noopener">' . rides_e( $tr['map']['label'] ?? 'Course Map' ) . '</a>';
+	}
+	$out .= '</div></div>';
+	if ( ! empty( $tr['lead'] ) ) {
+		$out .= '<p class="rides-trail-lead">' . rides_e( $tr['lead'] ) . '</p>';
+	}
+	$out .= '<div class="rides-two"><div class="rides-block">';
+	if ( ! empty( $tr['facts'] ) ) {
+		$rows = array();
+		foreach ( (array) $tr['facts'] as $f ) {
+			$rows[] = array( $f[0], $f[1] );
+		}
+		$out .= str_replace( '<td>TBA</td>', '<td class="is-tba">TBA</td>', rides_event_rows_table( array( 'caption' => 'Race Details', 'rows' => $rows ) ) );
+	}
+	if ( ! empty( $tr['tba_note'] ) ) {
+		$out .= '<p class="rides-note">' . rides_e( $tr['tba_note'] ) . '</p>';
+	}
+	$out .= '</div><div class="rides-block">';
+	if ( ! empty( $tr['course']['paras'] ) ) {
+		$out .= '<h3>' . rides_e( $tr['course']['name'] ?? 'Course' ) . '</h3>' . rides_paras( $tr['course']['paras'] );
+	}
+	foreach ( array( 'pickup', 'records' ) as $k ) {
+		if ( ! empty( $tr[ $k ]['items'] ) ) {
+			$out .= '<h3>' . rides_e( $tr[ $k ]['caption'] ?? '' ) . '</h3><ul class="rides-trail-list">';
+			foreach ( (array) $tr[ $k ]['items'] as $it ) {
+				$out .= '<li>' . rides_e( $it ) . '</li>';
+			}
+			$out .= '</ul>';
+		}
+	}
+	if ( ! empty( $tr['results'] ) ) {
+		$out .= '<h3>Results</h3><ul class="rides-rows">';
+		foreach ( (array) $tr['results'] as $r ) {
+			$out .= '<li><b>' . rides_e( $r['label'] ) . '</b><a class="rides-btn rides-btn--line" href="' . rides_e( $r['href'] ) . '" rel="noopener">Results</a></li>';
+		}
+		$out .= '</ul>';
+	}
+	return $out . '</div></div></div></section>';
 }
 
 /**
