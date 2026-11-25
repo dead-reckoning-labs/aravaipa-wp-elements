@@ -1887,3 +1887,49 @@
 	padding: 0;
 	border-radius: 0;
 }
+
+/* Trail run section on a ride page (Prickly Pedal): its own anchor, facts table, course and register. */
+.rides-band-run a {
+	color: inherit;
+	font-weight: 700;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+.rides-trail-run {
+	scroll-margin-top: 90px;
+}
+.rides-trail-lead {
+	max-width: 760px;
+	margin: 0 0 28px;
+	font-size: 18px;
+	line-height: 1.55;
+}
+.rides-trail-run .rides-schedule th {
+	white-space: normal;
+}
+.rides-trail-run .rides-schedule td.is-tba {
+	font-weight: 700;
+	color: var(--rides-teal-dark);
+}
+.rides-trail-run .rides-block h3 + p,
+.rides-trail-run .rides-block h3 + ul {
+	margin-top: 8px;
+}
+.rides-trail-run .rides-block h3:not(:first-child) {
+	margin-top: 24px;
+}
+.rides-trail-list {
+	margin: 0;
+	padding: 0 0 0 18px;
+}
+.rides-trail-list li {
+	margin: 0 0 6px;
+}
+@media (max-width: 640px) {
+	.rides-trail-lead {
+		font-size: 16px;
+	}
+	.rides-trail-run .rides-head-row .rides-actions {
+		width: 100%;
+	}
+}

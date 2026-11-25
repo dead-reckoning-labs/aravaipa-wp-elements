@@ -445,5 +445,32 @@ foreach ( array( 'adrenaline', 'sinister', 'stunner', 'frenzy-hills', 'black-can
 }
 ok( 'night' === rides_data( 'events/adrenaline' )['theme'] && 'night' === rides_data( 'events/sinister' )['theme'] && 'night' === rides_data( 'events/stunner' )['theme'], 'night rides use the night theme' );
 
+// 0.1.10: Prickly Pedal trail run gets its own #trail-run section right after the intro, plus a top note.
+$ppd = rides_data( 'events/prickly-pedal' );
+foreach ( array( '', 'blend' ) as $lk ) {
+	$tp = rides_render_layout( 'event:prickly-pedal', $ectx + ( $lk ? array( 'look' => $lk ) : array() ) );
+	$lb = $lk ? $lk : 'default';
+	ok( 1 === preg_match( '#</section><section class="rides-section rides-trail-run" id="trail-run">#', $tp ) && strpos( $tp, 'id="intro"' ) < strpos( $tp, 'id="trail-run"' ) && strpos( $tp, 'id="trail-run"' ) < strpos( $tp, 'id="distances"' ), "$lb trail-run section sits between intro and distances" );
+	ok( 1 === substr_count( $tp, 'id="trail-run"' ), "$lb one trail-run anchor" );
+	ok( false !== strpos( $tp, 'Trail runners: ' ) && strpos( $tp, 'href="#trail-run"' ) < strpos( $tp, 'id="intro"' ) && strpos( $tp, 'href="#trail-run"' ) > strpos( $tp, 'id="band"' ), "$lb Trail runners note in the band links to #trail-run" );
+	$sec = substr( $tp, strpos( $tp, 'id="trail-run"' ) );
+	$sec = substr( $sec, 0, strpos( $sec, 'id="distances"' ) );
+	ok( false !== strpos( $sec, 'rides-register" href="https://ultrasignup.com/register.aspx?eid=19341"' ), "$lb trail-run Register keeps the eid=19341 href" );
+	ok( false !== strpos( $sec, 'href="https://caltopo.com/m/V0T3EQM"' ) && false !== strpos( $sec, 'href="https://live.aravaiparunning.com/#/prickly_pedal_run-2026"' ), "$lb trail-run has the course map and 2026 results" );
+	ok( false !== strpos( $sec, '<td class="is-tba">TBA</td>' ) && 2 === substr_count( $sec, '>TBA<' ), "$lb unknown facts show as TBA" );
+	ok( false !== strpos( $sec, '9:00 AM' ) && false !== strpos( $sec, '883 feet' ) && false !== strpos( $sec, 'Pipeline Cove' ) && false !== strpos( $sec, 'Troy Gresham, 1:33:51 (2026)' ), "$lb trail-run facts rendered" );
+	ok( 0 === preg_match( '/\x{2014}|&m' . 'dash;/u', $sec ), "$lb trail-run has no em dash" );
+	preg_match_all( '#class="rides-btn rides-register[^"]*" href="([^"]+)"#', $tp, $rm2 );
+	ok( array_values( array_unique( $rm2[1] ) ) === array_column( $ppd['register'], 'href' ), "$lb register hrefs unchanged (MTB BikeReg, Trail Run eid=19341)" );
+}
+$nod = $ppd;
+unset( $nod['trail_run'] );
+ok( '' === rides_event_trail_run( $nod ), 'no trail_run block renders no section' );
+ok( false === strpos( rides_event_band( $nod ), '#trail-run' ), 'no trail_run block renders no top note' );
+ok( '' === rides_event_trail_run( array( 'trail_run' => array( 'title' => 'x' ) ) ), 'trail_run without an anchor renders nothing' );
+foreach ( array( 'insomniac', 'big-woody', 'adrenaline', 'tonto', 'group-rides' ) as $os ) {
+	ok( false === strpos( rides_render_layout( 'event:' . $os, $ectx + array( 'look' => 'blend' ) ), 'trail-run' ), "$os has no trail-run section" );
+}
+
 echo "$count checks, $fails failed\n";
 exit( $fails ? 1 : 0 );
