@@ -16,6 +16,11 @@ function wp_json_encode($d,$f=0){return json_encode($d,$f);}
 // than ignored, so a test can assert it actually happens: it silently did
 // not on the live site, which is what left the map an empty grey box.
 function add_action($t,$f,$p=10,$n=1){}
+// race-store.php registers shortcodes and filters at load time since it
+// grew its own [arv_...] tags; without these the harness fatals before a
+// single assertion runs.
+function add_shortcode($t,$f){}
+function add_filter(...$a){}
 $GLOBALS['ENQUEUED'] = array();
 function wp_enqueue_script($h,$src='',$deps=array(),$v=false,$footer=false){ $GLOBALS['ENQUEUED'][]='js:'.$h; }
 function wp_enqueue_style($h,$src='',$deps=array(),$v=false){ $GLOBALS['ENQUEUED'][]='css:'.$h; }

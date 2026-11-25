@@ -206,6 +206,9 @@ require_once ARV_ELEMENTS_PATH . 'includes/adventures.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-render.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-form.php';
 require_once ARV_ELEMENTS_PATH . 'includes/adventures-activecampaign.php';
+// The home page section, [aravaipa_adventures_home]: every published trip
+// as a photo tile. Placed on a page by hand, never by the plugin.
+require_once ARV_ELEMENTS_PATH . 'includes/adventures-home.php';
 
 // 2027 Racing Team application: [arv_rt_apply] on /racing-team/apply/, a
 // time-gated CF7 form with Flamingo storage and wp arv-rt-apply.

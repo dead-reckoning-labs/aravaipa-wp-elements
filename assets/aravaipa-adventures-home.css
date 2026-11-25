@@ -1,0 +1,327 @@
+/*
+ * Aravaipa Adventures on the home page ([aravaipa_adventures_home]).
+ *
+ * Same type, palette and yellow button as the Adventures hub
+ * (aravaipa-adventures.css), scoped under .arv-adv-home so nothing reaches
+ * the rest of the home page. Enqueued only when the shortcode renders.
+ *
+ * House rules: no accent stripe on any edge, no drop shadows, near-square
+ * corners (2px at most), no pills.
+ */
+
+.arv-adv-home {
+	--aah-ink: #000;
+	--aah-ink-2: #272727;
+	--aah-muted: #6f6f6f;
+	--aah-red: #ff2a13;
+	--aah-yellow: #fdcf00;
+	--aah-yellow-hover: #e9be00;
+	--aah-gray-bg: #f2f2f2;
+	--aah-head: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	--aah-body: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	display: block;
+	width: 100%;
+	padding: 72px 0 80px;
+	background: var(--aah-gray-bg);
+	color: var(--aah-ink-2);
+	font-family: var(--aah-body);
+	font-size: 16px;
+	font-weight: 500;
+	line-height: 1.5;
+	text-align: left;
+}
+.arv-adv-home *,
+.arv-adv-home *::before,
+.arv-adv-home *::after {
+	box-sizing: border-box;
+}
+.arv-adv-home .aah-wrap {
+	width: 88%;
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+/* Heading row: text left, buttons right. */
+.arv-adv-home .aah-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 22px 40px;
+	margin: 0 0 32px;
+}
+.arv-adv-home .aah-head-text {
+	flex: 1 1 520px;
+	max-width: 720px;
+}
+.arv-adv-home .aah-kicker {
+	display: block;
+	margin: 0 0 8px;
+	font-family: var(--aah-head);
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: 0;
+	color: var(--aah-red);
+}
+.arv-adv-home .aah-title {
+	margin: 0;
+	padding: 0;
+	font-family: var(--aah-head);
+	font-size: 52px;
+	font-weight: 700;
+	line-height: 1.04;
+	letter-spacing: -2px;
+	text-transform: none;
+	color: var(--aah-ink);
+}
+.arv-adv-home .aah-intro {
+	margin: 14px 0 0;
+	font-size: 19px;
+	line-height: 1.5;
+	color: var(--aah-ink-2);
+}
+.arv-adv-home .aah-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+.arv-adv-home .aah-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 150px;
+	padding: 12px 26px;
+	border: 2px solid transparent;
+	border-radius: 2px;
+	font-family: var(--aah-body);
+	font-size: 17px;
+	font-weight: 700;
+	line-height: 1.2;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+.arv-adv-home .aah-btn-yellow {
+	background: var(--aah-yellow);
+	border-color: var(--aah-yellow);
+	color: #000;
+}
+.arv-adv-home .aah-btn-yellow:hover,
+.arv-adv-home .aah-btn-yellow:focus {
+	background: var(--aah-yellow-hover);
+	border-color: var(--aah-yellow-hover);
+	color: #000;
+}
+.arv-adv-home .aah-btn-dark {
+	background: transparent;
+	border-color: #000;
+	color: #000;
+}
+.arv-adv-home .aah-btn-dark:hover,
+.arv-adv-home .aah-btn-dark:focus {
+	background: #000;
+	color: #fff;
+}
+
+/* Tiles: six column grid, a tile spans two, so three to a row. */
+.arv-adv-home .aah-grid {
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	gap: 16px;
+}
+.arv-adv-home .aah-tile {
+	position: relative;
+	display: block;
+	grid-column: span 2;
+	overflow: hidden;
+	background: #333;
+	color: #fff;
+	text-decoration: none;
+}
+.arv-adv-home .aah-grid-pairs > .aah-tile,
+.arv-adv-home .aah-grid-lead-2 > .aah-tile:nth-child(-n+2),
+.arv-adv-home .aah-grid-lead-4 > .aah-tile:nth-child(-n+4) {
+	grid-column: span 3;
+}
+.arv-adv-home .aah-grid-solo > .aah-tile {
+	grid-column: span 6;
+}
+.arv-adv-home .aah-media {
+	display: block;
+	aspect-ratio: 4 / 3;
+}
+.arv-adv-home .aah-grid-pairs > .aah-tile .aah-media,
+.arv-adv-home .aah-grid-lead-2 > .aah-tile:nth-child(-n+2) .aah-media,
+.arv-adv-home .aah-grid-lead-4 > .aah-tile:nth-child(-n+4) .aah-media {
+	aspect-ratio: 16 / 9;
+}
+.arv-adv-home .aah-grid-solo > .aah-tile .aah-media {
+	aspect-ratio: 21 / 9;
+}
+.arv-adv-home .aah-media img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+	transition: transform 0.6s ease;
+}
+.arv-adv-home .aah-tile:hover .aah-media img {
+	transform: scale(1.04);
+}
+.arv-adv-home .aah-tile::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.78) 100%);
+	pointer-events: none;
+}
+.arv-adv-home .aah-top {
+	position: absolute;
+	top: 18px;
+	left: 20px;
+	right: 20px;
+	z-index: 1;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 12px;
+}
+.arv-adv-home .aah-badge {
+	display: inline-block;
+	padding: 4px 9px 3px;
+	border-radius: 2px;
+	font-family: var(--aah-head);
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1.25;
+	white-space: nowrap;
+}
+.arv-adv-home .aah-badge-race {
+	background: var(--aah-red);
+	color: #fff;
+}
+.arv-adv-home .aah-badge-adventure {
+	background: var(--aah-yellow);
+	color: #000;
+}
+.arv-adv-home .aah-badge-soon {
+	background: #fff;
+	color: #000;
+}
+.arv-adv-home .aah-len {
+	font-family: var(--aah-head);
+	font-size: 15px;
+	font-weight: 700;
+	color: #fff;
+	text-shadow: 0 1px 8px rgba(0,0,0,0.55);
+}
+.arv-adv-home .aah-body {
+	position: absolute;
+	left: 22px;
+	right: 22px;
+	bottom: 20px;
+	z-index: 1;
+	display: block;
+}
+.arv-adv-home .aah-dest {
+	display: block;
+	font-family: var(--aah-head);
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 1.05;
+	letter-spacing: -0.8px;
+	color: #fff;
+}
+.arv-adv-home .aah-name {
+	display: block;
+	margin-top: 8px;
+	font-size: 15px;
+	line-height: 1.3;
+	color: #fff;
+}
+.arv-adv-home .aah-dates {
+	display: block;
+	margin-top: 2px;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: #fff;
+}
+.arv-adv-home .aah-tile-soon .aah-dest {
+	font-size: 24px;
+}
+
+/* Tablet and phone: one row that scrolls sideways, tiles snap. */
+@media (max-width: 979px) {
+	.arv-adv-home {
+		padding: 56px 0 60px;
+	}
+	.arv-adv-home .aah-title {
+		font-size: 40px;
+		letter-spacing: -1.4px;
+	}
+	.arv-adv-home .aah-grid {
+		display: flex;
+		gap: 12px;
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		-webkit-overflow-scrolling: touch;
+		margin: 0 -6.82%;
+		padding: 0 6.82% 6px;
+		scroll-padding: 0 6.82%;
+		scrollbar-width: none;
+	}
+	.arv-adv-home .aah-grid::-webkit-scrollbar {
+		display: none;
+	}
+	.arv-adv-home .aah-grid > .aah-tile,
+	.arv-adv-home .aah-grid-pairs > .aah-tile,
+	.arv-adv-home .aah-grid-lead-2 > .aah-tile:nth-child(-n+2),
+	.arv-adv-home .aah-grid-lead-4 > .aah-tile:nth-child(-n+4),
+	.arv-adv-home .aah-grid-solo > .aah-tile {
+		flex: 0 0 44%;
+		scroll-snap-align: start;
+	}
+	.arv-adv-home .aah-grid > .aah-tile .aah-media,
+	.arv-adv-home .aah-grid-pairs > .aah-tile .aah-media,
+	.arv-adv-home .aah-grid-lead-2 > .aah-tile:nth-child(-n+2) .aah-media,
+	.arv-adv-home .aah-grid-lead-4 > .aah-tile:nth-child(-n+4) .aah-media,
+	.arv-adv-home .aah-grid-solo > .aah-tile .aah-media {
+		aspect-ratio: 4 / 5;
+	}
+}
+@media (max-width: 600px) {
+	.arv-adv-home {
+		padding: 44px 0 48px;
+	}
+	.arv-adv-home .aah-head {
+		margin-bottom: 24px;
+	}
+	.arv-adv-home .aah-head-text {
+		flex-basis: 100%;
+	}
+	.arv-adv-home .aah-title {
+		font-size: 34px;
+		letter-spacing: -1px;
+	}
+	.arv-adv-home .aah-intro {
+		font-size: 17px;
+	}
+	.arv-adv-home .aah-actions {
+		width: 100%;
+	}
+	.arv-adv-home .aah-btn {
+		flex: 1 1 100%;
+	}
+	.arv-adv-home .aah-grid > .aah-tile,
+	.arv-adv-home .aah-grid-pairs > .aah-tile,
+	.arv-adv-home .aah-grid-lead-2 > .aah-tile:nth-child(-n+2),
+	.arv-adv-home .aah-grid-lead-4 > .aah-tile:nth-child(-n+4),
+	.arv-adv-home .aah-grid-solo > .aah-tile {
+		flex-basis: 80%;
+	}
+	.arv-adv-home .aah-dest {
+		font-size: 26px;
+	}
+}
