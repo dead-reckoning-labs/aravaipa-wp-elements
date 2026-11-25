@@ -382,3 +382,14 @@ Guided trips (race trips, training camps, adventures) as an `adventure` post typ
 - **Interest form:** a Contact Form 7 form (ID in `arv_adventures_form_id`) with Turnstile; entries in Flamingo, mail to info@. The `adv-trip` select is filled from the trips by `includes/adventures-form.php`.
 - **Unpublished** trips and the landing get `noindex, nofollow`; WordPress already hides them from logged-out visitors and sitemaps.
 - **Import:** `node scripts/adventures/export.mjs <astro site> > adventures.json`, then `wp eval-file scripts/adventures/import.php adventures.json <public dir>`. Creates drafts, matches by slug on re-run, uploads each photo once.
+
+## Series Pass
+
+`[aravaipa_series_pass series="sonoran-desert-cup"]` (also `insomniac`, `white-mountain`) renders the series block placed under the registration area of every race in a series: the series name and season, one line on the deal with the price, a **Get the pass** button to the RaceGoat pass and an **About the cup** (or About the series) button to the series page.
+
+- **Data:** `includes/data/series-passes.json`, one entry per series: `deal`, `price_label` (`{price}` is replaced), `pass_url`, `page_url`, button labels, `timezone`, `closes_at`, and `prices[]` with `cents`, `tier`, `from` and `until` (dates in the series timezone, inclusive, null = open). Copy the prices from the live RaceGoat pass page.
+- **Price line:** one price valid today shows as `$432 through Dec 14` when a later step for the same tier is already listed, else `$360`. Several tiers valid today show the lowest. No price valid today: the deal line shows without a price.
+- **After `closes_at`:** the pass button and the deal line hide; only the series page button stays.
+- **Cache:** WP Rocket caches the rendered page, so a price step appears once the page cache rebuilds. Reset the cache on step dates if the change must show at once.
+- **Style:** `assets/aravaipa-series-pass.css`, square and flat, no shadow, no edge stripe, brand yellow on the pass button only. Enqueued in the head on pages whose content or `_cornerstone_data` names the shortcode, and at render time otherwise.
+- **Tests:** `php arv-series-pass-test.php` walks the real data across every price step and close date.

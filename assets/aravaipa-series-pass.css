@@ -1,0 +1,119 @@
+/*
+ * Series pass block ([aravaipa_series_pass], includes/series-pass.php).
+ * Square and flat on purpose: no rounded card, no shadow, no coloured
+ * stripe on any edge. Brand yellow goes on the pass button only.
+ */
+.aravaipa-series-pass {
+	box-sizing: border-box;
+	margin: 1.25em auto 0.5em;
+	max-width: 34em;
+	padding: 1.1em 1.25em 1.25em;
+	background: #fff;
+	border: 1px solid #d6d6d6;
+	border-radius: 0;
+	color: #111;
+	text-align: center;
+}
+
+.aravaipa-series-pass p {
+	margin: 0;
+}
+
+.aravaipa-series-pass__name {
+	font-size: 1.15em;
+	font-weight: 900;
+	letter-spacing: 0.04em;
+	line-height: 1.2;
+	text-transform: uppercase;
+	color: #111;
+}
+
+.aravaipa-series-pass__season {
+	font-weight: 700;
+	color: #6b6b6b;
+	white-space: nowrap;
+}
+
+.aravaipa-series-pass__deal {
+	margin-top: 0.45em !important;
+	font-size: 1em;
+	line-height: 1.45;
+	color: #333;
+}
+
+.aravaipa-series-pass__actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.6em;
+	margin-top: 0.95em;
+}
+
+/* :link and :visited so the theme's a:hover colour never wins the tie. */
+.aravaipa-series-pass a.aravaipa-series-pass__btn,
+.aravaipa-series-pass a.aravaipa-series-pass__btn:link,
+.aravaipa-series-pass a.aravaipa-series-pass__btn:visited {
+	display: inline-block;
+	box-sizing: border-box;
+	min-width: 11em;
+	padding: 0.75em 1.3em;
+	border: 2px solid #111;
+	border-radius: 0;
+	font-size: 0.9em;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	line-height: 1.2;
+	text-align: center;
+	text-decoration: none;
+	text-transform: uppercase;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.aravaipa-series-pass a.aravaipa-series-pass__btn--pass,
+.aravaipa-series-pass a.aravaipa-series-pass__btn--pass:link,
+.aravaipa-series-pass a.aravaipa-series-pass__btn--pass:visited {
+	background: rgb(253, 207, 0);
+	border-color: rgb(253, 207, 0);
+	color: #111;
+}
+
+.aravaipa-series-pass a.aravaipa-series-pass__btn--pass:hover,
+.aravaipa-series-pass a.aravaipa-series-pass__btn--pass:focus-visible {
+	background: #111;
+	border-color: #111;
+	color: rgb(253, 207, 0);
+}
+
+.aravaipa-series-pass a.aravaipa-series-pass__btn--page,
+.aravaipa-series-pass a.aravaipa-series-pass__btn--page:link,
+.aravaipa-series-pass a.aravaipa-series-pass__btn--page:visited {
+	background: transparent;
+	color: #111;
+}
+
+.aravaipa-series-pass a.aravaipa-series-pass__btn--page:hover,
+.aravaipa-series-pass a.aravaipa-series-pass__btn--page:focus-visible {
+	background: #111;
+	color: #fff;
+}
+
+.aravaipa-series-pass a.aravaipa-series-pass__btn:focus-visible {
+	outline: 2px solid #111;
+	outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+	.aravaipa-series-pass {
+		padding: 1em 0.9em 1.1em;
+	}
+
+	.aravaipa-series-pass__actions {
+		flex-direction: column;
+	}
+
+	.aravaipa-series-pass a.aravaipa-series-pass__btn,
+	.aravaipa-series-pass a.aravaipa-series-pass__btn:link,
+	.aravaipa-series-pass a.aravaipa-series-pass__btn:visited {
+		width: 100%;
+	}
+}
