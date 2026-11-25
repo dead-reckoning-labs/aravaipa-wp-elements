@@ -43,6 +43,7 @@ function t( $name, $cond ) {
 		echo "  FAIL $name\n";
 	}
 }
+function nb( $s ) { return str_replace( "\u{00A0}", ' ', (string) $s ); }
 function at( $local, $tz = 'America/Phoenix' ) {
 	return ( new DateTimeImmutable( $local, new DateTimeZone( $tz ) ) )->getTimestamp();
 }
@@ -84,11 +85,11 @@ t( 'insomniac: closed after Apr 19', $v['closed'] && null === $v['pass_url'] && 
 $s  = $all['white-mountain'];
 $et = 'America/New_York';
 $v  = arv_series_pass_view( $s, at( '2026-11-25 09:00', $et ) );
-t( 'wme: $432 through Dec 14', 'All four White Mountain races on one registration, $432 through Dec 14.' === $v['deal'] );
+t( 'wme: $432 through Dec 14', 'All four White Mountain races on one registration, $432 through Dec 14.' === nb( $v['deal'] ) );
 $v = arv_series_pass_view( $s, at( '2026-12-14 23:30', $et ) );
 t( 'wme: Dec 14 late evening ET still $432', false !== strpos( (string) $v['deal'], '$432' ) );
 $v = arv_series_pass_view( $s, at( '2026-12-15 00:30', $et ) );
-t( 'wme: Dec 15 ET is $464 through Mar 31', false !== strpos( (string) $v['deal'], '$464 through Mar 31' ) );
+t( 'wme: Dec 15 ET is $464 through Mar 31', false !== strpos( nb( $v['deal'] ), '$464 through Mar 31' ) );
 $v = arv_series_pass_view( $s, at( '2027-04-01 09:00', $et ) );
 t( 'wme: $495 from Apr 1 with no "through"', ', $495.' === substr( (string) $v['deal'], -7 ) );
 t( 'wme: no close date means never closed', ! $v['closed'] && null !== $v['pass_url'] );
@@ -117,6 +118,7 @@ foreach ( $all as $k => $series ) {
 	t( "$k: two buttons while open", 2 === substr_count( $h, 'aravaipa-series-pass__btn ' ) );
 	t( "$k: escapes markup", false === strpos( arv_series_pass_html( $k, array_merge( arv_series_pass_view( $series, 0 ), array( 'name' => '<b>x' ) ) ), '<b>x' ) );
 }
+t( 'short date uses a no-break space', "Dec\u{00A0}14" === arv_series_pass_short_date( '2026-12-14' ) );
 t( 'data file has no em dash', false === strpos( file_get_contents( __DIR__ . '/includes/data/series-passes.json' ), "\u{2014}" ) );
 
 echo "\n$pass passed, $fail failed\n";

@@ -75,7 +75,7 @@ function arv_series_pass_money( $cents ) {
 }
 
 /**
- * "Dec 14" for a Y-m-d date. Month names are fixed English on purpose: the
+ * "Dec 14" (with a no-break space) for a Y-m-d date. Month names are fixed English on purpose: the
  * site is English and this must not depend on the server locale.
  *
  * @param string $ymd Date as Y-m-d.
@@ -83,7 +83,8 @@ function arv_series_pass_money( $cents ) {
  */
 function arv_series_pass_short_date( $ymd ) {
 	$d = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $ymd );
-	return $d ? $d->format( 'M j' ) : '';
+	// No-break space so "Dec 14" never splits across two lines.
+	return $d ? $d->format( 'M' ) . "\u{00A0}" . $d->format( 'j' ) : '';
 }
 
 /**
