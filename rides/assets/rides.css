@@ -1904,6 +1904,10 @@
 	font-size: 18px;
 	line-height: 1.55;
 }
+.rides-look-blend .rides-trail-lead {
+	margin: 0 auto 28px;
+	text-align: center;
+}
 .rides-trail-run .rides-schedule th {
 	white-space: normal;
 }
