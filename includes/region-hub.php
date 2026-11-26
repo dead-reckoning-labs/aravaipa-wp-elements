@@ -126,6 +126,32 @@ function arv_region_hub_races( $hub, $store ) {
 }
 
 /**
+ * A store race made ready for a hub tile, without touching the store.
+ *
+ * - The year on the date line. The homepage list is "what is next" and can
+ *   leave it off; a hub is a season page read months ahead, where "March 6"
+ *   alone is ambiguous.
+ * - One distance separator. The store keeps what its source said, which for
+ *   one race is "100 Mile, 100K, 60K" and for the next "50 Mile | 55K".
+ * - www on the site's own links, so Race Info does not cost a redirect.
+ *
+ * @param array $race
+ * @return array
+ */
+function arv_region_hub_tidy( $race ) {
+	if ( ! empty( $race['iso'] ) && ! empty( $race['display'] ) && ! preg_match( '/\b(19|20)\d\d\b/', $race['display'] ) ) {
+		$race['display'] .= ', ' . substr( $race['iso'], 0, 4 );
+	}
+	if ( ! empty( $race['distances'] ) && false === strpos( $race['distances'], '|' ) ) {
+		$race['distances'] = implode( ' | ', array_filter( array_map( 'trim', explode( ',', $race['distances'] ) ), 'strlen' ) );
+	}
+	if ( ! empty( $race['page'] ) ) {
+		$race['page'] = preg_replace( '#^https?://aravaiparunning\.com/#i', 'https://www.aravaiparunning.com/', $race['page'] );
+	}
+	return $race;
+}
+
+/**
  * A Photon (i0.wp.com) URL at a given width; anything else unchanged.
  *
  * @param string $url
@@ -226,19 +252,26 @@ function arv_region_hub_map( $hub, $items ) {
 		return '';
 	}
 
-	// Frame: the bounding box of the pins, padded generously so the states
-	// read as places and not as a crop. Fixed 4:3 so the section keeps its
-	// shape on any hub.
-	$xs   = array_column( $pins, 'x' );
-	$ys   = array_column( $pins, 'y' );
-	$cx   = ( min( $xs ) + max( $xs ) ) / 2;
-	$cy   = ( min( $ys ) + max( $ys ) ) / 2;
-	$w    = max( 160, ( max( $xs ) - min( $xs ) ) * 2.4 );
-	$h    = $w * 0.75;
-	$h    = max( $h, ( max( $ys ) - min( $ys ) ) * 2 );
-	$w    = $h / 0.75;
-	$view = sprintf( '%.1f %.1f %.1f %.1f', $cx - $w / 2, $cy - $h / 2, $w, $h );
-	$unit = $w / 160;
+	// Frame: the hub's own states whole, so the pins read against places
+	// people know rather than an anonymous crop, padded a little. Falls back
+	// to the pins when the hub names no state the outlines have.
+	$xs = array_column( $pins, 'x' );
+	$ys = array_column( $pins, 'y' );
+	foreach ( $states as $code ) {
+		if ( isset( $atlas['states'][ $code ] ) && preg_match_all( '/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/', $atlas['states'][ $code ], $sm ) ) {
+			$xs[] = min( $sm[1] );
+			$xs[] = max( $sm[1] );
+			$ys[] = min( $sm[2] );
+			$ys[] = max( $sm[2] );
+		}
+	}
+	$pad  = 0.06 * max( max( $xs ) - min( $xs ), max( $ys ) - min( $ys ), 20 );
+	$x0   = min( $xs ) - $pad;
+	$y0   = min( $ys ) - $pad;
+	$w    = max( $xs ) - min( $xs ) + 2 * $pad;
+	$h    = max( $ys ) - min( $ys ) + 2 * $pad;
+	$view = sprintf( '%.1f %.1f %.1f %.1f', $x0, $y0, $w, $h );
+	$unit = max( $w, $h ) / 160;
 
 	$svg  = '<svg class="arv-hub__map-svg" viewBox="' . esc_attr( $view ) . '" role="img" aria-label="' . esc_attr( __( 'Map of the race locations', 'aravaipa-elements' ) ) . '">';
 	foreach ( $atlas['states'] as $code => $d ) {
@@ -386,7 +419,7 @@ function arv_region_hub_render( $hub, $store, $today ) {
 			$opts['card_class'] = 'arv-hub__card arv-hub__card--soon';
 		}
 
-		$card    = arv_races_card( $race, $today, $opts );
+		$card    = arv_races_card( arv_region_hub_tidy( $race ), $today, $opts );
 		$cards  .= $card['html'];
 		$shown[] = $item;
 		if ( null !== $card['event'] ) {

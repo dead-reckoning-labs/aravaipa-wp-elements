@@ -287,19 +287,18 @@
 	align-items: center;
 }
 
-.arv-hub__map-frame {
-	background: #fff;
-}
-
 .arv-hub__map-svg {
 	display: block;
 	width: 100%;
 	height: auto;
+	/* Utah over Arizona is a tall shape. Capped so it never outgrows a
+	   screen; the viewBox keeps its proportions inside the cap. */
+	max-height: min(78vh, 680px);
 }
 
 .arv-hub__state {
-	fill: #ece6dc;
-	stroke: #fff;
+	fill: #ebe4d8;
+	stroke: var(--arv-hub-sand);
 	stroke-width: 0.6;
 }
 
@@ -572,9 +571,12 @@
 		gap: 1.5rem;
 	}
 
+	/* stretch, because the shared phone card sets align-items: start for
+	   its grid row, which here would shrink every block to its content. */
 	.arv-hub .arv-hub__card {
 		display: flex;
 		flex-direction: column;
+		align-items: stretch;
 	}
 
 	.arv-hub .arv-hub__card .arv-races__media {
@@ -595,7 +597,9 @@
 	}
 
 	.arv-hub .arv-races__actions {
+		display: flex;
 		flex-direction: column;
+		gap: 0.6rem;
 		padding: 0 1.1rem 1rem;
 	}
 
