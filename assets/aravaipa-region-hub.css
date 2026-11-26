@@ -631,7 +631,7 @@
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 	grid-auto-flow: dense;
 	gap: 4px;
-	margin: 0 0 4px;
+	margin: 0;
 	background: #fff;
 }
 
@@ -1022,8 +1022,13 @@
 	height: auto;
 }
 
-.arv-hub__tribute-text .arv-hub__h2 {
+.arv-hub__tribute .arv-hub__tribute-text .arv-hub__h2 {
 	margin-bottom: 1rem;
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__tribute .arv-hub__tribute-text p {
+	color: #3a3a3a;
 }
 
 /* ------------------------------------------------------------- Fade-in -- */
