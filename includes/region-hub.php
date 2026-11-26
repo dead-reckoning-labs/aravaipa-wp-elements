@@ -594,15 +594,17 @@ add_shortcode( 'arv_region_hub', 'arv_region_hub_shortcode' );
  * The hub stylesheet in the head, on the pages that hold a hub.
  *
  * Enqueued at render time only, the styles would print in the footer and
- * the hero would paint unstyled first. Cornerstone writes a page's
- * shortcodes into post_content as well as its own data, so a plain content
- * check finds it before anything renders.
+ * the hero would paint unstyled first. Cornerstone keeps a raw content
+ * element's shortcode in _cornerstone_data, not in post_content (checked on
+ * a live course map page), so both are looked at; the meta is already in
+ * the object cache for the page being viewed.
  */
 function arv_region_hub_assets() {
 	if ( ! is_singular() ) {
 		return;
 	}
-	$content = (string) get_post_field( 'post_content', get_queried_object_id() );
+	$id      = get_queried_object_id();
+	$content = (string) get_post_field( 'post_content', $id ) . (string) get_post_meta( $id, '_cornerstone_data', true );
 	if ( false === strpos( $content, '[arv_region_hub' ) ) {
 		return;
 	}
