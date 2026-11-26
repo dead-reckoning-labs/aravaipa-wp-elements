@@ -4,9 +4,9 @@
 		{
 			"slug": "frenzy-hills",
 			"name": "Frenzy Hills Rides",
-			"date_label": "December 6, 2026",
-			"date": "2026-12-06",
-			"year": 2026,
+			"date_label": "December 5, 2027",
+			"date": "2027-12-05",
+			"year": 2027,
 			"status": "upcoming",
 			"location": {
 				"venue": "McDowell Mountain Regional Park",
@@ -78,7 +78,7 @@
 		{
 			"slug": "insomniac",
 			"name": "Insomniac Night Series",
-			"date_label": "April thru Sept. 2027",
+			"date_label": "April thru July 2027",
 			"date": null,
 			"year": 2027,
 			"status": "upcoming",
@@ -122,8 +122,8 @@
 		{
 			"slug": "royal-gorge-groove",
 			"name": "Royal Gorge Groove",
-			"date_label": "April  2027",
-			"date": null,
+			"date_label": "April 25, 2027",
+			"date": "2027-04-25",
 			"year": 2027,
 			"status": "upcoming",
 			"location": {
