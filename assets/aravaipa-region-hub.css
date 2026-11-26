@@ -17,6 +17,8 @@
 	--arv-hub-night: #1d2624;
 	--arv-hub-red: #ff2a13;
 	--arv-hub-red-dark: #c61300;
+	--arv-hub-maroon: #6e1f1c;
+	--arv-hub-cream: #f6ecd9;
 	box-sizing: border-box;
 	color: var(--arv-hub-ink);
 	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -379,17 +381,8 @@
 	color: #3a3a3a;
 }
 
-.arv-hub__tribute {
-	padding: 2rem 2.25rem;
-	background: var(--arv-hub-night);
-}
-
-.arv-hub__tribute .arv-hub__h2 {
-	color: #fff;
-}
-
-.arv-hub__tribute p {
-	color: rgba(255, 255, 255, 0.88);
+.arv-hub__story-text {
+	max-width: 48rem;
 }
 
 /* --------------------------------------------------------------- Video -- */
@@ -620,10 +613,16 @@
 
 /* ------------------------------------------------------------- Gallery -- */
 
+.arv-hub__gallery-wrap {
+	padding-bottom: 0;
+}
+
 .arv-hub__gallery {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-auto-flow: dense;
 	gap: 4px;
+	margin: 0 0 4px;
 	background: #fff;
 }
 
@@ -631,6 +630,13 @@
 	margin: 0;
 	aspect-ratio: 1 / 1;
 	overflow: hidden;
+	background: var(--arv-hub-rock);
+}
+
+.arv-hub__shot--big {
+	grid-column: span 2;
+	grid-row: span 2;
+	aspect-ratio: auto;
 }
 
 .arv-hub__shot img {
@@ -682,6 +688,358 @@
 	color: var(--arv-hub-muted);
 }
 
+/* ------------------------------------------------- Round 2: old tiles -- */
+
+/* The race's own baked tile (logo on a course photo over a maroon name
+   plate) at its native 13:10, never cropped, with the facts centred below
+   in red, the way the old hub had them. */
+.arv-hub .arv-hub__card--tile {
+	background: transparent;
+	text-align: center;
+}
+
+.arv-hub .arv-hub__card--tile .arv-races__media--photo {
+	aspect-ratio: 13 / 10;
+	background: transparent;
+}
+
+.arv-hub .arv-hub__card--tile .arv-races__body {
+	padding: 1.1rem 0.5rem 0.4rem;
+	text-align: center;
+}
+
+.arv-hub .arv-hub__card--tile .arv-races__when {
+	justify-content: center;
+}
+
+.arv-hub .arv-hub__card--tile .arv-races__name,
+.arv-hub .arv-hub__card--tile .arv-races__name a,
+.arv-hub .arv-hub__card--tile .arv-races__date,
+.arv-hub .arv-hub__card--tile .arv-races__distances,
+.arv-hub .arv-hub__card--tile .arv-races__where {
+	color: var(--arv-hub-red);
+	text-align: center;
+}
+
+.arv-hub .arv-hub__card--tile .arv-races__name {
+	margin: 0.2rem 0 0.35rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.arv-hub .arv-hub__card--tile .arv-races__distances,
+.arv-hub .arv-hub__card--tile .arv-races__where {
+	font-weight: 700;
+}
+
+.arv-hub .arv-hub__card--tile .arv-races__actions,
+.arv-hub .arv-hub__card--tile .arv-races__more {
+	justify-content: center;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+/* ---------------------------------------------------------------- Stats -- */
+
+.arv-hub__stats {
+	padding: 3.25rem 0;
+	background: var(--arv-hub-night);
+	color: #fff;
+}
+
+.arv-hub__stats-list {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 2rem;
+	margin: 0 auto;
+	list-style: none;
+}
+
+.arv-hub__stats-list li {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	margin: 0;
+}
+
+.arv-hub__stat-value {
+	font-size: clamp(40px, 5vw, 64px);
+	font-weight: 800;
+	line-height: 1;
+	color: var(--arv-hub-cream);
+}
+
+.arv-hub__stat-label {
+	font-size: 15px;
+	line-height: 1.45;
+	color: rgba(255, 255, 255, 0.75);
+}
+
+/* ---------------------------------------------------------- Photo band -- */
+
+.arv-hub__band {
+	position: relative;
+	height: clamp(280px, 46vw, 640px);
+	margin: 0;
+	overflow: hidden;
+	background: var(--arv-hub-rock);
+}
+
+.arv-hub__band img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+}
+
+/* -------------------------------------------------------- Terrain map -- */
+
+.arv-hub__map--terrain {
+	padding-bottom: 0;
+}
+
+.arv-hub__map-head {
+	margin-bottom: 2rem;
+}
+
+.arv-hub__map-text {
+	max-width: 46rem;
+	margin: 0;
+	font-size: 17px;
+	line-height: 1.7;
+	color: #3a3a3a;
+}
+
+.arv-hub__map-figure {
+	margin: 0;
+}
+
+.arv-hub__map-figure picture,
+.arv-hub__map-img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-width: none;
+}
+
+.arv-hub__map-credit {
+	padding-top: 0.7rem;
+	padding-bottom: 1.2rem;
+	font-size: 12px;
+	color: var(--arv-hub-muted);
+}
+
+/* ---------------------------------------------------------------- Eras -- */
+
+.arv-hub__history-head {
+	max-width: 48rem;
+	margin-bottom: 3rem;
+}
+
+.arv-hub__eras {
+	margin: 0 0 2.5rem;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-hub__era {
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+	gap: 3rem;
+	align-items: center;
+	margin: 0 0 4rem;
+}
+
+.arv-hub__era:nth-child(even) .arv-hub__era-photo {
+	order: 2;
+}
+
+.arv-hub__era-photo {
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	background: var(--arv-hub-rock);
+}
+
+.arv-hub__era-photo img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+}
+
+.arv-hub__era-years {
+	margin: 0 0 0.4rem;
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-hub-red);
+}
+
+.arv-hub__era-label {
+	margin: 0 0 0.8rem;
+	font-size: clamp(24px, 2.6vw, 32px);
+	font-weight: 800;
+	line-height: 1.15;
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__era-text {
+	margin: 0 0 1.4rem;
+	font-size: 17px;
+	line-height: 1.7;
+	color: #3a3a3a;
+}
+
+.arv-hub__era .arv-hub__timeline li {
+	padding-bottom: 0.8rem;
+}
+
+.arv-hub__era .arv-hub__year {
+	font-size: 18px;
+}
+
+.arv-hub__era .arv-hub__year-text {
+	font-size: 16px;
+}
+
+/* ------------------------------------------------------ Past race cards -- */
+
+.arv-hub__past-media {
+	position: relative;
+	margin: 0;
+}
+
+.arv-hub__past-media img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 3 / 2;
+	max-width: none;
+	object-fit: cover;
+}
+
+/* The race name on an angled maroon plate over the photo, the same plate
+   the season's tiles carry. A plate with type on it, not an edge stripe. */
+.arv-hub__past-plate {
+	position: absolute;
+	left: 0;
+	bottom: 2.4rem;
+	max-width: 88%;
+	padding: 0.55rem 1.8rem 0.55rem 1rem;
+	background: var(--arv-hub-maroon);
+	clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
+	color: var(--arv-hub-cream);
+	font-size: clamp(16px, 1.6vw, 20px);
+	font-weight: 800;
+	line-height: 1.15;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+
+.arv-hub__past-credit {
+	padding: 0.35rem 0 0;
+	font-size: 11px;
+	color: var(--arv-hub-muted);
+}
+
+.arv-hub__past-media:not(:has(.arv-hub__past-credit)) .arv-hub__past-plate {
+	bottom: 1rem;
+}
+
+.arv-hub__past-film {
+	margin: 1rem 0 0 !important;
+}
+
+.arv-hub__btn--ghost,
+.arv-hub__btn--ghost:link,
+.arv-hub__btn--ghost:visited {
+	padding: 0.7rem 1.2rem;
+	background: #fff;
+	border-color: #cfc6b8;
+	color: var(--arv-hub-ink);
+	font-size: 12px;
+}
+
+.arv-hub__past-results {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.3rem 0.9rem;
+	margin: 1rem 0 0;
+}
+
+.arv-hub__past-results-label {
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	color: var(--arv-hub-muted);
+}
+
+.arv-hub__past-results .arv-hub__past-links {
+	margin: 0;
+	gap: 0.3rem 0.9rem;
+}
+
+.arv-hub__past-results .arv-hub__past-links a {
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: none;
+	color: var(--arv-hub-muted);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+/* ------------------------------------------------------ In Remembrance -- */
+
+.arv-hub__tribute {
+	background: var(--arv-hub-sand);
+}
+
+.arv-hub__tribute-inner {
+	display: grid;
+	grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+	gap: 3.5rem;
+	align-items: center;
+	max-width: 1000px;
+}
+
+.arv-hub__tribute-portrait img {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.arv-hub__tribute-text .arv-hub__h2 {
+	margin-bottom: 1rem;
+}
+
+/* ------------------------------------------------------------- Fade-in -- */
+
+/* Only once the script has said it is running (arv-hub--fx), so with the
+   script blocked nothing is ever hidden. */
+.arv-hub--fx [data-arv-fade] {
+	opacity: 0;
+	transform: translateY(22px);
+	transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.arv-hub--fx [data-arv-fade].is-in {
+	opacity: 1;
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.arv-hub--fx [data-arv-fade] {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+}
+
 /* ------------------------------------------------------------- Hover -- */
 
 @media (hover: hover) and (pointer: fine) {
@@ -699,6 +1057,7 @@
 	}
 
 	.arv-hub__past-links a:hover,
+	.arv-hub__past-results .arv-hub__past-links a:hover,
 	.arv-hub__history .arv-hub__note a:hover {
 		color: var(--arv-hub-red-dark);
 	}
@@ -721,6 +1080,35 @@
 	.arv-hub__connect .arv-hub__split {
 		grid-template-columns: minmax(0, 1fr);
 		gap: 2rem;
+	}
+
+	.arv-hub__stats-list {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.arv-hub__era {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem;
+		margin-bottom: 3rem;
+	}
+
+	.arv-hub__era:nth-child(even) .arv-hub__era-photo {
+		order: 0;
+	}
+
+	.arv-hub__tribute-inner {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+		justify-items: center;
+		text-align: center;
+	}
+
+	.arv-hub__tribute-portrait {
+		width: min(300px, 80%);
+	}
+
+	.arv-hub__tribute-text .arv-hub__h2 {
+		text-align: center;
 	}
 }
 
@@ -766,6 +1154,28 @@
 		aspect-ratio: 3 / 2;
 	}
 
+	.arv-hub .arv-hub__card--tile .arv-races__media {
+		aspect-ratio: 13 / 10;
+	}
+
+	.arv-hub .arv-hub__card--tile .arv-races__actions,
+	.arv-hub .arv-hub__card--tile .arv-races__more {
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.arv-hub__stats {
+		padding: 2.5rem 0;
+	}
+
+	.arv-hub__stats-list {
+		gap: 1.75rem 1.25rem;
+	}
+
+	.arv-hub__band {
+		height: 240px;
+	}
+
 	.arv-hub .arv-races__plate {
 		left: 0.75rem;
 		bottom: 0.75rem;
@@ -797,12 +1207,13 @@
 		padding: 0 1.1rem 1.2rem;
 	}
 
-	.arv-hub__tribute {
-		padding: 1.5rem 1.25rem;
-	}
-
+	
 	.arv-hub__gallery {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.arv-hub__past-plate {
+		font-size: 16px;
 	}
 
 	.arv-hub__past-grid,

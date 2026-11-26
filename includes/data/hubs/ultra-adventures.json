@@ -1,5 +1,5 @@
 {
-  "_about": "Region hub content for [arv_region_hub region=\"ultra-adventures\"] (includes/region-hub.php). Race dates, distances, venues, logos and Register links come from the race store at render time; this file only holds what the store does not: photos, copy, races without a store entry yet, results and photo archives, socials. Copy rules: no em dashes, no filler, no facts that are not on the site already. register_page: the race page's current UltraSignup Register link where the store holds a different one (store dtid vs page did, 2026-11-25); used only while the store still points at UltraSignup. History, past races and films (2026-11-25, job tmvzwk): facts only from Internet Archive captures of ultra-adventures.com (2013-2014), grandcircletrails.com (2014-2017) and vacationraces.com/ultras (2019); each fact's capture is in _sources. Film titles from YouTube oEmbed, year = upload year. Old results live on UltraSignup and RunSignUp (results pages, not register links); none are on RaceGoat yet.",
+  "_about": "Region hub content for [arv_region_hub region=\"ultra-adventures\"] (includes/region-hub.php). Race dates, distances, venues, logos and Register links come from the race store at render time; this file only holds what the store does not: photos, copy, races without a store entry yet, results and photo archives, socials. Copy rules: no em dashes, no filler, no facts that are not on the site already. register_page: the race page's current UltraSignup Register link where the store holds a different one (store dtid vs page did, 2026-11-25); used only while the store still points at UltraSignup. Round 2 (2026-11-26, job x7m4s3): race tiles are the old baked tile images (logo and name plate are part of the image, so no logo plate is added); history is four eras with years checked against Internet Archive captures and press (job x7m4s3 out/facts.json, out/sources.md); new photos are fixed ua-hub-* names in the flat uploads folder; the map is a rendered shaded relief image (tools/map/render.py in that job); the tribute renders only while its gate_option is on. Old results stay with the timers until the RaceGoat archive URLs arrive (Frothy job zcpbi6).",
   "region": "ultra-adventures",
   "title": "Ultra Adventures",
   "eyebrow": "Southern Utah and Northern Arizona",
@@ -22,7 +22,9 @@
       "video": {
         "youtube": "wbmeaiuMlJ0",
         "title": "Antelope Canyon Ultras promo"
-      }
+      },
+      "tile": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/Antelope-Canyon-Ultras-opt.jpg",
+      "tile_alt": "Antelope Canyon Ultras with the race logo over a course photo"
     },
     {
       "name": "Zion Ultras",
@@ -32,12 +34,14 @@
       "video": {
         "youtube": "SWb-n_28_a4",
         "title": "2020 Zion Ultra Marathons"
-      }
+      },
+      "tile": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/Zion-Ultras-opt.jpg",
+      "tile_alt": "Zion Ultras with the race logo over a course photo"
     },
     {
       "name": "Tushars Ultras",
       "soon": {
-        "display": "2027 date coming soon",
+        "display": "July 31, 2027",
         "distances": "100K | 70K | Marathon | Half Marathon",
         "venue": "Eagle Point Resort",
         "location": "Beaver, UT",
@@ -45,7 +49,8 @@
         "image": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/Tushars-Ultras-Logo.png",
         "lat": "38.332549",
         "lng": "-112.373394",
-        "note": "No race store entry and the race page says 2027 Date TBD (job tmvzwk, 2026-11-25). Swap to a store race once the date is set."
+        "note": "No race store entry yet and the race page still says 2027 Date TBD; Master Events lists 2027-07-31 Brian Head / Tushars Mountain Runs (checked 2026-11-25, job x7m4s3). No Register until a link exists. Swap to a store race once it has one.",
+        "dated": true
       },
       "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/tushars-ultras-2025-runner-crossing-the-meadow-below-the-tus-02-hd.jpg",
       "photo_alt": "Runner crossing the meadow below the Tushar peaks at Tushars Ultras",
@@ -54,7 +59,9 @@
       "video": {
         "youtube": "fHWb4J_6uKc",
         "title": "The Tushars: 100K in Utah's Hidden Range"
-      }
+      },
+      "tile": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/Tushars-Ultras-opt.jpg",
+      "tile_alt": "Tushars Ultras with the race logo over a course photo"
     },
     {
       "name": "Bryce Canyon Ultras",
@@ -65,17 +72,71 @@
       "video": {
         "youtube": "C4Xc5MJGMzM",
         "title": "Bryce Canyon Ultras"
-      }
+      },
+      "tile": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/Bryce-Canyon-Ultras-1-opt.jpg",
+      "tile_alt": "Bryce Canyon Ultras with the race logo over a course photo"
+    }
+  ],
+  "stats": [
+    {
+      "value": "2012",
+      "label": "The first Zion 100"
+    },
+    {
+      "value": "7",
+      "label": "Races across the Grand Circle over the years"
+    },
+    {
+      "value": "4",
+      "label": "Races on the 2027 calendar"
+    },
+    {
+      "value": "2",
+      "label": "States: Utah and Arizona"
+    }
+  ],
+  "bands": [
+    {
+      "after": "stats",
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ZionHeader-opt.jpg",
+      "alt": "Zion's red and white cliffs above the Kolob Terrace",
+      "position": "50% 50%"
+    },
+    {
+      "after": "story",
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-band-bryce.jpg",
+      "alt": "Runners climbing below the orange hoodoo cliffs of Red Canyon at Bryce Canyon Ultras 2026",
+      "position": "50% 40%"
+    },
+    {
+      "after": "past",
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/AntelopeCanyonHeader-opt.jpg",
+      "alt": "Light falling into a slot canyon near Page, Arizona",
+      "position": "50% 50%"
+    },
+    {
+      "after": "gallery",
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-band-tushars.jpg",
+      "alt": "Runner crossing an alpine meadow below Mount Holly at Tushars 2025",
+      "position": "50% 45%"
     }
   ],
   "map": {
     "eyebrow": "Where",
     "heading": "Four Races Across the Grand Circle",
+    "text": "From the slot canyons at Page to the high Tushar Mountains above Beaver, every race in the series sits within a day's drive of the next, with Zion, Bryce Canyon, Capitol Reef, Glen Canyon and the Grand Canyon in between.",
+    "image": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-map-desktop.jpg",
+    "image_mobile": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-map-mobile.jpg",
+    "width": 2400,
+    "height": 1676,
+    "mobile_width": 1080,
+    "mobile_height": 868,
+    "alt": "Shaded relief map of the Grand Circle from Page, Arizona to Beaver, Utah, with the 2027 race venues at Page, Apple Valley, Hatch and Beaver, and the past race venues at Capitol Reef, Monument Valley and the Grand Canyon North Rim",
+    "attribution": "Terrain: AWS Terrain Tiles (SRTM, USGS). Water: Natural Earth. Park boundaries: National Park Service.",
     "states": [
       "UT",
       "AZ"
-    ],
-    "note": "Pins sit at each race's start and finish venue."
+    ]
   },
   "story": {
     "eyebrow": "The Series",
@@ -85,119 +146,103 @@
       "Now under the direction of Aravaipa Running, the series brings the Tushars back together with the Zion Ultras, Bryce Canyon Ultras and Antelope Canyon Ultras."
     ]
   },
-  "tribute": {
-    "eyebrow": "Founder",
-    "heading": "Matt Gunn",
-    "paragraphs": [
-      "None of this exists without Matt Gunn. Matt founded Ultra Adventures in 2012 with the Zion 100 and spent years building a series of races that opened up the Grand Circle to runners from around the world. His vision, his love for this region and his care for the people who came out to run it are the foundation of what Ultra Adventures was and what we build on today. We're honored to carry it forward."
-    ]
-  },
-  "video": {
-    "eyebrow": "Watch",
-    "heading": "Films From the Grand Circle",
-    "youtube": "kaKkCW4x_mI",
-    "title": "Ultra Adventures Grand Circle Trail Series",
-    "year": "2014"
-  },
-  "gallery": [
-    {
-      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/AntelopeCanyonHeader-opt.jpg",
-      "alt": "Slot canyon walls near Page, Arizona"
-    },
-    {
-      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/BryceCanyonHeader-opt.jpg",
-      "alt": "Hoodoos at sunrise on the Bryce Canyon Ultras course"
-    },
-    {
-      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/JE-Tushars_25-352.jpg",
-      "alt": "Runner on a scree ridge at Tushars Ultras"
-    },
-    {
-      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/BryceCanyonHeader-1-opt.jpg",
-      "alt": "Looking up at pines between hoodoo walls at Bryce Canyon Ultras"
-    }
-  ],
-  "socials": [
-    {
-      "label": "Instagram",
-      "handle": "@ultraadventures",
-      "url": "https://www.instagram.com/ultraadventures/"
-    },
-    {
-      "label": "Facebook",
-      "handle": "Ultra Adventures",
-      "url": "https://www.facebook.com/ultradventures"
-    },
-    {
-      "label": "YouTube",
-      "handle": "Ultra Adventures",
-      "url": "https://www.youtube.com/@ultraadventures3480"
-    },
-    {
-      "label": "X",
-      "handle": "@ultraadventures",
-      "url": "https://x.com/ultraadventures"
-    }
-  ],
-  "newsletter": {
-    "heading": "Get the Dates First",
-    "text": "Registration openings, course news and race week updates from Aravaipa Running.",
-    "label": "Join the Newsletter",
-    "url": "https://aravaiparunning.activehosted.com/f/62"
-  },
   "history": {
     "eyebrow": "The Grand Circle Trail Series",
     "heading": "How the Series Grew",
     "paragraphs": [
-      "Ultra Adventures started with one race and grew into a season of destination ultras across the Grand Circle, the ring of national parks, tribal parks and monuments around the Utah and Arizona line. By late 2014 the races ran together as The Grand Circle Trail Series, with a zero waste promise at every event and a Trifecta Challenge that sent runners out to three must-see trails near each course.",
-      "The series also counted Behind the Rocks in Moab, put on by Mad Moose Events, in 2015 and 2016."
+      "Ultra Adventures started with one race and grew into a season of destination ultras across the Grand Circle, the ring of national parks, tribal parks and monuments around the Utah and Arizona line."
     ],
-    "timeline": [
+    "eras": [
       {
-        "year": "2012",
-        "text": "The first Zion 100."
+        "years": "2012 to 2016",
+        "label": "Ultra Adventures",
+        "text": "Matt Gunn founded Ultra Adventures with the first Zion 100 and built it into the Grand Circle Trail Series. In those years the series ran a zero waste program and offered a Trifecta Challenge that sent runners out to three must-see trails near each course.",
+        "rows": [
+          {
+            "year": "2012",
+            "text": "The first Zion 100."
+          },
+          {
+            "year": "2013",
+            "text": "Bryce Canyon joins with a 100 mile and 100K."
+          },
+          {
+            "year": "2014",
+            "text": "Antelope Canyon, Monument Valley and Grand Canyon run for the first time."
+          },
+          {
+            "year": "2015",
+            "text": "Capitol Reef and the Tushars join the calendar."
+          }
+        ],
+        "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-era-ultra-adventures.jpg",
+        "alt": "Runners heading into the pines at the 2016 Tushars, an Ultra Adventures race"
       },
       {
-        "year": "2013",
-        "text": "Bryce Canyon joins with a 100 mile and 100K."
+        "years": "2016",
+        "label": "Joined Vacation Races",
+        "text": "In 2016 Ultra Adventures joined Vacation Races. Zion, Bryce Canyon and Antelope Canyon carried on as Ultra Adventures races.",
+        "rows": [
+          {
+            "year": "2016",
+            "text": "Ultra Adventures joins Vacation Races."
+          },
+          {
+            "year": "2017",
+            "text": "The last Monument Valley and Grand Canyon races on record."
+          }
+        ],
+        "photo": "https://www.aravaiparunning.com/wp-content/uploads/50mi-Bryce.avif",
+        "alt": "A runner below balanced hoodoos at Bryce Canyon Ultras"
       },
       {
-        "year": "2014",
-        "text": "Antelope Canyon, Monument Valley and Grand Canyon run for the first time."
+        "years": "2020",
+        "label": "The Tushars Come to Aravaipa",
+        "text": "The Tushars stayed on their own path and returned in 2020 under Aravaipa Running, high in the Tushar Mountains above Beaver.",
+        "rows": [
+          {
+            "year": "2020",
+            "text": "The Tushars return under Aravaipa Running."
+          }
+        ],
+        "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-tushars-tk-tmr-2025-1.jpg",
+        "alt": "Runner in a summer meadow below a Tushar peak, Tushars 2025"
       },
       {
-        "year": "2015",
-        "text": "Capitol Reef and the Tushars join the calendar."
-      },
-      {
-        "year": "2017",
-        "text": "The last Monument Valley and Grand Canyon races on record."
-      },
-      {
-        "year": "2019",
-        "text": "Zion, Bryce Canyon and Antelope Canyon carry on as Ultra Adventures races with Vacation Races."
-      },
-      {
-        "year": "Now",
-        "text": "Aravaipa Running brings Zion, Bryce Canyon, Antelope Canyon and the Tushars back together."
+        "years": "2026",
+        "label": "Joined Aravaipa Running",
+        "text": "In 2026 Ultra Adventures joined Aravaipa Running, bringing Zion, Bryce Canyon and Antelope Canyon back together with the Tushars.",
+        "rows": [
+          {
+            "year": "2026",
+            "text": "Ultra Adventures joins Aravaipa Running. Bryce Canyon runs its first edition under Aravaipa."
+          },
+          {
+            "year": "2027",
+            "text": "Four races on the calendar: Antelope Canyon, Zion, the Tushars and Bryce Canyon."
+          }
+        ],
+        "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-era-aravaipa.jpg",
+        "alt": "Three runners on the rim trail at Bryce Canyon Ultras 2026, the first edition under Aravaipa Running"
       }
     ],
-    "source_text": "From the Ultra Adventures and Grand Circle Trail Series websites, 2013 to 2019, as saved by the Internet Archive.",
+    "source_text": "Years from Internet Archive captures of the Ultra Adventures and Grand Circle Trail Series websites, race press and the Aravaipa Running site.",
     "source_label": "See the 2014 series site",
     "source_url": "https://web.archive.org/web/20141128071051/http://www.grandcircletrails.com/",
     "_sources": {
-      "2012, 2013, 2014 firsts": "https://web.archive.org/web/20140404143001/http://www.ultra-adventures.com/race-results/ (Zion 2012 + 2013 results, Bryce 2013 100K/100 mile, Antelope + Monument Valley 2014 results, Grand Canyon not yet run in April 2014); Grand Canyon 2014 results: https://web.archive.org/web/20151121022413/http://www.grandcircletrails.com/grand-canyon-general-info",
-      "series name, zero waste, Trifecta": "https://web.archive.org/web/20141128071051/http://www.grandcircletrails.com/ and https://web.archive.org/web/20151121022423/http://www.grandcircletrails.com/monument-valley-general-info",
-      "2015 Capitol Reef + Tushars": "https://web.archive.org/web/20141125132952/http://ultra-adventures.com/events/capitol-reef/ (July 10-11, 2015) and https://web.archive.org/web/20141109095447/http://ultra-adventures.com/events/tushar-trails/",
-      "Moab Behind the Rocks": "https://web.archive.org/web/20151204041949/http://www.grandcircletrails.com/moab-behind-the-rocks and nav in https://web.archive.org/web/20160206020438/http://www.grandcircletrails.com/",
-      "2017 last MV + GC": "https://web.archive.org/web/20170906035410/http://www.grandcircletrails.com/monument-valley-general-info (March 25, 2017, 2017 results) and https://web.archive.org/web/20170924215318/http://www.grandcircletrails.com/grand-canyon-general-info (May 27, 2017); grandcircletrails.com 301s away from Oct 2017; neither race is on vacationraces.com/ultras",
-      "2019 Vacation Races": "https://web.archive.org/web/20190402181748/https://vacationraces.com/ultras (Ultra Adventures Ultra Marathons: Antelope, Bryce, Zion)"
+      "2012 2013 2014 firsts": "https://web.archive.org/web/20140404143001/http://www.ultra-adventures.com/race-results/ and https://web.archive.org/web/20151121022413/http://www.grandcircletrails.com/grand-canyon-general-info",
+      "series name, zero waste, Trifecta (past)": "https://web.archive.org/web/20141128071051/http://www.grandcircletrails.com/",
+      "2015 Capitol Reef and Tushars": "https://web.archive.org/web/20141125132952/http://ultra-adventures.com/events/capitol-reef/ and https://web.archive.org/web/20141109095447/http://ultra-adventures.com/events/tushar-trails/",
+      "2016 joined Vacation Races": "https://www.therunnerstrip.com/2016/10/grand-circle-trail-fest-review/ and https://web.archive.org/web/20170906035410/http://www.grandcircletrails.com/monument-valley-general-info",
+      "2017 last MV and GC": "https://web.archive.org/web/20170906035410/http://www.grandcircletrails.com/monument-valley-general-info and https://web.archive.org/web/20170924215318/http://www.grandcircletrails.com/grand-canyon-general-info",
+      "2020 Tushars under Aravaipa": "https://web.archive.org/web/20191113020501/https://www.aravaiparunning.com/tushars/",
+      "2026 joined Aravaipa": "https://web.archive.org/web/20260506101519/https://www.aravaiparunning.com/ultra-adventures/"
     }
   },
   "past": {
     "eyebrow": "From the Archive",
     "heading": "Past Races",
-    "intro": "Three Ultra Adventures races that are no longer on the calendar. Results from before Aravaipa live with the timers who posted them.",
+    "intro": "Three Ultra Adventures races that are no longer on the calendar. Results from those years are still kept by the timers who posted them.",
     "races": [
       {
         "name": "Monument Valley Ultras",
@@ -205,11 +250,6 @@
         "location": "Monument Valley Tribal Park, Navajo Nation",
         "distances": "50 Mile | 50K | Half Marathon",
         "text": "Inside the tribal park, past the Mittens and the Totem Pole and up onto Mitchell Mesa, with a free 4 mile run for the local community.",
-        "video": {
-          "youtube": "cyZgZncGVXc",
-          "title": "Monument Valley Ultras Preview",
-          "year": "2014"
-        },
         "results": [
           {
             "label": "2017 Results",
@@ -224,7 +264,13 @@
             "url": "https://ultrasignup.com/results_event.aspx?did=26201"
           }
         ],
-        "_source": "https://web.archive.org/web/20170906035410/http://www.grandcircletrails.com/monument-valley-general-info"
+        "_source": "https://web.archive.org/web/20170906035410/http://www.grandcircletrails.com/monument-valley-general-info",
+        "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-past-monument-valley.jpg",
+        "photo_alt": "Aerial view over the buttes and spires of Monument Valley at the 2016 Monument Valley race",
+        "film": {
+          "label": "Watch the 2014 film",
+          "url": "https://www.youtube.com/watch?v=cyZgZncGVXc"
+        }
       },
       {
         "name": "Grand Canyon Ultras",
@@ -232,11 +278,6 @@
         "location": "Kaibab National Forest, North Rim, AZ",
         "distances": "100 Mile | 50 Mile | 50K | Half Marathon",
         "text": "Forest trail along the North Rim from Big Saddle Tank to the Crazy Jug, Monument Point, Thunder Mountain and Sowats Point overlooks.",
-        "video": {
-          "youtube": "JBD83E7cXi8",
-          "title": "Grand Canyon Ultras",
-          "year": "2014"
-        },
         "results": [
           {
             "label": "2017 Results",
@@ -255,7 +296,14 @@
             "url": "https://ultrasignup.com/results_event.aspx?did=26480"
           }
         ],
-        "_source": "https://web.archive.org/web/20170924215318/http://www.grandcircletrails.com/grand-canyon-general-info and https://web.archive.org/web/20170220170914/http://www.grandcircletrails.com/grand-canyon-general-info"
+        "_source": "https://web.archive.org/web/20170924215318/http://www.grandcircletrails.com/grand-canyon-general-info and https://web.archive.org/web/20170220170914/http://www.grandcircletrails.com/grand-canyon-general-info",
+        "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-past-grand-canyon.jpg",
+        "photo_alt": "Steamboat Mountain seen from the Rainbow Rim Trail on the Grand Canyon North Rim",
+        "photo_credit": "Photo: Deborah Lee Soltesz, CC0, via Wikimedia Commons",
+        "film": {
+          "label": "Watch the 2014 film",
+          "url": "https://www.youtube.com/watch?v=JBD83E7cXi8"
+        }
       },
       {
         "name": "Capitol Reef Ultras",
@@ -263,20 +311,29 @@
         "location": "Red River Ranch, Torrey, UT",
         "distances": "100 Mile | 50 Mile | 50K | Half Marathon",
         "text": "From the red cliffs of Capitol Reef up onto the Aquarius Plateau, above 11,000 feet for nearly half the race, then back down to finish at Red River Ranch.",
-        "video": {
-          "youtube": "16Vb42yxf9E",
-          "title": "Capitol Reef Ultras",
-          "year": "2015"
-        },
         "results": [
           {
             "label": "2016 Results",
             "url": "https://ultrasignup.com/results_event.aspx?did=35103"
           }
         ],
-        "_source": "https://web.archive.org/web/20160723001004/http://www.grandcircletrails.com/capitol-reef-general-info and https://web.archive.org/web/20141125132952/http://ultra-adventures.com/events/capitol-reef/ (100 mile in 2015)"
+        "_source": "https://web.archive.org/web/20160723001004/http://www.grandcircletrails.com/capitol-reef-general-info and https://web.archive.org/web/20141125132952/http://ultra-adventures.com/events/capitol-reef/ (100 mile in 2015)",
+        "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-past-capitol-reef.jpg",
+        "photo_alt": "View over Capitol Reef National Park from the Rim Overlook Trail",
+        "photo_credit": "Photo: Jtwag55, CC BY 4.0, via Wikimedia Commons",
+        "film": {
+          "label": "Watch the 2015 film",
+          "url": "https://www.youtube.com/watch?v=16Vb42yxf9E"
+        }
       }
     ]
+  },
+  "video": {
+    "eyebrow": "Watch",
+    "heading": "Films From the Grand Circle",
+    "youtube": "kaKkCW4x_mI",
+    "title": "Ultra Adventures Grand Circle Trail Series",
+    "year": "2014"
   },
   "films": [
     {
@@ -337,5 +394,113 @@
   "films_more": {
     "label": "More on the Ultra Adventures YouTube",
     "url": "https://www.youtube.com/@ultraadventures3480"
+  },
+  "gallery_heading": {
+    "eyebrow": "Photos",
+    "heading": "On the Trail"
+  },
+  "gallery": [
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-bryce-242.jpg",
+      "alt": "Runners winding through orange hoodoos at Bryce Canyon Ultras 2026",
+      "feature": true
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-bryce-470.jpg",
+      "alt": "A runner on a ponderosa trail near Red Canyon, Bryce Canyon Ultras 2026"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-bryce-1076.jpg",
+      "alt": "Runner with poles on the hoodoo slopes at Bryce Canyon Ultras 2026"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-bryce-926.jpg",
+      "alt": "Runners crossing a hoodoo amphitheater at Bryce Canyon Ultras 2026"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-bryce-1189.jpg",
+      "alt": "Runner on the red rim with distant plateaus, Bryce Canyon Ultras 2026"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-bryce-347.jpg",
+      "alt": "Runner crossing a red ridge below hoodoo towers, Bryce Canyon Ultras 2026",
+      "feature": true
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-tushars-je-tushars-25-319.jpg",
+      "alt": "Runner on a scree ridge below the Tushar peaks, Tushars 2025"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-tushars-je-tushars-25-610.jpg",
+      "alt": "Runner with poles descending scree above the forest, Tushars 2025"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-tushars-tk-tmr-2025-304.jpg",
+      "alt": "Runner crossing a wildflower meadow under a big sky, Tushars 2025"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-tushars-tk-tmr-2025-614.jpg",
+      "alt": "Runner with poles on a white scree trail among firs, Tushars 2025"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-g-monument-valley-2016.jpg",
+      "alt": "Low sun over the sand and buttes of Monument Valley, 2016",
+      "feature": true
+    },
+    {
+      "src": "https://www.aravaiparunning.com/wp-content/uploads/Antelope-Runner.avif",
+      "alt": "A runner in the glowing walls of a slot canyon at Antelope Canyon Ultras"
+    },
+    {
+      "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/AntelopeCanyonLadder-opt.jpg",
+      "alt": "The ladder climbing out of a slot canyon on the Antelope Canyon course"
+    },
+    {
+      "src": "https://www.aravaiparunning.com/wp-content/uploads/Zion-Runner.avif",
+      "alt": "Runner on a dirt road below the peaks at Zion Ultras"
+    },
+    {
+      "src": "https://www.aravaiparunning.com/wp-content/uploads/Bryce-50k.avif",
+      "alt": "Runner climbing among hoodoos at Bryce Canyon Ultras"
+    }
+  ],
+  "socials": [
+    {
+      "label": "Instagram",
+      "handle": "@ultraadventures",
+      "url": "https://www.instagram.com/ultraadventures/"
+    },
+    {
+      "label": "Facebook",
+      "handle": "Ultra Adventures",
+      "url": "https://www.facebook.com/ultradventures"
+    },
+    {
+      "label": "YouTube",
+      "handle": "Ultra Adventures",
+      "url": "https://www.youtube.com/@ultraadventures3480"
+    },
+    {
+      "label": "X",
+      "handle": "@ultraadventures",
+      "url": "https://x.com/ultraadventures"
+    }
+  ],
+  "newsletter": {
+    "heading": "Get the Dates First",
+    "text": "Registration openings, course news and race week updates from Aravaipa Running.",
+    "label": "Join the Newsletter",
+    "url": "https://aravaiparunning.activehosted.com/f/62"
+  },
+  "tribute": {
+    "gate_option": "arv_region_hub_tribute_ultra_adventures",
+    "eyebrow": "In Remembrance",
+    "heading": "Matt Gunn",
+    "portrait": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ua-hub-matt-gunn.png",
+    "portrait_alt": "Line art portrait of Matt Gunn inside a Zia sun, from the 2021 Tushars race shirt",
+    "paragraphs": [
+      "Matt Gunn founded Ultra Adventures in 2012 with the Zion 100 and spent years building a series of races that opened up the Grand Circle to runners from around the world. His vision, his love for this region and his care for the people who came out to run it are the foundation of everything on this page. Every one of these races still carries his work, and we are honored to carry it forward."
+    ],
+    "_source": "Portrait: Aravaipa in-house tribute art, 2021 Tushars shirt sleeve (Drive 1bXaVnpS9HrllYY0cdsdxwUvWt8-ZClfG). Hidden until Jamil OKs copy and portrait."
   }
 }
