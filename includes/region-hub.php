@@ -4,8 +4,9 @@
  *
  * One long page for a race division: a photo hero, the season's races as
  * photo tiles (drawn by arv_races_card(), the same card the Upcoming Races
- * element uses), a map of where they are, the story and the founder, a
- * video, a photo strip, socials and the newsletter.
+ * element uses), a numbers strip, full-bleed photo bands, a terrain map,
+ * the story, the history by era, past races, films, a gallery, socials and
+ * the newsletter, and last an In Remembrance section behind an option.
  *
  * Race facts (date, distances, venue, logo, Register link) come from the
  * race store at render time, so the hub never carries a second copy of a
@@ -103,6 +104,10 @@ function arv_region_hub_races( $hub, $store ) {
 			$out[] = array(
 				'race'  => array(
 					'name'      => $entry['name'],
+					// A date the hub can stand behind (Master Events) while the
+					// race has no store entry: shown, but still no <time>, no
+					// schema and no Register, because nothing is on sale yet.
+					'dated'     => ! empty( $soon['dated'] ),
 					'iso'       => '',
 					'display'   => isset( $soon['display'] ) ? $soon['display'] : __( 'Date coming soon', 'aravaipa-elements' ),
 					'distances' => isset( $soon['distances'] ) ? $soon['distances'] : '',
@@ -223,6 +228,9 @@ function arv_region_hub_project( $lng, $lat ) {
  * @return string
  */
 function arv_region_hub_map( $hub, $items ) {
+	if ( ! empty( $hub['map']['image'] ) ) {
+		return arv_region_hub_map_image( $hub['map'] );
+	}
 	if ( empty( $hub['map'] ) || ! function_exists( 'arv_rt_apply_data' ) ) {
 		return '';
 	}
@@ -327,6 +335,104 @@ function arv_region_hub_map( $hub, $items ) {
 }
 
 /**
+ * The map as a rendered shaded relief image, full width.
+ *
+ * A static picture rather than tiles or a script: the terrain is the point,
+ * it costs one image, and a phone gets its own tighter crop through
+ * <picture> instead of a shrunk desktop frame with unreadable labels.
+ *
+ * @param array $map Hub map block: image, image_mobile, sizes, alt, attribution.
+ * @return string
+ */
+function arv_region_hub_map_image( $map ) {
+	$w  = ! empty( $map['width'] ) ? (int) $map['width'] : 2400;
+	$h  = ! empty( $map['height'] ) ? (int) $map['height'] : 1600;
+	$pic = '<picture>';
+	if ( ! empty( $map['image_mobile'] ) ) {
+		$mw   = ! empty( $map['mobile_width'] ) ? (int) $map['mobile_width'] : 1080;
+		$ms   = arv_region_hub_srcset( $map['image_mobile'], array( 640, $mw ) );
+		$pic .= '<source media="(max-width: 619px)" srcset="' . esc_attr( '' !== $ms ? $ms : $map['image_mobile'] ) . '" sizes="100vw" />';
+	}
+	$ds   = arv_region_hub_srcset( $map['image'], array( 1200, 1800, $w ) );
+	$pic .= '<img class="arv-hub__map-img" src="' . esc_url( arv_region_hub_img( $map['image'], 1800 ) ) . '"'
+		. ( '' !== $ds ? ' srcset="' . esc_attr( $ds ) . '" sizes="100vw"' : '' )
+		. ' width="' . $w . '" height="' . $h . '" alt="' . esc_attr( isset( $map['alt'] ) ? $map['alt'] : '' ) . '" loading="lazy" decoding="async" />';
+	$pic .= '</picture>';
+
+	return '<section class="arv-hub__section arv-hub__map arv-hub__map--terrain" aria-labelledby="arv-hub-map">'
+		. '<div class="arv-hub__inner arv-hub__map-head" data-arv-fade>'
+		. arv_region_hub_head( $map, 'arv-hub-map' )
+		. ( ! empty( $map['text'] ) ? '<p class="arv-hub__map-text">' . esc_html( $map['text'] ) . '</p>' : '' )
+		. '</div>'
+		. '<figure class="arv-hub__map-figure">' . $pic
+		. ( ! empty( $map['attribution'] ) ? '<figcaption class="arv-hub__inner arv-hub__map-credit">' . esc_html( $map['attribution'] ) . '</figcaption>' : '' )
+		. '</figure></section>';
+}
+
+/**
+ * Numbers strip under the races. Only numbers the hub file states, which in
+ * turn are only numbers with a source (no finisher counts we cannot back).
+ *
+ * @param array $stats List of value, label.
+ * @return string
+ */
+function arv_region_hub_stats( $stats ) {
+	$li = '';
+	foreach ( is_array( $stats ) ? $stats : array() as $st ) {
+		if ( empty( $st['value'] ) || empty( $st['label'] ) ) {
+			continue;
+		}
+		$li .= '<li data-arv-fade><span class="arv-hub__stat-value">' . esc_html( $st['value'] ) . '</span><span class="arv-hub__stat-label">' . esc_html( $st['label'] ) . '</span></li>';
+	}
+	return '' === $li ? '' : '<section class="arv-hub__stats" aria-label="' . esc_attr( __( 'The series in numbers', 'aravaipa-elements' ) ) . '"><ul class="arv-hub__inner arv-hub__stats-list">' . $li . '</ul></section>';
+}
+
+/**
+ * Full-bleed photo bands, each placed after a named section.
+ *
+ * @param array  $hub   Hub data.
+ * @param string $after Section key: stats, story, past, gallery.
+ * @return string
+ */
+function arv_region_hub_bands( $hub, $after ) {
+	$out = '';
+	foreach ( isset( $hub['bands'] ) && is_array( $hub['bands'] ) ? $hub['bands'] : array() as $b ) {
+		if ( empty( $b['src'] ) || ! isset( $b['after'] ) || $after !== $b['after'] ) {
+			continue;
+		}
+		$set  = arv_region_hub_srcset( $b['src'], array( 768, 1280, 1920 ) );
+		$out .= '<figure class="arv-hub__band"><img src="' . esc_url( arv_region_hub_img( $b['src'], 1920 ) ) . '"'
+			. ( '' !== $set ? ' srcset="' . esc_attr( $set ) . '" sizes="100vw"' : '' )
+			. ' alt="' . esc_attr( isset( $b['alt'] ) ? $b['alt'] : '' ) . '" loading="lazy" decoding="async"'
+			. ( ! empty( $b['position'] ) ? ' style="object-position:' . esc_attr( $b['position'] ) . '"' : '' ) . ' /></figure>';
+	}
+	return $out;
+}
+
+/**
+ * In Remembrance: the founder, at the very bottom of the hub. Rendered only
+ * when the caller says the gate is on (see the shortcode), so the copy and
+ * portrait can be signed off before they show.
+ *
+ * @param array $t Hub tribute block.
+ * @return string
+ */
+function arv_region_hub_tribute( $t ) {
+	if ( empty( $t['paragraphs'] ) ) {
+		return '';
+	}
+	$img = '';
+	if ( ! empty( $t['portrait'] ) ) {
+		$img = '<div class="arv-hub__tribute-portrait"><img src="' . esc_url( arv_region_hub_img( $t['portrait'], 720 ) ) . '" alt="'
+			. esc_attr( isset( $t['portrait_alt'] ) ? $t['portrait_alt'] : '' ) . '" width="360" height="360" loading="lazy" decoding="async" /></div>';
+	}
+	return '<section class="arv-hub__section arv-hub__tribute" aria-labelledby="arv-hub-tribute"><div class="arv-hub__inner arv-hub__tribute-inner" data-arv-fade>'
+		. $img
+		. '<div class="arv-hub__prose arv-hub__tribute-text">' . arv_region_hub_head( $t, 'arv-hub-tribute' ) . arv_region_hub_paras( $t ) . '</div>'
+		. '</div></section>';
+}
+
+/**
  * Eyebrow and heading for a section.
  *
  * @param array  $section Has eyebrow, heading.
@@ -390,20 +496,45 @@ function arv_region_hub_player( $id, $title, $thumb ) {
 }
 
 /**
- * Series history: prose, a timeline and a source line.
+ * Series history: short prose, then one block per era (photo, years, what
+ * happened, and the year rows inside it), then a source line. Falls back to
+ * a flat timeline for a hub that has no eras.
  *
  * @param array $h Hub history block.
  * @return string Empty when there is nothing to say.
  */
 function arv_region_hub_history( $h ) {
-	$rows = '';
-	foreach ( isset( $h['timeline'] ) && is_array( $h['timeline'] ) ? $h['timeline'] : array() as $t ) {
-		if ( empty( $t['year'] ) || empty( $t['text'] ) ) {
+	$eras = '';
+	foreach ( isset( $h['eras'] ) && is_array( $h['eras'] ) ? $h['eras'] : array() as $e ) {
+		if ( empty( $e['label'] ) ) {
 			continue;
 		}
-		$rows .= '<li><span class="arv-hub__year">' . esc_html( $t['year'] ) . '</span><span class="arv-hub__year-text">' . esc_html( $t['text'] ) . '</span></li>';
+		$rows = '';
+		foreach ( isset( $e['rows'] ) && is_array( $e['rows'] ) ? $e['rows'] : array() as $t ) {
+			if ( ! empty( $t['year'] ) && ! empty( $t['text'] ) ) {
+				$rows .= '<li><span class="arv-hub__year">' . esc_html( $t['year'] ) . '</span><span class="arv-hub__year-text">' . esc_html( $t['text'] ) . '</span></li>';
+			}
+		}
+		$photo = '';
+		if ( ! empty( $e['photo'] ) ) {
+			$photo = '<div class="arv-hub__era-photo"><img src="' . esc_url( arv_region_hub_img( $e['photo'], 900 ) ) . '" alt="' . esc_attr( isset( $e['alt'] ) ? $e['alt'] : '' ) . '" loading="lazy" decoding="async" /></div>';
+		}
+		$eras .= '<li class="arv-hub__era" data-arv-fade>' . $photo . '<div class="arv-hub__era-body">'
+			. ( ! empty( $e['years'] ) ? '<p class="arv-hub__era-years">' . esc_html( $e['years'] ) . '</p>' : '' )
+			. '<h3 class="arv-hub__era-label">' . esc_html( $e['label'] ) . '</h3>'
+			. ( ! empty( $e['text'] ) ? '<p class="arv-hub__era-text">' . esc_html( $e['text'] ) . '</p>' : '' )
+			. ( '' !== $rows ? '<ol class="arv-hub__timeline">' . $rows . '</ol>' : '' )
+			. '</div></li>';
 	}
-	if ( '' === $rows && empty( $h['paragraphs'] ) ) {
+	$rows = '';
+	if ( '' === $eras ) {
+		foreach ( isset( $h['timeline'] ) && is_array( $h['timeline'] ) ? $h['timeline'] : array() as $t ) {
+			if ( ! empty( $t['year'] ) && ! empty( $t['text'] ) ) {
+				$rows .= '<li><span class="arv-hub__year">' . esc_html( $t['year'] ) . '</span><span class="arv-hub__year-text">' . esc_html( $t['text'] ) . '</span></li>';
+			}
+		}
+	}
+	if ( '' === $eras && '' === $rows && empty( $h['paragraphs'] ) ) {
 		return '';
 	}
 	$src = '';
@@ -414,6 +545,13 @@ function arv_region_hub_history( $h ) {
 		}
 		$src .= '</p>';
 	}
+	if ( '' !== $eras ) {
+		return '<section class="arv-hub__section arv-hub__history" aria-labelledby="arv-hub-history"><div class="arv-hub__inner">'
+			. '<div class="arv-hub__prose arv-hub__history-head" data-arv-fade>' . arv_region_hub_head( $h, 'arv-hub-history' ) . arv_region_hub_paras( $h ) . '</div>'
+			. '<ol class="arv-hub__eras">' . $eras . '</ol>'
+			. $src
+			. '</div></section>';
+	}
 	return '<section class="arv-hub__section arv-hub__history" aria-labelledby="arv-hub-history"><div class="arv-hub__inner arv-hub__split">'
 		. '<div class="arv-hub__prose">' . arv_region_hub_head( $h, 'arv-hub-history' ) . arv_region_hub_paras( $h ) . $src . '</div>'
 		. ( '' !== $rows ? '<ol class="arv-hub__timeline">' . $rows . '</ol>' : '' )
@@ -421,8 +559,11 @@ function arv_region_hub_history( $h ) {
 }
 
 /**
- * Retired races: name, years, place, distances, a film and results links.
- * Results before Aravaipa stay here, never in the site-wide results archive.
+ * Retired races, drawn like the season's tiles: a course photo with the
+ * race name on a plate, then years, place, distances, a line about the
+ * course, a film link and the old results. Results before Aravaipa stay
+ * here, never in the site-wide results archive, and while they still live
+ * on the timers' sites they are small secondary links, not buttons.
  *
  * @param array $p Hub past block.
  * @return string
@@ -434,10 +575,11 @@ function arv_region_hub_past( $p ) {
 			continue;
 		}
 		$media = '';
-		if ( ! empty( $r['video']['youtube'] ) && arv_region_hub_yt_ok( $r['video']['youtube'] ) ) {
-			$vt    = ! empty( $r['video']['title'] ) ? $r['video']['title'] : $r['name'];
-			$media = '<figure class="arv-hub__film">' . arv_region_hub_player( $r['video']['youtube'], $vt, 'hqdefault' )
-				. '<figcaption><span class="arv-hub__film-meta">' . esc_html( $vt . ( ! empty( $r['video']['year'] ) ? ', ' . $r['video']['year'] : '' ) ) . '</span></figcaption></figure>';
+		if ( ! empty( $r['photo'] ) ) {
+			$media = '<figure class="arv-hub__past-media"><img src="' . esc_url( arv_region_hub_img( $r['photo'], 900 ) ) . '" alt="' . esc_attr( isset( $r['photo_alt'] ) ? $r['photo_alt'] : '' ) . '" loading="lazy" decoding="async" />'
+				. '<span class="arv-hub__past-plate" aria-hidden="true">' . esc_html( $r['name'] ) . '</span>'
+				. ( ! empty( $r['photo_credit'] ) ? '<figcaption class="arv-hub__past-credit">' . esc_html( $r['photo_credit'] ) . '</figcaption>' : '' )
+				. '</figure>';
 		}
 		$links = '';
 		foreach ( isset( $r['results'] ) && is_array( $r['results'] ) ? $r['results'] : array() as $l ) {
@@ -445,22 +587,27 @@ function arv_region_hub_past( $p ) {
 				$links .= '<li><a href="' . esc_url( $l['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $l['label'] ) . '</a></li>';
 			}
 		}
-		$cards .= '<article class="arv-hub__past-race">' . $media
+		$film = '';
+		if ( ! empty( $r['film']['url'] ) && ! empty( $r['film']['label'] ) && preg_match( '#^https://www\.youtube\.com/watch\?v=[A-Za-z0-9_\-]{6,20}$#', $r['film']['url'] ) ) {
+			$film = '<p class="arv-hub__past-film"><a class="arv-hub__btn arv-hub__btn--ghost" href="' . esc_url( $r['film']['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $r['film']['label'] ) . '</a></p>';
+		}
+		$cards .= '<article class="arv-hub__past-race" data-arv-fade>' . $media
 			. '<div class="arv-hub__past-body">'
 			. ( ! empty( $r['years'] ) ? '<p class="arv-hub__past-years">' . esc_html( $r['years'] ) . '</p>' : '' )
 			. '<h3 class="arv-hub__past-name">' . esc_html( $r['name'] ) . '</h3>'
 			. ( ! empty( $r['location'] ) ? '<p class="arv-hub__past-place">' . esc_html( $r['location'] ) . '</p>' : '' )
 			. ( ! empty( $r['distances'] ) ? '<p class="arv-hub__past-dist">' . esc_html( $r['distances'] ) . '</p>' : '' )
 			. ( ! empty( $r['text'] ) ? '<p class="arv-hub__past-text">' . esc_html( $r['text'] ) . '</p>' : '' )
-			. ( '' !== $links ? '<ul class="arv-hub__past-links">' . $links . '</ul>' : '' )
+			. $film
+			. ( '' !== $links ? '<div class="arv-hub__past-results"><span class="arv-hub__past-results-label">' . esc_html( __( 'Results', 'aravaipa-elements' ) ) . '</span><ul class="arv-hub__past-links">' . $links . '</ul></div>' : '' )
 			. '</div></article>';
 	}
 	if ( '' === $cards ) {
 		return '';
 	}
 	return '<section class="arv-hub__section arv-hub__past" aria-labelledby="arv-hub-past"><div class="arv-hub__inner">'
-		. arv_region_hub_head( $p, 'arv-hub-past' )
-		. ( ! empty( $p['intro'] ) ? '<p class="arv-hub__past-intro">' . esc_html( $p['intro'] ) . '</p>' : '' )
+		. '<div data-arv-fade>' . arv_region_hub_head( $p, 'arv-hub-past' )
+		. ( ! empty( $p['intro'] ) ? '<p class="arv-hub__past-intro">' . esc_html( $p['intro'] ) . '</p>' : '' ) . '</div>'
 		. '<div class="arv-hub__past-grid">' . $cards . '</div>'
 		. '</div></section>';
 }
@@ -472,9 +619,11 @@ function arv_region_hub_past( $p ) {
  * @param array  $hub   Hub data.
  * @param array  $store Every store race.
  * @param string $today Y-m-d.
+ * @param array  $opts  tribute: true to draw the In Remembrance section
+ *                      (the shortcode passes its gate option).
  * @return string Empty when the hub has no races to show.
  */
-function arv_region_hub_render( $hub, $store, $today ) {
+function arv_region_hub_render( $hub, $store, $today, $opts = array() ) {
 	$items = arv_region_hub_races( $hub, $store );
 	if ( empty( $items ) ) {
 		return '';
@@ -516,23 +665,32 @@ function arv_region_hub_render( $hub, $store, $today ) {
 			);
 		}
 
-		$opts = array(
+		$card_opts = array(
 			'details_label' => __( 'Race Info', 'aravaipa-elements' ),
 			'photo'         => ! empty( $entry['photo'] ) ? arv_region_hub_img( $entry['photo'], 900 ) : '',
 			'photo_alt'     => ! empty( $entry['photo_alt'] ) ? $entry['photo_alt'] : '',
 			'links'         => $links,
 			'card_class'    => 'arv-hub__card',
 		);
+		// The race's own baked tile (logo over a course photo on a name
+		// plate), the look the old hub had. The logo is in the picture, so
+		// no logo plate goes on top of it.
+		if ( ! empty( $entry['tile'] ) ) {
+			$card_opts['photo']      = arv_region_hub_img( $entry['tile'], 900 );
+			$card_opts['photo_alt']  = ! empty( $entry['tile_alt'] ) ? $entry['tile_alt'] : $race['name'];
+			$card_opts['card_class'] = 'arv-hub__card arv-hub__card--tile';
+			$race['image']           = '';
+		}
 		if ( $item['soon'] ) {
-			$opts['action']     = array(
+			$card_opts['action']      = array(
 				'phase' => 'soon',
 				'label' => '',
 				'url'   => '',
 			);
-			$opts['card_class'] = 'arv-hub__card arv-hub__card--soon';
+			$card_opts['card_class'] .= empty( $race['dated'] ) ? ' arv-hub__card--soon' : ' arv-hub__card--dated';
 		}
 
-		$card    = arv_races_card( arv_region_hub_tidy( $race ), $today, $opts );
+		$card    = arv_races_card( arv_region_hub_tidy( $race ), $today, $card_opts );
 		$cards  .= $card['html'];
 		$shown[] = $item;
 		if ( null !== $card['event'] ) {
@@ -585,28 +743,28 @@ function arv_region_hub_render( $hub, $store, $today ) {
 		. '<div class="arv-races arv-races--light arv-hub__grid"><div class="arv-races__grid">' . $cards . '</div></div>'
 		. '</div></section>';
 
+	// --- Numbers, then the first photo band.
+	$out .= arv_region_hub_stats( isset( $hub['stats'] ) ? $hub['stats'] : array() );
+	$out .= arv_region_hub_bands( $hub, 'stats' );
+
 	// --- Map.
 	$out .= arv_region_hub_map( $hub, $shown );
 
-	// --- Story and founder, side by side on a wide screen.
-	$story   = isset( $hub['story'] ) ? $hub['story'] : array();
-	$tribute = isset( $hub['tribute'] ) ? $hub['tribute'] : array();
-	if ( ! empty( $story['paragraphs'] ) || ! empty( $tribute['paragraphs'] ) ) {
-		$out .= '<section class="arv-hub__section arv-hub__story" aria-labelledby="arv-hub-story"><div class="arv-hub__inner arv-hub__split">';
-		if ( ! empty( $story['paragraphs'] ) ) {
-			$out .= '<div class="arv-hub__prose">' . arv_region_hub_head( $story, 'arv-hub-story' ) . arv_region_hub_paras( $story ) . '</div>';
-		}
-		if ( ! empty( $tribute['paragraphs'] ) ) {
-			$out .= '<div class="arv-hub__prose arv-hub__tribute">' . arv_region_hub_head( $tribute, 'arv-hub-tribute' ) . arv_region_hub_paras( $tribute ) . '</div>';
-		}
-		$out .= '</div></section>';
+	// --- Story. The founder is no longer beside it: he has his own section
+	// at the very bottom (arv_region_hub_tribute()).
+	$story = isset( $hub['story'] ) ? $hub['story'] : array();
+	if ( ! empty( $story['paragraphs'] ) ) {
+		$out .= '<section class="arv-hub__section arv-hub__story" aria-labelledby="arv-hub-story"><div class="arv-hub__inner"><div class="arv-hub__prose arv-hub__story-text" data-arv-fade>'
+			. arv_region_hub_head( $story, 'arv-hub-story' ) . arv_region_hub_paras( $story ) . '</div></div></section>';
 	}
+	$out .= arv_region_hub_bands( $hub, 'story' );
 
-	// --- History: short prose, a year-by-year line, and where it came from.
+	// --- History: short prose, the eras with their years, and the sources.
 	$out .= arv_region_hub_history( isset( $hub['history'] ) ? $hub['history'] : array() );
 
 	// --- Past races: retired races with their years, results and a film.
 	$out .= arv_region_hub_past( isset( $hub['past'] ) ? $hub['past'] : array() );
+	$out .= arv_region_hub_bands( $hub, 'past' );
 
 	// --- Films: the series film big, then a grid of the rest. Every one is a
 	// click-to-play facade (see arv_region_hub_player()).
@@ -646,12 +804,18 @@ function arv_region_hub_render( $hub, $store, $today ) {
 			if ( empty( $g['src'] ) ) {
 				continue;
 			}
-			$strip .= '<figure class="arv-hub__shot"><img src="' . esc_url( arv_region_hub_img( $g['src'], 900 ) ) . '" alt="' . esc_attr( isset( $g['alt'] ) ? $g['alt'] : '' ) . '" loading="lazy" decoding="async" /></figure>';
+			$big    = ! empty( $g['feature'] );
+			$strip .= '<figure class="arv-hub__shot' . ( $big ? ' arv-hub__shot--big' : '' ) . '"><img src="' . esc_url( arv_region_hub_img( $g['src'], $big ? 1200 : 700 ) ) . '" alt="' . esc_attr( isset( $g['alt'] ) ? $g['alt'] : '' ) . '" loading="lazy" decoding="async" /></figure>';
 		}
 		if ( '' !== $strip ) {
-			$out .= '<section class="arv-hub__gallery" aria-label="' . esc_attr( __( 'Photos', 'aravaipa-elements' ) ) . '">' . $strip . '</section>';
+			$gh   = isset( $hub['gallery_heading'] ) && is_array( $hub['gallery_heading'] ) ? $hub['gallery_heading'] : array();
+			$out .= '<section class="arv-hub__section arv-hub__gallery-wrap"'
+				. ( ! empty( $gh['heading'] ) ? ' aria-labelledby="arv-hub-gallery"' : ' aria-label="' . esc_attr( __( 'Photos', 'aravaipa-elements' ) ) . '"' ) . '>'
+				. ( ! empty( $gh ) ? '<div class="arv-hub__inner" data-arv-fade>' . arv_region_hub_head( $gh, 'arv-hub-gallery' ) . '</div>' : '' )
+				. '<div class="arv-hub__gallery">' . $strip . '</div></section>';
 		}
 	}
+	$out .= arv_region_hub_bands( $hub, 'gallery' );
 
 	// --- Follow and newsletter.
 	$socials = isset( $hub['socials'] ) && is_array( $hub['socials'] ) ? $hub['socials'] : array();
@@ -678,6 +842,11 @@ function arv_region_hub_render( $hub, $store, $today ) {
 			$out .= '</ul></div>';
 		}
 		$out .= '</div></section>';
+	}
+
+	// --- In Remembrance, last on the page, only while its gate is on.
+	if ( ! empty( $opts['tribute'] ) && ! empty( $hub['tribute'] ) ) {
+		$out .= arv_region_hub_tribute( $hub['tribute'] );
 	}
 
 	if ( ! empty( $events ) ) {
@@ -709,10 +878,18 @@ function arv_region_hub_shortcode( $atts ) {
 		return '';
 	}
 
-	$html = arv_region_hub_render( $hub, arv_race_store_get(), arv_upcoming_races_today() );
+	// The tribute shows only once its option is switched on, so its copy and
+	// portrait can be signed off before anyone sees them.
+	$gate    = ! empty( $hub['tribute']['gate_option'] ) ? sanitize_key( $hub['tribute']['gate_option'] ) : '';
+	$tribute = '' !== $gate && '1' === (string) get_option( $gate, '0' );
+
+	$html = arv_region_hub_render( $hub, arv_race_store_get(), arv_upcoming_races_today(), array( 'tribute' => $tribute ) );
 	if ( '' === $html ) {
 		return '';
 	}
+
+	// Fade-in on scroll and the film facades. Off for reduced motion.
+	wp_enqueue_script( 'aravaipa-region-hub', ARV_ELEMENTS_URL . 'assets/aravaipa-region-hub.js', array(), ARV_ELEMENTS_VERSION, true );
 
 	// Normally already in the head (arv_region_hub_assets below); this is
 	// the fallback for a hub rendered somewhere that check cannot see.
