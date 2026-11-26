@@ -2,12 +2,12 @@
  "slug": "frenzy-hills",
  "name": "Frenzy Hills Rides",
  "source": "https://aravaiparides.com/frenzy/ read 2026-11-24 (plain GET, snapshot long-jobs/6defkt/out/live/frenzy-hills.html)",
- "date_label": "Sunday, December 6, 2026",
+ "date_label": "Sunday, December 5, 2027",
  "place": "McDowell Mountain Regional Park, Fountain Hills, AZ",
  "intro": [
   "Join us for the Frenzy Hills Rides at McDowell Mountain Regional Park. Ride through stunning Sonoran desert scenery on various loop options, from 8 to 100 miles. Enjoy a less technical route than last year, with options for solo racers, duo, and quad relay events too. Register now and get ready to ride!"
  ],
- "description": "Frenzy Hills Rides, Sunday, December 6, 2026: 100 Mile, 50 Mile, 25 Mile, 9 Hour Relay, 15 Mile, 8 Mile mountain bike races at McDowell Mountain Regional Park, Fountain Hills, AZ.",
+ "description": "Frenzy Hills Rides, Sunday, December 5, 2027: 100 Mile, 50 Mile, 25 Mile, 9 Hour Relay, 15 Mile, 8 Mile mountain bike races at McDowell Mountain Regional Park, Fountain Hills, AZ.",
  "distances": [
   {
    "name": "100 Mile",
@@ -250,11 +250,11 @@
    "caption": "Bib Pickup",
    "rows": [
     [
-     "Thursday, December 3, 2026, 12:00 PM - 5:00 PM",
+     "Thursday, December 2, 2027, 12:00 PM - 5:00 PM",
      "Aravaipa Office, Aravaipa Running Warehouse Drive Thru, 2401 S 24th St, Phoenix, AZ 85034"
     ],
     [
-     "Sunday, December 6, 2026, 5:00-9:00 AM",
+     "Sunday, December 5, 2027, 5:00-9:00 AM",
      "Competitive Track Parking Lot, 16300 McDowell Mountain Park Dr, Fountain Hills, AZ 85268"
     ]
    ]
@@ -385,7 +385,7 @@
   }
  ],
  "register_headline": "Frenzy Hills Rides",
- "register_note": "Registration closes: Mon, Nov. 30 @ 11:59PM MT",
+ "register_note": "Registration closes: Mon, Nov. 29 @ 11:59PM MT",
  "sponsors": [
   {
    "name": "MedStar Solutions",

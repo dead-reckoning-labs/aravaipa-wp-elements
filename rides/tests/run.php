@@ -222,9 +222,9 @@ foreach ( rides_events() as $e ) {
 		ok( false !== strpos( $home, 'href="' . htmlspecialchars( $e['register'][0], ENT_QUOTES ) . '"' ), "slide register href for {$e['slug']} is the live link" );
 	}
 }
-$past = rides_render_events( array( 'base' => 'https://x/', 'today' => '2026-12-07' ) );
+$past = rides_render_events( array( 'base' => 'https://x/', 'today' => '2027-12-06' ) );
 ok( false !== strpos( $past, 'rides-tile is-past' ), 'a ride after its date is marked past' );
-ok( false !== strpos( $past, 'Past event | December 6, 2026' ), 'past ride shows plain text, not a badge' );
+ok( false !== strpos( $past, 'Past event | December 5, 2027' ), 'past ride shows plain text, not a badge' );
 $ev = rides_render_events( $ctx );
 ok( 10 === preg_match_all( '/class="rides-tile( is-past)?"/', $ev ), 'events page has 10 tiles' );
 $pp = rides_render_event( $ctx, 'prickly-pedal' );
