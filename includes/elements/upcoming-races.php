@@ -655,137 +655,16 @@ function arv_upcoming_races_render( $data ) {
 	$events = array();
 
 	foreach ( $races as $race ) {
-		$display = '' !== $race['display'] ? $race['display'] : gmdate( 'F j', strtotime( $race['iso'] . ' 00:00:00 UTC' ) );
-
-		// The card is a link to the race page when there is one, so the whole
-		// tile is clickable, and a plain container when there is not. Falling
-		// back to the register URL instead would send someone straight to
-		// checkout for a race they have not read about yet.
-		$card_url = '' !== $race['page'] ? $race['page'] : '';
-
-		// data-arv-results-row is what lets the clock script find this card's
-		// live marker from the clock inside it: the two are siblings rather
-		// than nested, so the script walks up to the nearest marked row.
-		$cards .= '<div class="arv-races__card" data-arv-results-row>';
-
-		if ( '' !== $race['image'] ) {
-			$cards .= '<div class="arv-races__media">';
-			// Race name as alt rather than empty: unlike the region map's
-			// brand marks, this image is the only thing identifying the race
-			// visually, and it sits above the name rather than beside it.
-			$img = '<img class="arv-races__img" src="' . esc_url( arv_card_image_url( $race['image'] ) ) . '" alt="' . esc_attr( $race['name'] ) . '" loading="lazy" decoding="async" />';
-			// Wrapped in a link to the race page when there is one. It is the
-			// most obviously clickable thing on the card and was doing
-			// nothing. aria-hidden with tabindex -1 because the race name
-			// directly below is already a link to the same page: a screen
-			// reader or keyboard user hitting the same destination twice in a
-			// row is noise, not access.
-			if ( '' !== $card_url ) {
-				$cards .= '<a class="arv-races__media-link" href="' . esc_url( $card_url ) . '" aria-hidden="true" tabindex="-1">' . $img . '</a>';
-			} else {
-				$cards .= $img;
-			}
-			$cards .= '</div>';
-		}
-
-		$cards .= '<div class="arv-races__body">';
-		// <time> rather than a bare span so the machine-readable date is in
-		// the markup itself, not only in the JSON-LD below.
-		$cards .= '<span class="arv-races__when">';
-		$cards .= '<time class="arv-races__date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
-
-		// On the date line rather than a line of its own, so a card only
-		// changes shape while a race is actually running and goes back to
-		// exactly what it was afterwards. Renders nothing at all otherwise.
-		if ( function_exists( 'arv_races_live_clock' ) ) {
-			$cards .= arv_races_live_clock( $race );
-		}
-
-		$cards .= '</span>';
-
-		$title = esc_html( $race['name'] );
-		if ( '' !== $card_url ) {
-			$title = '<a class="arv-races__link" href="' . esc_url( $card_url ) . '">' . $title . '</a>';
-		}
-		$cards .= '<h3 class="arv-races__name">' . $title . '</h3>';
-
-		if ( '' !== $race['distances'] ) {
-			// Normalised the same way the race week block already does it, so
-			// the same race does not read "50KM | 33KM | 10 KM" here and
-			// "50K 33K 10K" three sections down the results page. It also
-			// buys back a line: Snow Mountain Ranch's five distances wrapped
-			// at 390px and no longer do.
-			$cards .= '<p class="arv-races__distances">'
-				. esc_html( arv_races_distance_list( $race['distances'] ) ) . '</p>';
-		}
-
-		$where = array_filter( array( $race['venue'], $race['location'] ) );
-		if ( ! empty( $where ) ) {
-			$cards .= '<p class="arv-races__where">' . esc_html( implode( ', ', $where ) ) . '</p>';
-		}
-
-		// Who is actually putting the race on, where that is not Aravaipa.
-		// A listing here is an implicit claim about that, and for a race
-		// Aravaipa has bought but does not run until next year the claim
-		// would be wrong for another season.
-		$presented = arv_race_presented_by( $race );
-		if ( '' !== $presented ) {
-			$cards .= '<p class="arv-races__presented">' . esc_html( $presented ) . '</p>';
-		}
-
-		// What the primary button offers depends on where the race is in its
-		// life: entries before it, the live field during it, results after.
-		$action = arv_upcoming_races_action( $race, $today, $live_lead );
-
-		// The configured label is about selling entries. Once the race is
-		// running, "Register" would be wrong whatever the setting says, so
-		// the phase wins.
-		$primary_label = ( 'upcoming' === $action['phase'] && '' !== trim( $cta_label ) )
-			? $cta_label
-			: $action['label'];
-
-		// Closes the body before the actions open, so the buttons are a
-		// sibling of the text block rather than sitting inside it. Stacked on
-		// a phone the card becomes two columns, a small logo beside the text,
-		// and buttons nested in the text column inherit that indent: they
-		// start well right of the card's edge and lose about a third of the
-		// width to a column that has nothing in it below the logo. As a
-		// sibling the row can span the whole card at that width. In the
-		// desktop column layout this changes nothing, since the card is a
-		// column either way.
-		$cards .= '</div>';
-
-		$cards .= '<div class="arv-races__actions">';
-		if ( '' === $action['url'] && '' !== $action['label'] ) {
-			// Nowhere to send anyone, but the slot still has something worth
-			// saying. A span, not a disabled link: there is no destination,
-			// so it should not be focusable or look clickable. Race Details
-			// beside it becomes the only thing to press, which is correct.
-			$cards .= '<span class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '">' . esc_html( $action['label'] ) . '</span>';
-		} elseif ( '' !== $action['url'] ) {
-			// Registration and the timing board are off-site, so those open
-			// in a new tab, with noopener because target=_blank without it
-			// hands the opened page a live reference back to this window.
-			// A race with a live page of its own is not off-site any more,
-			// and sending someone to another tab of the site they are
-			// already on is the kind of thing that quietly accumulates
-			// windows.
-			$cards .= '<a class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '" href="' . esc_url( $action['url'] ) . '"'
-				. arv_races_link_target( $action['url'] ) . arv_link_aria_label( $primary_label, $race['name'] ) . '>' . esc_html( $primary_label ) . '</a>';
-		}
-		if ( '' !== $card_url ) {
-			// Always present, and always the secondary of the pair, so the
-			// buttons keep the same shape whatever phase a race is in and the
-			// eye is not re-learning the layout down the list.
-			$cards .= '<a class="arv-races__details" href="' . esc_url( $card_url ) . '"'
-				. arv_link_aria_label( __( 'Race Details', 'aravaipa-elements' ), $race['name'] ) . '>'
-				. esc_html( __( 'Race Details', 'aravaipa-elements' ) ) . '</a>';
-		}
-		$cards .= '</div>';
-
-		$cards .= '</div>';
-
-		$events[] = arv_upcoming_races_event_schema( $race, $action['phase'] );
+		$card    = arv_races_card(
+			$race,
+			$today,
+			array(
+				'cta_label' => $cta_label,
+				'live_lead' => $live_lead,
+			)
+		);
+		$cards  .= $card['html'];
+		$events[] = $card['event'];
 	}
 
 	if ( '' === $cards ) {
@@ -839,6 +718,237 @@ function arv_upcoming_races_render( $data ) {
 	$out .= '</div>';
 
 	return $out;
+}
+
+/**
+ * One race tile: the card the Upcoming Races element draws, shared so a
+ * region hub draws exactly the same card rather than a lookalike that drifts.
+ *
+ * With no options beyond the two the element passes, the markup is byte for
+ * byte what the element rendered before this was split out
+ * (scripts/test/region-hub-test.php holds the snapshot).
+ *
+ * @param array  $race  Race array (store or parsed row). An empty iso is a
+ *                      race with no confirmed date: only valid together with
+ *                      an `action` override.
+ * @param string $today Y-m-d.
+ * @param array  $opts {
+ *     @type string     $cta_label     Primary label while entries are open. Default "Register".
+ *     @type int        $live_lead     Days before a race its live phase starts. Default 5.
+ *     @type string     $details_label Secondary button label. Default "Race Details".
+ *     @type string     $photo         Photo URL for the media slot; the race logo becomes a plate on it.
+ *     @type string     $photo_alt     Alt text for that photo. Default the race name.
+ *     @type array|null $action        Fixed primary action (phase, label, url) instead of the date-driven one. No schema for such a card.
+ *     @type array      $links         Extra text links under the buttons: list of {label, url}.
+ *     @type string     $card_class    Extra class on the card.
+ * }
+ * @return array{html: string, event: array|null}
+ */
+function arv_races_card( $race, $today, $opts = array() ) {
+	$opts = array_merge(
+		array(
+			'cta_label'     => __( 'Register', 'aravaipa-elements' ),
+			'live_lead'     => 5,
+			'details_label' => __( 'Race Details', 'aravaipa-elements' ),
+			'photo'         => '',
+			'photo_alt'     => '',
+			'action'        => null,
+			'links'         => array(),
+			'card_class'    => '',
+		),
+		$opts
+	);
+	$race = array_merge(
+		array(
+			'name'      => '',
+			'iso'       => '',
+			'display'   => '',
+			'distances' => '',
+			'venue'     => '',
+			'location'  => '',
+			'register'  => '',
+			'page'      => '',
+			'image'     => '',
+			'end'       => '',
+			'live'      => '',
+			'closes'    => '',
+			'confirmed' => true,
+		),
+		$race
+	);
+
+	$display = '' !== $race['display'] || '' === $race['iso'] ? $race['display'] : gmdate( 'F j', strtotime( $race['iso'] . ' 00:00:00 UTC' ) );
+
+	// The card is a link to the race page when there is one, so the whole
+	// tile is clickable, and a plain container when there is not. Falling
+	// back to the register URL instead would send someone straight to
+	// checkout for a race they have not read about yet.
+	$card_url = '' !== $race['page'] ? $race['page'] : '';
+
+	// data-arv-results-row is what lets the clock script find this card's
+	// live marker from the clock inside it: the two are siblings rather
+	// than nested, so the script walks up to the nearest marked row.
+	$html = '<div class="arv-races__card' . ( '' !== $opts['card_class'] ? ' ' . esc_attr( $opts['card_class'] ) : '' ) . '" data-arv-results-row>';
+
+	// A photo, when the caller has one, takes the media slot and the race
+	// logo rides on it as a plate. Region hubs use this: a badge on a grey
+	// tile is the right call for a list of eighty races, a photo is the
+	// right call for the four a hub is selling.
+	if ( '' !== $opts['photo'] ) {
+		$html .= '<div class="arv-races__media arv-races__media--photo">';
+		$photo = '<img class="arv-races__photo" src="' . esc_url( $opts['photo'] ) . '" alt="' . esc_attr( '' !== $opts['photo_alt'] ? $opts['photo_alt'] : $race['name'] ) . '" loading="lazy" decoding="async" />';
+		if ( '' !== $race['image'] ) {
+			$photo .= '<span class="arv-races__plate"><img src="' . esc_url( arv_card_image_url( $race['image'] ) ) . '" alt="" loading="lazy" decoding="async" /></span>';
+		}
+		$html .= '' !== $card_url
+			? '<a class="arv-races__media-link" href="' . esc_url( $card_url ) . '" aria-hidden="true" tabindex="-1">' . $photo . '</a>'
+			: $photo;
+		$html .= '</div>';
+	} elseif ( '' !== $race['image'] ) {
+		$html .= '<div class="arv-races__media">';
+		// Race name as alt rather than empty: unlike the region map's
+		// brand marks, this image is the only thing identifying the race
+		// visually, and it sits above the name rather than beside it.
+		$img = '<img class="arv-races__img" src="' . esc_url( arv_card_image_url( $race['image'] ) ) . '" alt="' . esc_attr( $race['name'] ) . '" loading="lazy" decoding="async" />';
+		// Wrapped in a link to the race page when there is one. It is the
+		// most obviously clickable thing on the card and was doing
+		// nothing. aria-hidden with tabindex -1 because the race name
+		// directly below is already a link to the same page: a screen
+		// reader or keyboard user hitting the same destination twice in a
+		// row is noise, not access.
+		if ( '' !== $card_url ) {
+			$html .= '<a class="arv-races__media-link" href="' . esc_url( $card_url ) . '" aria-hidden="true" tabindex="-1">' . $img . '</a>';
+		} else {
+			$html .= $img;
+		}
+		$html .= '</div>';
+	}
+
+	$html .= '<div class="arv-races__body">';
+	// <time> rather than a bare span so the machine-readable date is in
+	// the markup itself, not only in the JSON-LD below.
+	$html .= '<span class="arv-races__when">';
+	if ( '' !== $race['iso'] ) {
+		$html .= '<time class="arv-races__date" datetime="' . esc_attr( $race['iso'] ) . '">' . esc_html( $display ) . '</time>';
+	} else {
+		// No date to stand behind yet (a hub's date-coming-soon tile). Said
+		// in the date's own slot rather than left blank, and not a <time>,
+		// because there is no machine-readable date to give it.
+		$html .= '<span class="arv-races__date">' . esc_html( $display ) . '</span>';
+	}
+
+	// On the date line rather than a line of its own, so a card only
+	// changes shape while a race is actually running and goes back to
+	// exactly what it was afterwards. Renders nothing at all otherwise.
+	if ( '' !== $race['iso'] && function_exists( 'arv_races_live_clock' ) ) {
+		$html .= arv_races_live_clock( $race );
+	}
+
+	$html .= '</span>';
+
+	$title = esc_html( $race['name'] );
+	if ( '' !== $card_url ) {
+		$title = '<a class="arv-races__link" href="' . esc_url( $card_url ) . '">' . $title . '</a>';
+	}
+	$html .= '<h3 class="arv-races__name">' . $title . '</h3>';
+
+	if ( '' !== $race['distances'] ) {
+		// Normalised the same way the race week block already does it, so
+		// the same race does not read "50KM | 33KM | 10 KM" here and
+		// "50K 33K 10K" three sections down the results page. It also
+		// buys back a line: Snow Mountain Ranch's five distances wrapped
+		// at 390px and no longer do.
+		$html .= '<p class="arv-races__distances">'
+			. esc_html( arv_races_distance_list( $race['distances'] ) ) . '</p>';
+	}
+
+	$where = array_filter( array( $race['venue'], $race['location'] ) );
+	if ( ! empty( $where ) ) {
+		$html .= '<p class="arv-races__where">' . esc_html( implode( ', ', $where ) ) . '</p>';
+	}
+
+	// Who is actually putting the race on, where that is not Aravaipa.
+	// A listing here is an implicit claim about that, and for a race
+	// Aravaipa has bought but does not run until next year the claim
+	// would be wrong for another season.
+	$presented = arv_race_presented_by( $race );
+	if ( '' !== $presented ) {
+		$html .= '<p class="arv-races__presented">' . esc_html( $presented ) . '</p>';
+	}
+
+	// What the primary button offers depends on where the race is in its
+	// life: entries before it, the live field during it, results after.
+	$action = is_array( $opts['action'] )
+		? array_merge( array( 'phase' => 'soon', 'label' => '', 'url' => '' ), $opts['action'] )
+		: arv_upcoming_races_action( $race, $today, $opts['live_lead'] );
+	$cta_label = $opts['cta_label'];
+
+	// The configured label is about selling entries. Once the race is
+	// running, "Register" would be wrong whatever the setting says, so
+	// the phase wins.
+	$primary_label = ( 'upcoming' === $action['phase'] && '' !== trim( $cta_label ) )
+		? $cta_label
+		: $action['label'];
+
+	// Closes the body before the actions open, so the buttons are a
+	// sibling of the text block rather than sitting inside it. Stacked on
+	// a phone the card becomes two columns, a small logo beside the text,
+	// and buttons nested in the text column inherit that indent: they
+	// start well right of the card's edge and lose about a third of the
+	// width to a column that has nothing in it below the logo. As a
+	// sibling the row can span the whole card at that width. In the
+	// desktop column layout this changes nothing, since the card is a
+	// column either way.
+	$html .= '</div>';
+
+	$html .= '<div class="arv-races__actions">';
+	if ( '' === $action['url'] && '' !== $action['label'] ) {
+		// Nowhere to send anyone, but the slot still has something worth
+		// saying. A span, not a disabled link: there is no destination,
+		// so it should not be focusable or look clickable. Race Details
+		// beside it becomes the only thing to press, which is correct.
+		$html .= '<span class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '">' . esc_html( $action['label'] ) . '</span>';
+	} elseif ( '' !== $action['url'] ) {
+		// Registration and the timing board are off-site, so those open
+		// in a new tab, with noopener because target=_blank without it
+		// hands the opened page a live reference back to this window.
+		// A race with a live page of its own is not off-site any more,
+		// and sending someone to another tab of the site they are
+		// already on is the kind of thing that quietly accumulates
+		// windows.
+		$html .= '<a class="arv-races__cta arv-races__cta--' . esc_attr( $action['phase'] ) . '" href="' . esc_url( $action['url'] ) . '"'
+			. arv_races_link_target( $action['url'] ) . arv_link_aria_label( $primary_label, $race['name'] ) . '>' . esc_html( $primary_label ) . '</a>';
+	}
+	if ( '' !== $card_url ) {
+		// Always present, and always the secondary of the pair, so the
+		// buttons keep the same shape whatever phase a race is in and the
+		// eye is not re-learning the layout down the list.
+		$html .= '<a class="arv-races__details" href="' . esc_url( $card_url ) . '"'
+			. arv_link_aria_label( $opts['details_label'], $race['name'] ) . '>'
+			. esc_html( $opts['details_label'] ) . '</a>';
+	}
+	$html .= '</div>';
+
+	// Results and photos under the buttons, for a hub. Plain text links, not
+	// buttons: they are the archive, not the thing being sold.
+	if ( ! empty( $opts['links'] ) ) {
+		$more = array();
+		foreach ( $opts['links'] as $link ) {
+			if ( ! empty( $link['url'] ) && ! empty( $link['label'] ) ) {
+				$more[] = '<a href="' . esc_url( $link['url'] ) . '"' . arv_races_link_target( $link['url'] ) . arv_link_aria_label( $link['label'], $race['name'] ) . '>' . esc_html( $link['label'] ) . '</a>';
+			}
+		}
+		if ( ! empty( $more ) ) {
+			$html .= '<p class="arv-races__more">' . implode( '', $more ) . '</p>';
+		}
+	}
+
+	$html .= '</div>';
+
+	return array(
+		'html'  => $html,
+		'event' => is_array( $opts['action'] ) ? null : arv_upcoming_races_event_schema( $race, $action['phase'] ),
+	);
 }
 
 /**

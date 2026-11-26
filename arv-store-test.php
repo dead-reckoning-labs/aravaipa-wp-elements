@@ -3502,11 +3502,17 @@ t( 'a race with no page gets nothing',  '' === arv_live_page_for_live_url( 'http
 t( 'and no url at all gets nothing',    '' === arv_live_page_for_live_url( '' ) );
 
 // The single place every card, list and calendar reads its button url from.
-$with = arv_upcoming_races_action(
-	array( 'name' => 'Rock Hawk', 'iso' => '2026-08-29', 'end' => '', 'closes' => '2026-08-24',
-	       'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026', 'register' => '', 'page' => '' ),
-	'2026-08-28'
-);
+// The board is the default destination since 0.99.65 (arv_prefer_live_board,
+// race-schema.php); the branded page only wins with that filter flipped off.
+// This asserted the page with the filter at its default, so it had failed on
+// master since that release.
+$rock_hawk = array( 'name' => 'Rock Hawk', 'iso' => '2026-08-29', 'end' => '', 'closes' => '2026-08-24',
+	'live' => 'https://live.aravaiparunning.com/#/rock_hawk-2026', 'register' => '', 'page' => '' );
+$board = arv_upcoming_races_action( $rock_hawk, '2026-08-28' );
+t( 'by default the button points at the board', 'https://live.aravaiparunning.com/#/rock_hawk-2026' === $board['url'] );
+$GLOBALS['FILTERS']['arv_prefer_live_board'] = array( function () { return false; } );
+$with = arv_upcoming_races_action( $rock_hawk, '2026-08-28' );
+unset( $GLOBALS['FILTERS']['arv_prefer_live_board'] );
 t( 'the button points at the page',     'https://www.aravaiparunning.com/live-results/rock-hawk/' === $with['url'] );
 t( 'and still says Live Results',       'Live Results' === $with['label'] );
 
@@ -6775,9 +6781,9 @@ $GLOBALS['PERMALINK'][9503] = 'https://www.aravaiparunning.com/trail-talk-redux/
 // call away and 39 outbound requests to the plugin's own web server on
 // every feed build would be one for nothing this cheap.
 $GLOBALS['ATTACHMENTS']['https://x.test/ep44.mp3'] = 8801;
-$GLOBALS['ATTACHMENT_FILES'][8801] = '/tmp/tt_fixture/ep1.mp3';
+$GLOBALS['ATTACHMENT_FILES'][8801] = __DIR__ . '/scripts/test/fixtures/trailtalk/ep1.mp3'; // 10 bytes
 $GLOBALS['ATTACHMENTS']['https://x.test/ep39.mp3'] = 8802;
-$GLOBALS['ATTACHMENT_FILES'][8802] = '/tmp/tt_fixture/ep2.mp3';
+$GLOBALS['ATTACHMENT_FILES'][8802] = __DIR__ . '/scripts/test/fixtures/trailtalk/ep2.mp3'; // 40 bytes
 // ep bare.mp3 deliberately has no matching attachment: a length of 0 is
 // the honest answer for a file this store cannot find on disk.
 
