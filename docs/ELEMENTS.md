@@ -382,3 +382,14 @@ Guided trips (race trips, training camps, adventures) as an `adventure` post typ
 - **Interest form:** a Contact Form 7 form (ID in `arv_adventures_form_id`) with Turnstile; entries in Flamingo, mail to info@. The `adv-trip` select is filled from the trips by `includes/adventures-form.php`.
 - **Unpublished** trips and the landing get `noindex, nofollow`; WordPress already hides them from logged-out visitors and sitemaps.
 - **Import:** `node scripts/adventures/export.mjs <astro site> > adventures.json`, then `wp eval-file scripts/adventures/import.php adventures.json <public dir>`. Creates drafts, matches by slug on re-run, uploads each photo once.
+
+## Region hubs
+
+`[arv_region_hub region="ultra-adventures"]` (`includes/region-hub.php`) draws a whole division landing page: photo hero, the season's races, a map, the story and founder, a click-to-play video, a photo strip, socials and the newsletter.
+
+- Race facts (date, distances, venue, logo, Register link) come from the race store at render time. The hub file never repeats them.
+- Races are drawn by `arv_races_card()`, the same card the Upcoming Races element uses, with a photo in the media slot, the race logo as a plate on it and "Race Info" as the secondary button. With no options the card is byte for byte the element's old output (`scripts/test/region-hub-test.php` holds the snapshot).
+- Hub content lives in `includes/data/hubs/<region>.json`: copy, photos per race, results and photo archive links, socials, video id, and the order races appear in (matched to the store by name, so a race can sit on two hubs without a second region tag).
+- A race the store does not have yet can carry a `soon` block: it renders with its date line ("2027 date coming soon"), Race Info, results and photos, and never a Register button or event schema.
+- Map pins use the projection the bundled state outlines were drawn with (`arv_region_hub_project()`); a race without real coordinates gets no pin.
+- Styles: `assets/aravaipa-region-hub.css`, in the head on pages whose content holds the shortcode. Square corners, no shadows, no edge stripes.

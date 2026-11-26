@@ -91,7 +91,10 @@ cp includes/templates/*.php "$STAGE/includes/templates/"
 # Data the Racing Team apply page reads at render time: the us-atlas state
 # outlines and the region list (includes/racing-team-apply.php).
 cp includes/data/*.json "$STAGE/includes/data/"
-cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/aravaipa-course-map.js assets/aravaipa-a11y.js assets/aravaipa-adventures.css assets/aravaipa-adventures-home.css assets/aravaipa-adventures.js assets/aravaipa-volunteer.js assets/aravaipa-rt-apply.js assets/us-outline.svg "$STAGE/assets/"
+# Region hub content ([arv_region_hub], includes/region-hub.php).
+mkdir -p "$STAGE/includes/data/hubs"
+cp includes/data/hubs/*.json "$STAGE/includes/data/hubs/"
+cp assets/aravaipa-elements.css assets/aravaipa-countdown.js assets/aravaipa-calendar.js assets/aravaipa-race-map.js assets/aravaipa-region-map.js assets/aravaipa-results.js assets/aravaipa-footer.js assets/aravaipa-watch.js assets/aravaipa-live.js assets/aravaipa-films.js assets/aravaipa-photos.js assets/aravaipa-media-latest.js assets/aravaipa-articles.js assets/aravaipa-shop.js assets/aravaipa-faq.js assets/aravaipa-team.js assets/aravaipa-group-runs.js assets/aravaipa-course-map.js assets/aravaipa-a11y.js assets/aravaipa-adventures.css assets/aravaipa-adventures-home.css assets/aravaipa-region-hub.css assets/aravaipa-region-hub.js assets/aravaipa-adventures.js assets/aravaipa-volunteer.js assets/aravaipa-rt-apply.js assets/us-outline.svg "$STAGE/assets/"
 cp assets/adventures/* "$STAGE/assets/adventures/"
 cp assets/logos/*.png "$STAGE/assets/logos/"
 cp assets/plugin/*.png "$STAGE/assets/plugin/"
@@ -105,7 +108,7 @@ cp assets/vendor/heic2any.min.js assets/vendor/heic2any-LICENSE.txt "$STAGE/asse
 
 # WordPress convention: an empty index.php in every directory so a server
 # with directory listing enabled serves nothing instead of the file tree.
-for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/includes/data" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations" "$STAGE/assets/vendor"; do
+for d in "$STAGE" "$STAGE/includes" "$STAGE/includes/elements" "$STAGE/includes/templates" "$STAGE/includes/data" "$STAGE/includes/data/hubs" "$STAGE/assets" "$STAGE/assets/logos" "$STAGE/assets/plugin" "$STAGE/assets/adventures" "$STAGE/assets/integrations" "$STAGE/assets/vendor"; do
 	printf '<?php // Silence is golden.' > "$d/index.php"
 done
 

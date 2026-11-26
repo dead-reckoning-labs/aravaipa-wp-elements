@@ -1,0 +1,96 @@
+{
+  "_about": "Region hub content for [arv_region_hub region=\"ultra-adventures\"] (includes/region-hub.php). Race dates, distances, venues, logos and Register links come from the race store at render time; this file only holds what the store does not: photos, copy, races without a store entry yet, results and photo archives, socials. Copy rules: no em dashes, no filler, no facts that are not on the site already.",
+  "region": "ultra-adventures",
+  "title": "Ultra Adventures",
+  "eyebrow": "Southern Utah and Northern Arizona",
+  "intro": "Trail ultras through the Grand Circle: the cliffs above Zion, the hoodoos of Red Canyon near Bryce, the slot canyons around Page and the high country of the Tushar Mountains. Now run by Aravaipa Running.",
+  "logo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/Ultra-Adventures_logo.png",
+  "hero": {
+    "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/485101878_1045370277623946_8573528852771484977_n.jpg",
+    "alt": "Runners on the trail through the Red Canyon hoodoos at Bryce Canyon Ultras",
+    "position": "50% 55%"
+  },
+  "cta_label": "See the 2027 Races",
+  "races_eyebrow": "2027 Season",
+  "races_heading": "The Races",
+  "races": [
+    {
+      "name": "Antelope Canyon Ultras",
+      "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/AntelopeCanyonLadder-opt.jpg",
+      "photo_alt": "The ladder through the slot canyon on the Antelope Canyon Ultras course"
+    },
+    {
+      "name": "Zion Ultras",
+      "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/ZionHeader-opt.jpg",
+      "photo_alt": "Red cliffs and mesas of the Zion Ultras course"
+    },
+    {
+      "name": "Tushars Ultras",
+      "soon": {
+        "display": "2027 date coming soon",
+        "distances": "100K | 70K | Marathon | Half Marathon",
+        "venue": "Eagle Point Resort",
+        "location": "Beaver, UT",
+        "page": "https://www.aravaiparunning.com/tushars/",
+        "image": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/Tushars-Ultras-Logo.png",
+        "lat": "38.332549",
+        "lng": "-112.373394",
+        "note": "No race store entry and the race page says 2027 Date TBD (job tmvzwk, 2026-11-25). Swap to a store race once the date is set."
+      },
+      "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/tushars-ultras-2025-runner-crossing-the-meadow-below-the-tus-02-hd.jpg",
+      "photo_alt": "Runner crossing the meadow below the Tushar peaks at Tushars Ultras",
+      "results": "https://www.aravaiparunning.com/race-results/tushars-mountain-runs/",
+      "photos": "https://aravaipa.smugmug.com/2025-Events/Tushars-2025"
+    },
+    {
+      "name": "Bryce Canyon Ultras",
+      "photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/bryce-canyon-ultras-2026-switchback-trail-through-the-red-canyon-03-hd.jpg",
+      "photo_alt": "Switchback trail through the Red Canyon hoodoos at Bryce Canyon Ultras",
+      "results": "https://www.aravaiparunning.com/race-results/bryce-canyon/",
+      "photos": "https://aravaipa.smugmug.com/2026-Events/Bryce-Canyon-Ultras"
+    }
+  ],
+  "map": {
+    "eyebrow": "Where",
+    "heading": "Four Races Across the Grand Circle",
+    "states": ["UT", "AZ", "NV"],
+    "note": "Pins sit at each race's start and finish venue."
+  },
+  "story": {
+    "eyebrow": "The Series",
+    "heading": "Where Endurance Meets Adventure",
+    "paragraphs": [
+      "Ultra Adventures races cross some of the most scenic and challenging trail in the Southwest, on the historic and sacred lands of Utah and Arizona's Grand Circle.",
+      "Now under the direction of Aravaipa Running, the series brings the Tushars back together with the Zion Ultras, Bryce Canyon Ultras and Antelope Canyon Ultras."
+    ]
+  },
+  "tribute": {
+    "eyebrow": "Founder",
+    "heading": "Matt Gunn",
+    "paragraphs": [
+      "None of this exists without Matt Gunn. Matt founded Ultra Adventures in 2012 with the Zion 100 and spent years building a series of races that opened up the Grand Circle to runners from around the world. His vision, his love for this region and his care for the people who came out to run it are the foundation of what Ultra Adventures was and what we build on today. We're honored to carry it forward."
+    ]
+  },
+  "video": {
+    "eyebrow": "Watch",
+    "heading": "The Grand Circle Trail Series",
+    "youtube": "kaKkCW4x_mI",
+    "title": "Ultra Adventures Grand Circle Trail Series"
+  },
+  "gallery": [
+    { "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/AntelopeCanyonHeader-opt.jpg", "alt": "Slot canyon walls near Page, Arizona" },
+    { "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/BryceCanyonHeader-opt.jpg", "alt": "Hoodoos at sunrise on the Bryce Canyon Ultras course" },
+    { "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/JE-Tushars_25-352.jpg", "alt": "Runner on a scree ridge at Tushars Ultras" },
+    { "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/BryceCanyonHeader-1-opt.jpg", "alt": "Looking up at pines between hoodoo walls at Bryce Canyon Ultras" }
+  ],
+  "socials": [
+    { "label": "Instagram", "handle": "@ultraadventures", "url": "https://www.instagram.com/ultraadventures/" },
+    { "label": "YouTube", "handle": "Ultra Adventures", "url": "https://www.youtube.com/@ultraadventures3480" }
+  ],
+  "newsletter": {
+    "heading": "Get the Dates First",
+    "text": "Registration openings, course news and race week updates from Aravaipa Running.",
+    "label": "Join the Newsletter",
+    "url": "https://aravaiparunning.activehosted.com/f/62"
+  }
+}
