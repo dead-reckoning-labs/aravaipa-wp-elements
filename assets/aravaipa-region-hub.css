@@ -381,6 +381,15 @@
 	color: #3a3a3a;
 }
 
+/* The eyebrow is a <p>; inside prose it would take the body copy's size
+   and grey, so it is put back here. */
+.arv-hub__prose p.arv-hub__eyebrow {
+	margin: 0 0 0.5rem;
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--arv-hub-red);
+}
+
 .arv-hub__story-text {
 	max-width: 48rem;
 }
