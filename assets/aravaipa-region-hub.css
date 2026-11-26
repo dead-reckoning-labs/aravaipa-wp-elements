@@ -1,0 +1,821 @@
+/* Region hub ([arv_region_hub], includes/region-hub.php).
+ *
+ * A long landing page for a race division. Square corners, no shadows and no
+ * edge stripes anywhere; brand red only on buttons, pins and the date line.
+ * The race tiles are the shared Upcoming Races card (arv_races_card()) with
+ * hub-scoped overrides below: a photo instead of a badge, and on a phone a
+ * full-width stacked tile instead of the list row the homepage uses.
+ *
+ * The hub expects a full-width page section; every block keeps its own text
+ * inside .arv-hub__inner. */
+
+.arv-hub {
+	--arv-hub-ink: #272727;
+	--arv-hub-muted: #6a6a6a;
+	--arv-hub-sand: #f4f0ea;
+	--arv-hub-rock: #d8c3a5;
+	--arv-hub-night: #1d2624;
+	--arv-hub-red: #ff2a13;
+	--arv-hub-red-dark: #c61300;
+	box-sizing: border-box;
+	color: var(--arv-hub-ink);
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	text-align: left;
+	overflow-x: clip;
+}
+
+.arv-hub *,
+.arv-hub *::before,
+.arv-hub *::after {
+	box-sizing: inherit;
+}
+
+.arv-hub img {
+	max-width: 100%;
+	border-radius:0;
+}
+
+.arv-hub__inner {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 1.25rem;
+}
+
+.arv-hub__section {
+	padding: 4.5rem 0;
+}
+
+.arv-hub__eyebrow {
+	margin: 0 0 0.5rem;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-hub-red);
+}
+
+.arv-hub__eyebrow--light {
+	color: #fff;
+	opacity: 0.85;
+}
+
+.arv-hub__h2 {
+	margin: 0 0 1.5rem;
+	font-size: clamp(28px, 3.6vw, 42px);
+	font-weight: 700;
+	line-height: 1.15;
+	color: var(--arv-hub-ink);
+	text-align: left;
+}
+
+.arv-hub__btn,
+.arv-hub__btn:link,
+.arv-hub__btn:visited {
+	display: inline-block;
+	padding: 0.9rem 1.6rem;
+	background: var(--arv-hub-red);
+	border: 2px solid var(--arv-hub-red);
+	border-radius:0;
+	color: #fff;
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	text-decoration: none;
+	transition: background 0.15s ease;
+}
+
+.arv-hub .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- Hero -- */
+
+.arv-hub__hero {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	min-height: clamp(520px, 80vh, 820px);
+	padding: 0 0 3.5rem;
+	background: var(--arv-hub-night);
+	color: #fff;
+	overflow: hidden;
+}
+
+.arv-hub__hero-img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+}
+
+/* A gradient over the lower part of the photo so white type reads on any
+   frame. A wash, not a band: it has no edge. */
+.arv-hub__hero::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to top, rgba(10, 14, 13, 0.82) 0%, rgba(10, 14, 13, 0.45) 38%, rgba(10, 14, 13, 0) 70%);
+	pointer-events: none;
+}
+
+.arv-hub__hero-text {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+}
+
+.arv-hub__logo {
+	display: block;
+	width: 150px;
+	height: auto;
+	margin: 0 0 1.25rem;
+}
+
+.arv-hub__h1 {
+	margin: 0 0 0.75rem;
+	font-size: clamp(40px, 6.4vw, 80px);
+	font-weight: 800;
+	line-height: 1;
+	letter-spacing: -0.5px;
+	color: #fff;
+	text-align: left;
+}
+
+.arv-hub__lead {
+	max-width: 40rem;
+	margin: 0 0 1.75rem;
+	font-size: clamp(17px, 1.6vw, 20px);
+	line-height: 1.55;
+	color: rgba(255, 255, 255, 0.92);
+}
+
+.arv-hub__hero-actions {
+	margin: 0;
+}
+
+/* --------------------------------------------------------------- Races -- */
+
+.arv-hub__races {
+	padding-top: 4rem;
+}
+
+.arv-hub .arv-hub__grid {
+	padding: 0;
+	background: transparent;
+}
+
+.arv-hub .arv-hub__grid .arv-races__grid {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 2rem;
+}
+
+.arv-hub .arv-hub__card {
+	border-radius:0;
+	background: var(--arv-hub-sand);
+}
+
+.arv-hub .arv-races__media--photo {
+	position: relative;
+	aspect-ratio: 3 / 2;
+	padding: 0;
+	margin: 0;
+	background: var(--arv-hub-rock);
+}
+
+.arv-hub .arv-races__photo {
+	display: block;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+}
+
+/* The race logo on its photo: a square white plate in the corner, so a
+   badge of any colour reads on any frame. */
+.arv-hub .arv-races__plate {
+	position: absolute;
+	left: 1rem;
+	bottom: 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 96px;
+	height: 96px;
+	padding: 0.5rem;
+	background: #fff;
+}
+
+.arv-hub .arv-races__plate img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.arv-hub .arv-races__body {
+	padding: 1.4rem 1.5rem 0.6rem;
+}
+
+.arv-hub .arv-races__date {
+	font-size: 14px;
+}
+
+.arv-hub .arv-races__name {
+	font-size: clamp(22px, 2.2vw, 28px);
+}
+
+.arv-hub .arv-races__actions {
+	justify-content: flex-start;
+	padding: 0 1.5rem 1.2rem;
+}
+
+.arv-hub .arv-races__cta,
+.arv-hub .arv-races__cta:link,
+.arv-hub .arv-races__cta:visited,
+.arv-hub .arv-races__details {
+	border-radius:0;
+	padding: 0.8rem 1.4rem;
+	font-size: 13px;
+}
+
+.arv-hub .arv-races__details {
+	border-color: #cfc6b8;
+	background: #fff;
+}
+
+.arv-hub .arv-races__more {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem 1.25rem;
+	margin: 0;
+	padding: 0 1.5rem 1.4rem;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+}
+
+.arv-hub .arv-races__more a {
+	color: var(--arv-hub-muted);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+/* No date yet: the date line goes quiet instead of red, so it does not
+   read as a race on sale. */
+.arv-hub .arv-hub__card--soon .arv-races__date {
+	color: var(--arv-hub-muted);
+}
+
+/* ----------------------------------------------------------------- Map -- */
+
+.arv-hub__map {
+	background: var(--arv-hub-sand);
+}
+
+.arv-hub__split {
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+	gap: 3rem;
+	align-items: center;
+}
+
+.arv-hub__map-svg {
+	display: block;
+	width: 100%;
+	height: auto;
+	/* Utah over Arizona is a tall shape. Capped so it never outgrows a
+	   screen; the viewBox keeps its proportions inside the cap. */
+	max-height: min(78vh, 680px);
+}
+
+.arv-hub__state {
+	fill: #ebe4d8;
+	stroke: var(--arv-hub-sand);
+	stroke-width: 0.6;
+}
+
+.arv-hub__state--on {
+	fill: var(--arv-hub-rock);
+}
+
+.arv-hub__state-name {
+	fill: #8a7356;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-anchor: middle;
+}
+
+.arv-hub__pin circle {
+	fill: var(--arv-hub-red);
+	stroke: #fff;
+	stroke-width: 0.8;
+}
+
+.arv-hub__pin text {
+	fill: #fff;
+	font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-weight: 800;
+	text-anchor: middle;
+}
+
+.arv-hub__map-key {
+	margin: 0 0 1rem;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-hub__map-key li {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin: 0 0 0.7rem;
+	font-size: 18px;
+	font-weight: 700;
+}
+
+.arv-hub__map-key a {
+	color: var(--arv-hub-ink);
+	text-decoration: none;
+}
+
+.arv-hub__map-n {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 28px;
+	height: 28px;
+	background: var(--arv-hub-red);
+	color: #fff;
+	font-size: 14px;
+	font-weight: 800;
+}
+
+.arv-hub__note {
+	margin: 0;
+	font-size: 14px;
+	color: var(--arv-hub-muted);
+}
+
+/* --------------------------------------------------------------- Story -- */
+
+.arv-hub__story .arv-hub__split {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
+}
+
+.arv-hub__prose p {
+	margin: 0 0 1.1rem;
+	font-size: 17px;
+	line-height: 1.7;
+	color: #3a3a3a;
+}
+
+.arv-hub__tribute {
+	padding: 2rem 2.25rem;
+	background: var(--arv-hub-night);
+}
+
+.arv-hub__tribute .arv-hub__h2 {
+	color: #fff;
+}
+
+.arv-hub__tribute p {
+	color: rgba(255, 255, 255, 0.88);
+}
+
+/* --------------------------------------------------------------- Video -- */
+
+.arv-hub__video {
+	background: var(--arv-hub-night);
+}
+
+.arv-hub__video .arv-hub__h2 {
+	color: #fff;
+}
+
+.arv-hub__player {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	background: #000;
+}
+
+.arv-hub__play,
+.arv-hub__player iframe {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+.arv-hub__play img {
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+	opacity: 0.85;
+}
+
+.arv-hub__play-btn {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 84px;
+	height: 84px;
+	margin: -42px 0 0 -42px;
+	background: var(--arv-hub-red);
+}
+
+.arv-hub__play-btn::before {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin: -14px 0 0 -8px;
+	border-style: solid;
+	border-width: 14px 0 14px 24px;
+	border-color: transparent transparent transparent #fff;
+}
+
+/* ------------------------------------------------------------- History -- */
+
+.arv-hub__history {
+	background: var(--arv-hub-sand);
+}
+
+.arv-hub__history .arv-hub__split {
+	align-items: start;
+}
+
+.arv-hub__history .arv-hub__note a {
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__timeline {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-hub__timeline li {
+	display: grid;
+	grid-template-columns: 5.5rem minmax(0, 1fr);
+	gap: 1rem;
+	padding: 0 0 1.4rem;
+}
+
+.arv-hub__year {
+	font-size: 22px;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--arv-hub-red);
+}
+
+.arv-hub__year-text {
+	font-size: 17px;
+	line-height: 1.55;
+	color: #3a3a3a;
+}
+
+/* ---------------------------------------------------------- Past races -- */
+
+.arv-hub__past-intro {
+	max-width: 46rem;
+	margin: 0 0 2rem;
+	font-size: 17px;
+	line-height: 1.6;
+	color: #3a3a3a;
+}
+
+.arv-hub__past-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 2rem;
+}
+
+.arv-hub__past-race .arv-hub__film figcaption {
+	padding: 0.5rem 0 0;
+}
+
+.arv-hub__past-race .arv-hub__film-meta {
+	color: var(--arv-hub-muted);
+}
+
+.arv-hub__past-body p {
+	margin: 0 0 0.4rem;
+}
+
+.arv-hub__past-years {
+	margin-top: 1rem !important;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-hub-red);
+}
+
+.arv-hub__past-name {
+	margin: 0 0 0.4rem;
+	font-size: 24px;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__past-place,
+.arv-hub__past-dist {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__past-text {
+	font-size: 16px;
+	line-height: 1.6;
+	color: #3a3a3a;
+}
+
+.arv-hub__past-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem 1.25rem;
+	margin: 0.8rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-hub__past-links a {
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	color: var(--arv-hub-red);
+	text-decoration: none;
+}
+
+/* --------------------------------------------------------------- Films -- */
+
+.arv-hub__film {
+	margin: 0;
+}
+
+.arv-hub__films {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 2rem 1.5rem;
+	margin-top: 2.5rem;
+}
+
+.arv-hub__film figcaption {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	padding: 0.7rem 0 0;
+}
+
+.arv-hub__film-title {
+	font-size: 16px;
+	font-weight: 800;
+	line-height: 1.35;
+	color: #fff;
+}
+
+.arv-hub__film-meta {
+	font-size: 14px;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.arv-hub__film .arv-hub__play-btn {
+	width: 56px;
+	height: 56px;
+	margin: -28px 0 0 -28px;
+}
+
+.arv-hub__film .arv-hub__play-btn::before {
+	margin: -10px 0 0 -6px;
+	border-width: 10px 0 10px 17px;
+}
+
+.arv-hub__films-more {
+	margin: 2rem 0 0;
+}
+
+.arv-hub__films-more a {
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	color: #fff;
+}
+
+/* ------------------------------------------------------------- Gallery -- */
+
+.arv-hub__gallery {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 4px;
+	background: #fff;
+}
+
+.arv-hub__shot {
+	margin: 0;
+	aspect-ratio: 1 / 1;
+	overflow: hidden;
+}
+
+.arv-hub__shot img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	object-fit: cover;
+}
+
+/* ------------------------------------------------------------- Connect -- */
+
+.arv-hub__connect .arv-hub__split {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	align-items: start;
+}
+
+.arv-hub__news p {
+	margin: 0 0 1.25rem;
+	font-size: 17px;
+	line-height: 1.6;
+	color: #3a3a3a;
+}
+
+.arv-hub__socials {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-hub__socials a {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1rem 0;
+	color: var(--arv-hub-ink);
+	text-decoration: none;
+	border: 0;
+}
+
+.arv-hub__social-label {
+	font-size: 22px;
+	font-weight: 800;
+}
+
+.arv-hub__social-handle {
+	font-size: 15px;
+	color: var(--arv-hub-muted);
+}
+
+/* ------------------------------------------------------------- Hover -- */
+
+@media (hover: hover) and (pointer: fine) {
+	.arv-hub a.arv-hub__btn:hover,
+	.arv-hub a.arv-hub__btn:focus {
+		background: var(--arv-hub-red-dark);
+		border-color: var(--arv-hub-red-dark);
+		color: #fff;
+	}
+
+	.arv-hub .arv-races__more a:hover,
+	.arv-hub__map-key a:hover,
+	.arv-hub__socials a:hover .arv-hub__social-label {
+		color: var(--arv-hub-red);
+	}
+
+	.arv-hub__past-links a:hover,
+	.arv-hub__history .arv-hub__note a:hover {
+		color: var(--arv-hub-red-dark);
+	}
+
+	.arv-hub__play:hover .arv-hub__play-btn {
+		background: var(--arv-hub-red-dark);
+	}
+}
+
+/* ------------------------------------------------------------- Narrow -- */
+
+@media (max-width: 979px) {
+	.arv-hub__past-grid,
+	.arv-hub__films {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.arv-hub__split,
+	.arv-hub__story .arv-hub__split,
+	.arv-hub__connect .arv-hub__split {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+	}
+}
+
+/* Phone: the shared card turns into a list row on the homepage. A hub has
+   four races and they are the point of the page, so here each one stays a
+   full-width photo tile with full-width buttons. */
+@media (max-width: 619px) {
+	.arv-hub__section {
+		padding: 3rem 0;
+	}
+
+	.arv-hub__hero {
+		min-height: 480px;
+		padding-bottom: 2.25rem;
+	}
+
+	.arv-hub__logo {
+		width: 110px;
+	}
+
+	.arv-hub__hero-actions .arv-hub__btn,
+	.arv-hub__news .arv-hub__btn {
+		display: block;
+		text-align: center;
+	}
+
+	.arv-hub .arv-hub__grid .arv-races__grid {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.5rem;
+	}
+
+	/* stretch, because the shared phone card sets align-items: start for
+	   its grid row, which here would shrink every block to its content. */
+	.arv-hub .arv-hub__card {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.arv-hub .arv-hub__card .arv-races__media {
+		width: 100%;
+		margin: 0;
+		aspect-ratio: 3 / 2;
+	}
+
+	.arv-hub .arv-races__plate {
+		left: 0.75rem;
+		bottom: 0.75rem;
+		width: 76px;
+		height: 76px;
+	}
+
+	.arv-hub .arv-races__body {
+		padding: 1.1rem 1.1rem 0.5rem;
+	}
+
+	.arv-hub .arv-races__actions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		padding: 0 1.1rem 1rem;
+	}
+
+	.arv-hub .arv-races__actions .arv-races__cta,
+	.arv-hub .arv-races__actions .arv-races__details {
+		display: block;
+		width: 100%;
+		padding: 0.95rem 1rem;
+		font-size: 14px;
+		text-align: center;
+	}
+
+	.arv-hub .arv-races__more {
+		padding: 0 1.1rem 1.2rem;
+	}
+
+	.arv-hub__tribute {
+		padding: 1.5rem 1.25rem;
+	}
+
+	.arv-hub__gallery {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.arv-hub__past-grid,
+	.arv-hub__films {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+	}
+
+	.arv-hub__timeline li {
+		grid-template-columns: 4rem minmax(0, 1fr);
+	}
+
+	.arv-hub__year {
+		font-size: 19px;
+	}
+}
