@@ -188,6 +188,21 @@ t( 'facade still works without script', false !== strpos( $html, 'href="https://
 t( 'newsletter keeps the form the page uses', false !== strpos( $html, 'https://aravaiparunning.activehosted.com/f/62' ) );
 t( 'Instagram is the Ultra Adventures account', false !== strpos( $html, 'https://www.instagram.com/ultraadventures/' ) );
 
+echo "history, past races, films:\n";
+t( 'history timeline renders', false !== strpos( $html, 'class="arv-hub__timeline"' ) && false !== strpos( $html, '>The first Zion 100.<' ) );
+t( 'history links its archive source', false !== strpos( $html, 'https://web.archive.org/web/20141128071051/http://www.grandcircletrails.com/' ) );
+t( 'three past races', 3 === substr_count( $html, 'class="arv-hub__past-race"' ) );
+foreach ( array( 'Monument Valley Ultras', 'Grand Canyon Ultras', 'Capitol Reef Ultras' ) as $n ) {
+	t( "past race $n", false !== strpos( $html, '<h3 class="arv-hub__past-name">' . $n . '</h3>' ) );
+}
+t( 'past results are results pages, never register links', false !== strpos( $html, 'results_event.aspx?did=32965' ) && false === strpos( $html, 'register.aspx?did=32965' ) );
+t( 'every past and film video is a facade', 0 === substr_count( $html, '<iframe' ) && substr_count( $html, 'data-arv-hub-video=' ) >= 13 );
+t( 'nine films in the grid', 9 === substr_count( substr( $html, strpos( $html, 'arv-hub__films"' ) ), 'class="arv-hub__film"' ) );
+t( 'each current tile gets a Watch link', 4 === substr_count( substr( $html, 0, strpos( $html, 'arv-hub__map' ) ), '>Watch</a>' ) );
+t( 'Facebook and X in Follow', false !== strpos( $html, 'https://www.facebook.com/ultradventures' ) && false !== strpos( $html, 'https://x.com/ultraadventures' ) );
+t( 'a bad film id is dropped', false === strpos( arv_region_hub_render( array_merge( $hub, array( 'films' => array( array( 'youtube' => '"><x', 'title' => 'bad' ) ) ) ), $store, '2026-11-25' ), '"><x' ) );
+t( 'no hub without history or past still renders', '' !== arv_region_hub_render( array_diff_key( $hub, array( 'history' => 1, 'past' => 1, 'films' => 1 ) ), $store, '2026-11-25' ) );
+
 echo "map:\n";
 t( 'four numbered pins', 4 === substr_count( $html, 'class="arv-hub__pin"' ) );
 // Projection sanity: the same projection drew the outlines, so a Zion pin

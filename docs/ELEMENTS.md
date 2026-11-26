@@ -385,11 +385,12 @@ Guided trips (race trips, training camps, adventures) as an `adventure` post typ
 
 ## Region hubs
 
-`[arv_region_hub region="ultra-adventures"]` (`includes/region-hub.php`) draws a whole division landing page: photo hero, the season's races, a map, the story and founder, a click-to-play video, a photo strip, socials and the newsletter.
+`[arv_region_hub region="ultra-adventures"]` (`includes/region-hub.php`) draws a whole division landing page: photo hero, the season's races, a map, the story and founder, the series history, past races, films, a photo strip, socials and the newsletter.
 
 - Race facts (date, distances, venue, logo, Register link) come from the race store at render time. The hub file never repeats them.
 - Races are drawn by `arv_races_card()`, the same card the Upcoming Races element uses, with a photo in the media slot, the race logo as a plate on it and "Race Info" as the secondary button. With no options the card is byte for byte the element's old output (`scripts/test/region-hub-test.php` holds the snapshot).
 - Hub content lives in `includes/data/hubs/<region>.json`: copy, photos per race, results and photo archive links, socials, video id, and the order races appear in (matched to the store by name, so a race can sit on two hubs without a second region tag).
 - A race the store does not have yet can carry a `soon` block: it renders with its date line ("2027 date coming soon"), Race Info, results and photos, and never a Register button or event schema.
+- Optional blocks in the hub file: `history` (prose, a `timeline` of year and text rows, a source line and link), `past` (retired races with years, place, distances, a film and `results` links; pre-Aravaipa results stay on the hub, never in the site-wide results archive), `films` (a grid under the main `video`, each `{youtube, title, by, year}`, plus `films_more`), and `video` on a race entry for a Watch link on its tile. Every video is a click-to-play facade; ids are checked before they go in a URL. Keep `_sources` next to any history fact.
 - Map pins use the projection the bundled state outlines were drawn with (`arv_region_hub_project()`); a race without real coordinates gets no pin.
 - Styles: `assets/aravaipa-region-hub.css`, in the head on pages whose content holds the shortcode. Square corners, no shadows, no edge stripes.

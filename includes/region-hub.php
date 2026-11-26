@@ -359,6 +359,113 @@ function arv_region_hub_paras( $section ) {
 }
 
 /**
+ * A YouTube id we are willing to put in a URL.
+ *
+ * @param string $id Video id.
+ * @return bool
+ */
+function arv_region_hub_yt_ok( $id ) {
+	return is_string( $id ) && 1 === preg_match( '/^[A-Za-z0-9_\-]{6,20}$/', $id );
+}
+
+/**
+ * Click-to-play video facade: a thumbnail and a button until someone asks
+ * for it, then a youtube-nocookie iframe (assets/aravaipa-region-hub.js).
+ * The full YouTube player is about a megabyte of script per embed on a page
+ * that is otherwise photos; nobody who scrolls past should pay for it. The
+ * link goes to YouTube, so with the script blocked the click still plays.
+ *
+ * @param string $id    Checked video id.
+ * @param string $title Video title, for the iframe and the button.
+ * @param string $thumb YouTube thumbnail name (maxresdefault, hqdefault).
+ * @return string
+ */
+function arv_region_hub_player( $id, $title, $thumb ) {
+	wp_enqueue_script( 'aravaipa-region-hub', ARV_ELEMENTS_URL . 'assets/aravaipa-region-hub.js', array(), ARV_ELEMENTS_VERSION, true );
+	return '<div class="arv-hub__player" data-arv-hub-video="' . esc_attr( $id ) . '" data-title="' . esc_attr( $title ) . '">'
+		. '<a class="arv-hub__play" href="' . esc_url( 'https://www.youtube.com/watch?v=' . $id ) . '" target="_blank" rel="noopener">'
+		. '<img src="' . esc_url( 'https://i.ytimg.com/vi/' . $id . '/' . $thumb . '.jpg' ) . '" alt="" loading="lazy" decoding="async" />'
+		. '<span class="arv-hub__play-btn"><span class="screen-reader-text">' . esc_html( sprintf( /* translators: %s: video title */ __( 'Play: %s', 'aravaipa-elements' ), $title ) ) . '</span></span>'
+		. '</a></div>';
+}
+
+/**
+ * Series history: prose, a timeline and a source line.
+ *
+ * @param array $h Hub history block.
+ * @return string Empty when there is nothing to say.
+ */
+function arv_region_hub_history( $h ) {
+	$rows = '';
+	foreach ( isset( $h['timeline'] ) && is_array( $h['timeline'] ) ? $h['timeline'] : array() as $t ) {
+		if ( empty( $t['year'] ) || empty( $t['text'] ) ) {
+			continue;
+		}
+		$rows .= '<li><span class="arv-hub__year">' . esc_html( $t['year'] ) . '</span><span class="arv-hub__year-text">' . esc_html( $t['text'] ) . '</span></li>';
+	}
+	if ( '' === $rows && empty( $h['paragraphs'] ) ) {
+		return '';
+	}
+	$src = '';
+	if ( ! empty( $h['source_text'] ) ) {
+		$src = '<p class="arv-hub__note">' . esc_html( $h['source_text'] );
+		if ( ! empty( $h['source_url'] ) && ! empty( $h['source_label'] ) ) {
+			$src .= ' <a href="' . esc_url( $h['source_url'] ) . '" target="_blank" rel="noopener">' . esc_html( $h['source_label'] ) . '</a>';
+		}
+		$src .= '</p>';
+	}
+	return '<section class="arv-hub__section arv-hub__history" aria-labelledby="arv-hub-history"><div class="arv-hub__inner arv-hub__split">'
+		. '<div class="arv-hub__prose">' . arv_region_hub_head( $h, 'arv-hub-history' ) . arv_region_hub_paras( $h ) . $src . '</div>'
+		. ( '' !== $rows ? '<ol class="arv-hub__timeline">' . $rows . '</ol>' : '' )
+		. '</div></section>';
+}
+
+/**
+ * Retired races: name, years, place, distances, a film and results links.
+ * Results before Aravaipa stay here, never in the site-wide results archive.
+ *
+ * @param array $p Hub past block.
+ * @return string
+ */
+function arv_region_hub_past( $p ) {
+	$cards = '';
+	foreach ( isset( $p['races'] ) && is_array( $p['races'] ) ? $p['races'] : array() as $r ) {
+		if ( empty( $r['name'] ) ) {
+			continue;
+		}
+		$media = '';
+		if ( ! empty( $r['video']['youtube'] ) && arv_region_hub_yt_ok( $r['video']['youtube'] ) ) {
+			$vt    = ! empty( $r['video']['title'] ) ? $r['video']['title'] : $r['name'];
+			$media = '<figure class="arv-hub__film">' . arv_region_hub_player( $r['video']['youtube'], $vt, 'hqdefault' )
+				. '<figcaption><span class="arv-hub__film-meta">' . esc_html( $vt . ( ! empty( $r['video']['year'] ) ? ', ' . $r['video']['year'] : '' ) ) . '</span></figcaption></figure>';
+		}
+		$links = '';
+		foreach ( isset( $r['results'] ) && is_array( $r['results'] ) ? $r['results'] : array() as $l ) {
+			if ( ! empty( $l['url'] ) && ! empty( $l['label'] ) ) {
+				$links .= '<li><a href="' . esc_url( $l['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $l['label'] ) . '</a></li>';
+			}
+		}
+		$cards .= '<article class="arv-hub__past-race">' . $media
+			. '<div class="arv-hub__past-body">'
+			. ( ! empty( $r['years'] ) ? '<p class="arv-hub__past-years">' . esc_html( $r['years'] ) . '</p>' : '' )
+			. '<h3 class="arv-hub__past-name">' . esc_html( $r['name'] ) . '</h3>'
+			. ( ! empty( $r['location'] ) ? '<p class="arv-hub__past-place">' . esc_html( $r['location'] ) . '</p>' : '' )
+			. ( ! empty( $r['distances'] ) ? '<p class="arv-hub__past-dist">' . esc_html( $r['distances'] ) . '</p>' : '' )
+			. ( ! empty( $r['text'] ) ? '<p class="arv-hub__past-text">' . esc_html( $r['text'] ) . '</p>' : '' )
+			. ( '' !== $links ? '<ul class="arv-hub__past-links">' . $links . '</ul>' : '' )
+			. '</div></article>';
+	}
+	if ( '' === $cards ) {
+		return '';
+	}
+	return '<section class="arv-hub__section arv-hub__past" aria-labelledby="arv-hub-past"><div class="arv-hub__inner">'
+		. arv_region_hub_head( $p, 'arv-hub-past' )
+		. ( ! empty( $p['intro'] ) ? '<p class="arv-hub__past-intro">' . esc_html( $p['intro'] ) . '</p>' : '' )
+		. '<div class="arv-hub__past-grid">' . $cards . '</div>'
+		. '</div></section>';
+}
+
+/**
  * The whole hub. Pure apart from the URL helpers, so the test can feed it a
  * hub and a store directly.
  *
@@ -400,6 +507,12 @@ function arv_region_hub_render( $hub, $store, $today ) {
 			$links[] = array(
 				'label' => __( 'Photos', 'aravaipa-elements' ),
 				'url'   => $entry['photos'],
+			);
+		}
+		if ( ! empty( $entry['video']['youtube'] ) && arv_region_hub_yt_ok( $entry['video']['youtube'] ) ) {
+			$links[] = array(
+				'label' => __( 'Watch', 'aravaipa-elements' ),
+				'url'   => 'https://www.youtube.com/watch?v=' . $entry['video']['youtube'],
 			);
 		}
 
@@ -489,22 +602,41 @@ function arv_region_hub_render( $hub, $store, $today ) {
 		$out .= '</div></section>';
 	}
 
-	// --- Video, as a click-to-play facade: a thumbnail and a button until
-	// someone asks for it, then a youtube-nocookie iframe. The full YouTube
-	// player is about a megabyte of script on a page that is otherwise
-	// photos; nobody who scrolls past should pay for it.
+	// --- History: short prose, a year-by-year line, and where it came from.
+	$out .= arv_region_hub_history( isset( $hub['history'] ) ? $hub['history'] : array() );
+
+	// --- Past races: retired races with their years, results and a film.
+	$out .= arv_region_hub_past( isset( $hub['past'] ) ? $hub['past'] : array() );
+
+	// --- Films: the series film big, then a grid of the rest. Every one is a
+	// click-to-play facade (see arv_region_hub_player()).
 	$video = isset( $hub['video'] ) ? $hub['video'] : array();
-	if ( ! empty( $video['youtube'] ) && preg_match( '/^[A-Za-z0-9_\-]{6,20}$/', $video['youtube'] ) ) {
-		$id    = $video['youtube'];
-		$vt    = ! empty( $video['title'] ) ? $video['title'] : $title;
-		$out  .= '<section class="arv-hub__section arv-hub__video" aria-labelledby="arv-hub-video"><div class="arv-hub__inner">'
-			. arv_region_hub_head( $video, 'arv-hub-video' )
-			. '<div class="arv-hub__player" data-arv-hub-video="' . esc_attr( $id ) . '" data-title="' . esc_attr( $vt ) . '">'
-			. '<a class="arv-hub__play" href="' . esc_url( 'https://www.youtube.com/watch?v=' . $id ) . '" target="_blank" rel="noopener">'
-			. '<img src="' . esc_url( 'https://i.ytimg.com/vi/' . $id . '/maxresdefault.jpg' ) . '" alt="" loading="lazy" decoding="async" />'
-			. '<span class="arv-hub__play-btn"><span class="screen-reader-text">' . esc_html( sprintf( /* translators: %s: video title */ __( 'Play: %s', 'aravaipa-elements' ), $vt ) ) . '</span></span>'
-			. '</a></div></div></section>';
-		wp_enqueue_script( 'aravaipa-region-hub', ARV_ELEMENTS_URL . 'assets/aravaipa-region-hub.js', array(), ARV_ELEMENTS_VERSION, true );
+	$films = '';
+	foreach ( isset( $hub['films'] ) && is_array( $hub['films'] ) ? $hub['films'] : array() as $f ) {
+		if ( empty( $f['youtube'] ) || ! arv_region_hub_yt_ok( $f['youtube'] ) ) {
+			continue;
+		}
+		$films .= '<figure class="arv-hub__film">' . arv_region_hub_player( $f['youtube'], isset( $f['title'] ) ? $f['title'] : '', 'hqdefault' )
+			. '<figcaption><span class="arv-hub__film-title">' . esc_html( isset( $f['title'] ) ? $f['title'] : '' ) . '</span>'
+			. '<span class="arv-hub__film-meta">' . esc_html( trim( ( isset( $f['by'] ) ? $f['by'] : '' ) . ( ! empty( $f['year'] ) ? ', ' . $f['year'] : '' ), ', ' ) ) . '</span>'
+			. '</figcaption></figure>';
+	}
+	$has_main = ! empty( $video['youtube'] ) && arv_region_hub_yt_ok( $video['youtube'] );
+	if ( $has_main || '' !== $films ) {
+		$out .= '<section class="arv-hub__section arv-hub__video" aria-labelledby="arv-hub-video"><div class="arv-hub__inner">'
+			. arv_region_hub_head( $video, 'arv-hub-video' );
+		if ( $has_main ) {
+			$vt   = ! empty( $video['title'] ) ? $video['title'] : $title;
+			$out .= arv_region_hub_player( $video['youtube'], $vt, 'maxresdefault' );
+		}
+		if ( '' !== $films ) {
+			$out .= '<div class="arv-hub__films">' . $films . '</div>';
+		}
+		$more = isset( $hub['films_more'] ) ? $hub['films_more'] : array();
+		if ( ! empty( $more['url'] ) && ! empty( $more['label'] ) ) {
+			$out .= '<p class="arv-hub__films-more"><a href="' . esc_url( $more['url'] ) . '" target="_blank" rel="noopener">' . esc_html( $more['label'] ) . '</a></p>';
+		}
+		$out .= '</div></section>';
 	}
 
 	// --- Photo strip.

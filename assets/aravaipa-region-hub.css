@@ -447,6 +447,177 @@
 	border-color: transparent transparent transparent #fff;
 }
 
+/* ------------------------------------------------------------- History -- */
+
+.arv-hub__history {
+	background: var(--arv-hub-sand);
+}
+
+.arv-hub__history .arv-hub__split {
+	align-items: start;
+}
+
+.arv-hub__history .arv-hub__note a {
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__timeline {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-hub__timeline li {
+	display: grid;
+	grid-template-columns: 5.5rem minmax(0, 1fr);
+	gap: 1rem;
+	padding: 0 0 1.4rem;
+}
+
+.arv-hub__year {
+	font-size: 22px;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--arv-hub-red);
+}
+
+.arv-hub__year-text {
+	font-size: 17px;
+	line-height: 1.55;
+	color: #3a3a3a;
+}
+
+/* ---------------------------------------------------------- Past races -- */
+
+.arv-hub__past-intro {
+	max-width: 46rem;
+	margin: 0 0 2rem;
+	font-size: 17px;
+	line-height: 1.6;
+	color: #3a3a3a;
+}
+
+.arv-hub__past-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 2rem;
+}
+
+.arv-hub__past-race .arv-hub__film figcaption {
+	padding: 0.5rem 0 0;
+}
+
+.arv-hub__past-race .arv-hub__film-meta {
+	color: var(--arv-hub-muted);
+}
+
+.arv-hub__past-body p {
+	margin: 0 0 0.4rem;
+}
+
+.arv-hub__past-years {
+	margin-top: 1rem !important;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--arv-hub-red);
+}
+
+.arv-hub__past-name {
+	margin: 0 0 0.4rem;
+	font-size: 24px;
+	font-weight: 800;
+	line-height: 1.2;
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__past-place,
+.arv-hub__past-dist {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--arv-hub-ink);
+}
+
+.arv-hub__past-text {
+	font-size: 16px;
+	line-height: 1.6;
+	color: #3a3a3a;
+}
+
+.arv-hub__past-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem 1.25rem;
+	margin: 0.8rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-hub__past-links a {
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	color: var(--arv-hub-red);
+	text-decoration: none;
+}
+
+/* --------------------------------------------------------------- Films -- */
+
+.arv-hub__film {
+	margin: 0;
+}
+
+.arv-hub__films {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 2rem 1.5rem;
+	margin-top: 2.5rem;
+}
+
+.arv-hub__film figcaption {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	padding: 0.7rem 0 0;
+}
+
+.arv-hub__film-title {
+	font-size: 16px;
+	font-weight: 800;
+	line-height: 1.35;
+	color: #fff;
+}
+
+.arv-hub__film-meta {
+	font-size: 14px;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.arv-hub__film .arv-hub__play-btn {
+	width: 56px;
+	height: 56px;
+	margin: -28px 0 0 -28px;
+}
+
+.arv-hub__film .arv-hub__play-btn::before {
+	margin: -10px 0 0 -6px;
+	border-width: 10px 0 10px 17px;
+}
+
+.arv-hub__films-more {
+	margin: 2rem 0 0;
+}
+
+.arv-hub__films-more a {
+	font-size: 14px;
+	font-weight: 800;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	color: #fff;
+}
+
 /* ------------------------------------------------------------- Gallery -- */
 
 .arv-hub__gallery {
@@ -527,6 +698,11 @@
 		color: var(--arv-hub-red);
 	}
 
+	.arv-hub__past-links a:hover,
+	.arv-hub__history .arv-hub__note a:hover {
+		color: var(--arv-hub-red-dark);
+	}
+
 	.arv-hub__play:hover .arv-hub__play-btn {
 		background: var(--arv-hub-red-dark);
 	}
@@ -535,6 +711,11 @@
 /* ------------------------------------------------------------- Narrow -- */
 
 @media (max-width: 979px) {
+	.arv-hub__past-grid,
+	.arv-hub__films {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
 	.arv-hub__split,
 	.arv-hub__story .arv-hub__split,
 	.arv-hub__connect .arv-hub__split {
@@ -622,5 +803,19 @@
 
 	.arv-hub__gallery {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.arv-hub__past-grid,
+	.arv-hub__films {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2rem;
+	}
+
+	.arv-hub__timeline li {
+		grid-template-columns: 4rem minmax(0, 1fr);
+	}
+
+	.arv-hub__year {
+		font-size: 19px;
 	}
 }
