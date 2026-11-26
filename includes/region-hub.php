@@ -78,8 +78,23 @@ function arv_region_hub_races( $hub, $store ) {
 		$key = strtolower( trim( $entry['name'] ) );
 
 		if ( isset( $by_name[ $key ] ) ) {
+			$race = $by_name[ $key ];
+
+			// The race page's own Register link, where it differs from the
+			// store's. The store keeps UltraSignup's series link (dtid) and
+			// the race pages carry the edition link (did); a hub must send
+			// people where the race page does, byte for byte. Only while the
+			// store still points at UltraSignup: on a race's RaceGoat launch
+			// day the store changes and wins again, so this can never hold
+			// a race back on a stale UltraSignup page.
+			if ( ! empty( $entry['register_page'] )
+				&& preg_match( '#^https://(www\.)?ultrasignup\.com/#i', (string) $race['register'] )
+				&& preg_match( '#^https://(www\.)?ultrasignup\.com/register\.aspx\?did=\d+$#i', (string) $entry['register_page'] ) ) {
+				$race['register'] = $entry['register_page'];
+			}
+
 			$out[] = array(
-				'race'  => $by_name[ $key ],
+				'race'  => $race,
 				'entry' => $entry,
 				'soon'  => false,
 			);

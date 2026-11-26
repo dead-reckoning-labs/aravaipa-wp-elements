@@ -91,7 +91,7 @@ echo "hub render:\n";
 // The live store as read on 2026-11-25 (job tmvzwk out/races.json), plus a
 // race that is over and one from another region, to prove neither leaks in.
 $store = array(
-	$race,
+	array_merge( $race, array( 'register' => 'https://ultrasignup.com/register.aspx?dtid=66545' ) ),
 	array_merge(
 		$race,
 		array(
@@ -102,7 +102,7 @@ $store = array(
 			'distances' => '50 Mile | 55K | 30K | Half Marathon',
 			'venue'     => 'Page Sports Complex',
 			'location'  => 'Page, AZ',
-			'register'  => 'https://ultrasignup.com/register.aspx?did=138695',
+			'register'  => 'https://ultrasignup.com/register.aspx?dtid=66537',
 			'page'      => 'https://www.aravaiparunning.com/antelope/',
 			'image'     => 'https://x.test/antelope.png',
 			'lat'       => '36.9005756',
@@ -152,6 +152,15 @@ foreach ( array(
 	t( "Register goes to $url exactly", 1 === substr_count( $html, 'href="' . esc_url( $url ) . '" target="_blank" rel="noopener" aria-label="Register for ' ) );
 }
 t( 'three Register buttons, not four', 3 === substr_count( $html, '>Register</a>' ) );
+t( 'the store dtid links never show', false === strpos( $html, 'dtid=' ) );
+
+echo "register_page override:\n";
+$one = array( 'title' => 'X', 'races' => array( array( 'name' => 'Zion Ultras', 'register_page' => 'https://ultrasignup.com/register.aspx?did=138715' ) ) );
+$got = arv_region_hub_races( $one, array( array_merge( $race, array( 'register' => 'https://racegoat.com/events/zion-ultras-2027' ) ) ) );
+t( 'once the store moves to RaceGoat the store wins', 'https://racegoat.com/events/zion-ultras-2027' === $got[0]['race']['register'] );
+$one['races'][0]['register_page'] = 'https://evil.test/register.aspx?did=1';
+$got = arv_region_hub_races( $one, array( array_merge( $race, array( 'register' => 'https://ultrasignup.com/register.aspx?dtid=66545' ) ) ) );
+t( 'only an UltraSignup did link can override', 'https://ultrasignup.com/register.aspx?dtid=66545' === $got[0]['race']['register'] );
 t( 'four Race Info buttons', 4 === substr_count( $html, '>Race Info</a>' ) );
 
 // The Tushars card alone.
