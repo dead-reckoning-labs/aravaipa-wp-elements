@@ -13,12 +13,13 @@
 		"eyebrow": "Openings",
 		"heading": "Current openings",
 		"empty_heading": "Nothing open right now",
-		"empty_text": "We are not hiring for any role at the moment. When a job opens it shows up here and on our job board the same day.",
+		"empty_text": "We are not hiring for any role at the moment. When a job opens it shows up here and on {board} the same day.",
+		"board_text": "Every opening is also on {board}.",
 		"stay_text": "If you want us to know you are out there, send us a note through the contact form (topic: Something else) with what you do and where you are.",
 		"stay_label": "Contact Us",
 		"stay_url": "https://www.aravaiparunning.com/contact-us/",
 		"ways_text": "You can also work a race with us as a volunteer, or race for us on the Racing Team.",
-		"board_label": "Our job board",
+		"board_label": "our job board",
 		"board_url": "https://aravaipa.bamboohr.com/careers"
 	},
 	"stats": [

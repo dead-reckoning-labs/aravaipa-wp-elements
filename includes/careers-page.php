@@ -81,6 +81,19 @@ function arv_careers_page_head( $s, $id ) {
 }
 
 /**
+ * Copy with an optional {board} placeholder, escaped, the placeholder swapped
+ * for the job board link.
+ *
+ * @param string $text
+ * @param string $board Link HTML, already escaped.
+ * @return string
+ */
+function arv_careers_page_board_text( $text, $board ) {
+	$parts = explode( '{board}', (string) $text );
+	return implode( $board, array_map( 'esc_html', $parts ) );
+}
+
+/**
  * The openings block: one row per live requisition, or the empty state.
  *
  * @param array $list Requisitions from arv_careers_fetch_list().
@@ -140,7 +153,7 @@ function arv_careers_page_openings( $list, $o ) {
 
 	if ( $count > 0 ) {
 		$html = '<ul class="arv-careers-page__jobs">' . $rows . '</ul>'
-			. ( '' !== $board ? '<p class="arv-careers-page__board">' . sprintf( esc_html__( 'Every opening is also on %s.', 'aravaipa-elements' ), $board ) . '</p>' : '' );
+			. ( '' !== $board && ! empty( $o['board_text'] ) ? '<p class="arv-careers-page__board">' . arv_careers_page_board_text( $o['board_text'], $board ) . '</p>' : '' );
 		return array(
 			'html'  => $html,
 			'count' => $count,
@@ -149,7 +162,7 @@ function arv_careers_page_openings( $list, $o ) {
 
 	$html = '<div class="arv-careers-page__empty">'
 		. '<h3 class="arv-careers-page__empty-title">' . esc_html( isset( $o['empty_heading'] ) ? $o['empty_heading'] : '' ) . '</h3>'
-		. '<p>' . esc_html( isset( $o['empty_text'] ) ? $o['empty_text'] : '' ) . ( '' !== $board ? ' ' . $board . '.' : '' ) . '</p>'
+		. '<p>' . arv_careers_page_board_text( isset( $o['empty_text'] ) ? $o['empty_text'] : '', '' !== $board ? $board : esc_html__( 'our job board', 'aravaipa-elements' ) ) . '</p>'
 		. ( ! empty( $o['stay_text'] ) ? '<p>' . esc_html( $o['stay_text'] ) . '</p>' : '' )
 		. ( ! empty( $o['ways_text'] ) ? '<p>' . esc_html( $o['ways_text'] ) . '</p>' : '' )
 		. '<p class="arv-careers-page__empty-actions">'

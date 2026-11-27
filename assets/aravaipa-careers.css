@@ -183,8 +183,11 @@
 	color: var(--arv-hub-ink);
 }
 
-.arv-careers-page .arv-careers-page__item dt a {
+/* Same weight and color as the unlinked title beside it; the underline
+   alone says it is a link. */
+.arv-careers-page .arv-careers-page__item dt a:not(.arv-hub__btn):not(.arv-careers-page__btn-line) {
 	color: var(--arv-hub-ink);
+	text-decoration-color: var(--arv-hub-red);
 }
 
 .arv-careers-page__item dd {

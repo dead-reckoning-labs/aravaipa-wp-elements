@@ -123,7 +123,8 @@ t( 'hero photo with alt', false !== strpos( $html, 'careers-hero-javelina-course
 t( 'empty state block', false !== strpos( $html, 'arv-careers-page__empty' ) && false !== strpos( $html, 'Nothing open right now' ) );
 t( 'openings anchor', false !== strpos( $html, 'id="openings"' ) );
 t( 'contact path', false !== strpos( $html, 'href="https://www.aravaiparunning.com/contact-us/"' ) );
-t( 'job board link', false !== strpos( $html, 'href="https://aravaipa.bamboohr.com/careers"' ) );
+t( 'job board link inline in the empty copy', false !== strpos( $html, 'shows up here and on <a href="https://aravaipa.bamboohr.com/careers" target="_blank" rel="noopener">our job board</a> the same day.' ) );
+t( 'no raw placeholder', false === strpos( $html, '{board}' ) );
 t( 'volunteer link', false !== strpos( $html, 'href="https://www.aravaiparunning.com/volunteer/"' ) );
 t( 'racing team link', false !== strpos( $html, 'href="https://www.aravaiparunning.com/racing-team/"' ) );
 t( 'no JobPosting schema when empty', false === strpos( $html, 'JobPosting' ) && false === strpos( $html, 'application/ld+json' ) );
@@ -156,7 +157,7 @@ t( 'schema description keeps word breaks', is_array( $ld ) && false !== strpos( 
 t( 'schema employment type', is_array( $ld ) && 'TEMPORARY' === $ld['employmentType'] );
 t( 'schema hourly pay', is_array( $ld ) && 'HOUR' === $ld['baseSalary']['value']['unitText'] && 20.0 === (float) $ld['baseSalary']['value']['value'] );
 t( 'no empty state when populated', false === strpos( $html, 'arv-careers-page__empty' ) );
-t( 'board link under the list', false !== strpos( $html, 'arv-careers-page__board' ) );
+t( 'board link under the list', false !== strpos( $html, '<p class="arv-careers-page__board">Every opening is also on <a href="https://aravaipa.bamboohr.com/careers"' ) && false === strpos( $html, '{board}' ) );
 t( 'last good now holds the opening', 1 === count( get_option( ARV_CAREERS_LAST_GOOD_OPTION, array() ) ) );
 
 echo "cache:\n";
