@@ -1,0 +1,33 @@
+{
+    "source": "rides/data/rides.json (scripts/contact-rides.sh)",
+    "rides": [
+        {
+            "name": "Frenzy Hills Rides",
+            "date": "2026-12-06"
+        },
+        {
+            "name": "Prickly Pedal",
+            "date": "2027-01-31"
+        },
+        {
+            "name": "Black Canyon Crusher",
+            "date": "2027-02-27"
+        },
+        {
+            "name": "Sinister Night Rides",
+            "date": "2027-04-23"
+        },
+        {
+            "name": "Adrenaline Night Rides",
+            "date": "2027-05-21"
+        },
+        {
+            "name": "Big Woody Rides",
+            "date": "2027-06-20"
+        },
+        {
+            "name": "Stunner Night Rides",
+            "date": "2027-07-09"
+        }
+    ]
+}
