@@ -1,0 +1,95 @@
+/* FAQ jump nav, Contact page top block and contact form topic answers (includes/faq.php).
+   Flat rows and text links, same posture as the FAQ rules in aravaipa-elements.css:
+   no accent bars, no shadows, no rounded cards. */
+
+/* Section jump nav: a plain row of text links under the search, no chips. */
+.arv-faq-nav {
+	margin: -1rem 0 2rem;
+}
+
+.arv-faq-nav ul {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem 1.4rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.arv-faq-nav li {
+	margin: 0;
+}
+
+.arv-faq-nav a {
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+/* Deep links land under the sticky header rather than behind it. */
+.arv-faq-section,
+.arv-faq-q {
+	scroll-margin-top: 110px;
+}
+
+/* Contact page: search and the most asked questions above the form. */
+.arv-faq-top {
+	margin: 0 0 2.5rem;
+}
+
+.arv-faq-top h2 {
+	margin: 0 0 1rem;
+}
+
+.arv-faq-top__search {
+	display: flex;
+	gap: 0.5rem;
+	max-width: 32rem;
+	margin: 0 0 1.25rem;
+}
+
+.arv-faq-top__search .arv-faq-search {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.arv-faq-top__go {
+	flex: 0 0 auto;
+	padding: 0.7rem 1.2rem;
+	border: 0;
+	border-radius: var(--arv-radius);
+	background: #0d8080;
+	color: #fff;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.arv-faq-top__go:hover,
+.arv-faq-top__go:focus-visible {
+	background: #0a6a6a;
+}
+
+.arv-faq-top__all {
+	margin: 1rem 0 0;
+	font-weight: 600;
+}
+
+/* Contact form: FAQ answers for the topic picked. */
+.arv-faq-topic {
+	margin: 0 0 1em;
+}
+
+.arv-faq-topic[hidden] {
+	display: none;
+}
+
+.arv-faq-topic__head {
+	margin: 0 0 0.25rem;
+	font-weight: 600;
+}
+
+.arv-faq-topic .arv-faq-q summary {
+	padding-top: 0.7rem;
+	padding-bottom: 0.7rem;
+}
