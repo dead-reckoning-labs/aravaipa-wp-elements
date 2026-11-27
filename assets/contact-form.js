@@ -64,25 +64,28 @@
 		if (!token) {
 			return 'empty';
 		}
-		if (stamp && now - stamp > MAX_AGE) {
+		if (stamp !== null && stamp !== undefined && now - stamp > MAX_AGE) {
 			return 'stale';
 		}
 		return 'pass';
 	}
 
 	function initGuard(form, env) {
-		var st = { stamp: 0, last: '', waiting: false, resubmit: false };
+		var st = { stamp: null, last: '', dead: '', waiting: false, resubmit: false };
 		form.arvGuard = st;
 
 		function token() {
 			var i = tokenInput(form);
-			return i ? String(i.value || '') : '';
+			var v = i ? String(i.value || '') : '';
+			// A token we reset is dead even if the widget has not cleared it yet.
+			return v && v === st.dead ? '' : v;
 		}
 
 		function reset() {
 			var w = widgetOf(form);
+			st.dead = token() || st.dead;
 			st.last = '';
-			st.stamp = 0;
+			st.stamp = null;
 			try {
 				if (env.turnstile && w) {
 					env.turnstile.reset(w);
@@ -97,9 +100,9 @@
 				st.stamp = env.now();
 			} else if (!v) {
 				st.last = '';
-				st.stamp = 0;
+				st.stamp = null;
 			}
-			if (v && st.stamp && env.now() - st.stamp > MAX_AGE) {
+			if (v && st.stamp !== null && env.now() - st.stamp > MAX_AGE) {
 				reset();
 			}
 		}
@@ -164,7 +167,7 @@
 			(function wait() {
 				tick();
 				var v = token();
-				if ((v && st.stamp && env.now() - st.stamp <= MAX_AGE) || env.now() - started >= WAIT_MAX) {
+				if ((v && st.stamp !== null && env.now() - st.stamp <= MAX_AGE) || env.now() - started >= WAIT_MAX) {
 					send(submitter);
 					return;
 				}
