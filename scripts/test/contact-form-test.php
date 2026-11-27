@@ -317,6 +317,8 @@ $out = arv_contact_form_elements( '<p>x</p><div class="arv-cf-help-slot"></div>'
 t( false === strpos( $out, 'arv-cf-help-slot' ) && false !== strpos( $out, 'class="arv-cf-data"' ), 'help slot filled with data' );
 t( false !== strpos( $out, 'https://www.aravaiparunning.com/refund-transfer-policy/' ) && false !== strpos( $out, 'data-topic="Lost and found"' ), 'help links rendered' );
 t( false === strpos( $out, "\u{2014}" ), 'no em dash in help' );
+$out2 = arv_contact_form_elements( "<p>x</p><div class=\"arv-cf-help-slot\">\n\t</div>" . $html );
+t( false === strpos( $out2, 'arv-cf-help-slot' ) && false !== strpos( $out2, 'class="arv-cf-data"' ), 'help slot filled after CF7 autop reflow' );
 t( false === stripos( arv_contact_css(), 'border-left' ) && false === stripos( arv_contact_css(), 'box-shadow' ) && false === stripos( arv_contact_css(), 'border-radius' ), 'no color bars, shadows or rounded cards' );
 
 // Flamingo.

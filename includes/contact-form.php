@@ -318,7 +318,8 @@ function arv_contact_event_names( $fresh = false ) {
 	}
 	$names[] = arv_contact_general_label();
 	$names   = (array) apply_filters( 'arv_contact_event_names', $names );
-	if ( count( $names ) > 1 ) {
+	// arv_contact_cache false: read only callers (the stills render) write nothing.
+	if ( count( $names ) > 1 && apply_filters( 'arv_contact_cache', true ) ) {
 		set_transient( $key, $names, 6 * 3600 );
 	}
 	return $names;
@@ -438,7 +439,7 @@ function arv_contact_v2_template( $stored ) {
 	$t  = '<div class="arv-cf2">' . "\n\n";
 	$t .= '<p class="arv-cf-row"><label>What is this about? (required)<br />' . arv_contact_category_tag( $stored ) . '</label></p>' . "\n\n";
 	$t .= '<div class="arv-cf-help-slot"></div>' . "\n\n";
-	$t .= '<p class="arv-cf-row arv-cf-event"><label for="arv-cf-event">Event or race name <span class="arv-cf-req">(required)</span></label><br />[text event id:arv-cf-event autocomplete:off placeholder "Start typing a race name"]<span class="arv-cf-hint">Pick from the list or type your own. Choose General if it is not about a race.</span></p>' . "\n\n";
+	$t .= '<p class="arv-cf-row arv-cf-event"><label for="arv-cf-event">Event or race name <span class="arv-cf-req">(required)</span></label>[text event id:arv-cf-event autocomplete:off placeholder "Start typing a race name"]<span class="arv-cf-hint">Pick from the list or type your own. Choose General if it is not about a race.</span></p>' . "\n\n";
 	$t .= '<p class="arv-cf-row"><label>Your name (required)<br />[text* your-name autocomplete:name]</label></p>' . "\n\n";
 	$t .= '<p class="arv-cf-row"><label>Your email (required)<br />[email* your-email autocomplete:email]</label></p>' . "\n\n";
 	$t .= '<div class="arv-cf-topic" data-topic="Registration, refunds or transfers"><p class="arv-cf-row"><label>Email you registered with (if different)<br />[email reg-email]</label></p></div>' . "\n\n";
@@ -499,6 +500,7 @@ function arv_contact_turnstile_attrs( $html ) {
  */
 function arv_contact_css() {
 	return '.arv-cf2 .arv-cf-event{position:relative}'
+		. '.arv-cf2 .arv-cf-event>label{display:block}'
 		. '.arv-cf2 .arv-cf-req{display:none}'
 		. '.arv-cf2.arv-cf-need-event .arv-cf-req{display:inline}'
 		. '.arv-cf2 .arv-cf-hint{display:block;font-size:.85em;opacity:.75;margin-top:4px}'
@@ -542,7 +544,9 @@ function arv_contact_form_elements( $html ) {
 		$slot = arv_contact_help_html()
 			. '<script type="application/json" class="arv-cf-data">' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ) . '</script>'
 			. '<style>' . arv_contact_css() . '</style>';
-		$html = preg_replace( '#<div class="arv-cf-help-slot"></div>#', $slot, $html, 1 );
+		// CF7's autop reflows the template, so the empty slot can come back as
+		// <div class="arv-cf-help-slot">\n\t</div>.
+		$html = preg_replace( '#<div class="arv-cf-help-slot">\s*</div>#', str_replace( array( '\\', '$' ), array( '\\\\', '\\$' ), $slot ), $html, 1 );
 	}
 	arv_contact_enqueue();
 	return $html;
