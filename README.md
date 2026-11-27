@@ -40,6 +40,8 @@ php arv-edge.php              # element render assertions
 php arv-store-test.php        # race store assertions
 php arv-updater-test.php      # self-updater assertions
 bun scripts/test/<name>.test.mjs   # Node data-script tests (name matcher, photo ingest, SmugMug, Zenfolio, ...)
+php scripts/test/contact-form-test.php          # Contact Us form (includes/contact-form.php)
+node --test scripts/test/contact-form.test.mjs  # Contact Us browser helper (combobox, Turnstile guard)
 python3 scripts/check-css-vars.py  # CSS custom property check
 ./build.sh                    # packages the zip and fails on version or payload mistakes
 ```
