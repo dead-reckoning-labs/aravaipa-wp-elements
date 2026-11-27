@@ -287,6 +287,15 @@ foreach ( array_keys( arv_contact_help() ) as $topic ) {
 	$r = arv_contact_autoreply( $topic, 'ARV-261127-TEST', 'Pat' );
 	t( false === strpos( $r['body'] . $r['subject'], "\u{2014}" ), "no em dash in auto-reply ($topic)" );
 }
+$ar_topics = array_unique( array_merge( array_keys( arv_contact_help() ), array( 'Registration, refunds or transfers', 'Race day, results or timing', 'Lost and found', 'Volunteering', 'Media and press', 'Sponsorship and partnerships', 'Event services, timing or production', 'Something else', 'Not a real topic' ) ) );
+foreach ( $ar_topics as $topic ) {
+	$links = arv_contact_autoreply_links( $topic );
+	$urls  = array_map( function ( $l ) { return $l[1]; }, $links );
+	t( count( $links ) >= 2 && count( $links ) <= 3, "auto-reply has 2 or 3 links ($topic)" );
+	t( count( $urls ) === count( array_unique( $urls ) ), "auto-reply links not repeated ($topic)" );
+	$r = arv_contact_autoreply( $topic, 'ARV-261127-TEST', 'Pat' );
+	t( 0 === count( array_filter( $urls, function ( $u ) use ( $r ) { return false === strpos( $r['body'], $u ); } ) ), "auto-reply body carries its links ($topic)" );
+}
 
 // Race list.
 reset_state();

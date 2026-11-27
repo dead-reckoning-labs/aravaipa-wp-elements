@@ -777,6 +777,44 @@ function arv_contact_defang( $text ) {
 }
 
 /**
+ * Two or three links for the auto-reply: the topic's help links first, then
+ * topped up from pages we know answer common questions (all checked 200).
+ *
+ * @param string $topic Category.
+ * @return array<int, array{0: string, 1: string}>
+ */
+function arv_contact_autoreply_links( $topic ) {
+	$b      = 'https://www.aravaiparunning.com';
+	$faq    = array( 'FAQ', $b . '/faq/' );
+	$res    = array( 'Results', $b . '/results/' );
+	$live   = array( 'Live results', $b . '/live-results/' );
+	$policy = array( 'Refund and transfer policy', $b . '/refund-transfer-policy/' );
+	$extras = array(
+		'Lost and found'                       => array( $faq, $res ),
+		'Media and press'                      => array( $faq, $res ),
+		'Sponsorship and partnerships'         => array( $faq ),
+		'Event services, timing or production' => array( $live, $res ),
+		'Something else'                       => array( $policy, $res ),
+	);
+	$help  = arv_contact_help();
+	$pool  = isset( $help[ $topic ]['links'] ) ? (array) $help[ $topic ]['links'] : array();
+	$pool  = array_merge( $pool, isset( $extras[ $topic ] ) ? $extras[ $topic ] : array() );
+	$links = array();
+	$seen  = array();
+	// Topic links up to three, then the general pages only until there are two.
+	foreach ( array( array( $pool, 3 ), array( array( $faq, $res, $policy ), 2 ) ) as $pass ) {
+		foreach ( $pass[0] as $l ) {
+			if ( count( $links ) >= $pass[1] || isset( $seen[ $l[1] ] ) ) {
+				continue;
+			}
+			$seen[ $l[1] ] = true;
+			$links[]       = $l;
+		}
+	}
+	return $links;
+}
+
+/**
  * Auto-reply subject and body for a topic.
  *
  * @param string $topic Topic label.
@@ -789,11 +827,7 @@ function arv_contact_autoreply( $topic, $ref = '', $name = null ) {
 	$name = null === $name ? arv_contact_posted( 'your-name', 60 ) : (string) $name;
 	$first = trim( (string) strtok( $name, ' ' ) );
 	$first = arv_contact_defang( $first );
-	$help  = arv_contact_help();
-	$links = isset( $help[ $topic ]['links'] ) ? array_slice( $help[ $topic ]['links'], 0, 3 ) : array();
-	if ( ! $links ) {
-		$links = array( array( 'FAQ', 'https://www.aravaiparunning.com/faq/' ) );
-	}
+	$links = arv_contact_autoreply_links( $topic );
 	$body  = ( '' !== $first ? 'Hi ' . $first . ",\n\n" : "Hi,\n\n" );
 	$body .= "Got it. Your message reached the Aravaipa Running team and we will reply within 1 to 2 business days.\n\n";
 	$body .= 'Your reference number is ' . $ref . ". If you write again about this, keep it in the subject so we can find your message.\n\n";
