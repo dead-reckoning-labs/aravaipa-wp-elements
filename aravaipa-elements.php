@@ -68,6 +68,11 @@ require_once ARV_ELEMENTS_PATH . 'includes/athlete-articles.php';
 // the front end.
 require_once ARV_ELEMENTS_PATH . 'includes/contact-form-log.php';
 
+// Contact Us form 84199: Turnstile freshness and the ARV reference subject
+// always; the v2 form (race picker, topic help and fields) and the auto-reply
+// only behind their options. Loaded on every request for the same reason.
+require_once ARV_ELEMENTS_PATH . 'includes/contact-form.php';
+
 // Open positions, read live from BambooHR. Loaded unconditionally because
 // it registers a shortcode, same as the stores above it.
 require_once ARV_ELEMENTS_PATH . 'includes/careers-store.php';
