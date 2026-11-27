@@ -37,8 +37,8 @@ const ARV_CAREERS_LAST_GOOD_OPTION = 'arv_careers_last_good';
  * No auth: this is the same JSON the public /careers page on BambooHR's
  * own domain calls to render itself.
  *
- * Cached for 6 hours, the same window the athlete results and upcoming
- * races syncs use for data that changes by the day, not the minute. On a
+ * Cached for 1 hour (it was 6): a role posted or closed in BambooHR shows
+ * up on the page within the hour, and BambooHR is hit at most once an hour. On a
  * failed request this falls back to the last list that did succeed,
  * stored separately with no expiry, rather than to an empty list: a
  * BambooHR outage should not make the page briefly claim there is nothing
@@ -75,7 +75,7 @@ function arv_careers_fetch_list() {
 	// the point of the fallback is surviving BambooHR being unreachable,
 	// not second-guessing BambooHR when it answers.
 	update_option( ARV_CAREERS_LAST_GOOD_OPTION, $list, false );
-	set_transient( $key, $list, 6 * HOUR_IN_SECONDS );
+	set_transient( $key, $list, HOUR_IN_SECONDS );
 
 	return $list;
 }
@@ -130,7 +130,7 @@ function arv_careers_fetch_detail( $id ) {
 		return null;
 	}
 
-	set_transient( $key, $detail, 6 * HOUR_IN_SECONDS );
+	set_transient( $key, $detail, HOUR_IN_SECONDS );
 
 	return $detail;
 }
@@ -304,7 +304,7 @@ function arv_careers_board_link() {
  * its absence as license to guess an expiry rather than to assume the
  * posting is still live indefinitely. Rather than invent a real closing
  * date this does not have, it sets a rolling 45 days out from render time.
- * The page itself is only true for 6 hours at a time (the list is cached
+ * The page itself is only true for 1 hour at a time (the list is cached
  * that long), so a requisition that actually closes stops rendering, and
  * therefore stops emitting this schema, well inside that window regardless
  * of what date this field claims.
@@ -317,7 +317,7 @@ function arv_careers_board_link() {
 function arv_careers_schema( $summary, $detail, $apply_url ) {
 	$title       = isset( $summary['jobOpeningName'] ) ? (string) $summary['jobOpeningName'] : '';
 	$description = ( $detail && ! empty( $detail['description'] ) )
-		? wp_kses( $detail['description'], array() )
+		? trim( preg_replace( '~\s+~', ' ', wp_kses( preg_replace( '~</p\s*>|<br\s*/?>|</li\s*>~i', '$0 ', $detail['description'] ), array() ) ) )
 		: $title;
 
 	$schema = array(
@@ -471,7 +471,7 @@ add_shortcode( 'arv_careers', 'arv_careers_shortcode' );
 
 /**
  * A manual refresh, for confirming a change in BambooHR shows up here
- * without waiting out the 6 hour cache.
+ * without waiting out the 1 hour cache.
  */
 function arv_careers_admin_menu() {
 	add_management_page(
@@ -497,7 +497,7 @@ function arv_careers_admin_screen() {
 	$list = arv_careers_fetch_list();
 
 	echo '<div class="wrap"><h1>' . esc_html__( 'Careers Sync', 'aravaipa-elements' ) . '</h1>';
-	echo '<p>' . esc_html__( 'The Careers page reads open positions live from BambooHR, cached for 6 hours. Use this to force an immediate refresh after closing or posting a role.', 'aravaipa-elements' ) . '</p>';
+	echo '<p>' . esc_html__( 'The Careers page reads open positions live from BambooHR, cached for 1 hour. Use this to force an immediate refresh after closing or posting a role.', 'aravaipa-elements' ) . '</p>';
 
 	echo '<form method="post">';
 	wp_nonce_field( 'arv_careers_refresh' );

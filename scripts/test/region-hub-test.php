@@ -170,7 +170,7 @@ t( 'four Race Info buttons', 4 === substr_count( $html, '>Race Info</a>' ) );
 $start  = strpos( $html, 'arv-hub__card--dated' );
 $end    = strpos( $html, 'arv-races__card', $start + 30 );
 $tush   = substr( $html, $start, $end - $start );
-t( 'Tushars shows the Master Events date', false !== strpos( $tush, 'July 31, 2027' ) );
+t( 'Tushars shows 2027 Date TBD (Jamil, 2026-11-25)', false !== strpos( $tush, '2027 Date TBD' ) && false === strpos( $tush, 'July 31, 2027' ) );
 t( 'a dated soon tile is not greyed as undated', false === strpos( $html, 'arv-hub__card--soon' ) );
 t( 'Tushars has no time element to guess at', false === strpos( $tush, '<time' ) );
 t( 'Tushars has no Register button', false === strpos( $tush, 'Register' ) && false === strpos( $tush, 'ultrasignup.com/register' ) );
