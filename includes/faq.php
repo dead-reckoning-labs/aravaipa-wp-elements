@@ -200,3 +200,335 @@ function arv_faq_search_log_route() {
 	);
 }
 add_action( 'rest_api_init', 'arv_faq_search_log_route' );
+
+/* ------------------------------------------------------------------
+ * Sections, deep links, the Contact page top block and topic answers
+ * ----------------------------------------------------------------
+ *
+ * Extended markup contract (job aclb03): sections carry an id for the jump
+ * nav, and each question carries data-topics, a space separated list of
+ * contact form topic slugs (see arv_faq_topic_slugs()):
+ *
+ *   <div class="arv-faq-section" id="race-day"><h2>Race Week and Race Day</h2>
+ *     <details class="arv-faq-q" id="parking" data-topics="raceday" data-keywords="...">
+ */
+
+/** Path of the one FAQ page the Contact page block reads from. */
+const ARV_FAQ_PAGE_PATH = 'faq';
+
+/**
+ * Every question with its id, topics, section and answer HTML, in page order.
+ *
+ * @param string $content Raw FAQ page content.
+ * @return array<int, array{id: string, topics: string[], section: string, q: string, a: string}>
+ */
+function arv_faq_extract_items( $content ) {
+	$items   = array();
+	$section = '';
+	$pattern = '~<div[^>]*class="[^"]*arv-faq-section[^"]*"[^>]*>\s*<h2[^>]*>(.*?)</h2>'
+		. '|<details([^>]*class="[^"]*arv-faq-q[^"]*"[^>]*)>\s*<summary[^>]*>(.*?)</summary>\s*<div[^>]*class="[^"]*arv-faq-a[^"]*"[^>]*>(.*?)</div>\s*</details>~is';
+
+	if ( ! preg_match_all( $pattern, (string) $content, $matches, PREG_SET_ORDER ) ) {
+		return array();
+	}
+
+	foreach ( $matches as $m ) {
+		if ( isset( $m[1] ) && '' !== $m[1] ) {
+			$section = trim( wp_strip_all_tags( $m[1] ) );
+			continue;
+		}
+
+		$attrs = $m[2];
+		$q     = trim( wp_strip_all_tags( $m[3] ) );
+		$a     = trim( $m[4] );
+
+		if ( '' === $q || '' === $a ) {
+			continue;
+		}
+
+		$id     = preg_match( '~\bid="([a-z0-9-]+)"~', $attrs, $im ) ? $im[1] : '';
+		$topics = preg_match( '~\bdata-topics="([^"]*)"~', $attrs, $tm ) ? preg_split( '~\s+~', trim( $tm[1] ), -1, PREG_SPLIT_NO_EMPTY ) : array();
+
+		$items[] = array(
+			'id'      => $id,
+			'topics'  => $topics,
+			'section' => $section,
+			'q'       => $q,
+			'a'       => $a,
+		);
+	}
+
+	return $items;
+}
+
+/**
+ * Sections with an id, for the jump nav.
+ *
+ * @param string $content
+ * @return array<int, array{id: string, name: string}>
+ */
+function arv_faq_extract_sections( $content ) {
+	$out = array();
+
+	if ( preg_match_all( '~<div[^>]*class="[^"]*arv-faq-section[^"]*"[^>]*\bid="([a-z0-9-]+)"[^>]*>\s*<h2[^>]*>(.*?)</h2>~is', (string) $content, $matches, PREG_SET_ORDER ) ) {
+		foreach ( $matches as $m ) {
+			$out[] = array(
+				'id'   => $m[1],
+				'name' => trim( wp_strip_all_tags( $m[2] ) ),
+			);
+		}
+	}
+
+	return $out;
+}
+
+/**
+ * [arv_faq_nav]: one row of links to each section, placed under the search.
+ *
+ * @return string
+ */
+function arv_faq_nav_shortcode() {
+	$post     = get_post();
+	$sections = $post ? arv_faq_extract_sections( $post->post_content ) : array();
+
+	if ( empty( $sections ) ) {
+		return '';
+	}
+
+	$out = '<nav class="arv-faq-nav" aria-label="FAQ sections"><ul>';
+
+	foreach ( $sections as $s ) {
+		$out .= '<li><a href="#' . esc_attr( $s['id'] ) . '">' . esc_html( $s['name'] ) . '</a></li>';
+	}
+
+	return $out . '</ul></nav>';
+}
+add_shortcode( 'arv_faq_nav', 'arv_faq_nav_shortcode' );
+
+/**
+ * Answer HTML reduced to paragraphs, lists, emphasis and links, for use
+ * outside the FAQ page (Contact block and topic answers).
+ *
+ * @param string $html
+ * @return string
+ */
+function arv_faq_safe_html( $html ) {
+	return wp_kses(
+		(string) $html,
+		array(
+			'p'      => array(),
+			'br'     => array(),
+			'strong' => array(),
+			'em'     => array(),
+			'ul'     => array(),
+			'ol'     => array(),
+			'li'     => array(),
+			'a'      => array( 'href' => true ),
+		)
+	);
+}
+
+/**
+ * Contact form topic label (CF7 84199 category select) to topic slug.
+ *
+ * @return array<string, string>
+ */
+function arv_faq_topic_slugs() {
+	return apply_filters(
+		'arv_faq_topic_slugs',
+		array(
+			'Registration, refunds or transfers'   => 'registration',
+			'Race day, results or timing'          => 'raceday',
+			'Lost and found'                       => 'lost',
+			'Volunteering'                         => 'volunteering',
+			'Media and press'                      => 'media',
+			'Sponsorship and partnerships'         => 'sponsorship',
+			'Event services, timing or production' => 'services',
+			'Something else'                       => 'other',
+		)
+	);
+}
+
+/**
+ * Preferred questions per topic slug, best first. Ids missing from the page
+ * are skipped, and a topic is topped up from questions tagged with it.
+ *
+ * @return array<string, string[]>
+ */
+function arv_faq_topic_questions() {
+	return apply_filters(
+		'arv_faq_topic_questions',
+		array(
+			'registration' => array( 'change-distance', 'race-credits', 'withdraw', 'refund-policy' ),
+			'raceday'      => array( 'results', 'live-tracking', 'race-weekend-contact' ),
+			'lost'         => array( 'race-weekend-contact' ),
+			'volunteering' => array( 'volunteer-signup', 'volunteer-perks' ),
+			'media'        => array( 'race-photos' ),
+			'sponsorship'  => array( 'sponsorship' ),
+			'services'     => array( 'timing-services' ),
+			'other'        => array( 'race-weekend-contact', 'accessibility' ),
+		)
+	);
+}
+
+/**
+ * Up to $max questions per topic slug.
+ *
+ * @param array $items From arv_faq_extract_items().
+ * @param int   $max
+ * @return array<string, array<int, array>>
+ */
+function arv_faq_topic_answers( $items, $max = 3 ) {
+	$by_id = array();
+
+	foreach ( $items as $item ) {
+		if ( '' !== $item['id'] ) {
+			$by_id[ $item['id'] ] = $item;
+		}
+	}
+
+	$out = array();
+
+	foreach ( array_unique( array_values( arv_faq_topic_slugs() ) ) as $slug ) {
+		$picked    = array();
+		$preferred = arv_faq_topic_questions();
+
+		foreach ( isset( $preferred[ $slug ] ) ? $preferred[ $slug ] : array() as $id ) {
+			if ( isset( $by_id[ $id ] ) && count( $picked ) < $max ) {
+				$picked[ $id ] = $by_id[ $id ];
+			}
+		}
+
+		foreach ( $items as $item ) {
+			if ( count( $picked ) >= $max ) {
+				break;
+			}
+
+			if ( '' !== $item['id'] && ! isset( $picked[ $item['id'] ] ) && in_array( $slug, $item['topics'], true ) ) {
+				$picked[ $item['id'] ] = $item;
+			}
+		}
+
+		if ( $picked ) {
+			$out[ $slug ] = array_values( $picked );
+		}
+	}
+
+	return $out;
+}
+
+/** The FAQ page's raw content, or '' when there is no FAQ page. */
+function arv_faq_page_content() {
+	$page = get_page_by_path( ARV_FAQ_PAGE_PATH );
+
+	return ( $page instanceof WP_Post ) ? (string) $page->post_content : '';
+}
+
+/** Default questions for the Contact page top block, most asked first. */
+const ARV_FAQ_TOP_DEFAULT = 'race-credits,change-distance,refund-policy,results,parking,awards';
+
+/**
+ * [arv_faq_top ids="a,b"]: a search box that goes to the FAQ page and the
+ * six most asked questions as accordions, for the top of the Contact page.
+ * Also prints the topic answer data the FAQ script shows under the contact
+ * form's topic select.
+ *
+ * @param array|string $atts
+ * @return string
+ */
+function arv_faq_top_shortcode( $atts = array() ) {
+	$atts  = shortcode_atts( array( 'ids' => ARV_FAQ_TOP_DEFAULT ), $atts, 'arv_faq_top' );
+	$items = arv_faq_extract_items( arv_faq_page_content() );
+
+	if ( empty( $items ) ) {
+		return '';
+	}
+
+	return arv_faq_top_html( $items, array_filter( array_map( 'trim', explode( ',', $atts['ids'] ) ) ), home_url( '/' . ARV_FAQ_PAGE_PATH . '/' ) );
+}
+add_shortcode( 'arv_faq_top', 'arv_faq_top_shortcode' );
+
+/**
+ * The top block markup (separate from the shortcode so tests need no WP page).
+ *
+ * @param array    $items
+ * @param string[] $ids
+ * @param string   $faq_url
+ * @return string
+ */
+function arv_faq_top_html( $items, $ids, $faq_url ) {
+	$by_id = array();
+
+	foreach ( $items as $item ) {
+		$by_id[ $item['id'] ] = $item;
+	}
+
+	$top = array();
+
+	foreach ( $ids as $id ) {
+		if ( isset( $by_id[ $id ] ) && count( $top ) < 6 ) {
+			$top[] = $by_id[ $id ];
+		}
+	}
+
+	$out  = '<div class="arv-faq-top" data-arv-faq-top>';
+	$out .= '<h2>Find an answer first</h2>';
+	$out .= '<form class="arv-faq-top__search" role="search" method="get" action="' . esc_url( $faq_url ) . '">';
+	$out .= '<input type="search" name="q" class="arv-faq-search" placeholder="Search the FAQ, e.g. &ldquo;race credit&rdquo;" aria-label="Search frequently asked questions" />';
+	$out .= '<button type="submit" class="arv-faq-top__go">Search</button>';
+	$out .= '</form>';
+
+	foreach ( $top as $item ) {
+		$out .= '<details class="arv-faq-q" id="top-' . esc_attr( $item['id'] ) . '"><summary>' . esc_html( $item['q'] ) . '</summary>';
+		$out .= '<div class="arv-faq-a">' . arv_faq_safe_html( $item['a'] ) . '</div></details>';
+	}
+
+	$out .= '<p class="arv-faq-top__all"><a href="' . esc_url( $faq_url ) . '">See all questions</a></p>';
+	$out .= '</div>';
+	$out .= arv_faq_topic_data_script( $items, $faq_url );
+
+	return $out;
+}
+
+/**
+ * JSON for the contact form topic answers: { topics: {label: slug}, answers: {slug: [...] } }.
+ *
+ * @param array  $items
+ * @param string $faq_url
+ * @return string
+ */
+function arv_faq_topic_data_script( $items, $faq_url ) {
+	$answers = array();
+
+	foreach ( arv_faq_topic_answers( $items ) as $slug => $list ) {
+		foreach ( $list as $item ) {
+			$answers[ $slug ][] = array(
+				'id'  => $item['id'],
+				'q'   => $item['q'],
+				'a'   => arv_faq_safe_html( $item['a'] ),
+				'url' => $faq_url . '#' . $item['id'],
+			);
+		}
+	}
+
+	$data = array(
+		'topics'  => arv_faq_topic_slugs(),
+		'answers' => $answers,
+	);
+
+	return '<script type="application/json" class="arv-faq-topic-data">' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES ) . '</script>';
+}
+
+/**
+ * Styles for the jump nav, the Contact top block and the topic answers.
+ * Loaded after the main stylesheet so it can lean on its .arv-faq-* rules.
+ */
+function arv_faq_enqueue_styles() {
+	wp_enqueue_style(
+		'aravaipa-faq',
+		ARV_ELEMENTS_URL . 'assets/aravaipa-faq.css',
+		array(),
+		ARV_ELEMENTS_VERSION
+	);
+}
+add_action( 'wp_enqueue_scripts', 'arv_faq_enqueue_styles', 20 );
