@@ -139,7 +139,7 @@ ok( false !== strpos( $top, 'action="https://www.aravaiparunning.com/faq/"' ) &&
 ok( false !== strpos( $top, 'id="top-race-credits"' ), 'top ids do not clash with FAQ ids' );
 ok( false !== strpos( $top, 'class="arv-faq-topic-data"' ), 'topic data printed with the block' );
 ok( false === strpos( $top, '<script>alert' ), 'no raw script from answers in the block' );
-ok( 0 === preg_match( '/\x{2014}|&mdash;/u', $top . file_get_contents( dirname( __DIR__, 2 ) . '/includes/faq.php' ) ), 'no em dashes' );
+ok( 0 === preg_match( '/\x{2014}|\x26mdash;/u', $top . file_get_contents( dirname( __DIR__, 2 ) . '/includes/faq.php' ) ), 'no em dashes' );
 
 // Topic map and answers.
 $slugs = arv_faq_topic_slugs();
