@@ -402,3 +402,14 @@ Guided trips (race trips, training camps, adventures) as an `adventure` post typ
 - `tribute`: `{gate_option, eyebrow, heading, portrait, portrait_alt, paragraphs, _source}`, rendered last on a light section. It is off by default: the shortcode renders it only when `get_option( gate_option )` is `'1'` (for Ultra Adventures `arv_region_hub_tribute_ultra_adventures`), so copy and portrait can be signed off before anyone sees them. `wp option update arv_region_hub_tribute_ultra_adventures 1` turns it on, `0` or deleting the option turns it off.
 - Fade-in: blocks marked `data-arv-fade` fade in on scroll once `assets/aravaipa-region-hub.js` adds `arv-hub--fx` to the hub. Without the script, or with `prefers-reduced-motion: reduce`, everything is simply visible. The same script runs the film facades.
 - Styles: `assets/aravaipa-region-hub.css`, in the head on pages whose content holds the shortcode. Square corners, no shadows, no edge stripes.
+
+## Careers page
+
+`[arv_careers_page]` (`includes/careers-page.php`) is the whole /careers/ page body (WP page 3620), built on the region hub's pieces: photo hero, live openings, a stats strip, Life at Aravaipa as three photo splits, a behind the scenes gallery and Other ways in (Volunteer, Racing Team).
+
+- Openings are read live from BambooHR's public list through `includes/careers-store.php` (`arv_careers_fetch_list()`, cached 1 hour, last good list kept in `arv_careers_last_good` so an outage never blanks a real opening). Each opening shows title, department, place and type, BambooHR's own pay line and summary when it has them, and an Apply button to its BambooHR posting.
+- JobPosting schema is emitted once per live opening and never on the empty page.
+- Empty state: "Nothing open right now", the job board link, a contact path (Contact Us, topic Something else: BambooHR takes no general applications without a posting), and pointers to Volunteer and the Racing Team.
+- Copy and photos live in `includes/data/careers.json`. Every claim there is sourced from our own site or mountainoutpost.com. No pay, perks or benefits unless they are written down somewhere we can point to; `scripts/test/careers-page-test.php` fails on benefit and pay words in the data file.
+- Styles: `assets/aravaipa-region-hub.css` plus `assets/aravaipa-careers.css` (mobile first), in the head on pages whose content holds the shortcode.
+- `[arv_careers]` (the old openings-only block) still works for any page that uses it.

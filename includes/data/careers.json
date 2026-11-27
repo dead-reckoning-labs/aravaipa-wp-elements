@@ -1,0 +1,83 @@
+{
+	"_about": "Copy and photos for [arv_careers_page] (includes/careers-page.php). Every claim here is sourced from our own site (About, Contact, Timing, Artworx, Printworx, Volunteer, Racing Team, the old Careers copy) or mountainoutpost.com; keep it that way. No pay, perks or benefits unless they are written down somewhere we can point to. Openings come live from BambooHR, never from this file.",
+	"title": "Careers",
+	"eyebrow": "Work at Aravaipa",
+	"intro": "We are a family owned crew producing trail and ultra races since 2009, from our Phoenix headquarters to start lines across the West.",
+	"cta_label": "See Openings",
+	"hero": {
+		"photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/careers-hero-javelina-course-crew.jpg",
+		"alt": "Aravaipa course crew member in a safety vest directing runners at Javelina Jundred, Four Peaks behind",
+		"position": "30% 35%"
+	},
+	"openings": {
+		"eyebrow": "Openings",
+		"heading": "Current openings",
+		"empty_heading": "Nothing open right now",
+		"empty_text": "We are not hiring for any role at the moment. When a job opens it shows up here and on our job board the same day.",
+		"stay_text": "If you want us to know you are out there, send us a note through the contact form (topic: Something else) with what you do and where you are.",
+		"stay_label": "Contact Us",
+		"stay_url": "https://www.aravaiparunning.com/contact-us/",
+		"ways_text": "You can also work a race with us as a volunteer, or race for us on the Racing Team.",
+		"board_label": "Our job board",
+		"board_url": "https://aravaipa.bamboohr.com/careers"
+	},
+	"stats": [
+		{ "value": "2009", "label": "Producing endurance events since" },
+		{ "value": "50+", "label": "Trail and ultra events a year" },
+		{ "value": "2", "label": "Offices: Phoenix and Colorado Springs" }
+	],
+	"life": [
+		{
+			"eyebrow": "Life at Aravaipa",
+			"heading": "What we do",
+			"paragraphs": [
+				"We build the race, start to finish. Our team spans race directors, aid station leads, event crew, technology, design, printing, warehouse and logistics."
+			],
+			"items": [
+				{ "title": "Race production", "text": "Courses, aid stations, start and finish lines for more than 50 trail and ultra events a year." },
+				{ "title": "Broadcasts", "text": "Mountain Outpost carries our races live, with multi-camera livestreams from the start line to the backcountry.", "url": "https://www.aravaiparunning.com/media/broadcasts/" },
+				{ "title": "Timing", "text": "We chip time our own events, including remote timing points that work off grid, with live results.", "url": "https://www.aravaiparunning.com/timing/" },
+				{ "title": "Artworx and Printworx", "text": "Custom wooden medals, buckles and awards, plus race apparel and merchandise, made by our own team.", "url": "https://www.aravaiparunning.com/artworx/" }
+			],
+			"photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/careers-zion-aid-station.jpg",
+			"alt": "Aid station crew serving fruit and snacks to a runner at Zion Ultras"
+		},
+		{
+			"eyebrow": "Where we work",
+			"heading": "Phoenix, and wherever the race is",
+			"paragraphs": [
+				"Our headquarters is in Phoenix, Arizona, and we have an office in Colorado Springs.",
+				"Race weekends take the crew to Arizona, California, Colorado, Nevada and Utah, and to races in Michigan, New Hampshire, Tennessee and Wisconsin."
+			],
+			"photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/mogollon-monster-trail-work-aravaipa-staff-rim.jpg",
+			"alt": "An Aravaipa Running staff member carries a brush cutter along the Highline Trail as storm clouds build over the Mogollon Rim",
+			"flip": true
+		},
+		{
+			"eyebrow": "How we work",
+			"heading": "Hard work, family feel",
+			"paragraphs": [
+				"We are incredibly hard working and passionate about what we do, and we keep a fun, laid back vibe in the office and the same family feel at our events.",
+				"We look for high energy, self motivated people who are not afraid to get their hands dirty, and we see ourselves as trail stewards and community builders."
+			],
+			"photo": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/careers-javelina-broadcast-camera.jpg",
+			"alt": "Camera operator running a broadcast camera at the Javelina Jundred start and finish"
+		}
+	],
+	"gallery_heading": { "eyebrow": "Behind the scenes", "heading": "Race day, from our side" },
+	"gallery": [
+		{ "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/careers-javelina-aid-station-ice.jpg", "alt": "Aid station volunteer wringing out an ice bandana over a runner at Jackass Junction", "feature": true },
+		{ "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/careers-javelina-aid-station-refill.jpg", "alt": "Aid station crew refilling a runner bottle at Jackass Junction" },
+		{ "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/careers-javelina-course-marshal.jpg", "alt": "Smiling course marshal with a light wand at Javelina Jundred" },
+		{ "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/careers-javelina-finish-line-night.jpg", "alt": "Javelina Jundred start and finish arch lit up at dawn with a runner coming in" },
+		{ "src": "https://i0.wp.com/www.aravaiparunning.com/wp-content/uploads/mogollon-monster-trail-work-crew-group.jpg", "alt": "The Aravaipa Running trail work crew gathered at the edge of the Mogollon Rim" }
+	],
+	"ways": {
+		"eyebrow": "Other ways in",
+		"heading": "Not a job, still the crew",
+		"items": [
+			{ "title": "Volunteer", "text": "Work an aid station, a course sweep or the finish line at one of our races. Volunteers earn race credits toward a future race.", "label": "Volunteer With Us", "url": "https://www.aravaiparunning.com/volunteer/" },
+			{ "title": "Racing Team", "text": "The Aravaipa Racing Team, powered by HOKA: runners who represent us as trail stewards, environmentalists and community builders.", "label": "Meet the Team", "url": "https://www.aravaiparunning.com/racing-team/" }
+		]
+	}
+}
